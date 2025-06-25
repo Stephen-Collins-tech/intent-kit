@@ -32,7 +32,7 @@ class GoogleClient:
                     "Google GenAI package not installed. Install with: pip install google-genai"
                 )
 
-    def generate_text(self, prompt: str, model: str = "gemini-2.0-flash-lite") -> str:
+    def generate(self, prompt: str, model: str = "gemini-2.0-flash-lite") -> str:
         """Generate text using Google's Gemini model."""
         self._ensure_imported()
 

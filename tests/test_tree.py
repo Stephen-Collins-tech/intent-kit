@@ -1,8 +1,8 @@
 import pytest
-from intentify.node import IntentNode, ClassifierNode, TaxonomyNode
-from intentify.tree import TreeBuilder
-from intentify.classifiers import keyword_classifier
-from intentify.engine import execute_taxonomy
+from intent_kit.node import IntentNode, ClassifierNode, TaxonomyNode
+from intent_kit.tree import TreeBuilder
+from intent_kit.classifiers import keyword_classifier
+from intent_kit.engine import execute_taxonomy
 
 # Test fixtures
 
@@ -45,10 +45,14 @@ def sample_tree(sample_handlers):
 
 
 def test_taxonomy_node_creation():
-    """Test basic node creation."""
-    node = TaxonomyNode("test", "test description")
-    assert node.name == "test"
-    assert node.description == "test description"
+    """Test that TaxonomyNode ABC cannot be instantiated directly."""
+    import pytest
+    with pytest.raises(TypeError):
+        # type: ignore pylint: disable-next=abstract-class-instantiated
+        TaxonomyNode(  # type: ignore # pylint: disable-next=abstract-class-instantiated
+            name="test",
+            description="test description"
+        )
 
 
 def test_intent_creation(sample_handlers):

@@ -240,6 +240,7 @@ dev = [
     { name = "google-genai" },
     { name = "openai" },
     { name = "pytest" },
+    { name = "python-dotenv" },
 ]
 
 [package.metadata]
@@ -257,6 +258,7 @@ dev = [
     { name = "google-genai", specifier = ">=0.1.0" },
     { name = "openai", specifier = ">=1.0.0" },
     { name = "pytest", specifier = ">=8.4.1" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
 ]
 
 [[package]]

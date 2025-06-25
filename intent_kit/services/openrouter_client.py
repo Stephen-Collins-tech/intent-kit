@@ -1,21 +1,24 @@
-# OpenAI client wrapper for intent-kit
+# OpenRouter client wrapper for intent-kit
 # Requires: pip install openai
 
 from intent_kit.utils.logger import Logger
 
-logger = Logger("openai_service")
+logger = Logger("openrouter_service")
 
 
-class OpenAIClient:
+class OpenRouterClient:
     def __init__(self, api_key: str):
         self.api_key = api_key
         self._client = self.get_client()
 
     def get_client(self):
-        """Get the OpenAI client."""
+        """Get the OpenRouter client."""
         try:
             import openai
-            return openai.OpenAI(api_key=self.api_key)
+            return openai.OpenAI(
+                api_key=self.api_key,
+                base_url="https://openrouter.ai/api/v1"
+            )
         except ImportError:
             raise ImportError(
                 "OpenAI package not installed. Install with: pip install openai"
@@ -26,14 +29,17 @@ class OpenAIClient:
         if self._client is None:
             try:
                 import openai
-                self._client = openai.OpenAI(api_key=self.api_key)
+                self._client = openai.OpenAI(
+                    api_key=self.api_key,
+                    base_url="https://openrouter.ai/api/v1"
+                )
             except ImportError:
                 raise ImportError(
                     "OpenAI package not installed. Install with: pip install openai"
                 )
 
-    def generate(self, prompt: str, model: str = "gpt-4") -> str:
-        """Generate text using OpenAI's GPT model."""
+    def generate(self, prompt: str, model: str = "openai/gpt-4") -> str:
+        """Generate text using OpenRouter model."""
         self._ensure_imported()
         response = self._client.chat.completions.create(
             model=model,
@@ -41,9 +47,10 @@ class OpenAIClient:
             max_tokens=1000
         )
         content = response.choices[0].message.content
+        logger.debug(f"OpenRouter generate response: {content}")
         return str(content) if content else ""
 
     # Keep generate_text as an alias for backward compatibility
-    def generate_text(self, prompt: str, model: str = "gpt-4") -> str:
+    def generate_text(self, prompt: str, model: str = "openai/gpt-4") -> str:
         """Alias for generate method (backward compatibility)."""
         return self.generate(prompt, model)
