@@ -11,6 +11,7 @@ from intent_kit.graph import IntentGraph
 from intent_kit.graph.splitters import llm_splitter
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.tree import TreeBuilder
+from intent_kit.taxonomy import Taxonomy
 from typing import Dict, Any
 from dotenv import load_dotenv
 load_dotenv()
@@ -102,17 +103,18 @@ def build_llm_taxonomy():
     )
 
 
-class LLMTaxonomy:
+class LLMTaxonomy(Taxonomy):
     def __init__(self):
         self.root = build_llm_taxonomy()
 
-    def route(self, user_input: str, debug: bool = False) -> Dict[str, Any]:
+    def route(self, user_input: str, context=None, debug: bool = False) -> Dict[str, Any]:
         if debug:
             print(f"[LLM] Processing: {user_input}")
         result = self.root.execute(user_input)
         if result["success"]:
             return {
                 "intent": self.root.name,
+                "node_name": self.root.name,
                 "params": result["params"],
                 "output": result["output"],
                 "error": None
@@ -120,6 +122,7 @@ class LLMTaxonomy:
         else:
             return {
                 "intent": None,
+                "node_name": None,
                 "params": result["params"],
                 "output": None,
                 "error": result["error"]

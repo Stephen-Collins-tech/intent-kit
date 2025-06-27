@@ -124,11 +124,12 @@ def test_execute_taxonomy_handler_error(sample_tree):
         description="Error test root"
     )
 
-    result = execute_taxonomy(user_input="Error value", node=error_tree)
-    assert result["intent"] == "Error"
-    assert result["params"] == {"param": "value"}
-    assert result["output"] is None
-    assert "Test error" in result["error"]
+    # Now expect an exception to be raised
+    with pytest.raises(Exception) as exc_info:
+        execute_taxonomy(user_input="Error value", node=error_tree)
+
+    # Check that the exception contains the expected error message
+    assert "Test error" in str(exc_info.value)
 
 
 def test_intent_node_execution():
@@ -163,10 +164,12 @@ def test_intent_node_execution():
     assert result["output"] == "Hello John, you are 30 years old"
     assert result["error"] is None
 
-    # Test validation failure
-    result = intent.execute("")
-    assert result["success"] is False
-    assert "validation failed" in result["error"]
+    # Test validation failure - now expect an exception
+    with pytest.raises(Exception) as exc_info:
+        intent.execute("")
+
+    # Check that the exception contains the expected error message
+    assert "validation failed" in str(exc_info.value)
 
 
 def test_type_validation():
@@ -193,7 +196,9 @@ def test_type_validation():
     assert result["success"] is True
     assert result["params"] == {"count": 10, "active": True}
 
-    # Test invalid type
-    result = intent.execute("invalid true")
-    assert result["success"] is False
-    assert "must be an integer" in result["error"]
+    # Test invalid type - now expect an exception
+    with pytest.raises(Exception) as exc_info:
+        intent.execute("invalid true")
+
+    # Check that the exception contains the expected error message
+    assert "must be an integer" in str(exc_info.value)

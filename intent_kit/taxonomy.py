@@ -1,45 +1,73 @@
-from typing import Any, Dict, Optional, Type, get_type_hints
-from dataclasses import dataclass
-import inspect
+from typing import Any, Dict, Optional
+from abc import ABC, abstractmethod
+from intent_kit.context import IntentContext
+from intent_kit.engine import execute_taxonomy
+from intent_kit.tree import TaxonomyNode
 
 
-@dataclass
-class Intent:
-    """Base class for all intent types."""
+class Taxonomy(ABC):
+    """
+    Abstract base class for intent taxonomies.
 
-    def __post_init__(self):
-        """Validate parameters after initialization."""
-        type_hints = get_type_hints(self.__class__)
-        for field_name, field_value in self.__dict__.items():
-            if field_name in type_hints:
-                expected_type = type_hints[field_name]
-                if not isinstance(field_value, expected_type):
-                    raise TypeError(
-                        f"Parameter '{field_name}' must be of type {expected_type}, "
-                        f"got {type(field_value)}"
-                    )
+    All taxonomies must inherit from this class and implement the route method.
+    This ensures a consistent interface for the IntentGraph to work with.
+    """
+
+    @abstractmethod
+    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False) -> Dict[str, Any]:
+        """
+        Route user input through the taxonomy.
+
+        Args:
+            user_input: The input string to process
+            context: Optional context object for state sharing
+            debug: Whether to print debug information
+
+        Returns:
+            Dict containing:
+                - intent: Name of the matched intent (or None if no match)
+                - node_name: Name of the matched node (or None if no match)
+                - params: Extracted parameters (or None if no match)
+                - output: Result of handler execution (or None if no match)
+                - error: Error message if any (or None if successful)
+        """
+        pass
 
 
-class IntentTaxonomy:
-    """Base class for intent taxonomies."""
+class TreeTaxonomy(Taxonomy):
+    """
+    Concrete implementation of Taxonomy that wraps tree-based taxonomies.
 
-    def __init__(self):
-        """Initialize the taxonomy."""
-        self._intents: Dict[str, Type[Intent]] = {}
-        self._discover_intents()
+    This class provides a bridge between the old tree-based taxonomy system
+    and the new abstract Taxonomy interface.
+    """
 
-    def _discover_intents(self):
-        """Discover all Intent subclasses defined in this taxonomy."""
-        for name, value in inspect.getmembers(self.__class__):
-            if (
-                isinstance(value, type)
-                and issubclass(value, Intent)
-                and value is not Intent
-            ):
-                self._intents[name] = value
+    def __init__(self, root_node: TaxonomyNode):
+        """
+        Initialize the TreeTaxonomy with a root node.
 
-    def get_intents(self) -> Dict[str, Type[Intent]]:
-        """Get all discovered intents."""
-        return self._intents.copy()
+        Args:
+            root_node: The root node of the taxonomy tree
+        """
+        self.root_node = root_node
+
+    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False) -> Dict[str, Any]:
+        """
+        Route user input through the taxonomy tree.
+
+        Args:
+            user_input: The input string to process
+            context: Optional context object for state sharing
+            debug: Whether to print debug information
+
+        Returns:
+            Dict containing the routing result
+        """
+        return execute_taxonomy(
+            user_input=user_input,
+            node=self.root_node,
+            context=context,
+            debug=debug
+        )
 
 # Example taxonomy for testing

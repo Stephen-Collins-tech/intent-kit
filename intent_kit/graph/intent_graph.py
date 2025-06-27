@@ -7,9 +7,13 @@ taxonomy routing, and result aggregation.
 
 from typing import Dict, Any, Optional, Callable
 from intent_kit.utils.logger import Logger
+from intent_kit.context import IntentContext
 from intent_kit.graph.splitters import rule_splitter
 from intent_kit.graph.splitters.splitter_types import SplitterFunction
 from intent_kit.graph.aggregation import aggregate_results, create_error_dict, create_no_intent_error, create_no_taxonomy_error
+from intent_kit.exceptions import NodeExecutionError, NodeInputValidationError, NodeOutputValidationError
+from intent_kit.taxonomy import Taxonomy
+import inspect
 
 
 class IntentGraph:
@@ -20,6 +24,7 @@ class IntentGraph:
     - Intent splitting: Decompose multi-intent user inputs into sub-intents
     - Flexible routing: Dispatch to one or more taxonomy trees
     - Multi-intent orchestration: Support for parallel or sequential execution
+    - Context sharing: Pass context through all execution paths
     """
 
     def __init__(self, splitter: SplitterFunction = rule_splitter):
@@ -29,77 +34,99 @@ class IntentGraph:
         Args:
             splitter: Function to use for splitting intents (default: rule_splitter)
         """
-        self.taxonomies: Dict[str, Any] = {}
+        self.taxonomies: dict[str, Taxonomy] = {}
         self.splitter = splitter
         self.logger = Logger(__name__)
 
-    def register_taxonomy(self, name: str, taxonomy: Any) -> None:
+    def register_taxonomy(self, name: str, taxonomy: Taxonomy) -> None:
         """
         Register a taxonomy in the graph.
 
         Args:
             name: The name of the taxonomy
-            taxonomy: The taxonomy instance (must support .route() method)
+            taxonomy: The taxonomy instance (must inherit from Taxonomy)
         """
-        if not hasattr(taxonomy, 'route'):
+        if not isinstance(taxonomy, Taxonomy):
             raise ValueError(
-                f"Taxonomy '{name}' must support a .route() method")
+                f"Taxonomy '{name}' must inherit from Taxonomy base class")
 
         self.taxonomies[name] = taxonomy
         self.logger.info(f"Registered taxonomy: {name}")
 
-    def remove_taxonomy(self, name: str) -> bool:
+    def remove_taxonomy(self, name: str) -> None:
         """
         Remove a taxonomy from the graph.
 
         Args:
             name: The name of the taxonomy to remove
-
-        Returns:
-            True if taxonomy was removed, False if it didn't exist
         """
         if name in self.taxonomies:
             del self.taxonomies[name]
             self.logger.info(f"Removed taxonomy: {name}")
-            return True
         else:
             self.logger.warning(f"Taxonomy '{name}' not found for removal")
-            return False
 
-    def list_taxonomies(self) -> list[str]:
+    def list_taxonomies(self) -> list:
         """
-        Get a list of registered taxonomy names.
+        List all registered taxonomies.
 
         Returns:
-            List of registered taxonomy names
+            List of taxonomy names
         """
         return list(self.taxonomies.keys())
 
-    def route(self, user_input: str, debug: bool = False, **splitter_kwargs) -> Dict[str, Any]:
+    def _call_splitter(self, user_input: str, debug: bool, context: Optional[IntentContext] = None, **splitter_kwargs) -> list:
         """
-        Route user input to appropriate taxonomies.
+        Call the splitter function with appropriate parameters.
 
         Args:
-            user_input: The user's input string
+            user_input: The input string to process
             debug: Whether to enable debug logging
-            **splitter_kwargs: Additional arguments to pass to the splitter function
+            context: Optional context object (not passed to splitter)
+            **splitter_kwargs: Additional arguments for the splitter
 
         Returns:
-            Dict with format: {"results": [...], "errors": [...]}
+            List of intent splits
+        """
+        # Call splitter (context-aware splitters can access context via closure or other means)
+        return self.splitter(user_input, self.taxonomies, debug, **splitter_kwargs)
+
+    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False, **splitter_kwargs) -> Dict[str, Any]:
+        """
+        Route user input through the graph with optional context support.
+
+        Args:
+            user_input: The input string to process
+            context: Optional context object for state sharing
+            debug: Whether to print debug information
+            **splitter_kwargs: Additional arguments to pass to the splitter
+
+        Returns:
+            Dict containing results and errors from all matched taxonomies
         """
         if debug:
-            self.logger.info(f"Routing input: '{user_input}'")
-            self.logger.info(f"Available taxonomies: {self.list_taxonomies()}")
-
-        # Check if we have any taxonomies registered
-        if not self.taxonomies:
-            if debug:
-                self.logger.warning("No taxonomies registered")
-            return create_no_taxonomy_error([])
+            self.logger.info(f"Processing input: {user_input}")
+            if context:
+                self.logger.info(f"Using context: {context}")
 
         # Split the input into intents
-        intent_splits = self.splitter(
-            user_input, self.taxonomies, debug, **splitter_kwargs)
+        try:
+            intent_splits = self._call_splitter(
+                user_input=user_input,
+                debug=debug,
+                **splitter_kwargs
+            )
+
+        except Exception as e:
+            self.logger.error(f"Splitter error: {e}")
+            return {
+                "results": [],
+                "errors": [create_error_dict(
+                    "splitter",
+                    f"Splitter failed: {str(e)}",
+                    type(e).__name__
+                )]
+            }
 
         if debug:
             self.logger.info(f"Intent splits: {intent_splits}")
@@ -134,22 +161,142 @@ class IntentGraph:
                     self.logger.error(f"Taxonomy '{taxonomy_name}' not found")
                 continue
 
-            # Route to taxonomy
+            # Route to taxonomy with context support
             try:
                 taxonomy = self.taxonomies[taxonomy_name]
-                result = taxonomy.route(split_text, debug=debug)
+
+                # Check if taxonomy route accepts context parameter
+                if hasattr(taxonomy.route, '__code__'):
+                    route_params = taxonomy.route.__code__.co_varnames
+                    if 'context' in route_params:
+                        result = taxonomy.route(
+                            split_text, context=context, debug=debug)
+                    else:
+                        result = taxonomy.route(split_text, debug=debug)
+                else:
+                    # Try with context first, fall back to without
+                    try:
+                        result = taxonomy.route(
+                            split_text, context=context, debug=debug)
+                    except TypeError:
+                        result = taxonomy.route(split_text, debug=debug)
 
                 if debug:
                     self.logger.info(
                         f"Taxonomy '{taxonomy_name}' result: {result}")
 
-                results.append(result)
+                # Check if the result contains an error
+                if result and isinstance(result, dict) and result.get('error'):
+                    # Extract error information and add to context
+                    error_message = result['error']
+                    error_type = NodeExecutionError.__name__
+                    node_name = result.get('intent', 'unknown')
+                    params = result.get('params')
 
-            except Exception as e:
+                    # Add error to context if available
+                    if context:
+                        context.add_error(
+                            node_name=node_name,
+                            taxonomy_name=taxonomy_name,
+                            user_input=split_text,
+                            error_message=error_message,
+                            error_type=error_type,
+                            params=params
+                        )
+
+                    # Create error dict and add to errors list
+                    error = create_error_dict(
+                        taxonomy_name,
+                        f"Node '{node_name}' failed: {error_message}",
+                        error_type
+                    )
+                    errors.append(error)
+
+                    if debug:
+                        self.logger.error(
+                            f"Node '{node_name}' in taxonomy '{taxonomy_name}' failed: {error_message}")
+                else:
+                    # No error, add to results
+                    results.append(result)
+
+            except (NodeInputValidationError, NodeOutputValidationError) as e:
+                # Handle validation errors specifically
+                error_message = str(e)
+                error_type = type(e).__name__
+                node_name = e.node_name
+                node_id = e.node_id
+                node_path = e.node_path
+
+                # Add error to context if available
+                if context:
+                    context.add_error(
+                        node_name=node_name,
+                        taxonomy_name=taxonomy_name,
+                        user_input=split_text,
+                        error_message=error_message,
+                        error_type=error_type,
+                        params=None
+                    )
+
                 error = create_error_dict(
                     taxonomy_name,
-                    str(e),
-                    type(e).__name__
+                    f"Node '{node_name}' validation failed: {error_message}",
+                    error_type
+                )
+                errors.append(error)
+                if debug:
+                    self.logger.error(
+                        f"Node '{node_name}' (ID: {node_id}, Path: {'.'.join(node_path)}) in taxonomy '{taxonomy_name}' validation failed: {error_message}")
+
+            except NodeExecutionError as e:
+                # Handle execution errors specifically
+                error_message = str(e)
+                error_type = type(e).__name__
+                node_name = e.node_name
+                node_id = e.node_id
+                node_path = e.node_path
+                params = e.params
+
+                # Add error to context if available
+                if context:
+                    context.add_error(
+                        node_name=node_name,
+                        taxonomy_name=taxonomy_name,
+                        user_input=split_text,
+                        error_message=error_message,
+                        error_type=error_type,
+                        params=params
+                    )
+
+                error = create_error_dict(
+                    taxonomy_name,
+                    f"Node '{node_name}' execution failed: {error_message}",
+                    error_type
+                )
+                errors.append(error)
+                if debug:
+                    self.logger.error(
+                        f"Node '{node_name}' (ID: {node_id}, Path: {'.'.join(node_path)}) in taxonomy '{taxonomy_name}' execution failed: {error_message}")
+
+            except Exception as e:
+                error_message = str(e)
+                error_type = type(e).__name__
+
+                # Add error to context if available
+                if context:
+                    context.add_error(
+                        node_name="unknown",
+                        taxonomy_name=taxonomy_name,
+                        user_input=split_text,
+                        error_message=error_message,
+                        error_type=error_type,
+                        params=None
+                    )
+
+                error = create_error_dict(
+                    taxonomy_name,
+                    error_message,
+                    error_type
                 )
                 errors.append(error)
                 if debug:
