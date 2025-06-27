@@ -217,7 +217,24 @@ class IntentGraph:
                             f"Node '{node_name}' in taxonomy '{taxonomy_name}' failed: {error_message}")
                 else:
                     # No error, add to results
-                    results.append(result)
+                    # Handle both old and new result formats
+                    if result and isinstance(result, dict):
+                        # If the result has the new format with execution_path, preserve it
+                        if 'execution_path' in result:
+                            # This is the new format, keep it as is
+                            results.append(result)
+                        else:
+                            # This is the old format, convert to new format for consistency
+                            results.append({
+                                'intent': result.get('intent'),
+                                'node_name': result.get('node_name'),
+                                'params': result.get('params'),
+                                'output': result.get('output'),
+                                'error': result.get('error'),
+                                'execution_path': []  # Empty execution path for old format
+                            })
+                    else:
+                        results.append(result)
 
             except (NodeInputValidationError, NodeOutputValidationError) as e:
                 # Handle validation errors specifically

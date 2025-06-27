@@ -118,14 +118,36 @@ class ClassifierNode(TaxonomyNode):
             self.logger.error(
                 f"Classifier at '{self.name}' (Path: {'.'.join(self.get_path())}) could not route input.")
             return {
-                "intent": None,
+                "success": False,
+                "node_name": self.name,
+                "node_path": self.get_path(),
+                "node_type": "classifier",
                 "params": None,
                 "output": None,
-                "error": f"Classifier at '{self.name}' could not route input."
+                "error": f"Classifier at '{self.name}' could not route input.",
+                "children_results": []
             }
+
         self.logger.debug(
             f"Classifier at '{self.name}' routed input to '{chosen.name}'.")
-        return chosen.execute(user_input, context)
+
+        # Execute the chosen child and collect its result
+        child_result = chosen.execute(user_input, context)
+
+        # Create a comprehensive result that includes this classifier's decision
+        return {
+            "success": True,
+            "node_name": self.name,
+            "node_path": self.get_path(),
+            "node_type": "classifier",
+            "params": {
+                "chosen_child": chosen.name,
+                "available_children": [child.name for child in self.children]
+            },
+            "output": f"Routed to '{chosen.name}'",
+            "error": None,
+            "children_results": [child_result]
+        }
 
 
 class IntentNode(TaxonomyNode):
@@ -303,9 +325,13 @@ class IntentNode(TaxonomyNode):
 
         return {
             "success": True,
+            "node_name": self.name,
+            "node_path": self.get_path(),
+            "node_type": "intent",
             "params": validated_params,
             "output": output,
-            "error": None
+            "error": None,
+            "children_results": []
         }
 
     def _validate_types(self, params: Dict[str, Any]) -> Dict[str, Any]:

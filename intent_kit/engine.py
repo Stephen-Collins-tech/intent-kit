@@ -29,44 +29,64 @@ def execute_taxonomy(
             - params: Extracted parameters
             - output: Result of handler execution
             - error: Error message if any
+            - execution_path: List of all nodes executed with their results
     """
-    current = node
+    # Execute the root node, which will recursively execute all children
+    result = node.execute(user_input, context)
 
-    # Traverse the tree until we reach an Intent node
-    while isinstance(current, ClassifierNode):
-        if debug:
-            logger.debug(
-                f"At node: {current.name} (children: {[c.name for c in current.children]})")
+    # Flatten the results to get the complete execution path
+    execution_path = flatten_execution_results(result)
 
-        chosen = current.classifier(user_input, current.children)
-        if not chosen:
-            return {
-                "intent": None,
-                "node_name": None,
-                "params": None,
-                "output": None,
-                "error": f"Classifier at '{current.name}' could not route input."
-            }
-        current = chosen
+    # Find the final intent result (the last intent node in the path)
+    final_intent = None
+    final_node_name = None
+    final_params = None
+    final_output = None
+    final_error = result.get("error")
 
-    # We should now be at an Intent node
-    if not isinstance(current, IntentNode):
-        return {
-            "intent": None,
-            "node_name": None,
-            "params": None,
-            "output": None,
-            "error": "Reached non-intent leaf node."
-        }
+    for node_result in execution_path:
+        if node_result["node_type"] == "intent":
+            final_intent = node_result["node_name"]
+            final_node_name = node_result["node_name"]
+            final_params = node_result["params"]
+            final_output = node_result["output"]
+            final_error = node_result.get("error")
 
-    # Execute the intent node with context
-    result = current.execute(user_input, context)
-
-    # Convert the new result format to the expected format
     return {
-        "intent": current.name,
-        "node_name": current.name,
+        "intent": final_intent,
+        "node_name": final_node_name,
+        "params": final_params,
+        "output": final_output,
+        "error": final_error,
+        "execution_path": execution_path
+    }
+
+
+def flatten_execution_results(result: Dict[str, Any]) -> list:
+    """
+    Flatten the nested execution results into a flat list showing the complete path.
+
+    Args:
+        result: The result from a node execution
+
+    Returns:
+        List of node results in execution order
+    """
+    execution_path = []
+
+    # Add the current node result
+    execution_path.append({
+        "node_name": result["node_name"],
+        "node_path": result["node_path"],
+        "node_type": result["node_type"],
         "params": result["params"],
         "output": result["output"],
-        "error": result["error"]
-    }
+        "error": result.get("error")
+    })
+
+    # Recursively add children results
+    for child_result in result.get("children_results", []):
+        child_path = flatten_execution_results(child_result)
+        execution_path.extend(child_path)
+
+    return execution_path

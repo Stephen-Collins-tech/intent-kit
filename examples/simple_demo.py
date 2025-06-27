@@ -14,6 +14,7 @@ from intent_kit.tree import TreeBuilder
 from intent_kit.taxonomy import Taxonomy
 from typing import Dict, Any
 from dotenv import load_dotenv
+from intent_kit.engine import execute_taxonomy
 load_dotenv()
 
 # LLM-powered classifier and arg extractor
@@ -108,25 +109,12 @@ class LLMTaxonomy(Taxonomy):
         self.root = build_llm_taxonomy()
 
     def route(self, user_input: str, context=None, debug: bool = False) -> Dict[str, Any]:
-        if debug:
-            print(f"[LLM] Processing: {user_input}")
-        result = self.root.execute(user_input)
-        if result["success"]:
-            return {
-                "intent": self.root.name,
-                "node_name": self.root.name,
-                "params": result["params"],
-                "output": result["output"],
-                "error": None
-            }
-        else:
-            return {
-                "intent": None,
-                "node_name": None,
-                "params": result["params"],
-                "output": None,
-                "error": result["error"]
-            }
+        return execute_taxonomy(
+            user_input=user_input,
+            node=self.root,
+            context=context,
+            debug=debug
+        )
 
 
 def main():
@@ -156,6 +144,21 @@ def main():
                     print(f"  Intent: {res['intent']}")
                     print(f"  Params: {res['params']}")
                     print(f"  Output: {res['output']}")
+                    # Show execution path if available
+                    if 'execution_path' in res:
+                        print(f"  Execution Path:")
+                        for i, node_result in enumerate(res['execution_path']):
+                            path_str = '.'.join(node_result['node_path'])
+                            print(
+                                f"    {i+1}. {node_result['node_name']} ({node_result['node_type']}) - Path: {path_str}")
+                            if node_result['params']:
+                                print(
+                                    f"       Params: {node_result['params']}")
+                            if node_result['output']:
+                                print(
+                                    f"       Output: {node_result['output']}")
+                            if node_result.get('error'):
+                                print(f"       Error: {node_result['error']}")
             else:
                 print(f"  Error: {result['errors']}")
         except Exception as e:
