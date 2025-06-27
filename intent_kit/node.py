@@ -95,7 +95,7 @@ class ClassifierNode(TaxonomyNode):
     def __init__(
         self,
         name: Optional[str],
-        classifier: Callable[[str, List["TaxonomyNode"]], Optional["TaxonomyNode"]],
+        classifier: Callable[[str, List["TaxonomyNode"], Optional[Dict[str, Any]]], Optional["TaxonomyNode"]],
         children: List["TaxonomyNode"],
         description: str = "",
         parent: Optional["TaxonomyNode"] = None
@@ -105,7 +105,15 @@ class ClassifierNode(TaxonomyNode):
 
     def execute(self, user_input: str, context: Optional[IntentContext] = None) -> Dict[str, Any]:
         """Execute the node with the given user input and optional context."""
-        chosen = self.classifier(user_input, self.children)
+        # Prepare context information for the classifier
+        context_dict = None
+        if context:
+            # Get all available context fields
+            context_dict = {}
+            for key in context.keys():
+                context_dict[key] = context.get(key)
+
+        chosen = self.classifier(user_input, self.children, context_dict)
         if not chosen:
             self.logger.error(
                 f"Classifier at '{self.name}' (Path: {'.'.join(self.get_path())}) could not route input.")
@@ -128,7 +136,7 @@ class IntentNode(TaxonomyNode):
         name: Optional[str],
         param_schema: Dict[str, Type],
         handler: Callable[..., Any],
-        arg_extractor: Callable[[str], Dict[str, Any]],
+        arg_extractor: Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]],
         context_inputs: Optional[Set[str]] = None,
         context_outputs: Optional[Set[str]] = None,
         input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
@@ -166,7 +174,17 @@ class IntentNode(TaxonomyNode):
         """
         # Step 1: Argument Extraction
         try:
-            extracted_params = self.arg_extractor(user_input)
+            # Prepare context information for the arg extractor
+            context_dict: Optional[Dict[str, Any]] = None
+            if context:
+                # Get only the context fields this intent needs
+                context_dict = {}
+                for key in self.context_inputs:
+                    if context.has(key):
+                        context_dict[key] = context.get(key)
+
+            extracted_params = self.arg_extractor(
+                user_input, context_dict or {})
         except Exception as e:
             original_error = e
             self.logger.error(

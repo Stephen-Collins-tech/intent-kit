@@ -58,34 +58,19 @@ def greet_handler(name: str, context: IntentContext) -> str:
 def calculate_handler(operation: str, a: float, b: float, context: IntentContext) -> str:
     """Calculate handler with history tracking."""
     result = None
-
-    # Map common operation names to actual operations
-    operation_lower = operation.lower()
-    if operation_lower in ["add", "plus", "addition", "+"]:
+    if operation == "add":
         result = a + b
-        operation_display = "plus"
-    elif operation_lower in ["subtract", "minus", "subtraction", "-"]:
+    elif operation == "subtract":
         result = a - b
-        operation_display = "minus"
-    elif operation_lower in ["multiply", "times", "multiplication", "*"]:
+    elif operation == "multiply":
         result = a * b
-        operation_display = "times"
-    elif operation_lower in ["divide", "division", "/"]:
-        if b != 0:
-            result = a / b
-            operation_display = "divided by"
-        else:
-            result = "Error: Division by zero"
-            operation_display = "divided by"
-    else:
-        # Unknown operation
-        result = f"Error: Unknown operation '{operation}'"
-        operation_display = operation
+    elif operation == "divide":
+        result = a / b if b != 0 else "Error: Division by zero"
 
     # Store calculation history in context
     calc_history = context.get("calculation_history", [])
     calc_history.append({
-        "operation": operation_display,
+        "operation": operation,
         "a": a,
         "b": b,
         "result": result,
@@ -93,9 +78,9 @@ def calculate_handler(operation: str, a: float, b: float, context: IntentContext
     })
     context.set("calculation_history", calc_history, modified_by="calculate")
     context.set("last_calculation",
-                f"{a} {operation_display} {b} = {result}", modified_by="calculate")
+                f"{a} {operation} {b} = {result}", modified_by="calculate")
 
-    return f"{a} {operation_display} {b} = {result}"
+    return f"{a} {operation} {b} = {result}"
 
 
 def weather_handler(location: str, context: IntentContext) -> str:
@@ -119,22 +104,6 @@ def weather_handler(location: str, context: IntentContext) -> str:
     return f"Weather in {location}: {weather_data}"
 
 
-def show_calculation_history_handler(context: IntentContext) -> str:
-    """Show calculation history from context."""
-    calc_history = context.get("calculation_history", [])
-
-    if not calc_history:
-        return "No calculations have been performed yet."
-
-    # Get the last calculation
-    last_calc = calc_history[-1]
-
-    if last_calc.get("result") is not None:
-        return f"Your last calculation was: {last_calc['a']} {last_calc['operation']} {last_calc['b']} = {last_calc['result']}"
-    else:
-        return f"Your last calculation was: {last_calc['a']} {last_calc['operation']} {last_calc['b']} (result not available)"
-
-
 def build_context_aware_taxonomy():
     """Build a taxonomy with context-aware handlers."""
     # LLM classifier for top-level intent
@@ -145,7 +114,6 @@ def build_context_aware_taxonomy():
             "Greet the user",
             "Perform a calculation",
             "Get weather information",
-            "Show calculation history",
             "Get help"
         ]
     )
@@ -165,11 +133,6 @@ def build_context_aware_taxonomy():
         llm_config=LLM_CONFIG,
         extraction_prompt=get_default_extraction_prompt(),
         param_schema={"location": str}
-    )
-    history_extractor = create_llm_arg_extractor(
-        llm_config=LLM_CONFIG,
-        extraction_prompt=get_default_extraction_prompt(),
-        param_schema={}
     )
     help_extractor = create_llm_arg_extractor(
         llm_config=LLM_CONFIG,
@@ -210,17 +173,9 @@ def build_context_aware_taxonomy():
                 description="Get weather with caching"
             ),
             TreeBuilder.intent_node(
-                name="show_history",
-                param_schema={},
-                handler=show_calculation_history_handler,
-                arg_extractor=history_extractor,
-                context_inputs={"calculation_history"},
-                description="Show calculation history from context"
-            ),
-            TreeBuilder.intent_node(
                 name="help",
                 param_schema={},
-                handler=lambda context: "I can help you with greetings, calculations, weather, and showing calculation history!",
+                handler=lambda context: "I can help you with greetings, calculations, and weather!",
                 arg_extractor=help_extractor,
                 description="Get help"
             )

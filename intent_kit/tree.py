@@ -17,7 +17,7 @@ class TreeBuilder:
         name: Optional[str] = None,
         param_schema: Dict[str, Type],
         handler: Callable[..., Any],
-        arg_extractor: Callable[[str], Dict[str, Any]],
+        arg_extractor: Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]],
         context_inputs: Optional[Set[str]] = None,
         context_outputs: Optional[Set[str]] = None,
         input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
@@ -78,7 +78,7 @@ class TreeBuilder:
     def classifier_node(
         *,
         name: Optional[str] = None,
-        classifier: Callable[[str, List[TaxonomyNode]], Optional[TaxonomyNode]],
+        classifier: Callable[[str, List[TaxonomyNode], Optional[Dict[str, Any]]], Optional[TaxonomyNode]],
         children: List[TaxonomyNode],
         description: str = "",
         parent: Optional[TaxonomyNode] = None

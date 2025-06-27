@@ -9,6 +9,7 @@ from typing import Dict, Any, List, Optional, Callable
 from intent_kit.node import TaxonomyNode
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
+import re
 
 logger = Logger("llm_classifier")
 
@@ -17,7 +18,7 @@ def create_llm_classifier(
     llm_config: Dict[str, Any],
     classification_prompt: str,
     node_descriptions: List[str]
-) -> Callable[[str, List[TaxonomyNode]], Optional[TaxonomyNode]]:
+) -> Callable[[str, List[TaxonomyNode], Optional[Dict[str, Any]]], Optional[TaxonomyNode]]:
     """
     Create an LLM-powered classifier function.
 
@@ -29,18 +30,27 @@ def create_llm_classifier(
     Returns:
         Classifier function that can be used with ClassifierNode
     """
-    def llm_classifier(user_input: str, children: List[TaxonomyNode]) -> Optional[TaxonomyNode]:
+    def llm_classifier(user_input: str, children: List[TaxonomyNode], context: Optional[Dict[str, Any]] = None) -> Optional[TaxonomyNode]:
         """
         LLM-powered classifier that selects the most appropriate child node.
 
         Args:
             user_input: User's input text
             children: List of available child nodes
+            context: Optional context information to include in the prompt
 
         Returns:
             Selected child node or None if no match
         """
         try:
+            # Build context information for the prompt
+            context_info = ""
+            if context:
+                context_info = "\n\nAvailable Context Information:\n"
+                for key, value in context.items():
+                    context_info += f"- {key}: {value}\n"
+                context_info += "\nUse this context information to make better classification decisions."
+
             # Build the classification prompt
             prompt = classification_prompt.format(
                 user_input=user_input,
@@ -48,7 +58,8 @@ def create_llm_classifier(
                     f"{i+1}. {child.name}: {child.description}"
                     for i, child in enumerate(children)
                 ]),
-                num_nodes=len(children)
+                num_nodes=len(children),
+                context_info=context_info
             )
 
             # Get LLM response
@@ -57,8 +68,30 @@ def create_llm_classifier(
             # Parse the response to get the selected node index
             # Expect response to be a number (1-based index)
             try:
-                selected_index = int(response.strip()) - \
-                    1  # Convert to 0-based
+                # Try to extract just the number from the response
+                response_text = response.strip()
+
+                # Look for patterns like "Your choice (number only): 3" or "The choice is: 3"
+                number_patterns = [
+                    r'choice.*?(\d+)',
+                    r'answer.*?(\d+)',
+                    r'(\d+)',
+                    r'number.*?(\d+)'
+                ]
+
+                selected_index = None
+                for pattern in number_patterns:
+                    match = re.search(pattern, response_text, re.IGNORECASE)
+                    if match:
+                        # Convert to 0-based
+                        selected_index = int(match.group(1)) - 1
+                        break
+
+                # If no pattern matched, try to parse the entire response as a number
+                if selected_index is None:
+                    selected_index = int(response_text) - \
+                        1  # Convert to 0-based
+
                 if 0 <= selected_index < len(children):
                     logger.debug(
                         f"LLM classifier selected node {selected_index}: {children[selected_index].name}")
@@ -83,7 +116,7 @@ def create_llm_arg_extractor(
     llm_config: Dict[str, Any],
     extraction_prompt: str,
     param_schema: Dict[str, Any]
-) -> Callable[[str], Dict[str, Any]]:
+) -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
     """
     Create an LLM-powered argument extractor function.
 
@@ -95,17 +128,26 @@ def create_llm_arg_extractor(
     Returns:
         Argument extractor function that can be used with IntentNode
     """
-    def llm_arg_extractor(user_input: str) -> Dict[str, Any]:
+    def llm_arg_extractor(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         LLM-powered argument extractor that extracts parameters from user input.
 
         Args:
             user_input: User's input text
+            context: Optional context information to include in the prompt
 
         Returns:
             Dictionary of extracted parameters
         """
         try:
+            # Build context information for the prompt
+            context_info = ""
+            if context:
+                context_info = "\n\nAvailable Context Information:\n"
+                for key, value in context.items():
+                    context_info += f"- {key}: {value}\n"
+                context_info += "\nUse this context information to help extract more accurate parameters."
+
             # Build the extraction prompt
             param_descriptions = "\n".join([
                 f"- {param_name}: {param_type.__name__}"
@@ -115,7 +157,8 @@ def create_llm_arg_extractor(
             prompt = extraction_prompt.format(
                 user_input=user_input,
                 param_descriptions=param_descriptions,
-                param_names=", ".join(param_schema.keys())
+                param_names=", ".join(param_schema.keys()),
+                context_info=context_info
             )
 
             # Get LLM response
@@ -157,8 +200,11 @@ User Input: {user_input}
 Available Intents:
 {node_descriptions}
 
+{context_info}
+
 Instructions:
 - Analyze the user input carefully
+- Consider the available context information when making your decision
 - Select the intent that best matches the user's request
 - Return only the number (1-{num_nodes}) corresponding to your choice
 - If no intent matches, return 0
@@ -175,8 +221,11 @@ User Input: {user_input}
 Required Parameters:
 {param_descriptions}
 
+{context_info}
+
 Instructions:
 - Extract the required parameters from the user input
+- Consider the available context information to help with extraction
 - Return each parameter on a new line in the format: "param_name: value"
 - If a parameter is not found, use a reasonable default or empty string
 - Be specific and accurate in your extraction
