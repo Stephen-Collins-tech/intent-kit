@@ -26,6 +26,7 @@ openai = [
     "anthropic>=0.54.0",
     "google-genai>=0.1.0",
     "openai>=1.0.0",
+    
 ]
 dev = ["python-dotenv>=1.0.0"]
 
@@ -39,4 +40,8 @@ dev = [
     "anthropic>=0.54.0",
     "openai>=1.0.0",
     "python-dotenv>=1.0.0",
+]
+viz = [
+    "networkx>=3.5",
+    "pyvis>=0.3.2",
 ]

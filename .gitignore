@@ -37,6 +37,9 @@ htmlcov/
 .pytest_cache/
 .tox/
 
+# Visualization
+intentkit_graphs/
+
 # Distribution
 dist/
 build/ 

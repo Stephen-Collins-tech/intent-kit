@@ -72,16 +72,27 @@ def create_llm_classifier(
                 response_text = response.strip()
 
                 # Look for patterns like "Your choice (number only): 3" or "The choice is: 3"
+                # Make patterns more specific to avoid matching context numbers like years/timestamps
                 number_patterns = [
-                    r'choice.*?(\d+)',
-                    r'answer.*?(\d+)',
-                    r'(\d+)',
-                    r'number.*?(\d+)'
+                    # Match 1-2 digit numbers after "choice"
+                    r'choice.*?(\d{1,2})',
+                    # Match 1-2 digit numbers after "answer"
+                    r'answer.*?(\d{1,2})',
+                    # Match 1-2 digit numbers after "number"
+                    r'number.*?(\d{1,2})',
+                    # Match 1-2 digit numbers after "select"
+                    r'select.*?(\d{1,2})',
+                    # Match 1-2 digit numbers after "option"
+                    r'option.*?(\d{1,2})',
+                    r'^(\d{1,2})$',  # Match standalone 1-2 digit numbers
+                    # Match 1-2 digit numbers with optional whitespace
+                    r'^(\d{1,2})\s*$',
                 ]
 
                 selected_index = None
                 for pattern in number_patterns:
-                    match = re.search(pattern, response_text, re.IGNORECASE)
+                    match = re.search(pattern, response_text,
+                                      re.IGNORECASE | re.MULTILINE)
                     if match:
                         # Convert to 0-based
                         selected_index = int(match.group(1)) - 1
@@ -89,20 +100,28 @@ def create_llm_classifier(
 
                 # If no pattern matched, try to parse the entire response as a number
                 if selected_index is None:
-                    selected_index = int(response_text) - \
-                        1  # Convert to 0-based
+                    # Clean up the response text - remove markdown formatting, asterisks, etc.
+                    cleaned_text = re.sub(r'[^\d]', '', response_text)
+                    if cleaned_text:
+                        # Only take the first 1-2 digits to avoid long numbers like years
+                        first_digits = cleaned_text[:2]
+                        if first_digits.isdigit():
+                            # Convert to 0-based
+                            selected_index = int(first_digits) - 1
 
-                if 0 <= selected_index < len(children):
-                    logger.debug(
-                        f"LLM classifier selected node {selected_index}: {children[selected_index].name}")
+                if selected_index is not None and 0 <= selected_index < len(children):
                     return children[selected_index]
                 else:
                     logger.warning(
-                        f"LLM returned invalid index: {selected_index}")
+                        f"LLM returned invalid index: {selected_index} (valid range: 0-{len(children)-1})")
+                    logger.warning(
+                        f"Available children: {[child.name for child in children]}")
+                    logger.warning(f"Raw LLM response: {response_text}")
                     return None
-            except ValueError:
+            except ValueError as e:
                 logger.warning(
                     f"LLM response could not be parsed as integer: {response}")
+                logger.warning(f"Parse error: {e}")
                 return None
 
         except Exception as e:

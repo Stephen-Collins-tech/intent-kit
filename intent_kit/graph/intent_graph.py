@@ -10,10 +10,22 @@ from intent_kit.utils.logger import Logger
 from intent_kit.context import IntentContext
 from intent_kit.graph.splitters import rule_splitter
 from intent_kit.graph.splitters.splitter_types import SplitterFunction
-from intent_kit.graph.aggregation import aggregate_results, create_error_dict, create_no_intent_error, create_no_taxonomy_error
+# from intent_kit.graph.aggregation import aggregate_results, create_error_dict, create_no_intent_error, create_no_taxonomy_error
+from intent_kit.engine import ExecutionResult
+from intent_kit.node import ExecutionError
 from intent_kit.exceptions import NodeExecutionError, NodeInputValidationError, NodeOutputValidationError
 from intent_kit.taxonomy import Taxonomy
-import inspect
+import os
+
+# Add imports for visualization
+try:
+    import networkx as nx
+    from pyvis.network import Network
+    VIZ_AVAILABLE = True
+except ImportError as e:
+    nx = None
+    Network = None
+    VIZ_AVAILABLE = False
 
 
 class IntentGraph:
@@ -27,16 +39,18 @@ class IntentGraph:
     - Context sharing: Pass context through all execution paths
     """
 
-    def __init__(self, splitter: SplitterFunction = rule_splitter):
+    def __init__(self, splitter: SplitterFunction = rule_splitter, visualize: bool = False):
         """
         Initialize the IntentGraph with an empty taxonomy registry.
 
         Args:
             splitter: Function to use for splitting intents (default: rule_splitter)
+            visualize: If True, render the final output (error or success) to an interactive graph HTML file
         """
         self.taxonomies: dict[str, Taxonomy] = {}
         self.splitter = splitter
         self.logger = Logger(__name__)
+        self.visualize = visualize
 
     def register_taxonomy(self, name: str, taxonomy: Taxonomy) -> None:
         """
@@ -91,7 +105,7 @@ class IntentGraph:
         # Call splitter (context-aware splitters can access context via closure or other means)
         return self.splitter(user_input, self.taxonomies, debug, **splitter_kwargs)
 
-    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False, **splitter_kwargs) -> Dict[str, Any]:
+    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False, **splitter_kwargs) -> ExecutionResult:
         """
         Route user input through the graph with optional context support.
 
@@ -102,7 +116,7 @@ class IntentGraph:
             **splitter_kwargs: Additional arguments to pass to the splitter
 
         Returns:
-            Dict containing results and errors from all matched taxonomies
+            ExecutionResult containing aggregated results and errors from all matched taxonomies
         """
         if debug:
             self.logger.info(f"Processing input: {user_input}")
@@ -119,14 +133,22 @@ class IntentGraph:
 
         except Exception as e:
             self.logger.error(f"Splitter error: {e}")
-            return {
-                "results": [],
-                "errors": [create_error_dict(
-                    "splitter",
-                    f"Splitter failed: {str(e)}",
-                    type(e).__name__
-                )]
-            }
+            return ExecutionResult(
+                success=False,
+                params=None,
+                children_results=[],
+                node_name="splitter",
+                node_path=[],
+                node_type="splitter",
+                input=user_input,
+                output=None,
+                error=ExecutionError(
+                    error_type="SplitterError",
+                    message=str(e),
+                    node_name="splitter",
+                    node_path=[]
+                )
+            )
 
         if debug:
             self.logger.info(f"Intent splits: {intent_splits}")
@@ -135,11 +157,28 @@ class IntentGraph:
         if not intent_splits:
             if debug:
                 self.logger.warning("No recognizable intents found")
-            return create_no_intent_error(self.list_taxonomies())
+            return ExecutionResult(
+                success=False,
+                params=None,
+                children_results=[],
+                node_name="no_intent",
+                node_path=[],
+                node_type="no_intent",
+                input=user_input,
+                output=None,
+                error=ExecutionError(
+                    error_type="NoIntentFound",
+                    message="No recognizable intents found",
+                    node_name="no_intent",
+                    node_path=[]
+                )
+            )
 
         # Route each intent to its taxonomy
-        results = []
-        errors = []
+        children_results = []
+        all_errors = []
+        all_outputs = []
+        all_params = []
 
         for intent_split in intent_splits:
             taxonomy_name = intent_split["taxonomy"]
@@ -151,12 +190,24 @@ class IntentGraph:
 
             # Check if taxonomy exists
             if taxonomy_name not in self.taxonomies:
-                error = create_error_dict(
-                    taxonomy_name,
-                    f"Taxonomy '{taxonomy_name}' not found",
-                    "TaxonomyNotFound"
+                error_result = ExecutionResult(
+                    success=False,
+                    params=None,
+                    children_results=[],
+                    node_name="taxonomy_not_found",
+                    node_path=[],
+                    node_type="error",
+                    input=split_text,
+                    output=None,
+                    error=ExecutionError(
+                        error_type="TaxonomyNotFound",
+                        message=f"Taxonomy '{taxonomy_name}' not found",
+                        node_name="taxonomy_not_found",
+                        node_path=[]
+                    )
                 )
-                errors.append(error)
+                children_results.append(error_result)
+                all_errors.append(f"Taxonomy '{taxonomy_name}' not found")
                 if debug:
                     self.logger.error(f"Taxonomy '{taxonomy_name}' not found")
                 continue
@@ -165,76 +216,26 @@ class IntentGraph:
             try:
                 taxonomy = self.taxonomies[taxonomy_name]
 
-                # Check if taxonomy route accepts context parameter
-                if hasattr(taxonomy.route, '__code__'):
-                    route_params = taxonomy.route.__code__.co_varnames
-                    if 'context' in route_params:
-                        result = taxonomy.route(
-                            split_text, context=context, debug=debug)
-                    else:
-                        result = taxonomy.route(split_text, debug=debug)
-                else:
-                    # Try with context first, fall back to without
-                    try:
-                        result = taxonomy.route(
-                            split_text, context=context, debug=debug)
-                    except TypeError:
-                        result = taxonomy.route(split_text, debug=debug)
+                result = taxonomy.route(
+                    split_text, context=context, debug=debug)
 
                 if debug:
                     self.logger.info(
                         f"Taxonomy '{taxonomy_name}' result: {result}")
 
+                # Add the result to children_results
+                children_results.append(result)
+
+                # Collect outputs and params for aggregation
+                if result.success and result.output is not None:
+                    all_outputs.append(result.output)
+                if result.params is not None:
+                    all_params.append(result.params)
+
                 # Check if the result contains an error
-                if result and isinstance(result, dict) and result.get('error'):
-                    # Extract error information and add to context
-                    error_message = result['error']
-                    error_type = NodeExecutionError.__name__
-                    node_name = result.get('intent', 'unknown')
-                    params = result.get('params')
-
-                    # Add error to context if available
-                    if context:
-                        context.add_error(
-                            node_name=node_name,
-                            taxonomy_name=taxonomy_name,
-                            user_input=split_text,
-                            error_message=error_message,
-                            error_type=error_type,
-                            params=params
-                        )
-
-                    # Create error dict and add to errors list
-                    error = create_error_dict(
-                        taxonomy_name,
-                        f"Node '{node_name}' failed: {error_message}",
-                        error_type
-                    )
-                    errors.append(error)
-
-                    if debug:
-                        self.logger.error(
-                            f"Node '{node_name}' in taxonomy '{taxonomy_name}' failed: {error_message}")
-                else:
-                    # No error, add to results
-                    # Handle both old and new result formats
-                    if result and isinstance(result, dict):
-                        # If the result has the new format with execution_path, preserve it
-                        if 'execution_path' in result:
-                            # This is the new format, keep it as is
-                            results.append(result)
-                        else:
-                            # This is the old format, convert to new format for consistency
-                            results.append({
-                                'intent': result.get('intent'),
-                                'node_name': result.get('node_name'),
-                                'params': result.get('params'),
-                                'output': result.get('output'),
-                                'error': result.get('error'),
-                                'execution_path': []  # Empty execution path for old format
-                            })
-                    else:
-                        results.append(result)
+                if result.error:
+                    all_errors.append(
+                        f"Taxonomy '{taxonomy_name}': {result.error.message}")
 
             except (NodeInputValidationError, NodeOutputValidationError) as e:
                 # Handle validation errors specifically
@@ -255,12 +256,28 @@ class IntentGraph:
                         params=None
                     )
 
-                error = create_error_dict(
-                    taxonomy_name,
-                    f"Node '{node_name}' validation failed: {error_message}",
-                    error_type
+                error_result = ExecutionResult(
+                    success=False,
+                    params=None,
+                    children_results=[],
+                    node_name=node_name,
+                    node_path=node_path,
+                    node_type="error",
+                    input=split_text,
+                    output=None,
+                    error=ExecutionError(
+                        error_type=error_type,
+                        message=f"Node '{node_name}' validation failed: {error_message}",
+                        node_name=node_name,
+                        node_path=node_path,
+                        node_id=node_id,
+                        taxonomy_name=taxonomy_name
+                    )
                 )
-                errors.append(error)
+                children_results.append(error_result)
+                all_errors.append(
+                    f"Node '{node_name}' validation failed: {error_message}")
+
                 if debug:
                     self.logger.error(
                         f"Node '{node_name}' (ID: {node_id}, Path: {'.'.join(node_path)}) in taxonomy '{taxonomy_name}' validation failed: {error_message}")
@@ -285,12 +302,29 @@ class IntentGraph:
                         params=params
                     )
 
-                error = create_error_dict(
-                    taxonomy_name,
-                    f"Node '{node_name}' execution failed: {error_message}",
-                    error_type
+                error_result = ExecutionResult(
+                    success=False,
+                    params=None,
+                    children_results=[],
+                    node_name=node_name,
+                    node_path=node_path,
+                    node_type="error",
+                    input=split_text,
+                    output=None,
+                    error=ExecutionError(
+                        error_type=error_type,
+                        message=f"Node '{node_name}' execution failed: {error_message}",
+                        node_name=node_name,
+                        node_path=node_path,
+                        node_id=node_id,
+                        taxonomy_name=taxonomy_name,
+                        params=params
+                    )
                 )
-                errors.append(error)
+                children_results.append(error_result)
+                all_errors.append(
+                    f"Node '{node_name}' execution failed: {error_message}")
+
                 if debug:
                     self.logger.error(
                         f"Node '{node_name}' (ID: {node_id}, Path: {'.'.join(node_path)}) in taxonomy '{taxonomy_name}' execution failed: {error_message}")
@@ -310,20 +344,207 @@ class IntentGraph:
                         params=None
                     )
 
-                error = create_error_dict(
-                    taxonomy_name,
-                    error_message,
-                    error_type
+                error_result = ExecutionResult(
+                    success=False,
+                    params=None,
+                    children_results=[],
+                    node_name="unknown",
+                    node_path=[],
+                    node_type="error",
+                    input=split_text,
+                    output=None,
+                    error=ExecutionError(
+                        error_type=error_type,
+                        message=error_message,
+                        node_name="unknown",
+                        node_path=[],
+                        taxonomy_name=taxonomy_name
+                    )
                 )
-                errors.append(error)
+                children_results.append(error_result)
+                all_errors.append(
+                    f"Taxonomy '{taxonomy_name}' failed: {error_message}")
+
                 if debug:
                     self.logger.error(
                         f"Taxonomy '{taxonomy_name}' failed: {e}")
 
-        # Aggregate results
-        aggregated = aggregate_results(results, errors)
+        # Determine overall success and create aggregated result
+        overall_success = len(all_errors) == 0 and len(children_results) > 0
+
+        # Aggregate outputs and params
+        aggregated_output = all_outputs if len(all_outputs) > 1 else (
+            all_outputs[0] if all_outputs else None)
+        aggregated_params = all_params if len(all_params) > 1 else (
+            all_params[0] if all_params else None)
+
+        # Ensure params is a dict or None
+        if aggregated_params is not None and not isinstance(aggregated_params, dict):
+            aggregated_params = {"params": aggregated_params}
+
+        # Create aggregated error if there are any errors
+        aggregated_error = None
+        if all_errors:
+            aggregated_error = ExecutionError(
+                error_type="AggregatedErrors",
+                message="; ".join(all_errors),
+                node_name="intent_graph",
+                node_path=[]
+            )
+
+        # Create visualization if requested
+        visualization_html = None
+        if self.visualize:
+            try:
+                html_path = self._render_execution_graph(
+                    children_results, user_input)
+                visualization_html = html_path
+            except Exception as e:
+                self.logger.error(f"Visualization failed: {e}")
+                visualization_html = None
+
+        # Add visualization to output if available
+        if visualization_html:
+            if aggregated_output is None:
+                aggregated_output = {"visualization_html": visualization_html}
+            elif isinstance(aggregated_output, dict):
+                aggregated_output["visualization_html"] = visualization_html
+            else:
+                aggregated_output = {
+                    "output": aggregated_output,
+                    "visualization_html": visualization_html
+                }
 
         if debug:
-            self.logger.info(f"Final aggregated result: {aggregated}")
+            self.logger.info(f"Final aggregated result: {overall_success}")
 
-        return aggregated
+        return ExecutionResult(
+            success=overall_success,
+            params=aggregated_params,
+            children_results=children_results,
+            node_name="intent_graph",
+            node_path=[],
+            node_type="intent_graph",
+            input=user_input,
+            output=aggregated_output,
+            error=aggregated_error
+        )
+
+    def _render_execution_graph(self, children_results: list[ExecutionResult], user_input: str) -> str:
+        """
+        Render the execution path as an interactive HTML graph and return the file path.
+        """
+        if not VIZ_AVAILABLE:
+            raise ImportError(
+                "networkx and pyvis are required for visualization. Please install with: uv pip install 'intent-kit[viz]'")
+
+        try:
+            # Import here to ensure it's available
+            from pyvis.network import Network
+
+            # Build the graph from the execution path
+            net = Network(height="600px", width="100%",
+                          directed=True, notebook=False)
+            net.barnes_hut()
+            execution_paths = []
+
+            # Extract execution paths from all children results
+            for result in children_results:
+                # Add the current result to the path
+                execution_paths.append({
+                    "node_name": result.node_name,
+                    "node_type": result.node_type,
+                    "success": result.success,
+                    "input": result.input,
+                    "output": result.output,
+                    "error": result.error,
+                    "params": result.params
+                })
+
+                # Add child results recursively
+                for child_result in result.children_results:
+                    child_paths = self._extract_execution_paths(child_result)
+                    execution_paths.extend(child_paths)
+
+            if not execution_paths:
+                # fallback to errors
+                execution_paths = []
+                for result in children_results:
+                    if result.error:
+                        execution_paths.append({
+                            "node_name": result.node_name,
+                            "node_type": "error",
+                            "error": result.error
+                        })
+
+            # Add nodes and edges
+            last_node_id = None
+            for idx, node in enumerate(execution_paths):
+                node_id = f"{node['node_name']}_{idx}"
+                label = f"{node['node_name']}\n{node['node_type']}"
+                if node.get("error"):
+                    label += f"\nERROR: {node['error']}"
+                elif node.get("output"):
+                    label += f"\nOutput: {str(node['output'])[:40]}"
+                # Color coding
+                if node['node_type'] == 'error':
+                    color = "#ffcccc"  # red
+                elif node['node_type'] == 'classifier':
+                    color = "#99ccff"  # blue
+                elif node['node_type'] == 'intent':
+                    color = "#ccffcc"  # green
+                else:
+                    color = "#ccccff"  # fallback
+                net.add_node(node_id, label=label, color=color)
+                if last_node_id is not None:
+                    net.add_edge(last_node_id, node_id)
+                last_node_id = node_id
+            if not execution_paths:
+                net.add_node("no_path", label="No execution path",
+                             color="#cccccc")
+
+            # Save to HTML file
+            html_dir = os.path.join(os.getcwd(), "intentkit_graphs")
+            os.makedirs(html_dir, exist_ok=True)
+            html_path = os.path.join(
+                html_dir, f"intent_graph_{abs(hash(user_input)) % 100000}.html")
+
+            # Generate HTML and write to file manually
+            html_content = net.generate_html()
+            with open(html_path, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+
+            return html_path
+        except Exception as e:
+            self.logger.error(f"Failed to render graph: {e}")
+            raise
+
+    def _extract_execution_paths(self, result: ExecutionResult) -> list:
+        """
+        Recursively extract execution paths from an ExecutionResult.
+
+        Args:
+            result: The ExecutionResult to extract paths from
+
+        Returns:
+            List of execution path nodes
+        """
+        paths = []
+
+        # Add current node
+        paths.append({
+            "node_name": result.node_name,
+            "node_type": result.node_type,
+            "success": result.success,
+            "input": result.input,
+            "output": result.output,
+            "error": result.error,
+            "params": result.params
+        })
+
+        # Recursively add children
+        for child_result in result.children_results:
+            child_paths = self._extract_execution_paths(child_result)
+            paths.extend(child_paths)
+
+        return paths

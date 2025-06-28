@@ -1,13 +1,13 @@
 import pytest
 from intent_kit.node import IntentNode, ClassifierNode, TaxonomyNode
 from intent_kit.tree import TreeBuilder
-from intent_kit.classifiers import keyword_classifier
+from intent_kit.classifiers.keyword import keyword_classifier
 from intent_kit.engine import execute_taxonomy
 
 # Test fixtures
 
 
-def extract_test_args(user_input: str) -> dict:
+def extract_test_args(user_input: str, context=None) -> dict:
     """Simple argument extractor for testing."""
     words = user_input.split()
     return {"param": words[-1] if words else "default"}
@@ -124,12 +124,12 @@ def test_execute_taxonomy_handler_error(sample_tree):
         description="Error test root"
     )
 
-    # Now expect an exception to be raised
-    with pytest.raises(Exception) as exc_info:
-        execute_taxonomy(user_input="Error value", node=error_tree)
-
-    # Check that the exception contains the expected error message
-    assert "Test error" in str(exc_info.value)
+    # Now expect an ExecutionResult with error instead of exception
+    result = execute_taxonomy(user_input="Error value", node=error_tree)
+    assert result["intent"] is None
+    assert result["params"] is None
+    assert result["output"] is None
+    assert result["error"] is not None and "Test error" in result["error"]
 
 
 def test_intent_node_execution():
@@ -137,7 +137,7 @@ def test_intent_node_execution():
     def test_handler(name: str, age: int) -> str:
         return f"Hello {name}, you are {age} years old"
 
-    def extract_person_args(user_input: str) -> dict:
+    def extract_person_args(user_input: str, context=None) -> dict:
         words = user_input.split()
         if len(words) >= 2:
             return {"name": words[0], "age": words[1]}
@@ -159,17 +159,16 @@ def test_intent_node_execution():
 
     # Test successful execution
     result = intent.execute("John 30")
-    assert result["success"] is True
-    assert result["params"] == {"name": "John", "age": 30}
-    assert result["output"] == "Hello John, you are 30 years old"
-    assert result["error"] is None
+    assert result.success is True
+    assert result.params == {"name": "John", "age": 30}
+    assert result.output == "Hello John, you are 30 years old"
+    assert result.error is None
+    assert result.input == "John 30"
 
-    # Test validation failure - now expect an exception
-    with pytest.raises(Exception) as exc_info:
-        intent.execute("")
-
-    # Check that the exception contains the expected error message
-    assert "validation failed" in str(exc_info.value)
+    # Test validation failure - now returns ExecutionResult with error
+    result = intent.execute("")
+    assert result.success is False
+    assert result.error is not None and "validation failed" in result.error.message
 
 
 def test_type_validation():
@@ -177,7 +176,7 @@ def test_type_validation():
     def test_handler(count: int, active: bool) -> str:
         return f"Count: {count}, Active: {active}"
 
-    def extract_args(user_input: str) -> dict:
+    def extract_args(user_input: str, context=None) -> dict:
         words = user_input.split()
         return {
             "count": words[0] if words else "5",
@@ -193,12 +192,11 @@ def test_type_validation():
 
     # Test successful type conversion
     result = intent.execute("10 true")
-    assert result["success"] is True
-    assert result["params"] == {"count": 10, "active": True}
+    assert result.success is True
+    assert result.params == {"count": 10, "active": True}
+    assert result.input == "10 true"
 
-    # Test invalid type - now expect an exception
-    with pytest.raises(Exception) as exc_info:
-        intent.execute("invalid true")
-
-    # Check that the exception contains the expected error message
-    assert "must be an integer" in str(exc_info.value)
+    # Test invalid type - now returns ExecutionResult with error
+    result = intent.execute("invalid true")
+    assert result.success is False
+    assert result.error is not None and "must be an integer" in result.error.message

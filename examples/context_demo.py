@@ -17,6 +17,7 @@ from intent_kit.tree import TreeBuilder
 from intent_kit.taxonomy import Taxonomy
 from dotenv import load_dotenv
 from intent_kit.engine import execute_taxonomy
+from intent_kit.node import ExecutionResult
 load_dotenv()
 
 # LLM configuration
@@ -234,13 +235,9 @@ class ContextAwareTaxonomy(Taxonomy):
     def __init__(self):
         self.root = build_context_aware_taxonomy()
 
-    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False) -> Dict[str, Any]:
-        return execute_taxonomy(
-            user_input=user_input,
-            node=self.root,
-            context=context,
-            debug=debug
-        )
+    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False) -> ExecutionResult:
+        # Execute the root node directly to get the full tree structure
+        return self.root.execute(user_input, context)
 
 
 def main():
@@ -253,7 +250,7 @@ def main():
     context = IntentContext(session_id="demo_user_123", debug=True)
 
     # Create IntentGraph with our simple splitter
-    graph = IntentGraph(splitter=simple_context_splitter)
+    graph = IntentGraph(splitter=simple_context_splitter, visualize=True)
     graph.register_taxonomy("context_demo", ContextAwareTaxonomy())
 
     # Test sequence showing context persistence
@@ -275,48 +272,43 @@ def main():
             # Route with context
             result = graph.route(user_input, context=context, debug=True)
 
-            if result['results']:
-                for res in result['results']:
-                    print(f"  Intent: {res['intent']}")
-                    print(f"  Params: {res['params']}")
-                    print(f"  Output: {res['output']}")
+            if result.success:
+                print(f"  Intent: {result.node_name}")
+                print(f"  Params: {result.params}")
+                print(f"  Output: {result.output}")
 
-                    # Show execution path if available
-                    if 'execution_path' in res:
-                        print(f"  Execution Path:")
-                        for i, node_result in enumerate(res['execution_path']):
-                            path_str = '.'.join(node_result['node_path'])
+                # Show execution path if available
+                if result.children_results:
+                    print(f"  Execution Path:")
+                    for i, child_result in enumerate(result.children_results):
+                        path_str = '.'.join(child_result.node_path)
+                        print(
+                            f"    {i+1}. {child_result.node_name} ({child_result.node_type}) - Path: {path_str}")
+                        if child_result.params:
                             print(
-                                f"    {i+1}. {node_result['node_name']} ({node_result['node_type']}) - Path: {path_str}")
-                            if node_result['params']:
-                                print(
-                                    f"       Params: {node_result['params']}")
-                            if node_result['output']:
-                                print(
-                                    f"       Output: {node_result['output']}")
-                            if node_result.get('error'):
-                                print(f"       Error: {node_result['error']}")
+                                f"       Params: {child_result.params}")
+                        if child_result.output:
+                            print(
+                                f"       Output: {child_result.output}")
+                        if child_result.error:
+                            print(f"       Error: {child_result.error}")
 
-                    # Show context state after execution
-                    print(f"  Context state:")
-                    print(
-                        f"    Greeting count: {context.get('greeting_count', 0)}")
-                    print(
-                        f"    Last greeted: {context.get('last_greeted', 'None')}")
-                    print(
-                        f"    Calc history: {len(context.get('calculation_history', []))} entries")
-                    print(
-                        f"    Last weather: {context.get('last_weather', {}).get('location', 'None')}")
+                # Show context state after execution
+                print(f"  Context state:")
+                print(
+                    f"    Greeting count: {context.get('greeting_count', 0)}")
+                print(
+                    f"    Last greeted: {context.get('last_greeted', 'None')}")
+                print(
+                    f"    Calc history: {len(context.get('calculation_history', []))} entries")
+                print(
+                    f"    Last weather: {context.get('last_weather', {}).get('location', 'None')}")
             else:
-                print(f"  Error: {result['errors']}")
+                print(f"  Error: {result.error}")
 
             # Show context errors from result
-            if result.get('context_errors'):
-                print(
-                    f"  Context errors in result: {len(result['context_errors'])} total")
-                for error in result['context_errors'][-2:]:  # Show last 2 errors
-                    print(
-                        f"    [{error['timestamp'][11:19]}] {error['node_name']} in {error['taxonomy_name']}: {error['error_message']}")
+            if result.error:
+                print(f"  Context errors in result: {result.error.message}")
 
             # Show any errors from context (for backward compatibility)
             errors = context.get_errors()

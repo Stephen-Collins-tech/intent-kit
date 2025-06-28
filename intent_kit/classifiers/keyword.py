@@ -1,16 +1,17 @@
 """Keyword-based classifier module."""
 
-from typing import Optional
+from typing import Optional, Dict, Any
 from ..node import TaxonomyNode
 
 
-def keyword_classifier(user_input: str, children: list[TaxonomyNode]) -> Optional[TaxonomyNode]:
+def keyword_classifier(user_input: str, children: list[TaxonomyNode], context: Optional[Dict[str, Any]] = None) -> Optional[TaxonomyNode]:
     """
     A simple classifier that selects the first child whose name appears in the user input.
 
     Args:
         user_input: The input string to process
         children: List of possible child nodes
+        context: Optional context dictionary (unused in this classifier)
 
     Returns:
         The first matching child node, or None if no match is found

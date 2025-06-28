@@ -1,5 +1,5 @@
 from typing import Any, Callable, Dict, Optional
-from .node import IntentNode, ClassifierNode, TaxonomyNode
+from .node import IntentNode, ClassifierNode, TaxonomyNode, ExecutionResult, ExecutionError
 from .utils.logger import Logger
 from .context import IntentContext
 
@@ -12,7 +12,7 @@ def execute_taxonomy(
     node: TaxonomyNode,
     context: Optional[IntentContext] = None,
     debug: bool = False
-) -> Dict[str, Any]:
+) -> ExecutionResult:
     """
     Execute the intent taxonomy tree for a given user input and optional context.
 
@@ -23,7 +23,7 @@ def execute_taxonomy(
         debug: Whether to print debug information
 
     Returns:
-        Dict containing:
+        ExecutionResult containing:
             - intent: Name of the matched intent
             - node_name: Name of the matched node
             - params: Extracted parameters
@@ -37,32 +37,66 @@ def execute_taxonomy(
     # Flatten the results to get the complete execution path
     execution_path = flatten_execution_results(result)
 
-    # Find the final intent result (the last intent node in the path)
+    # Find the final successful intent result (the last successful intent node in the path)
     final_intent = None
     final_node_name = None
     final_params = None
     final_output = None
-    final_error = result.get("error")
+    final_error = result.error.message if result.error else None
+
+    # Collect all errors from the execution path for debugging
+    execution_errors = []
+    for node_result in execution_path:
+        if node_result.get("error"):
+            execution_errors.append({
+                "node_name": node_result["node_name"],
+                "node_path": node_result["node_path"],
+                "node_type": node_result["node_type"],
+                "error": node_result["error"]
+            })
 
     for node_result in execution_path:
-        if node_result["node_type"] == "intent":
+        if node_result["node_type"] == "intent" and node_result.get("success", True):
+            # Only consider successful intent nodes
             final_intent = node_result["node_name"]
             final_node_name = node_result["node_name"]
             final_params = node_result["params"]
             final_output = node_result["output"]
-            final_error = node_result.get("error")
+            # Preserve error information even for successful nodes (for debugging)
+            final_error = node_result.get(
+                "error").message if node_result.get("error") else None
 
-    return {
-        "intent": final_intent,
-        "node_name": final_node_name,
-        "params": final_params,
-        "output": final_output,
-        "error": final_error,
-        "execution_path": execution_path
-    }
+    # If no successful intent node, set error from the first failed intent node or root
+    if final_intent is None:
+        for node_result in execution_path:
+            if node_result["node_type"] == "intent" and node_result.get("error"):
+                final_error = node_result["error"].message if node_result["error"] else None
+                break
+        # fallback to root error if still None
+        if final_error is None:
+            final_error = result.error.message if result.error else None
+        final_params = None
+        final_output = None
+
+    return ExecutionResult(
+        success=final_intent is not None,
+        params=final_params,
+        children_results=[],
+        node_name=final_node_name or "unknown",
+        node_path=[],
+        node_type="taxonomy",
+        input=user_input,
+        output=final_output,
+        error=ExecutionError(
+            error_type="TaxonomyError",
+            message=final_error or "Unknown error",
+            node_name=final_node_name or "unknown",
+            node_path=[]
+        ) if final_error else None
+    )
 
 
-def flatten_execution_results(result: Dict[str, Any]) -> list:
+def flatten_execution_results(result: ExecutionResult) -> list:
     """
     Flatten the nested execution results into a flat list showing the complete path.
 
@@ -75,17 +109,21 @@ def flatten_execution_results(result: Dict[str, Any]) -> list:
     execution_path = []
 
     # Add the current node result
+    # Preserve error information even when success is True for debugging purposes
+    # This ensures we don't lose error information from the execution path
     execution_path.append({
-        "node_name": result["node_name"],
-        "node_path": result["node_path"],
-        "node_type": result["node_type"],
-        "params": result["params"],
-        "output": result["output"],
-        "error": result.get("error")
+        "node_name": result.node_name,
+        "node_path": result.node_path,
+        "node_type": result.node_type,
+        "success": result.success,
+        "input": result.input,
+        "output": result.output,
+        "error": result.error,  # Always preserve error information
+        "params": result.params
     })
 
     # Recursively add children results
-    for child_result in result.get("children_results", []):
+    for child_result in result.children_results:
         child_path = flatten_execution_results(child_result)
         execution_path.extend(child_path)
 

@@ -13,6 +13,96 @@ from intent_kit.context.dependencies import ContextDependencies, declare_depende
 from intent_kit.exceptions import NodeExecutionError, NodeInputValidationError, NodeOutputValidationError
 
 
+@dataclass
+class ExecutionError:
+    """Structured error information for execution results."""
+    error_type: str
+    message: str
+    node_name: str
+    node_path: List[str]
+    node_id: Optional[str] = None
+    taxonomy_name: Optional[str] = None
+    input_data: Optional[Dict[str, Any]] = None
+    output_data: Optional[Any] = None
+    params: Optional[Dict[str, Any]] = None
+    original_exception: Optional[Exception] = None
+
+    @classmethod
+    def from_exception(cls, exception: Exception, node_name: str, node_path: List[str],
+                       node_id: Optional[str] = None, taxonomy_name: Optional[str] = None) -> "ExecutionError":
+        """Create an ExecutionError from an exception."""
+        if isinstance(exception, NodeInputValidationError):
+            return cls(
+                error_type="NodeInputValidationError",
+                message=exception.validation_error,
+                node_name=node_name,
+                node_path=node_path,
+                node_id=node_id,
+                taxonomy_name=taxonomy_name,
+                input_data=exception.input_data,
+                params=exception.input_data
+            )
+        elif isinstance(exception, NodeOutputValidationError):
+            return cls(
+                error_type="NodeOutputValidationError",
+                message=exception.validation_error,
+                node_name=node_name,
+                node_path=node_path,
+                node_id=node_id,
+                taxonomy_name=taxonomy_name,
+                output_data=exception.output_data
+            )
+        elif isinstance(exception, NodeExecutionError):
+            return cls(
+                error_type="NodeExecutionError",
+                message=exception.error_message,
+                node_name=node_name,
+                node_path=node_path,
+                node_id=node_id,
+                taxonomy_name=taxonomy_name,
+                params=exception.params
+            )
+        else:
+            return cls(
+                error_type=type(exception).__name__,
+                message=str(exception),
+                node_name=node_name,
+                node_path=node_path,
+                node_id=node_id,
+                taxonomy_name=taxonomy_name,
+                original_exception=exception
+            )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the error to a dictionary representation."""
+        return {
+            "error_type": self.error_type,
+            "message": self.message,
+            "node_name": self.node_name,
+            "node_path": self.node_path,
+            "node_id": self.node_id,
+            "taxonomy_name": self.taxonomy_name,
+            "input_data": self.input_data,
+            "output_data": self.output_data,
+            "params": self.params
+        }
+
+
+@dataclass
+class ExecutionResult:
+    """Standardized execution result structure for all nodes."""
+    success: bool
+    node_name: str
+    node_path: List[str]
+    node_type: str
+    input: str
+    output: Optional[Any]
+    error: Optional[ExecutionError]
+    params: Optional[Dict[str, Any]]
+    children_results: List["ExecutionResult"]
+    visualization_html: Optional[str] = None
+
+
 class Node:
     """Base class for all nodes with UUID identification and optional user-defined names."""
 
@@ -84,9 +174,32 @@ class TaxonomyNode(Node, ABC):
             child.parent = self
 
     @abstractmethod
-    def execute(self, user_input: str, context: Optional[IntentContext] = None) -> Dict[str, Any]:
+    def execute(self, user_input: str, context: Optional[IntentContext] = None) -> ExecutionResult:
         """Execute the node with the given user input and optional context."""
         pass
+
+    def _create_execution_result(
+        self,
+        user_input: str,
+        success: bool,
+        node_type: str,
+        output: Optional[Any] = None,
+        error: Optional[ExecutionError] = None,
+        params: Optional[Dict[str, Any]] = None,
+        children_results: Optional[List[ExecutionResult]] = None
+    ) -> ExecutionResult:
+        """Create a standardized execution result."""
+        return ExecutionResult(
+            success=success,
+            node_name=self.name,
+            node_path=self.get_path(),
+            node_type=node_type,
+            input=user_input,
+            output=output,
+            error=error,
+            params=params,
+            children_results=children_results or []
+        )
 
 
 class ClassifierNode(TaxonomyNode):
@@ -103,7 +216,7 @@ class ClassifierNode(TaxonomyNode):
         super().__init__(name=name, description=description, children=children, parent=parent)
         self.classifier = classifier
 
-    def execute(self, user_input: str, context: Optional[IntentContext] = None) -> Dict[str, Any]:
+    def execute(self, user_input: str, context: Optional[IntentContext] = None) -> ExecutionResult:
         """Execute the node with the given user input and optional context."""
         # Prepare context information for the classifier
         context_dict = None
@@ -117,16 +230,22 @@ class ClassifierNode(TaxonomyNode):
         if not chosen:
             self.logger.error(
                 f"Classifier at '{self.name}' (Path: {'.'.join(self.get_path())}) could not route input.")
-            return {
-                "success": False,
-                "node_name": self.name,
-                "node_path": self.get_path(),
-                "node_type": "classifier",
-                "params": None,
-                "output": None,
-                "error": f"Classifier at '{self.name}' could not route input.",
-                "children_results": []
-            }
+            return ExecutionResult(
+                success=False,
+                node_name=self.name,
+                node_path=self.get_path(),
+                node_type="classifier",
+                input=user_input,
+                output=None,
+                error=ExecutionError(
+                    error_type="ClassifierRoutingError",
+                    message=f"Classifier at '{self.name}' could not route input.",
+                    node_name=self.name,
+                    node_path=self.get_path()
+                ),
+                params=None,
+                children_results=[]
+            )
 
         self.logger.debug(
             f"Classifier at '{self.name}' routed input to '{chosen.name}'.")
@@ -135,19 +254,20 @@ class ClassifierNode(TaxonomyNode):
         child_result = chosen.execute(user_input, context)
 
         # Create a comprehensive result that includes this classifier's decision
-        return {
-            "success": True,
-            "node_name": self.name,
-            "node_path": self.get_path(),
-            "node_type": "classifier",
-            "params": {
+        return ExecutionResult(
+            success=True,
+            node_name=self.name,
+            node_path=self.get_path(),
+            node_type="classifier",
+            input=user_input,
+            output={"routed_to": chosen.name},
+            error=None,
+            params={
                 "chosen_child": chosen.name,
                 "available_children": [child.name for child in self.children]
             },
-            "output": f"Routed to '{chosen.name}'",
-            "error": None,
-            "children_results": [child_result]
-        }
+            children_results=[child_result]
+        )
 
 
 class IntentNode(TaxonomyNode):
@@ -182,17 +302,18 @@ class IntentNode(TaxonomyNode):
             description=f"Context dependencies for intent '{self.name}'"
         )
 
-    def execute(self, user_input: str, context: Optional[IntentContext] = None) -> Dict[str, Any]:
+    def execute(self, user_input: str, context: Optional[IntentContext] = None) -> ExecutionResult:
         """
         Execute the intent with the given user input and optional context.
         Context is always passed as the final parameter to the handler.
 
         Returns:
-            Dict containing:
+            ExecutionResult containing:
                 - success: Boolean indicating if execution was successful
-                - params: Extracted and validated parameters
+                - input: The original user input
                 - output: Result of handler execution
                 - error: Error message if any
+                - params: Extracted and validated parameters
         """
         # Step 1: Argument Extraction
         try:
@@ -211,14 +332,22 @@ class IntentNode(TaxonomyNode):
             original_error = e
             self.logger.error(
                 f"Argument extraction failed for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(original_error).__name__}: {str(original_error)}")
-            raise NodeExecutionError(
+            return ExecutionResult(
+                success=False,
                 node_name=self.name,
-                taxonomy_name="unknown",  # Will be set by caller
-                error_message=f"Argument extraction failed: {type(original_error).__name__}: {str(original_error)}",
+                node_path=self.get_path(),
+                node_type="intent",
+                input=user_input,
+                output=None,
+                error=ExecutionError(
+                    error_type=type(original_error).__name__,
+                    message=str(original_error),
+                    node_name=self.name,
+                    node_path=self.get_path()
+                ),
                 params=None,
-                node_id=self.node_id,
-                node_path=self.get_path()
-            ) from e
+                children_results=[]
+            )
 
         # Step 2: Input Validation
         if self.input_validator:
@@ -226,48 +355,66 @@ class IntentNode(TaxonomyNode):
                 if not self.input_validator(extracted_params):
                     self.logger.error(
                         f"Input validation failed for intent '{self.name}' (Path: {'.'.join(self.get_path())})")
-                    raise NodeInputValidationError(
+                    return ExecutionResult(
+                        success=False,
                         node_name=self.name,
-                        taxonomy_name="unknown",  # Will be set by caller
-                        validation_error="Input validation failed",
-                        input_data=extracted_params,
-                        node_id=self.node_id,
-                        node_path=self.get_path()
+                        node_path=self.get_path(),
+                        node_type="intent",
+                        input=user_input,
+                        output=None,
+                        error=ExecutionError(
+                            error_type="InputValidationError",
+                            message="Input validation failed",
+                            node_name=self.name,
+                            node_path=self.get_path()
+                        ),
+                        params=extracted_params,
+                        children_results=[]
                     )
-            except (NodeInputValidationError, NodeOutputValidationError):
-                # Re-raise validation errors as-is
-                raise
             except Exception as e:
                 original_error = e
                 self.logger.error(
                     f"Input validation error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(original_error).__name__}: {str(original_error)}")
-                raise NodeInputValidationError(
+                return ExecutionResult(
+                    success=False,
                     node_name=self.name,
-                    taxonomy_name="unknown",  # Will be set by caller
-                    validation_error=f"Input validation error: {type(original_error).__name__}: {str(original_error)}",
-                    input_data=extracted_params,
-                    node_id=self.node_id,
-                    node_path=self.get_path()
-                ) from e
+                    node_path=self.get_path(),
+                    node_type="intent",
+                    input=user_input,
+                    output=None,
+                    error=ExecutionError(
+                        error_type=type(original_error).__name__,
+                        message=str(original_error),
+                        node_name=self.name,
+                        node_path=self.get_path()
+                    ),
+                    params=extracted_params,
+                    children_results=[]
+                )
 
         # Step 3: Type Validation
         try:
             validated_params = self._validate_types(extracted_params)
-        except (NodeInputValidationError, NodeOutputValidationError):
-            # Re-raise validation errors as-is
-            raise
         except Exception as e:
             original_error = e
             self.logger.error(
                 f"Type validation error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(original_error).__name__}: {str(original_error)}")
-            raise NodeInputValidationError(
+            return ExecutionResult(
+                success=False,
                 node_name=self.name,
-                taxonomy_name="unknown",  # Will be set by caller
-                validation_error=f"Type validation error: {type(original_error).__name__}: {str(original_error)}",
-                input_data=extracted_params,
-                node_id=self.node_id,
-                node_path=self.get_path()
-            ) from e
+                node_path=self.get_path(),
+                node_type="intent",
+                input=user_input,
+                output=None,
+                error=ExecutionError(
+                    error_type=type(original_error).__name__,
+                    message=str(original_error),
+                    node_name=self.name,
+                    node_path=self.get_path()
+                ),
+                params=extracted_params,
+                children_results=[]
+            )
 
         # Step 4: Handler Execution with context as final parameter
         try:
@@ -277,21 +424,26 @@ class IntentNode(TaxonomyNode):
             else:
                 # No context provided, call handler normally
                 output = self.handler(**validated_params)
-        except NodeExecutionError:
-            # Re-raise NodeExecutionError as-is
-            raise
         except Exception as e:
             original_error = e
             self.logger.error(
                 f"Handler execution error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(original_error).__name__}: {str(original_error)}")
-            raise NodeExecutionError(
+            return ExecutionResult(
+                success=False,
                 node_name=self.name,
-                taxonomy_name="unknown",  # Will be set by caller
-                error_message=f"Handler execution failed: {type(original_error).__name__}: {str(original_error)}",
+                node_path=self.get_path(),
+                node_type="intent",
+                input=user_input,
+                output=None,
+                error=ExecutionError(
+                    error_type=type(original_error).__name__,
+                    message=str(original_error),
+                    node_name=self.name,
+                    node_path=self.get_path()
+                ),
                 params=validated_params,
-                node_id=self.node_id,
-                node_path=self.get_path()
-            ) from e
+                children_results=[]
+            )
 
         # Step 5: Output Validation
         if self.output_validator:
@@ -299,40 +451,54 @@ class IntentNode(TaxonomyNode):
                 if not self.output_validator(output):
                     self.logger.error(
                         f"Output validation failed for intent '{self.name}' (Path: {'.'.join(self.get_path())})")
-                    raise NodeOutputValidationError(
+                    return ExecutionResult(
+                        success=False,
                         node_name=self.name,
-                        taxonomy_name="unknown",  # Will be set by caller
-                        validation_error="Output validation failed",
-                        output_data=output,
-                        node_id=self.node_id,
-                        node_path=self.get_path()
+                        node_path=self.get_path(),
+                        node_type="intent",
+                        input=user_input,
+                        output=output,
+                        error=ExecutionError(
+                            error_type="OutputValidationError",
+                            message="Output validation failed",
+                            node_name=self.name,
+                            node_path=self.get_path()
+                        ),
+                        params=validated_params,
+                        children_results=[]
                     )
-            except (NodeInputValidationError, NodeOutputValidationError):
-                # Re-raise validation errors as-is
-                raise
             except Exception as e:
                 original_error = e
                 self.logger.error(
                     f"Output validation error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(original_error).__name__}: {str(original_error)}")
-                raise NodeOutputValidationError(
+                return ExecutionResult(
+                    success=False,
                     node_name=self.name,
-                    taxonomy_name="unknown",  # Will be set by caller
-                    validation_error=f"Output validation error: {type(original_error).__name__}: {str(original_error)}",
-                    output_data=output,
-                    node_id=self.node_id,
-                    node_path=self.get_path()
-                ) from e
+                    node_path=self.get_path(),
+                    node_type="intent",
+                    input=user_input,
+                    output=output,
+                    error=ExecutionError(
+                        error_type=type(original_error).__name__,
+                        message=str(original_error),
+                        node_name=self.name,
+                        node_path=self.get_path()
+                    ),
+                    params=validated_params,
+                    children_results=[]
+                )
 
-        return {
-            "success": True,
-            "node_name": self.name,
-            "node_path": self.get_path(),
-            "node_type": "intent",
-            "params": validated_params,
-            "output": output,
-            "error": None,
-            "children_results": []
-        }
+        return ExecutionResult(
+            success=True,
+            node_name=self.name,
+            node_path=self.get_path(),
+            node_type="intent",
+            input=user_input,
+            output=output,
+            error=None,
+            params=validated_params,
+            children_results=[]
+        )
 
     def _validate_types(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that extracted parameters match the expected types."""

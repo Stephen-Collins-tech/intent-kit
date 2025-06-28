@@ -15,6 +15,7 @@ from intent_kit.taxonomy import Taxonomy
 from typing import Dict, Any
 from dotenv import load_dotenv
 from intent_kit.engine import execute_taxonomy
+from intent_kit.node import ExecutionResult
 load_dotenv()
 
 # LLM-powered classifier and arg extractor
@@ -108,7 +109,7 @@ class LLMTaxonomy(Taxonomy):
     def __init__(self):
         self.root = build_llm_taxonomy()
 
-    def route(self, user_input: str, context=None, debug: bool = False) -> Dict[str, Any]:
+    def route(self, user_input: str, context=None, debug: bool = False) -> ExecutionResult:
         return execute_taxonomy(
             user_input=user_input,
             node=self.root,
@@ -139,28 +140,26 @@ def main():
         print(f"\nInput: {user_input}")
         try:
             result = graph.route(user_input, debug=True)
-            if result['results']:
-                for res in result['results']:
-                    print(f"  Intent: {res['intent']}")
-                    print(f"  Params: {res['params']}")
-                    print(f"  Output: {res['output']}")
-                    # Show execution path if available
-                    if 'execution_path' in res:
-                        print(f"  Execution Path:")
-                        for i, node_result in enumerate(res['execution_path']):
-                            path_str = '.'.join(node_result['node_path'])
-                            print(
-                                f"    {i+1}. {node_result['node_name']} ({node_result['node_type']}) - Path: {path_str}")
-                            if node_result['params']:
-                                print(
-                                    f"       Params: {node_result['params']}")
-                            if node_result['output']:
-                                print(
-                                    f"       Output: {node_result['output']}")
-                            if node_result.get('error'):
-                                print(f"       Error: {node_result['error']}")
+            if result.success:
+                print(f"  Intent: {result.node_name}")
+                print(f"  Params: {result.params}")
+                print(f"  Output: {result.output}")
+                # Show execution path if available
+                print(f"  Execution Path:")
+                for i, node_result in enumerate(result.children_results):
+                    path_str = '.'.join(node_result.node_path)
+                    print(
+                        f"    {i+1}. {node_result.node_name} ({node_result.node_type}) - Path: {path_str}")
+                    if node_result.params:
+                        print(
+                            f"       Params: {node_result.params}")
+                    if node_result.output:
+                        print(
+                            f"       Output: {node_result.output}")
+                    if node_result.error:
+                        print(f"       Error: {node_result.error}")
             else:
-                print(f"  Error: {result['errors']}")
+                print(f"  Error: {result.error}")
         except Exception as e:
             print(f"  LLM error: {e}")
 

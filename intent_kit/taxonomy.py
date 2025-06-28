@@ -1,8 +1,7 @@
 from typing import Any, Dict, Optional
 from abc import ABC, abstractmethod
 from intent_kit.context import IntentContext
-from intent_kit.engine import execute_taxonomy
-from intent_kit.tree import TaxonomyNode
+from intent_kit.engine import ExecutionResult
 
 
 class Taxonomy(ABC):
@@ -14,7 +13,7 @@ class Taxonomy(ABC):
     """
 
     @abstractmethod
-    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False) -> Dict[str, Any]:
+    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False) -> ExecutionResult:
         """
         Route user input through the taxonomy.
 
@@ -24,50 +23,15 @@ class Taxonomy(ABC):
             debug: Whether to print debug information
 
         Returns:
-            Dict containing:
-                - intent: Name of the matched intent (or None if no match)
-                - node_name: Name of the matched node (or None if no match)
+            ExecutionResult containing:
+                - success: Whether the route was successful
                 - params: Extracted parameters (or None if no match)
+                - children_results: List of child results (or empty list if no children)
+                - node_name: Name of the matched node (or None if no match)
+                - node_path: Path to the matched node (or empty list if no match)
+                - node_type: Type of the matched node (or None if no match)
+                - input: The input string
                 - output: Result of handler execution (or None if no match)
                 - error: Error message if any (or None if successful)
         """
         pass
-
-
-class TreeTaxonomy(Taxonomy):
-    """
-    Concrete implementation of Taxonomy that wraps tree-based taxonomies.
-
-    This class provides a bridge between the old tree-based taxonomy system
-    and the new abstract Taxonomy interface.
-    """
-
-    def __init__(self, root_node: TaxonomyNode):
-        """
-        Initialize the TreeTaxonomy with a root node.
-
-        Args:
-            root_node: The root node of the taxonomy tree
-        """
-        self.root_node = root_node
-
-    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False) -> Dict[str, Any]:
-        """
-        Route user input through the taxonomy tree.
-
-        Args:
-            user_input: The input string to process
-            context: Optional context object for state sharing
-            debug: Whether to print debug information
-
-        Returns:
-            Dict containing the routing result
-        """
-        return execute_taxonomy(
-            user_input=user_input,
-            node=self.root_node,
-            context=context,
-            debug=debug
-        )
-
-# Example taxonomy for testing

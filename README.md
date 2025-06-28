@@ -23,9 +23,9 @@ All possible workflows—whether independent or dependent, serial or parallel—
 
 * **Every intent and parameter is known up front.**
 * **All context dependencies (inputs/outputs) are declared for each intent.**
-* **No “emergent” or open-ended LLM-driven behaviors outside the defined workflow graph.**
+* **No "emergent" or open-ended LLM-driven behaviors outside the defined workflow graph.**
 
-> **Note:** If you’re looking for “sentient” agents that magically invent new capabilities and workflow logic out of thin air, you’re in the wrong place. intent-kit doesn’t believe in spontaneous digital enlightenment—just reliable, deterministic software.
+> **Note:** If you're looking for "sentient" agents that magically invent new capabilities and workflow logic out of thin air, you're in the wrong place. intent-kit doesn't believe in spontaneous digital enlightenment—just reliable, deterministic software.
 
 
 This explicitness is *required* for:
@@ -33,7 +33,7 @@ This explicitness is *required* for:
 * Correctness and safety (no surprises at runtime)
 * Parallel/concurrent execution (fine-grained dependency tracking)
 * Auditability and testability (every workflow is analyzable and visualizable)
-* Business reliability (no “unknown unknowns”)
+* Business reliability (no "unknown unknowns")
 
 If you want deterministic, composable, and debuggable AI-assisted automation—where you, the developer, define and constrain the domain—**intent-kit is for you**.
 
@@ -271,6 +271,43 @@ graph_llm = IntentGraph(splitter=lambda user_input, taxonomies, debug, **kwargs:
 * **Flexible Routing**: Dispatch to one or more taxonomy trees.
 * **Multiple Splitters**: Rule-based and LLM-based splitting strategies.
 * **Consistent API**: Unified `{"results": [...], "errors": [...]}` return format
+* **Interactive Visualization**: Generate interactive HTML graphs of execution paths (optional)
+
+### Interactive Graph Visualization
+
+IntentGraph can generate interactive HTML visualizations of execution paths. This feature requires optional dependencies:
+
+```bash
+# Install with visualization support
+uv pip install 'intent-kit[viz]'
+
+# Or with pip
+pip install 'intent-kit[viz]'
+```
+
+**Usage:**
+
+```python
+from intent_kit.graph import IntentGraph
+
+# Create IntentGraph with visualization enabled
+graph = IntentGraph(splitter=rule_splitter, visualize=True)
+graph.register_taxonomy("travel", TravelTaxonomy())
+
+# Execute and get visualization
+result = graph.route("Book a flight to Paris")
+if result.get("visualization_html"):
+    print(f"Interactive graph saved to: {result['visualization_html']}")
+    # Open the HTML file in your browser to see the interactive graph
+```
+
+The visualization shows:
+- **Node types**: Classifier nodes (blue), Intent nodes (green), Error nodes (red)
+- **Execution flow**: Directed edges showing the path through the taxonomy
+- **Node details**: Input, output, errors, and parameters for each node
+- **Interactive features**: Zoom, pan, hover for details, and node dragging
+
+Graphs are saved to `intentkit_graphs/` directory with unique filenames based on the input hash.
 
 See `examples/simple_demo.py` for a complete IntentGraph demonstration with LLM integration.
 
