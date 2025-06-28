@@ -258,6 +258,7 @@ dev = [
 openai = [
     { name = "anthropic" },
     { name = "google-genai" },
+    { name = "ollama" },
     { name = "openai" },
 ]
 
@@ -265,6 +266,7 @@ openai = [
 dev = [
     { name = "anthropic" },
     { name = "google-genai" },
+    { name = "ollama" },
     { name = "openai" },
     { name = "pytest" },
     { name = "python-dotenv" },
@@ -278,6 +280,7 @@ viz = [
 requires-dist = [
     { name = "anthropic", marker = "extra == 'openai'", specifier = ">=0.54.0" },
     { name = "google-genai", marker = "extra == 'openai'", specifier = ">=0.1.0" },
+    { name = "ollama", marker = "extra == 'openai'", specifier = ">=0.1.0" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0.0" },
     { name = "python-dotenv", marker = "extra == 'dev'", specifier = ">=1.0.0" },
 ]
@@ -287,6 +290,7 @@ provides-extras = ["openai", "dev"]
 dev = [
     { name = "anthropic", specifier = ">=0.54.0" },
     { name = "google-genai", specifier = ">=0.1.0" },
+    { name = "ollama", specifier = ">=0.1.0" },
     { name = "openai", specifier = ">=1.0.0" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
@@ -490,6 +494,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/6c/4f/ccdb8ad3a38e583f214547fd2f7ff1fc160c43a75af88e6aec213404b96a/networkx-3.5.tar.gz", hash = "sha256:d4c6f9cf81f52d69230866796b82afbccdec3db7ae4fbd1b65ea750feed50037", size = 2471065, upload-time = "2025-05-29T11:35:07.804Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/eb/8d/776adee7bbf76365fdd7f2552710282c79a4ead5d2a46408c9043a2b70ba/networkx-3.5-py3-none-any.whl", hash = "sha256:0030d386a9a06dee3565298b4a734b68589749a544acbb6c412dc9e2489ec6ec", size = 2034406, upload-time = "2025-05-29T11:35:04.961Z" },
+]
+
+[[package]]
+name = "ollama"
+version = "0.5.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8d/96/c7fe0d2d1b3053be614822a7b722c7465161b3672ce90df71515137580a0/ollama-0.5.1.tar.gz", hash = "sha256:5a799e4dc4e7af638b11e3ae588ab17623ee019e496caaf4323efbaa8feeff93", size = 41112, upload-time = "2025-05-30T21:32:48.679Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d6/76/3f96c8cdbf3955d7a73ee94ce3e0db0755d6de1e0098a70275940d1aff2f/ollama-0.5.1-py3-none-any.whl", hash = "sha256:4c8839f35bc173c7057b1eb2cbe7f498c1a7e134eafc9192824c8aecb3617506", size = 13369, upload-time = "2025-05-30T21:32:47.429Z" },
 ]
 
 [[package]]

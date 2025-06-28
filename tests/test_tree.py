@@ -88,19 +88,17 @@ def test_classifier_node_creation():
 def test_execute_taxonomy_success(sample_tree):
     """Test successful taxonomy execution."""
     result = execute_taxonomy(user_input="Test value", node=sample_tree)
-    assert result["intent"] == "Test"
-    assert result["params"] == {"param": "value"}
-    assert result["output"] == "Test with value"
-    assert result["error"] is None
+    assert result.params == {"param": "value"}
+    assert result.output == "Test with value"
+    assert result.error is None
 
 
 def test_execute_taxonomy_no_match(sample_tree):
     """Test taxonomy execution with no matching intent."""
     result = execute_taxonomy(user_input="Unknown value", node=sample_tree)
-    assert result["intent"] is None
-    assert result["params"] is None
-    assert result["output"] is None
-    assert "could not route input" in result["error"]
+    assert result.params is None
+    assert result.output is None
+    assert result.error is not None and "could not route input" in result.error.message
 
 
 def test_execute_taxonomy_handler_error(sample_tree):
@@ -126,10 +124,9 @@ def test_execute_taxonomy_handler_error(sample_tree):
 
     # Now expect an ExecutionResult with error instead of exception
     result = execute_taxonomy(user_input="Error value", node=error_tree)
-    assert result["intent"] is None
-    assert result["params"] is None
-    assert result["output"] is None
-    assert result["error"] is not None and "Test error" in result["error"]
+    assert result.params is None
+    assert result.output is None
+    assert result.error is not None and "Test error" in result.error.message
 
 
 def test_intent_node_execution():

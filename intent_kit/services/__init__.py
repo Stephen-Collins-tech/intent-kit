@@ -4,6 +4,7 @@ from typing import Dict, Type, Optional, Any
 from .google_client import GoogleClient
 from .anthropic_client import AnthropicClient
 from .openai_client import OpenAIClient
+from .ollama_client import OllamaClient
 
 
 class ServiceRegistry:
@@ -13,6 +14,7 @@ class ServiceRegistry:
         'google': GoogleClient,
         'anthropic': AnthropicClient,
         'openai': OpenAIClient,
+        'ollama': OllamaClient,
     }
 
     @classmethod
