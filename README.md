@@ -4,14 +4,16 @@ A Python library for building hierarchical intent classification and execution s
 
 ## Features
 
-* **Tree-based Intent Architecture**: Build hierarchical intent taxonomies with classifier and intent nodes.
-* **IntentGraph Multi-Intent Routing**: Route to multiple taxonomies and handle complex multi-intent inputs.
+* **Tree-based Intent Architecture**: Build hierarchical intent trees with classifier and intent nodes.
+* **IntentGraph Multi-Intent Routing**: Route to multiple intent trees and handle complex multi-intent inputs.
+* **Context-Aware Execution**: Full context support with dependency tracking and state management.
 * **Multiple Classifier Backends**: Support for keyword-based classification and AI service integration.
 * **Parameter Extraction & Validation**: Automatic parameter extraction with type validation and custom validators.
-* **AI Service Integration**: Optional integration with OpenAI, Anthropic, and Google AI services.
+* **AI Service Integration**: Optional integration with OpenAI, Anthropic, Google AI, and Ollama services.
 * **Flexible Node System**: Mix classifier nodes and intent nodes to create complex decision trees.
-* **Error Handling**: Comprehensive error handling with detailed logging.
+* **Error Handling**: Comprehensive error handling with detailed logging and execution tracing.
 * **Type Safety**: Full type hints and validation throughout the system.
+* **Interactive Visualization**: Generate interactive HTML graphs of execution paths (optional).
 
 ---
 
@@ -26,7 +28,6 @@ All possible workflows—whether independent or dependent, serial or parallel—
 * **No "emergent" or open-ended LLM-driven behaviors outside the defined workflow graph.**
 
 > **Note:** If you're looking for "sentient" agents that magically invent new capabilities and workflow logic out of thin air, you're in the wrong place. intent-kit doesn't believe in spontaneous digital enlightenment—just reliable, deterministic software.
-
 
 This explicitness is *required* for:
 
@@ -47,6 +48,9 @@ uv pip install intent-kit
 
 # With AI service support
 uv pip install 'intent-kit[openai]'
+
+# With visualization support
+uv pip install 'intent-kit[viz]'
 ```
 
 Or, with plain pip:
@@ -54,6 +58,7 @@ Or, with plain pip:
 ```bash
 pip install intent-kit
 pip install 'intent-kit[openai]'
+pip install 'intent-kit[viz]'
 ```
 
 ---
@@ -65,7 +70,8 @@ pip install 'intent-kit[openai]'
 ```python
 from intent_kit.tree import TreeBuilder
 from intent_kit.classifiers import keyword_classifier
-from intent_kit.engine import execute_taxonomy
+from intent_kit.context import IntentContext
+
 import re
 
 # Define argument extractors
@@ -80,13 +86,15 @@ def extract_greeting_args(user_input: str) -> dict:
     return {"person": match.group(1) if match else "there"}
 
 # Define handlers
-def handle_weather(city: str) -> str:
+def handle_weather(city: str, context: IntentContext) -> str:
     return f"The weather in {city} is sunny."
 
-def handle_greeting(person: str) -> str:
-    return f"Hello, {person}!"
+def handle_greeting(person: str, context: IntentContext) -> str:
+    greeting_count = context.get("greeting_count", 0) + 1
+    context.set("greeting_count", greeting_count, modified_by="greet")
+    return f"Hello, {person}! (Greeting #{greeting_count})"
 
-# Build the taxonomy tree
+# Create intent nodes
 weather_node = TreeBuilder.intent_node(
     name="Weather",
     param_schema={"city": str},
@@ -100,87 +108,89 @@ greeting_node = TreeBuilder.intent_node(
     param_schema={"person": str},
     handler=handle_greeting,
     arg_extractor=extract_greeting_args,
+    context_outputs={"greeting_count"},
     description="Send a greeting to someone"
 )
 
-root_taxonomy = TreeBuilder.classifier_node(
+# Create classifier node
+root_node = TreeBuilder.classifier_node(
     name="Root",
     classifier=keyword_classifier,
     children=[weather_node, greeting_node],
     description="Main intent classifier"
 )
 
-# Execute intents
-result = execute_taxonomy(
-    user_input="What's the weather for Paris?",
-    node=root_taxonomy
-)
-print(result["output"])  # "The weather in Paris is sunny."
+# Execute intents with context
+context = IntentContext(session_id="user_123")
+result = root_node.execute("What's the weather for Paris?", context=context)
+print(result.output)  # Shows the classifier's routing result
+print(result.children_results[0].output)  # Shows the actual intent output: "The weather in Paris is sunny."
 ```
 
-### Advanced Example with Hierarchical Structure
+### Advanced Example with IntentGraph
 
 ```python
-# Banking domain
-def extract_account_args(user_input: str) -> dict:
-    match = re.search(r'account(\w+)', user_input)
-    return {"account_id": match.group(1) if match else "default"}
+from intent_kit.graph import IntentGraph
+from intent_kit.graph.splitters import rule_splitter
+from intent_kit.context import IntentContext
 
-def handle_get_balance(account_id: str) -> str:
-    return f"Balance for {account_id}: $1,000"
+# Create IntentGraph with rule-based splitting
+graph = IntentGraph(splitter=rule_splitter, visualize=True)
+graph.add_root_node(root_node)  # Add the root node from previous example
 
-banking_node = TreeBuilder.classifier_node(
-    name="Banking",
-    classifier=keyword_classifier,
-    children=[
-        TreeBuilder.intent_node(
-            name="GetBalance",
-            param_schema={"account_id": str},
-            handler=handle_get_balance,
-            arg_extractor=extract_account_args,
-            description="Get account balance"
-        )
-    ],
-    description="Banking operations"
+# Handle multi-intent input
+context = IntentContext(session_id="user_123")
+result = graph.route("Hello Alice and what's the weather for Paris?", context=context)
+
+if result.success:
+    print(f"Results: {result.output}")
+    print(f"Context state: {context.get('greeting_count', 0)} greetings")
+else:
+    print(f"Errors: {result.error}")
+```
+
+### LLM-Powered Classification Example
+
+```python
+from intent_kit.classifiers.llm_classifier import create_llm_classifier, create_llm_arg_extractor
+from intent_kit.services.llm_factory import LLMFactory
+
+# Configure LLM
+llm_config = {
+    "provider": "openai",
+    "model": "gpt-3.5-turbo",
+    "api_key": "your-api-key"
+}
+
+# Create LLM-powered classifier and extractor
+classifier = create_llm_classifier(
+    llm_config=llm_config,
+    node_descriptions=[
+        "Get weather information for a location",
+        "Send a greeting to someone"
+    ]
 )
 
-# HR domain  
-def extract_employee_args(user_input: str) -> dict:
-    words = user_input.split()
-    return {"name": words[-2] if len(words) >= 2 else "Unknown", 
-            "role": words[-1] if len(words) >= 1 else "Employee"}
-
-def handle_add_employee(name: str, role: str) -> str:
-    return f"Added employee {name} as {role}"
-
-hr_node = TreeBuilder.classifier_node(
-    name="HR",
-    classifier=keyword_classifier,
-    children=[
-        TreeBuilder.intent_node(
-            name="AddEmployee",
-            param_schema={"name": str, "role": str},
-            handler=handle_add_employee,
-            arg_extractor=extract_employee_args,
-            description="Add new employee"
-        )
-    ],
-    description="HR operations"
+weather_extractor = create_llm_arg_extractor(
+    llm_config=llm_config,
+    param_schema={"city": str}
 )
 
-# Root taxonomy
-root = TreeBuilder.classifier_node(
+# Create LLM-powered intent node
+weather_node = TreeBuilder.intent_node(
+    name="Weather",
+    param_schema={"city": str},
+    handler=handle_weather,
+    arg_extractor=weather_extractor,
+    description="Get weather information for a city"
+)
+
+# Create classifier node with LLM
+root_node = TreeBuilder.classifier_node(
     name="Root",
-    classifier=keyword_classifier,
-    children=[banking_node, hr_node],
-    description="Business operations"
-)
-
-# Usage
-result = execute_taxonomy(
-    user_input="banking:GetBalance account123",
-    node=root,
-    debug=True
+    classifier=classifier,
+    children=[weather_node, greeting_node],
+    description="LLM-powered intent classifier"
 )
 ```
 
@@ -192,6 +202,39 @@ result = execute_taxonomy(
 
 * **ClassifierNode**: Routes input to child nodes using a classifier function.
 * **IntentNode**: Leaf nodes that execute specific intents with parameter extraction and validation.
+
+### Trees (Emergent)
+
+Trees emerge naturally from the parent-child relationships between nodes. Any node can be a "root" of a tree simply by being the entry point. The tree structure is defined by the `children` parameter when creating nodes.
+
+### Context System
+
+The `IntentContext` provides state management and dependency tracking:
+
+```python
+from intent_kit.context import IntentContext
+
+context = IntentContext(session_id="user_123")
+
+# Set values with audit trail
+context.set("user_name", "Alice", modified_by="greet")
+context.set("greeting_count", 1, modified_by="greet")
+
+# Get values with defaults
+name = context.get("user_name", "Unknown")
+count = context.get("greeting_count", 0)
+
+# Track dependencies in intent nodes
+weather_node = TreeBuilder.intent_node(
+    name="Weather",
+    param_schema={"city": str},
+    handler=handle_weather,
+    arg_extractor=extract_weather_args,
+    context_inputs={"user_preferences"},  # Read from context
+    context_outputs={"last_weather_query"},  # Write to context
+    description="Get weather with user preferences"
+)
+```
 
 ### TreeBuilder
 
@@ -206,6 +249,8 @@ intent_node = TreeBuilder.intent_node(
     arg_extractor=your_extractor_function,
     input_validator=your_validator_function,  # Optional
     output_validator=your_output_validator,   # Optional
+    context_inputs={"field1", "field2"},      # Optional
+    context_outputs={"field3", "field4"},     # Optional
     description="Intent description"
 )
 
@@ -232,45 +277,47 @@ from intent_kit.classifiers import keyword_classifier
 ### AI Service Integration
 
 ```python
-from intent_kit.services import create_service, get_available_services
-
-# Check available services
-print(get_available_services())
+from intent_kit.services.llm_factory import LLMFactory
 
 # Create AI service client
-openai_client = create_service("openai", api_key="your-key")
-anthropic_client = create_service("anthropic", api_key="your-key")
-google_client = create_service("google", api_key="your-key")
+llm_client = LLMFactory.create_client({
+    "provider": "openai",
+    "model": "gpt-3.5-turbo",
+    "api_key": "your-key"
+})
+
+# Available providers: openai, anthropic, google, ollama
 ```
 
 ### IntentGraph - Multi-Intent Routing
 
-IntentGraph enables routing to multiple intent taxonomies and handling multi-intent user inputs:
+IntentGraph enables routing to multiple intent trees and handling multi-intent user inputs. Trees are registered as root nodes, and the tree structure emerges from their parent-child relationships:
 
 ```python
 from intent_kit.graph import IntentGraph
 from intent_kit.graph.splitters import rule_splitter, llm_splitter
 
 # Create IntentGraph with rule-based splitting
-graph = IntentGraph(splitter=rule_splitter)
-graph.register_taxonomy("travel", TravelTaxonomy())
-graph.register_taxonomy("account", AccountTaxonomy())
+graph = IntentGraph(splitter=rule_splitter, visualize=True)
+graph.add_root_node(root_node)
 
 # Handle multi-intent input
-result = graph.route("Cancel my flight and update my email")
-# Returns: {"results": [...], "errors": [...]}
+result = graph.route("Cancel my flight and update my email", context=context)
 
 # Use LLM-based splitting for complex inputs
-graph_llm = IntentGraph(splitter=lambda user_input, taxonomies, debug, **kwargs:
-                        llm_splitter(user_input, taxonomies, debug, llm_client))
+graph_llm = IntentGraph(
+    splitter=llm_splitter, 
+    visualize=True, 
+    llm_config=llm_config
+)
 ```
 
 **Key Features:**
 
 * **Intent Splitting**: Decompose multi-intent inputs into sub-intents.
-* **Flexible Routing**: Dispatch to one or more taxonomy trees.
+* **Flexible Routing**: Dispatch to one or more intent trees.
 * **Multiple Splitters**: Rule-based and LLM-based splitting strategies.
-* **Consistent API**: Unified `{"results": [...], "errors": [...]}` return format
+* **Consistent API**: Unified `ExecutionResult` return format
 * **Interactive Visualization**: Generate interactive HTML graphs of execution paths (optional)
 
 ### Interactive Graph Visualization
@@ -280,9 +327,6 @@ IntentGraph can generate interactive HTML visualizations of execution paths. Thi
 ```bash
 # Install with visualization support
 uv pip install 'intent-kit[viz]'
-
-# Or with pip
-pip install 'intent-kit[viz]'
 ```
 
 **Usage:**
@@ -292,24 +336,49 @@ from intent_kit.graph import IntentGraph
 
 # Create IntentGraph with visualization enabled
 graph = IntentGraph(splitter=rule_splitter, visualize=True)
-graph.register_taxonomy("travel", TravelTaxonomy())
+graph.add_root_node(root_node)
 
 # Execute and get visualization
-result = graph.route("Book a flight to Paris")
-if result.get("visualization_html"):
-    print(f"Interactive graph saved to: {result['visualization_html']}")
+result = graph.route("Book a flight to Paris", context=context)
+if result.output and isinstance(result.output, dict) and "visualization_html" in result.output:
+    print(f"Interactive graph saved to: {result.output['visualization_html']}")
     # Open the HTML file in your browser to see the interactive graph
 ```
 
 The visualization shows:
 - **Node types**: Classifier nodes (blue), Intent nodes (green), Error nodes (red)
-- **Execution flow**: Directed edges showing the path through the taxonomy
+- **Execution flow**: Directed edges showing the path through the tree
 - **Node details**: Input, output, errors, and parameters for each node
 - **Interactive features**: Zoom, pan, hover for details, and node dragging
 
 Graphs are saved to `intentkit_graphs/` directory with unique filenames based on the input hash.
 
-See `examples/simple_demo.py` for a complete IntentGraph demonstration with LLM integration.
+---
+
+## Examples
+
+See the `examples/` directory for complete working examples:
+
+* **`simple_demo.py`** - Basic IntentGraph with LLM integration
+* **`context_demo.py`** - Complete context-aware workflow example
+* **`ollama_demo.py`** - Using local Ollama models for offline processing
+* **`error_demo.py`** - Error handling demo
+
+### Running Examples
+
+```bash
+# Simple Demo (requires OpenAI API key)
+python examples/simple_demo.py
+
+# Ollama Demo (requires Ollama installed)
+python examples/ollama_demo.py
+
+# Context Demo
+python examples/context_demo.py
+
+# Error Demo
+python examples/error_demo.py
+```
 
 ---
 
@@ -349,27 +418,35 @@ intent-kit/
 │   ├── __init__.py          # Main exports
 │   ├── node.py              # Node classes (ClassifierNode, IntentNode)
 │   ├── tree.py              # TreeBuilder utility
-│   ├── engine.py            # Execution engine
-│   ├── taxonomy.py          # Intent taxonomy base classes
 │   ├── graph/               # IntentGraph multi-intent routing
 │   │   ├── intent_graph.py  # Main IntentGraph class
-│   │   ├── aggregation.py   # Result aggregation utilities
 │   │   └── splitters/       # Intent splitting strategies
 │   │       ├── rule_splitter.py
 │   │       ├── llm_splitter.py
 │   │       └── splitter_types.py
 │   ├── classifiers/         # Classification backends
 │   │   ├── keyword.py       # Keyword-based classifier
+│   │   ├── llm_classifier.py # LLM-powered classifier
+│   │   └── __init__.py
+│   ├── context/             # Context and state management
+│   │   ├── dependencies.py  # Context dependency tracking
 │   │   └── __init__.py
 │   ├── services/            # AI service integrations
-│   │   ├── openai_service.py
-│   │   ├── anthropic_service.py
+│   │   ├── llm_factory.py   # LLM client factory
+│   │   ├── openai_client.py
+│   │   ├── anthropic_client.py
 │   │   ├── google_client.py
+│   │   ├── ollama_client.py
 │   │   └── __init__.py
+│   ├── types.py             # Type definitions
+│   ├── exceptions/          # Custom exceptions
 │   └── utils/               # Utilities
 │       └── logger.py
 ├── examples/                # Usage examples
-│   ├── simple_demo.py       # IntentGraph LLM integration demo
+│   ├── simple_demo.py       # Basic IntentGraph demo
+│   ├── context_demo.py      # Context-aware workflow demo
+│   ├── ollama_demo.py       # Local LLM demo
+│   ├── error_demo.py        # Error handling demo
 │   └── README.md
 ├── tests/                   # Test suite
 └── pyproject.toml           # Project configuration

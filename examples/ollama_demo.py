@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-IntentKit + Ollama Demo: Showcases IntentKit's intent classification, argument extraction, context, and taxonomy features, using Ollama as the LLM backend.
+IntentKit + Ollama Demo: Showcases IntentKit's intent classification, argument extraction, context, and tree features, using Ollama as the LLM backend.
 
 This demo:
 - Uses IntentKit's abstractions for all LLM-powered tasks (classification, extraction, chat)
@@ -13,8 +13,6 @@ Prerequisites:
 """
 
 from intent_kit.node import ExecutionResult
-from intent_kit.engine import execute_taxonomy
-from intent_kit.taxonomy import Taxonomy
 from intent_kit.tree import TreeBuilder
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.classifiers.llm_classifier import create_llm_classifier, create_llm_arg_extractor, get_default_classification_prompt, get_default_extraction_prompt
@@ -36,10 +34,10 @@ OLLAMA_CONFIG = {
 }
 
 
-def simple_ollama_splitter(user_input: str, taxonomies: Dict[str, Any], debug: bool = False) -> List[Dict[str, str]]:
+def simple_ollama_splitter(user_input: str, debug: bool = False) -> list[str]:
     if debug:
-        print(f"[SimpleSplitter] Routing '{user_input}' to ollama_demo")
-    return [{"taxonomy": "ollama_demo", "text": user_input}]
+        print(f"Simple Ollama splitter routing: {user_input}")
+    return [user_input]
 
 
 def greet_handler(name: str, context: IntentContext) -> str:
@@ -122,7 +120,7 @@ def help_handler(context: IntentContext) -> str:
     return """I can help you with:\n- Greetings (e.g., 'Hello, my name is Alice')\n- Calculations (e.g., 'What's 15 plus 7?')\n- Weather (e.g., 'Weather in San Francisco')\n- Chat demo (e.g., 'Chat: Tell me a story')\n- Show calculation history (e.g., 'What was my last calculation?')\n- Help (e.g., 'Help me')"""
 
 
-def build_ollama_taxonomy():
+def build_ollama_tree():
     classifier = create_llm_classifier(
         llm_config=OLLAMA_CONFIG,
         classification_prompt=get_default_classification_prompt(),
@@ -226,17 +224,9 @@ def build_ollama_taxonomy():
     )
 
 
-class OllamaTaxonomy(Taxonomy):
-    def __init__(self):
-        self.root = build_ollama_taxonomy()
-
-    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False) -> ExecutionResult:
-        return self.root.execute(user_input, context)
-
-
 def main():
     print("IntentKit + Ollama Demo (IntentKit features, Ollama as LLM backend)")
-    print("This demo shows how to use IntentKit's taxonomy, context, and LLM-powered classification/extraction with Ollama.")
+    print("This demo shows how to use IntentKit's intent trees, context, and LLM-powered classification/extraction with Ollama.")
     print("Make sure Ollama is running locally with at least one model pulled.")
     print("\n" + "="*50)
     try:
@@ -246,8 +236,9 @@ def main():
         print("✗ ollama package not available. Install with: pip install ollama")
         return
     context = IntentContext(session_id="ollama_demo_user_123", debug=True)
-    graph = IntentGraph(splitter=simple_ollama_splitter, visualize=True)
-    graph.register_taxonomy("ollama_demo", OllamaTaxonomy())
+    graph = IntentGraph(splitter=simple_ollama_splitter,
+                        visualize=True, llm_config=OLLAMA_CONFIG)
+    graph.add_root_node(build_ollama_tree())
     test_sequence = [
         "Hello, my name is Alice",
         "What's 15 plus 7?",
@@ -309,7 +300,7 @@ def main():
         print(f"\n--- Recent Errors (last 3) ---")
         for error in errors:
             print(
-                f"  [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name} in {error.taxonomy_name}")
+                f"  [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name}")
             print(f"    Input: {error.user_input}")
             print(f"    Error: {error.error_message}")
             if error.params:

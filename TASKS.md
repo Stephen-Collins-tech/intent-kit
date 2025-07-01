@@ -2,15 +2,15 @@
 
 ## **Overview**
 
-This document covers the open-source core engine, developer APIs, intent taxonomy, classifier plug-ins, param extraction, reliability, and core CLI demos.
+This document covers the open-source core engine, developer APIs, intent classification, classifier plug-ins, param extraction, reliability, and core CLI demos.
 
 ---
 
 ## **Core Engine (OSS)**
 
-### **1. Intent Taxonomy & Handler Engine**
+### **1. Intent Tree & Handler Engine**
 
-* [x] API for declaring intent taxonomies, named intents, parameters, handler registration.
+* [x] API for declaring intent trees, named intents, parameters, handler registration.
 * [x] Parameter typing/schema for each intent.
 * [x] Tree-based intent architecture with classifier and intent nodes.
 * [x] Flexible node system mixing classifier nodes and intent nodes.
@@ -19,30 +19,32 @@ This document covers the open-source core engine, developer APIs, intent taxonom
 
 * [x] **IntentGraph Data Structure** - Root-level dispatcher for user input
 * [x] **Function-Based Intent Splitting** - Rule-based and LLM-based splitters
-* [x] **Multi-Taxonomy Dispatch** - Route to multiple intent taxonomies
+* [x] **Multi-Tree Dispatch** - Route to multiple intent trees
 * [x] **Orchestration and Aggregation** - Consistent result format
 * [x] **Fallbacks and Error Handling** - Comprehensive error management
 * [x] **Logging and Debugging** - Integrated with logger system
+* [x] **Interactive Visualization** - HTML graph generation of execution paths
 
 ### **3. Classifier Plug-in Support**
 
 * [x] Rule-based (keyword/regex) classifiers.
 * [x] LLM-backed classifiers (OpenAI, function-calling, JSON output).
 * [x] Classifier confidence scoring and routing.
-* [x] Support for OpenAI, Anthropic, Google AI services.
+* [x] Support for OpenAI, Anthropic, Google AI, and Ollama services.
 
 **Current Classifiers Status:**
 - ✅ **Keyword Classifier** - Simple substring matching
-- ✅ **OpenAI Classifier** - GPT-3.5-turbo based
-- ✅ **Google Classifier** - Gemini Pro based  
-- ✅ **Anthropic Classifier** - Claude-3-Sonnet based
+- ✅ **LLM Classifier** - Generic LLM-powered classification with multiple backends
+- ✅ **OpenAI Integration** - GPT models via LLM factory
+- ✅ **Google Integration** - Gemini models via LLM factory  
+- ✅ **Anthropic Integration** - Claude models via LLM factory
+- ✅ **Ollama Integration** - Local models via LLM factory
 
 **Additional Classifiers to Implement:**
 - [ ] **Regex Classifier** - Pattern-based matching
 - [ ] **Fuzzy Match Classifier** - Handle typos and variations
 - [ ] **Confidence-Based Classifier Wrapper** - Add confidence scoring
 - [ ] **Ensemble Classifier** - Combine multiple classifiers
-- [ ] **Local LLM Classifier** - Offline operation
 - [ ] **Semantic Search Classifier** - Vector similarity
 - [ ] **Hybrid Classifier** - Rule-based + ML approaches
 
@@ -51,11 +53,13 @@ This document covers the open-source core engine, developer APIs, intent taxonom
 * [x] Pluggable param extraction: regex, LLM, hybrid.
 * [x] Human-in-the-loop fallback (CLI/MVP).
 * [x] Automatic parameter extraction with type validation.
+* [x] LLM-powered argument extraction with multiple backends.
 
 ### **5. Handler Execution**
 
 * [x] Typed handler execution, structured error surfaces.
 * [x] Comprehensive error handling with detailed logging.
+* [x] Context-aware execution with dependency tracking.
 
 ---
 
@@ -65,6 +69,7 @@ This document covers the open-source core engine, developer APIs, intent taxonom
 * [x] Per-request trace/workflow audit log.
 * [x] Surface confidence/errors in API responses.
 * [x] Robust error handling with no unhandled exceptions.
+* [x] Interactive execution path visualization.
 
 ---
 
@@ -80,20 +85,20 @@ This document covers the open-source core engine, developer APIs, intent taxonom
 
 ## **Integrations & Connectors**
 
-* [x] Support OpenAI, Anthropic, local LLMs for classifier/param extraction.
+* [x] Support OpenAI, Anthropic, Google AI, Ollama for classifier/param extraction.
 * [x] Outbound connectors (webhooks, email, REST; can provide stubs).
-* [x] AI service integration with multiple backends.
+* [x] AI service integration with multiple backends via LLM factory.
 
 ---
 
 ## **Demos & Recipes**
 
-* [x] **simple_demo.py** - IntentGraph LLM integration demo
+* [x] **simple_demo.py** - Basic IntentGraph with LLM integration
 * [x] **context_demo.py** - Complete context-aware workflow example
-* [x] **context_demo_with_error.py** - Error handling and recovery demo
-* [x] CLI-based real-world demo workflows (PTO approval, CRM routing, support ticket).
+* [x] **ollama_demo.py** - Local Ollama models for offline processing
+* [x] **error_demo.py** - Error handling and debugging features
 * [x] All demos documented, runnable from CLI.
-* [x] Comprehensive example with real LLM integration.
+* [x] Comprehensive examples with real LLM integration.
 
 ---
 
@@ -111,7 +116,7 @@ This section tracks requirements and implementation progress for context-driven 
   Move context entity to its own subpackage (`context/`), enable multiple context types.
 
 * [x] **Context Pass-through & Mutation**
-  Ensure context is passed to all taxonomy trees, handlers, splitters, and can be mutated at every step.
+  Ensure context is passed to all intent trees, handlers, splitters, and can be mutated at every step.
 
 * [x] **Multi-Turn/Session Context Support**
   Add support for persistent context objects spanning multiple user turns/workflows (not just single input).
@@ -153,9 +158,9 @@ This section tracks requirements and implementation progress for context-driven 
 ### ✅ **Completed Features:**
 
 1. **IntentGraph Data Structure** (`graph/intent_graph.py`)
-   - Registry of taxonomies with `.route()` method support
-   - `register_taxonomy()`, `remove_taxonomy()`, `list_taxonomies()`
-   - Consistent `{"results": [...], "errors": [...]}` return format
+   - Registry of root nodes with `.route()` method support
+   - `add_root_node()`, `remove_root_node()`, `list_root_nodes()`
+   - Consistent `ExecutionResult` return format
 
 2. **Function-Based Splitters** (`graph/splitters/`)
    - `rule_splitter()` - Keyword-based intent splitting
@@ -163,12 +168,12 @@ This section tracks requirements and implementation progress for context-driven 
    - Custom splitter function support
    - Graceful fallback from LLM to rule-based
 
-3. **Multi-Taxonomy Dispatch**
-   - Route to multiple taxonomies based on splits
-   - Exception handling for taxonomy calls
+3. **Multi-Tree Dispatch**
+   - Route to multiple intent trees based on splits
+   - Exception handling for tree calls
    - Error aggregation in consistent format
 
-4. **Orchestration and Aggregation** (`graph/aggregation.py`)
+4. **Orchestration and Aggregation**
    - Unified result aggregation
    - Consistent output format for single/multi-intent
 
@@ -179,7 +184,7 @@ This section tracks requirements and implementation progress for context-driven 
 
 6. **Error Handling & Fallbacks**
    - No recognizable intent found handling
-   - No taxonomy matched handling
+   - No root node matched handling
    - Comprehensive error logging
 
 7. **Logging and Debugging**
@@ -187,7 +192,13 @@ This section tracks requirements and implementation progress for context-driven 
    - Debug flag support throughout
    - Verbose logging when `debug=True`
 
-8. **Testing**
+8. **Interactive Visualization**
+   - HTML graph generation with pyvis
+   - Node type color coding
+   - Interactive features (zoom, pan, hover)
+   - Execution path visualization
+
+9. **Testing**
    - Unit tests for rule_splitter and llm_splitter
    - Integration tests for IntentGraph
    - Edge case testing and error scenarios
@@ -195,13 +206,14 @@ This section tracks requirements and implementation progress for context-driven 
 ### **Success Criteria Met:**
 - ✅ Handles single and multi-intent queries with consistent return format
 - ✅ Supports both rule-based and LLM-based splitter functions
-- ✅ Extensible with new taxonomies or splitter functions
+- ✅ Extensible with new intent trees or splitter functions
 - ✅ Accurate, clear aggregation and error reporting
-- ✅ Idiomatic API with `.route()` method for all taxonomies
+- ✅ Idiomatic API with `.route()` method for all trees
 - ✅ Thoroughly tested and documented
 - ✅ Robust error handling with no unhandled exceptions
 - ✅ Graceful fallback from LLM to rule-based splitting
-- ✅ Comprehensive documentation with `simple_demo.py` as focal point
+- ✅ Comprehensive documentation with examples as focal point
+- ✅ Interactive visualization for debugging and analysis
 
 ---
 
@@ -226,9 +238,9 @@ This section tracks requirements and implementation progress for context-driven 
 
 ## **Advanced Features (Stretch Goals)**
 
-* [ ] **Splitter interface**: Pluggable (function-based, not class-based or registry-based).
+* [x] **Splitter interface**: Pluggable (function-based, not class-based or registry-based).
 * [ ] **Context-aware splitting** (user/session history).
-* [ ] **Async execution** (for parallel taxonomy invocation).
+* [ ] **Async execution** (for parallel intent tree invocation).
 
 ---
 

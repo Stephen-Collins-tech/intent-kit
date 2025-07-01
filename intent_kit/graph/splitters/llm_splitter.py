@@ -1,30 +1,29 @@
 """
 LLM-based intent splitter for IntentGraph.
 """
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Sequence
 import re
 import json
 from intent_kit.utils.logger import Logger
+from intent_kit.graph.splitters.splitter_types import IntentChunk
 
 
-def llm_splitter(user_input: str, taxonomies: Dict[str, Any], debug: bool = False, llm_client=None) -> List[Dict[str, str]]:
+def llm_splitter(user_input: str, debug: bool = False, llm_client=None) -> Sequence[IntentChunk]:
     """
     LLM-based intent splitter using AI models.
 
     Args:
         user_input: The user's input string
-        taxonomies: Dictionary of available taxonomies {name: taxonomy_object}
         debug: Whether to enable debug logging
         llm_client: LLM client instance (optional)
 
     Returns:
-        List of dicts with format [{"taxonomy": "name", "text": "split_text"}]
+        List of intent chunks as strings
     """
     logger = Logger(__name__)
 
     if debug:
         logger.info(f"LLM-based splitting input: '{user_input}'")
-        logger.info(f"Available taxonomies: {list(taxonomies.keys())}")
 
     if not llm_client:
         if debug:
@@ -32,11 +31,11 @@ def llm_splitter(user_input: str, taxonomies: Dict[str, Any], debug: bool = Fals
                 "No LLM client available, falling back to rule-based splitting")
         # Fallback to rule-based splitting
         from .rule_splitter import rule_splitter
-        return rule_splitter(user_input, taxonomies, debug)
+        return rule_splitter(user_input, debug)
 
     try:
         # Create prompt for LLM
-        prompt = _create_splitting_prompt(user_input, list(taxonomies.keys()))
+        prompt = _create_splitting_prompt(user_input)
 
         if debug:
             logger.info(f"LLM prompt: {prompt}")
@@ -62,7 +61,7 @@ def llm_splitter(user_input: str, taxonomies: Dict[str, Any], debug: bool = Fals
                 logger.warning(
                     "LLM parsing returned no results, falling back to rule-based")
             from .rule_splitter import rule_splitter
-            return rule_splitter(user_input, taxonomies, debug)
+            return rule_splitter(user_input, debug)
 
     except Exception as e:
         if debug:
@@ -71,29 +70,28 @@ def llm_splitter(user_input: str, taxonomies: Dict[str, Any], debug: bool = Fals
 
         # Fallback to rule-based splitting
         from .rule_splitter import rule_splitter
-        return rule_splitter(user_input, taxonomies, debug)
+        return rule_splitter(user_input, debug)
 
 
-def _create_splitting_prompt(user_input: str, taxonomy_names: List[str]) -> str:
+def _create_splitting_prompt(user_input: str) -> str:
     """Create a prompt for the LLM to split intents."""
     return f"""Given the user input: "{user_input}"
 
-And the available taxonomies: {taxonomy_names}
+Please split this into separate intents if it contains multiple distinct requests. If the input contains multiple intents, separate them. If it's a single intent, return it as is.
 
-Please split this into separate intents and assign each to the appropriate taxonomy. If the input contains multiple intents, separate them. If it's a single intent, assign it to the best matching taxonomy.
-
-Return your response as a JSON array with this exact format:
-[{{"taxonomy": "taxonomy_name", "text": "the relevant text portion"}}]
+Return your response as a JSON array of strings, where each string represents a separate intent chunk.
 
 For example:
 - Input: "Cancel my flight and update my email"
-- Taxonomies: ["travel", "account"]
-- Response: [{{"taxonomy": "travel", "text": "cancel my flight"}}, {{"taxonomy": "account", "text": "update my email"}}]
+- Response: ["cancel my flight", "update my email"]
+
+- Input: "Book a flight to NYC"
+- Response: ["book a flight to NYC"]
 
 Your response:"""
 
 
-def _parse_llm_response(response: str) -> List[Dict]:
+def _parse_llm_response(response: str) -> List[str]:
     """Parse the LLM response into the expected format."""
     logger = Logger(__name__)
 
@@ -109,11 +107,8 @@ def _parse_llm_response(response: str) -> List[Dict]:
             if isinstance(parsed, list):
                 results = []
                 for item in parsed:
-                    if isinstance(item, dict) and "taxonomy" in item and "text" in item:
-                        results.append({
-                            "taxonomy": str(item["taxonomy"]),
-                            "text": str(item["text"])
-                        })
+                    if isinstance(item, str):
+                        results.append(item.strip())
                 return results
 
         # If JSON parsing fails, try to extract manually
@@ -124,19 +119,24 @@ def _parse_llm_response(response: str) -> List[Dict]:
         return []
 
 
-def _extract_manual_parsing(response: str) -> List[Dict]:
-    """Fallback manual parsing if JSON parsing fails."""
-    results = []
+def _extract_manual_parsing(response: str) -> List[str]:
+    """Fallback manual parsing when JSON parsing fails."""
+    logger = Logger(__name__)
 
-    # Look for patterns like "taxonomy: name, text: content"
-    pattern = r'taxonomy["\s]*:["\s]*["\']?([^"\',\]]+)["\s]*[,}\]]\s*text["\s]*:["\s]*["\']?([^"\',\]]+)["\s]*[,}\]\]]'
-    matches = re.findall(pattern, response, re.IGNORECASE)
+    # Try to extract quoted strings
+    quoted_strings = re.findall(r'"([^"]*)"', response)
+    if quoted_strings:
+        return [s.strip() for s in quoted_strings if s.strip()]
 
-    for match in matches:
-        taxonomy, text = match
-        results.append({
-            "taxonomy": taxonomy.strip(),
-            "text": text.strip()
-        })
+    # Try to extract numbered items
+    numbered_items = re.findall(r'\d+\.\s*(.+)', response)
+    if numbered_items:
+        return [item.strip() for item in numbered_items if item.strip()]
 
-    return results
+    # Try to extract dash-separated items
+    dash_items = re.findall(r'-\s*(.+)', response)
+    if dash_items:
+        return [item.strip() for item in dash_items if item.strip()]
+
+    logger.warning("Manual parsing failed, returning empty list")
+    return []

@@ -1,8 +1,8 @@
 import pytest
-from intent_kit.node import IntentNode, ClassifierNode, TaxonomyNode
+from intent_kit.node import IntentNode, ClassifierNode, TreeNode
 from intent_kit.tree import TreeBuilder
 from intent_kit.classifiers.keyword import keyword_classifier
-from intent_kit.engine import execute_taxonomy
+
 
 # Test fixtures
 
@@ -44,12 +44,12 @@ def sample_tree(sample_handlers):
     )
 
 
-def test_taxonomy_node_creation():
-    """Test that TaxonomyNode ABC cannot be instantiated directly."""
+def test_tree_node_creation():
+    """Test that TreeNode ABC cannot be instantiated directly."""
     import pytest
     with pytest.raises(TypeError):
         # type: ignore pylint: disable-next=abstract-class-instantiated
-        TaxonomyNode(  # type: ignore # pylint: disable-next=abstract-class-instantiated
+        TreeNode(  # type: ignore # pylint: disable-next=abstract-class-instantiated
             name="test",
             description="test description"
         )
@@ -85,24 +85,31 @@ def test_classifier_node_creation():
     assert node.children == []
 
 
-def test_execute_taxonomy_success(sample_tree):
-    """Test successful taxonomy execution."""
-    result = execute_taxonomy(user_input="Test value", node=sample_tree)
-    assert result.params == {"param": "value"}
-    assert result.output == "Test with value"
-    assert result.error is None
+def test_execute_tree_success(sample_tree):
+    """Test successful tree execution."""
+    result = sample_tree.execute(user_input="Test value")
+    # The root classifier node should have routed to the Test intent
+    assert result.success is True
+    assert len(result.children_results) == 1
+
+    # The child result should be the actual intent execution
+    child_result = result.children_results[0]
+    assert child_result.node_name == "Test"
+    assert child_result.params == {"param": "value"}
+    assert child_result.output == "Test with value"
+    assert child_result.error is None
 
 
-def test_execute_taxonomy_no_match(sample_tree):
-    """Test taxonomy execution with no matching intent."""
-    result = execute_taxonomy(user_input="Unknown value", node=sample_tree)
-    assert result.params is None
-    assert result.output is None
+def test_execute_tree_no_match(sample_tree):
+    """Test tree execution with no matching intent."""
+    result = sample_tree.execute(user_input="Unknown value")
+    # The root classifier should fail to route
+    assert result.success is False
     assert result.error is not None and "could not route input" in result.error.message
 
 
-def test_execute_taxonomy_handler_error(sample_tree):
-    """Test taxonomy execution with handler error."""
+def test_execute_tree_handler_error(sample_tree):
+    """Test tree execution with handler error."""
     def error_handler(param: str) -> str:
         raise ValueError("Test error")
 
@@ -122,11 +129,16 @@ def test_execute_taxonomy_handler_error(sample_tree):
         description="Error test root"
     )
 
-    # Now expect an ExecutionResult with error instead of exception
-    result = execute_taxonomy(user_input="Error value", node=error_tree)
-    assert result.params is None
-    assert result.output is None
-    assert result.error is not None and "Test error" in result.error.message
+    # The root classifier should route to the error intent, which should fail
+    result = error_tree.execute(user_input="Error value")
+    assert result.success is True  # Classifier succeeded
+    assert len(result.children_results) == 1
+
+    # The child result should contain the error
+    child_result = result.children_results[0]
+    assert child_result.node_name == "Error"
+    assert child_result.success is False
+    assert child_result.error is not None and "Test error" in child_result.error.message
 
 
 def test_intent_node_execution():

@@ -2,20 +2,22 @@
 IntentGraph - The root-level dispatcher for user input.
 
 This module provides the main IntentGraph class that handles intent splitting,
-taxonomy routing, and result aggregation.
+routing to root nodes, and result aggregation.
 """
 
-from typing import Dict, Any, Optional, Callable
+from typing import Dict, Any, Optional, Callable, List
 from intent_kit.utils.logger import Logger
 from intent_kit.context import IntentContext
 from intent_kit.graph.splitters import rule_splitter
 from intent_kit.graph.splitters.splitter_types import SplitterFunction
-# from intent_kit.graph.aggregation import aggregate_results, create_error_dict, create_no_intent_error, create_no_taxonomy_error
-from intent_kit.engine import ExecutionResult
+# from intent_kit.graph.aggregation import aggregate_results, create_error_dict, create_no_intent_error, create_no_tree_error
+from intent_kit.node import ExecutionResult
 from intent_kit.node import ExecutionError
 from intent_kit.exceptions import NodeExecutionError, NodeInputValidationError, NodeOutputValidationError
-from intent_kit.taxonomy import Taxonomy
+from intent_kit.node import TreeNode
 import os
+from intent_kit.classifiers import classify_intent_chunk
+from intent_kit.types import IntentAction, IntentClassification
 
 # Add imports for visualization
 try:
@@ -32,62 +34,62 @@ class IntentGraph:
     """
     The root-level dispatcher for user input.
 
-    Each node is a high-level intent taxonomy (tree), and the graph enables:
-    - Intent splitting: Decompose multi-intent user inputs into sub-intents
-    - Flexible routing: Dispatch to one or more taxonomy trees
-    - Multi-intent orchestration: Support for parallel or sequential execution
-    - Context sharing: Pass context through all execution paths
+    The graph contains root nodes that can handle different types of intents.
+    Input splitting happens in isolation and routes to appropriate root nodes.
+    Trees emerge naturally from the parent-child relationships between nodes.
     """
 
-    def __init__(self, splitter: SplitterFunction = rule_splitter, visualize: bool = False):
+    def __init__(self, root_nodes: Optional[List[TreeNode]] = None, splitter: SplitterFunction = rule_splitter, visualize: bool = False, llm_config: Optional[dict] = None):
         """
-        Initialize the IntentGraph with an empty taxonomy registry.
+        Initialize the IntentGraph with root nodes.
 
         Args:
+            root_nodes: List of root nodes that can handle intents
             splitter: Function to use for splitting intents (default: rule_splitter)
-            visualize: If True, render the final output (error or success) to an interactive graph HTML file
+            visualize: If True, render the final output to an interactive graph HTML file
+            llm_config: LLM configuration for chunk classification (optional)
         """
-        self.taxonomies: dict[str, Taxonomy] = {}
+        self.root_nodes: List[TreeNode] = root_nodes or []
         self.splitter = splitter
         self.logger = Logger(__name__)
         self.visualize = visualize
+        self.llm_config = llm_config
 
-    def register_taxonomy(self, name: str, taxonomy: Taxonomy) -> None:
+    def add_root_node(self, root_node: TreeNode) -> None:
         """
-        Register a taxonomy in the graph.
+        Add a root node to the graph.
 
         Args:
-            name: The name of the taxonomy
-            taxonomy: The taxonomy instance (must inherit from Taxonomy)
+            root_node: The root node to add
         """
-        if not isinstance(taxonomy, Taxonomy):
-            raise ValueError(
-                f"Taxonomy '{name}' must inherit from Taxonomy base class")
+        if not isinstance(root_node, TreeNode):
+            raise ValueError("Root node must be a TreeNode")
 
-        self.taxonomies[name] = taxonomy
-        self.logger.info(f"Registered taxonomy: {name}")
+        self.root_nodes.append(root_node)
+        self.logger.info(f"Added root node: {root_node.name}")
 
-    def remove_taxonomy(self, name: str) -> None:
+    def remove_root_node(self, root_node: TreeNode) -> None:
         """
-        Remove a taxonomy from the graph.
+        Remove a root node from the graph.
 
         Args:
-            name: The name of the taxonomy to remove
+            root_node: The root node to remove
         """
-        if name in self.taxonomies:
-            del self.taxonomies[name]
-            self.logger.info(f"Removed taxonomy: {name}")
+        if root_node in self.root_nodes:
+            self.root_nodes.remove(root_node)
+            self.logger.info(f"Removed root node: {root_node.name}")
         else:
-            self.logger.warning(f"Taxonomy '{name}' not found for removal")
+            self.logger.warning(
+                f"Root node '{root_node.name}' not found for removal")
 
-    def list_taxonomies(self) -> list:
+    def list_root_nodes(self) -> List[str]:
         """
-        List all registered taxonomies.
+        List all root node names.
 
         Returns:
-            List of taxonomy names
+            List of root node names
         """
-        return list(self.taxonomies.keys())
+        return [node.name for node in self.root_nodes]
 
     def _call_splitter(self, user_input: str, debug: bool, context: Optional[IntentContext] = None, **splitter_kwargs) -> list:
         """
@@ -100,10 +102,51 @@ class IntentGraph:
             **splitter_kwargs: Additional arguments for the splitter
 
         Returns:
-            List of intent splits
+            List of intent chunks
         """
-        # Call splitter (context-aware splitters can access context via closure or other means)
-        return self.splitter(user_input, self.taxonomies, debug, **splitter_kwargs)
+        result = self.splitter(user_input, debug, **splitter_kwargs)
+        return list(result)  # Convert Sequence to list
+
+    def _route_chunk_to_root_node(self, chunk: str, debug: bool = False) -> Optional[TreeNode]:
+        """
+        Route a single chunk to the most appropriate root node.
+
+        Args:
+            chunk: The intent chunk to route
+            debug: Whether to enable debug logging
+
+        Returns:
+            The root node to handle this chunk, or None if no match found
+        """
+        if not self.root_nodes:
+            return None
+
+        # Simple routing logic: try to find a root node that matches the chunk
+        # This could be enhanced with more sophisticated matching
+        chunk_lower = chunk.lower()
+
+        for node in self.root_nodes:
+            # Check if node name appears in the chunk
+            if node.name.lower() in chunk_lower:
+                if debug:
+                    self.logger.info(
+                        f"Routed chunk '{chunk}' to root node '{node.name}' by name match")
+                return node
+
+            # Check for keyword matches (could be enhanced)
+            keywords = getattr(node, 'keywords', [])
+            for keyword in keywords:
+                if keyword.lower() in chunk_lower:
+                    if debug:
+                        self.logger.info(
+                            f"Routed chunk '{chunk}' to root node '{node.name}' by keyword '{keyword}'")
+                    return node
+
+        # If no specific match, return the first root node as fallback
+        if debug:
+            self.logger.info(
+                f"No specific match for chunk '{chunk}', using first root node '{self.root_nodes[0].name}' as fallback")
+        return self.root_nodes[0] if self.root_nodes else None
 
     def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False, **splitter_kwargs) -> ExecutionResult:
         """
@@ -123,9 +166,9 @@ class IntentGraph:
             if context:
                 self.logger.info(f"Using context: {context}")
 
-        # Split the input into intents
+        # Split the input into chunks
         try:
-            intent_splits = self._call_splitter(
+            intent_chunks = self._call_splitter(
                 user_input=user_input,
                 debug=debug,
                 **splitter_kwargs
@@ -151,12 +194,12 @@ class IntentGraph:
             )
 
         if debug:
-            self.logger.info(f"Intent splits: {intent_splits}")
+            self.logger.info(f"Intent chunks: {intent_chunks}")
 
-        # If no intents were found, return error
-        if not intent_splits:
+        # If no chunks were found, return error
+        if not intent_chunks:
             if debug:
-                self.logger.warning("No recognizable intents found")
+                self.logger.warning("No intent chunks found")
             return ExecutionResult(
                 success=False,
                 params=None,
@@ -168,206 +211,213 @@ class IntentGraph:
                 output=None,
                 error=ExecutionError(
                     error_type="NoIntentFound",
-                    message="No recognizable intents found",
+                    message="No intent chunks found",
                     node_name="no_intent",
                     node_path=[]
                 )
             )
 
-        # Route each intent to its taxonomy
+        # Route each chunk to an appropriate root node
         children_results = []
         all_errors = []
         all_outputs = []
         all_params = []
 
-        for intent_split in intent_splits:
-            taxonomy_name = intent_split["taxonomy"]
-            split_text = intent_split["text"]
+        # Use a queue to process chunks, with recursion limit
+        chunks_to_process = list(intent_chunks)  # Copy the list
+        processed_chunks = set()  # Track processed chunks to avoid infinite loops
+        max_recursion_depth = 10  # Prevent infinite recursion
+
+        while chunks_to_process and len(processed_chunks) < max_recursion_depth:
+            chunk = chunks_to_process.pop(0)
+
+            # Create a unique identifier for this chunk to avoid infinite loops
+            chunk_id = hash(chunk)
+            if chunk_id in processed_chunks:
+                continue  # Skip if we've already processed this exact chunk
+            processed_chunks.add(chunk_id)
+
+            # Handle both string and dict chunks
+            if isinstance(chunk, str):
+                chunk_text = chunk
+            elif isinstance(chunk, dict) and "text" in chunk:
+                chunk_text = chunk["text"]
+            else:
+                chunk_text = str(chunk)
 
             if debug:
-                self.logger.info(
-                    f"Routing '{split_text}' to taxonomy '{taxonomy_name}'")
+                self.logger.info(f"Classifying chunk: '{chunk_text}'")
+            classification = classify_intent_chunk(chunk, self.llm_config)
+            action = classification.get("action")
 
-            # Check if taxonomy exists
-            if taxonomy_name not in self.taxonomies:
+            if action == IntentAction.HANDLE:
+                # Route to root node as before
+                root_node = self._route_chunk_to_root_node(chunk_text, debug)
+                if root_node is None:
+                    error_result = ExecutionResult(
+                        success=False,
+                        params=None,
+                        children_results=[],
+                        node_name="no_root_node",
+                        node_path=[],
+                        node_type="error",
+                        input=chunk_text,
+                        output=None,
+                        error=ExecutionError(
+                            error_type="NoRootNodeFound",
+                            message=f"No root node found for chunk: '{chunk_text}'",
+                            node_name="no_root_node",
+                            node_path=[]
+                        )
+                    )
+                    children_results.append(error_result)
+                    all_errors.append(
+                        f"No root node found for chunk: '{chunk_text}'")
+                    if debug:
+                        self.logger.error(
+                            f"No root node found for chunk: '{chunk_text}'")
+                    continue
+                try:
+                    result = root_node.execute(chunk_text, context=context)
+                    if debug:
+                        self.logger.info(
+                            f"Root node '{root_node.name}' result: {result}")
+                    children_results.append(result)
+                    if result.success and result.output is not None:
+                        all_outputs.append(result.output)
+                    if result.params is not None:
+                        all_params.append(result.params)
+                    if result.error:
+                        all_errors.append(
+                            f"Root node '{root_node.name}': {result.error.message}")
+                except Exception as e:
+                    error_message = str(e)
+                    error_type = type(e).__name__
+                    error_result = ExecutionResult(
+                        success=False,
+                        params=None,
+                        children_results=[],
+                        node_name="unknown",
+                        node_path=[],
+                        node_type="error",
+                        input=chunk_text,
+                        output=None,
+                        error=ExecutionError(
+                            error_type=error_type,
+                            message=error_message,
+                            node_name="unknown",
+                            node_path=[]
+                        )
+                    )
+                    children_results.append(error_result)
+                    all_errors.append(
+                        f"Root node '{root_node.name}' failed: {error_message}")
+                    if debug:
+                        self.logger.error(
+                            f"Root node '{root_node.name}' failed: {e}")
+            elif action == IntentAction.SPLIT:
+                # Recursively split and route
+                if debug:
+                    self.logger.info(
+                        f"Recursively splitting chunk: '{chunk_text}'")
+                sub_chunks = self._call_splitter(
+                    chunk_text, debug, **splitter_kwargs)
+                # Add sub_chunks to the front of the queue for processing
+                chunks_to_process = sub_chunks + chunks_to_process
+            elif action == IntentAction.CLARIFY:
+                # Stub: Add a result indicating clarification is needed
                 error_result = ExecutionResult(
                     success=False,
                     params=None,
                     children_results=[],
-                    node_name="taxonomy_not_found",
+                    node_name="clarify",
                     node_path=[],
-                    node_type="error",
-                    input=split_text,
+                    node_type="clarify",
+                    input=chunk_text,
                     output=None,
                     error=ExecutionError(
-                        error_type="TaxonomyNotFound",
-                        message=f"Taxonomy '{taxonomy_name}' not found",
-                        node_name="taxonomy_not_found",
+                        error_type="ClarificationNeeded",
+                        message=f"Clarification needed for chunk: '{chunk_text}'",
+                        node_name="clarify",
                         node_path=[]
                     )
                 )
                 children_results.append(error_result)
-                all_errors.append(f"Taxonomy '{taxonomy_name}' not found")
+                all_errors.append(
+                    f"Clarification needed for chunk: '{chunk_text}'")
                 if debug:
-                    self.logger.error(f"Taxonomy '{taxonomy_name}' not found")
-                continue
-
-            # Route to taxonomy with context support
-            try:
-                taxonomy = self.taxonomies[taxonomy_name]
-
-                result = taxonomy.route(
-                    split_text, context=context, debug=debug)
-
-                if debug:
-                    self.logger.info(
-                        f"Taxonomy '{taxonomy_name}' result: {result}")
-
-                # Add the result to children_results
-                children_results.append(result)
-
-                # Collect outputs and params for aggregation
-                if result.success and result.output is not None:
-                    all_outputs.append(result.output)
-                if result.params is not None:
-                    all_params.append(result.params)
-
-                # Check if the result contains an error
-                if result.error:
-                    all_errors.append(
-                        f"Taxonomy '{taxonomy_name}': {result.error.message}")
-
-            except (NodeInputValidationError, NodeOutputValidationError) as e:
-                # Handle validation errors specifically
-                error_message = str(e)
-                error_type = type(e).__name__
-                node_name = e.node_name
-                node_id = e.node_id
-                node_path = e.node_path
-
-                # Add error to context if available
-                if context:
-                    context.add_error(
-                        node_name=node_name,
-                        taxonomy_name=taxonomy_name,
-                        user_input=split_text,
-                        error_message=error_message,
-                        error_type=error_type,
-                        params=None
-                    )
-
+                    self.logger.warning(
+                        f"Clarification needed for chunk: '{chunk_text}'")
+            elif action == IntentAction.REJECT:
+                # Stub: Add a result indicating rejection
                 error_result = ExecutionResult(
                     success=False,
                     params=None,
                     children_results=[],
-                    node_name=node_name,
-                    node_path=node_path,
-                    node_type="error",
-                    input=split_text,
+                    node_name="reject",
+                    node_path=[],
+                    node_type="reject",
+                    input=chunk_text,
                     output=None,
                     error=ExecutionError(
-                        error_type=error_type,
-                        message=f"Node '{node_name}' validation failed: {error_message}",
-                        node_name=node_name,
-                        node_path=node_path,
-                        node_id=node_id,
-                        taxonomy_name=taxonomy_name
+                        error_type="RejectedChunk",
+                        message=f"Rejected chunk: '{chunk_text}'",
+                        node_name="reject",
+                        node_path=[]
                     )
                 )
                 children_results.append(error_result)
-                all_errors.append(
-                    f"Node '{node_name}' validation failed: {error_message}")
-
+                all_errors.append(f"Rejected chunk: '{chunk_text}'")
                 if debug:
-                    self.logger.error(
-                        f"Node '{node_name}' (ID: {node_id}, Path: {'.'.join(node_path)}) in taxonomy '{taxonomy_name}' validation failed: {error_message}")
-
-            except NodeExecutionError as e:
-                # Handle execution errors specifically
-                error_message = str(e)
-                error_type = type(e).__name__
-                node_name = e.node_name
-                node_id = e.node_id
-                node_path = e.node_path
-                params = e.params
-
-                # Add error to context if available
-                if context:
-                    context.add_error(
-                        node_name=node_name,
-                        taxonomy_name=taxonomy_name,
-                        user_input=split_text,
-                        error_message=error_message,
-                        error_type=error_type,
-                        params=params
-                    )
-
+                    self.logger.warning(f"Rejected chunk: '{chunk_text}'")
+            else:
+                # Unknown action
                 error_result = ExecutionResult(
                     success=False,
                     params=None,
                     children_results=[],
-                    node_name=node_name,
-                    node_path=node_path,
-                    node_type="error",
-                    input=split_text,
-                    output=None,
-                    error=ExecutionError(
-                        error_type=error_type,
-                        message=f"Node '{node_name}' execution failed: {error_message}",
-                        node_name=node_name,
-                        node_path=node_path,
-                        node_id=node_id,
-                        taxonomy_name=taxonomy_name,
-                        params=params
-                    )
-                )
-                children_results.append(error_result)
-                all_errors.append(
-                    f"Node '{node_name}' execution failed: {error_message}")
-
-                if debug:
-                    self.logger.error(
-                        f"Node '{node_name}' (ID: {node_id}, Path: {'.'.join(node_path)}) in taxonomy '{taxonomy_name}' execution failed: {error_message}")
-
-            except Exception as e:
-                error_message = str(e)
-                error_type = type(e).__name__
-
-                # Add error to context if available
-                if context:
-                    context.add_error(
-                        node_name="unknown",
-                        taxonomy_name=taxonomy_name,
-                        user_input=split_text,
-                        error_message=error_message,
-                        error_type=error_type,
-                        params=None
-                    )
-
-                error_result = ExecutionResult(
-                    success=False,
-                    params=None,
-                    children_results=[],
-                    node_name="unknown",
+                    node_name="unknown_action",
                     node_path=[],
                     node_type="error",
-                    input=split_text,
+                    input=chunk_text,
                     output=None,
                     error=ExecutionError(
-                        error_type=error_type,
-                        message=error_message,
-                        node_name="unknown",
-                        node_path=[],
-                        taxonomy_name=taxonomy_name
+                        error_type="UnknownAction",
+                        message=f"Unknown action for chunk: '{chunk_text}'",
+                        node_name="unknown_action",
+                        node_path=[]
                     )
                 )
                 children_results.append(error_result)
-                all_errors.append(
-                    f"Taxonomy '{taxonomy_name}' failed: {error_message}")
-
+                all_errors.append(f"Unknown action for chunk: '{chunk_text}'")
                 if debug:
                     self.logger.error(
-                        f"Taxonomy '{taxonomy_name}' failed: {e}")
+                        f"Unknown action for chunk: '{chunk_text}'")
+
+        # Check if we hit the recursion limit
+        if len(processed_chunks) >= max_recursion_depth:
+            error_result = ExecutionResult(
+                success=False,
+                params=None,
+                children_results=[],
+                node_name="recursion_limit",
+                node_path=[],
+                node_type="error",
+                input=user_input,
+                output=None,
+                error=ExecutionError(
+                    error_type="RecursionLimitExceeded",
+                    message=f"Recursion limit exceeded ({max_recursion_depth} chunks processed)",
+                    node_name="recursion_limit",
+                    node_path=[]
+                )
+            )
+            children_results.append(error_result)
+            all_errors.append(
+                f"Recursion limit exceeded ({max_recursion_depth} chunks processed)")
+            if debug:
+                self.logger.error(
+                    f"Recursion limit exceeded ({max_recursion_depth} chunks processed)")
 
         # Determine overall success and create aggregated result
         overall_success = len(all_errors) == 0 and len(children_results) > 0

@@ -11,12 +11,10 @@ from typing import Dict, Any, Optional, List
 from intent_kit.context import IntentContext
 from intent_kit.classifiers.llm_classifier import create_llm_classifier, create_llm_arg_extractor, get_default_classification_prompt, get_default_extraction_prompt
 from intent_kit.graph import IntentGraph
-from intent_kit.graph.splitters import rule_splitter
+from intent_kit.graph.splitters import rule_splitter, llm_splitter
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.tree import TreeBuilder
-from intent_kit.taxonomy import Taxonomy
 from dotenv import load_dotenv
-from intent_kit.engine import execute_taxonomy
 from intent_kit.node import ExecutionResult
 load_dotenv()
 
@@ -29,17 +27,6 @@ LLM_CONFIG = {
 
 # Create LLM client
 LLM_CLIENT = LLMFactory.create_client(LLM_CONFIG)
-
-
-def simple_context_splitter(user_input: str, taxonomies: Dict[str, Any], debug: bool = False) -> List[Dict[str, str]]:
-    """
-    Simple splitter that always routes to the context_demo taxonomy.
-    This is needed because rule_splitter tries to match against taxonomy names.
-    """
-    if debug:
-        print(f"[SimpleSplitter] Routing '{user_input}' to context_demo")
-
-    return [{"taxonomy": "context_demo", "text": user_input}]
 
 
 def greet_handler(name: str, context: IntentContext) -> str:
@@ -137,8 +124,8 @@ def show_calculation_history_handler(context: IntentContext) -> str:
         return f"Your last calculation was: {last_calc['a']} {last_calc['operation']} {last_calc['b']} (result not available)"
 
 
-def build_context_aware_taxonomy():
-    """Build a taxonomy with context-aware handlers."""
+def build_context_aware_tree():
+    """Build an intent tree with context-aware handlers."""
     # LLM classifier for top-level intent
     classifier = create_llm_classifier(
         llm_config=LLM_CONFIG,
@@ -231,15 +218,6 @@ def build_context_aware_taxonomy():
     )
 
 
-class ContextAwareTaxonomy(Taxonomy):
-    def __init__(self):
-        self.root = build_context_aware_taxonomy()
-
-    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False) -> ExecutionResult:
-        # Execute the root node directly to get the full tree structure
-        return self.root.execute(user_input, context)
-
-
 def main():
     print("IntentKit Context Demo")
     print("This demo shows how context can be shared between workflow steps.")
@@ -249,9 +227,14 @@ def main():
     # Create context for the session
     context = IntentContext(session_id="demo_user_123", debug=True)
 
-    # Create IntentGraph with our simple splitter
-    graph = IntentGraph(splitter=simple_context_splitter, visualize=True)
-    graph.register_taxonomy("context_demo", ContextAwareTaxonomy())
+    # Create IntentGraph with LLM splitter
+    graph = IntentGraph(
+        splitter=lambda user_input, debug=False: llm_splitter(
+            user_input, debug, llm_client=LLM_CLIENT),
+        visualize=True,
+        llm_config=LLM_CONFIG
+    )
+    graph.add_root_node(build_context_aware_tree())
 
     # Test sequence showing context persistence
     test_sequence = [
@@ -316,7 +299,7 @@ def main():
                 print(f"  Context errors: {len(errors)} total")
                 for error in errors[-2:]:  # Show last 2 errors
                     print(
-                        f"    [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name} in {error.taxonomy_name}: {error.error_message}")
+                        f"    [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name}: {error.error_message}")
 
         except Exception as e:
             print(f"  Error: {e}")
@@ -339,7 +322,7 @@ def main():
         print(f"\n--- Recent Errors (last 3) ---")
         for error in errors:
             print(
-                f"  [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name} in {error.taxonomy_name}")
+                f"  [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name}")
             print(f"    Input: {error.user_input}")
             print(f"    Error: {error.error_message}")
             if error.params:

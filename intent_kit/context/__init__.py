@@ -40,7 +40,6 @@ class ContextErrorEntry:
     """An error entry in the context error log."""
     timestamp: datetime
     node_name: str
-    taxonomy_name: str
     user_input: str
     error_message: str
     error_type: str
@@ -256,14 +255,13 @@ class IntentContext:
         )
         self._history.append(entry)
 
-    def add_error(self, node_name: str, taxonomy_name: str, user_input: str,
+    def add_error(self, node_name: str, user_input: str,
                   error_message: str, error_type: str, params: Optional[Dict[str, Any]] = None) -> None:
         """
         Add an error to the context error log.
 
         Args:
             node_name: Name of the node where the error occurred
-            taxonomy_name: Name of the taxonomy where the error occurred
             user_input: The user input that caused the error
             error_message: The error message
             error_type: The type of error
@@ -273,7 +271,6 @@ class IntentContext:
             error_entry = ContextErrorEntry(
                 timestamp=datetime.now(),
                 node_name=node_name,
-                taxonomy_name=taxonomy_name,
                 user_input=user_input,
                 error_message=error_message,
                 error_type=error_type,
@@ -285,16 +282,15 @@ class IntentContext:
 
             if self._debug:
                 self.logger.error(
-                    f"Added error to context: {node_name} in {taxonomy_name}: {error_message}")
+                    f"Added error to context: {node_name}: {error_message}")
 
-    def get_errors(self, node_name: Optional[str] = None, taxonomy_name: Optional[str] = None,
+    def get_errors(self, node_name: Optional[str] = None,
                    limit: Optional[int] = None) -> List[ContextErrorEntry]:
         """
         Get errors from the context error log.
 
         Args:
             node_name: Filter errors by node name (optional)
-            taxonomy_name: Filter errors by taxonomy name (optional)
             limit: Maximum number of errors to return (optional)
 
         Returns:
@@ -306,10 +302,6 @@ class IntentContext:
             if node_name:
                 filtered_errors = [
                     error for error in filtered_errors if error.node_name == node_name]
-
-            if taxonomy_name:
-                filtered_errors = [
-                    error for error in filtered_errors if error.taxonomy_name == taxonomy_name]
 
             if limit:
                 filtered_errors = filtered_errors[-limit:]

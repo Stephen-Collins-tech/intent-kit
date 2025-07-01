@@ -21,7 +21,6 @@ class ExecutionError:
     node_name: str
     node_path: List[str]
     node_id: Optional[str] = None
-    taxonomy_name: Optional[str] = None
     input_data: Optional[Dict[str, Any]] = None
     output_data: Optional[Any] = None
     params: Optional[Dict[str, Any]] = None
@@ -29,7 +28,7 @@ class ExecutionError:
 
     @classmethod
     def from_exception(cls, exception: Exception, node_name: str, node_path: List[str],
-                       node_id: Optional[str] = None, taxonomy_name: Optional[str] = None) -> "ExecutionError":
+                       node_id: Optional[str] = None) -> "ExecutionError":
         """Create an ExecutionError from an exception."""
         if isinstance(exception, NodeInputValidationError):
             return cls(
@@ -38,7 +37,6 @@ class ExecutionError:
                 node_name=node_name,
                 node_path=node_path,
                 node_id=node_id,
-                taxonomy_name=taxonomy_name,
                 input_data=exception.input_data,
                 params=exception.input_data
             )
@@ -49,7 +47,6 @@ class ExecutionError:
                 node_name=node_name,
                 node_path=node_path,
                 node_id=node_id,
-                taxonomy_name=taxonomy_name,
                 output_data=exception.output_data
             )
         elif isinstance(exception, NodeExecutionError):
@@ -59,7 +56,6 @@ class ExecutionError:
                 node_name=node_name,
                 node_path=node_path,
                 node_id=node_id,
-                taxonomy_name=taxonomy_name,
                 params=exception.params
             )
         else:
@@ -69,7 +65,6 @@ class ExecutionError:
                 node_name=node_name,
                 node_path=node_path,
                 node_id=node_id,
-                taxonomy_name=taxonomy_name,
                 original_exception=exception
             )
 
@@ -81,7 +76,6 @@ class ExecutionError:
             "node_name": self.node_name,
             "node_path": self.node_path,
             "node_id": self.node_id,
-            "taxonomy_name": self.taxonomy_name,
             "input_data": self.input_data,
             "output_data": self.output_data,
             "params": self.params
@@ -115,23 +109,13 @@ class Node:
             parent: Parent node in the tree structure
         """
         self.node_id = str(uuid.uuid4())
-        self._user_name = name
+        self.name = name or self.node_id
         self.parent = parent
 
     @property
-    def name(self) -> str:
-        """Get the node name, using user-defined name if available, otherwise UUID."""
-        return self._user_name if self._user_name is not None else self.node_id
-
-    @name.setter
-    def name(self, value: str):
-        """Set the user-defined name for the node."""
-        self._user_name = value
-
-    @property
-    def has_user_name(self) -> bool:
+    def has_name(self) -> bool:
         """Check if the node has a user-defined name."""
-        return self._user_name is not None
+        return self.name is not None
 
     def get_path(self) -> List[str]:
         """Get the path from root to this node as a list of node names."""
@@ -160,14 +144,14 @@ class Node:
         return ".".join(self.get_uuid_path())
 
 
-class TaxonomyNode(Node, ABC):
-    """Base class for all nodes in the intent taxonomy tree."""
+class TreeNode(Node, ABC):
+    """Base class for all nodes in the intent tree."""
 
-    def __init__(self, *, name: Optional[str] = None, description: str, children: List["TaxonomyNode"] = [], parent: Optional["TaxonomyNode"] = None):
+    def __init__(self, *, name: Optional[str] = None, description: str, children: List["TreeNode"] = [], parent: Optional["TreeNode"] = None):
         super().__init__(name=name, parent=parent)
         self.logger = Logger(name or "unnamed_node")
         self.description = description
-        self.children: List["TaxonomyNode"] = children
+        self.children: List["TreeNode"] = children
 
         # Set parent reference for all children
         for child in self.children:
@@ -202,16 +186,16 @@ class TaxonomyNode(Node, ABC):
         )
 
 
-class ClassifierNode(TaxonomyNode):
+class ClassifierNode(TreeNode):
     """Intermediate node that uses a classifier to select child nodes."""
 
     def __init__(
         self,
         name: Optional[str],
-        classifier: Callable[[str, List["TaxonomyNode"], Optional[Dict[str, Any]]], Optional["TaxonomyNode"]],
-        children: List["TaxonomyNode"],
+        classifier: Callable[[str, List["TreeNode"], Optional[Dict[str, Any]]], Optional["TreeNode"]],
+        children: List["TreeNode"],
         description: str = "",
-        parent: Optional["TaxonomyNode"] = None
+        parent: Optional["TreeNode"] = None
     ):
         super().__init__(name=name, description=description, children=children, parent=parent)
         self.classifier = classifier
@@ -270,7 +254,7 @@ class ClassifierNode(TaxonomyNode):
         )
 
 
-class IntentNode(TaxonomyNode):
+class IntentNode(TreeNode):
     """Leaf node representing an executable intent with argument extraction and validation."""
 
     def __init__(
@@ -284,7 +268,7 @@ class IntentNode(TaxonomyNode):
         input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
         output_validator: Optional[Callable[[Any], bool]] = None,
         description: str = "",
-        parent: Optional["TaxonomyNode"] = None
+        parent: Optional["TreeNode"] = None
     ):
         super().__init__(name=name, description=description, children=[], parent=parent)
         self.param_schema = param_schema
@@ -510,7 +494,6 @@ class IntentNode(TaxonomyNode):
                     f"Missing required parameter '{param_name}' for intent '{self.name}' (Path: {'.'.join(self.get_path())})")
                 raise NodeInputValidationError(
                     node_name=self.name,
-                    taxonomy_name="unknown",  # Will be set by caller
                     validation_error=f"Missing required parameter '{param_name}'",
                     input_data=params,
                     node_id=self.node_id,
@@ -526,7 +509,6 @@ class IntentNode(TaxonomyNode):
                         f"Parameter '{param_name}' must be a string, got {type(param_value).__name__} for intent '{self.name}' (Path: {'.'.join(self.get_path())})")
                     raise NodeInputValidationError(
                         node_name=self.name,
-                        taxonomy_name="unknown",  # Will be set by caller
                         validation_error=f"Parameter '{param_name}' must be a string, got {type(param_value).__name__}",
                         input_data=params,
                         node_id=self.node_id,
@@ -541,7 +523,6 @@ class IntentNode(TaxonomyNode):
                         f"Parameter '{param_name}' must be an integer, got {type(param_value).__name__} for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(original_error).__name__}: {str(original_error)}")
                     raise NodeInputValidationError(
                         node_name=self.name,
-                        taxonomy_name="unknown",  # Will be set by caller
                         validation_error=f"Parameter '{param_name}' must be an integer, got {type(param_value).__name__}: {type(original_error).__name__}: {str(original_error)}",
                         input_data=params,
                         node_id=self.node_id,
@@ -556,7 +537,6 @@ class IntentNode(TaxonomyNode):
                         f"Parameter '{param_name}' must be a number, got {type(param_value).__name__} for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(original_error).__name__}: {str(original_error)}")
                     raise NodeInputValidationError(
                         node_name=self.name,
-                        taxonomy_name="unknown",  # Will be set by caller
                         validation_error=f"Parameter '{param_name}' must be a number, got {type(param_value).__name__}: {type(original_error).__name__}: {str(original_error)}",
                         input_data=params,
                         node_id=self.node_id,
@@ -570,7 +550,6 @@ class IntentNode(TaxonomyNode):
                         f"Parameter '{param_name}' must be a boolean, got {type(param_value).__name__} for intent '{self.name}' (Path: {'.'.join(self.get_path())})")
                     raise NodeInputValidationError(
                         node_name=self.name,
-                        taxonomy_name="unknown",  # Will be set by caller
                         validation_error=f"Parameter '{param_name}' must be a boolean, got {type(param_value).__name__}",
                         input_data=params,
                         node_id=self.node_id,

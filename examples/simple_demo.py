@@ -11,10 +11,8 @@ from intent_kit.graph import IntentGraph
 from intent_kit.graph.splitters import llm_splitter
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.tree import TreeBuilder
-from intent_kit.taxonomy import Taxonomy
 from typing import Dict, Any
 from dotenv import load_dotenv
-from intent_kit.engine import execute_taxonomy
 from intent_kit.node import ExecutionResult
 load_dotenv()
 
@@ -30,10 +28,10 @@ LLM_CONFIG = {
 # Create LLM client for the splitter
 LLM_CLIENT = LLMFactory.create_client(LLM_CONFIG)
 
-# Define the taxonomy using only LLMs
+# Define the intent tree using only LLMs
 
 
-def build_llm_taxonomy():
+def build_llm_tree():
     # LLM classifier for top-level intent
     classifier = create_llm_classifier(
         llm_config=LLM_CONFIG,
@@ -105,19 +103,6 @@ def build_llm_taxonomy():
     )
 
 
-class LLMTaxonomy(Taxonomy):
-    def __init__(self):
-        self.root = build_llm_taxonomy()
-
-    def route(self, user_input: str, context=None, debug: bool = False) -> ExecutionResult:
-        return execute_taxonomy(
-            user_input=user_input,
-            node=self.root,
-            context=context,
-            debug=debug
-        )
-
-
 def main():
     print("IntentGraph LLM-Only Demo")
     print("This demo uses only LLMs for intent classification and argument extraction.")
@@ -132,9 +117,9 @@ def main():
     ]
 
     # Create IntentGraph with LLM splitter
-    graph = IntentGraph(splitter=lambda user_input, taxonomies, debug, **kwargs:
-                        llm_splitter(user_input, taxonomies, debug, LLM_CLIENT))
-    graph.register_taxonomy("llm", LLMTaxonomy())
+    graph = IntentGraph(splitter=lambda user_input, debug, llm_client=LLM_CLIENT:
+                        llm_splitter(user_input, debug, llm_client))
+    graph.add_root_node(build_llm_tree())
 
     for user_input in test_inputs:
         print(f"\nInput: {user_input}")

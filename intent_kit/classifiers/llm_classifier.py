@@ -6,7 +6,7 @@ with ClassifierNode and IntentNode.
 """
 
 from typing import Dict, Any, List, Optional, Callable
-from intent_kit.node import TaxonomyNode
+from ..node import TreeNode
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
 import re
@@ -18,7 +18,7 @@ def create_llm_classifier(
     llm_config: Dict[str, Any],
     classification_prompt: str,
     node_descriptions: List[str]
-) -> Callable[[str, List[TaxonomyNode], Optional[Dict[str, Any]]], Optional[TaxonomyNode]]:
+) -> Callable[[str, List[TreeNode], Optional[Dict[str, Any]]], Optional[TreeNode]]:
     """
     Create an LLM-powered classifier function.
 
@@ -30,7 +30,7 @@ def create_llm_classifier(
     Returns:
         Classifier function that can be used with ClassifierNode
     """
-    def llm_classifier(user_input: str, children: List[TaxonomyNode], context: Optional[Dict[str, Any]] = None) -> Optional[TaxonomyNode]:
+    def llm_classifier(user_input: str, children: List[TreeNode], context: Optional[Dict[str, Any]] = None) -> Optional[TreeNode]:
         """
         LLM-powered classifier that selects the most appropriate child node.
 

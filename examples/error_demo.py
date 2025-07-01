@@ -8,7 +8,6 @@ rich, structured error information instead of simple strings.
 
 from intent_kit.tree import TreeBuilder
 from intent_kit.classifiers.keyword import keyword_classifier
-from intent_kit.engine import execute_taxonomy
 
 
 def extract_args(user_input: str, context=None) -> dict:
@@ -42,8 +41,8 @@ def main():
     """Demonstrate structured error handling."""
     print("=== Intent Kit Structured Error Demo ===\n")
 
-    # Create a simple taxonomy with an intent that can fail in various ways
-    tree = TreeBuilder.classifier_node(
+    # Create intent tree root node
+    root_node = TreeBuilder.classifier_node(
         name="Root",
         classifier=keyword_classifier,
         children=[
@@ -56,7 +55,7 @@ def main():
                 description="Greet someone with their name and age"
             ),
         ],
-        description="Demo taxonomy"
+        description="Demo intent tree"
     )
 
     # Test cases that will trigger different types of errors
@@ -72,7 +71,7 @@ def main():
         print(f"Input: {user_input}")
         print("-" * 50)
 
-        result = execute_taxonomy(user_input=user_input, node=tree, debug=True)
+        result = root_node.execute(user_input=user_input)
 
         if result.error:
             print(f"❌ Error: {result.error}")
@@ -95,8 +94,8 @@ def main():
                     print(f"    Node Path: {' -> '.join(error.node_path)}")
                     if error.node_id:
                         print(f"    Node ID: {error.node_id}")
-                    if error.taxonomy_name:
-                        print(f"    Taxonomy: {error.taxonomy_name}")
+                    if error.node_path:
+                        print(f"    Path: {' -> '.join(error.node_path)}")
                     if error.input_data:
                         print(f"    Input Data: {error.input_data}")
                     if error.output_data:

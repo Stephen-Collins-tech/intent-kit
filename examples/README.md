@@ -1,58 +1,65 @@
-# IntentGraph Examples
+# IntentKit Examples
 
-This directory contains examples demonstrating IntentGraph functionality.
+This directory contains examples demonstrating IntentKit functionality.
 
 ## Available Examples
 
 ### Simple Demo (`simple_demo.py`)
-A basic demonstration of IntentGraph with LLM-powered intent classification and argument extraction.
+A basic demonstration of IntentKit with LLM-powered intent classification and argument extraction. Shows the core IntentGraph functionality with multiple AI service backends.
 
 ### Context Demo (`context_demo.py`)
-Shows how to use context and dependencies in IntentGraph.
-
-### Error Demo (`error_demo.py`)
-Demonstrates error handling and debugging features.
+Shows how to use context and dependencies in IntentKit. Demonstrates state management, dependency tracking, and multi-turn conversations.
 
 ### Ollama Demo (`ollama_demo.py`)
-Shows how to use IntentGraph with local Ollama models for offline LLM processing.
+Shows how to use IntentKit with local Ollama models for offline LLM processing. Great for development and testing without API costs.
 
-## Simple Demo Setup
+### Error Demo (`error_demo.py`)
+Demonstrates error handling and debugging features. Shows how IntentKit handles various error scenarios and provides detailed error information.
 
-The `simple_demo.py` requires an API key for LLM services. You can set this up in two ways:
+## Setup Requirements
 
-### Option 1: Environment Variables
-Set the following environment variable in your shell:
+### API Keys for LLM Services
+
+Most examples require API keys for LLM services. You can set this up in two ways:
+
+#### Option 1: Environment Variables
+Set the following environment variables in your shell:
 
 ```bash
 export OPENAI_API_KEY="your-openai-api-key"
+export ANTHROPIC_API_KEY="your-anthropic-api-key"
+export GOOGLE_API_KEY="your-google-api-key"
 ```
 
-### Option 2: .env File (Recommended for Development)
+#### Option 2: .env File (Recommended for Development)
 Create a `.env` file in the project root with the following content:
 
 ```
-# LLM API Key for IntentGraph Demo
+# LLM API Keys for IntentKit Examples
 OPENAI_API_KEY=your-openai-api-key-here
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
+GOOGLE_API_KEY=your-google-api-key-here
 ```
 
-**Note:** The demo uses OpenAI by default, but you can modify the `LLM_CONFIG` in the demo to use other providers.
+**Note:** The examples use different providers by default, but you can modify the `LLM_CONFIG` in each demo to use other providers.
 
-### Installing python-dotenv
-To use the .env file functionality, install the dev dependencies:
+### Installing Dependencies
+To use the .env file functionality and run all examples, install the dev dependencies:
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-Or install python-dotenv directly:
+Or install required packages directly:
 
 ```bash
 pip install python-dotenv
+pip install ollama  # For ollama_demo.py
 ```
 
 ## Ollama Demo Setup
 
-The `ollama_demo.py` demonstrates using IntentGraph with local Ollama models. This is great for offline development and testing.
+The `ollama_demo.py` demonstrates using IntentKit with local Ollama models. This is great for offline development and testing.
 
 ### Prerequisites
 1. **Install Ollama**: Download and install from [https://ollama.ai/](https://ollama.ai/)
@@ -77,10 +84,10 @@ The Ollama demo shows:
 ## Running the Examples
 
 ```bash
-# Simple Demo
+# Simple Demo (requires OpenAI API key)
 python examples/simple_demo.py
 
-# Ollama Demo
+# Ollama Demo (requires Ollama installed)
 python examples/ollama_demo.py
 
 # Context Demo
@@ -90,28 +97,94 @@ python examples/context_demo.py
 python examples/error_demo.py
 ```
 
-## What the Demos Show
+## What Each Demo Shows
 
-### Simple Demo
+### Simple Demo (`simple_demo.py`)
 - **LLM-powered intent classification** - Using LLMs to classify user intents
 - **LLM-powered argument extraction** - Extracting structured parameters from natural language
 - **Basic IntentGraph setup** - Creating and configuring an IntentGraph
 - **Multiple intent types** - Greeting, calculations, weather, and help requests
 - **Error handling and debug mode** - How the system handles various inputs
+- **Multiple AI backends** - OpenAI, Anthropic, Google AI integration
 
-### Ollama Demo
+### Context Demo (`context_demo.py`)
+- **State management** - Persistent context across multiple interactions
+- **Dependency tracking** - Declaring what fields intents read/write
+- **Multi-turn conversations** - Maintaining state between user inputs
+- **Context history** - Audit trail of all context changes
+- **Thread-safe operations** - Safe concurrent access to context
+
+### Ollama Demo (`ollama_demo.py`)
 - **Local LLM processing** - Using Ollama for offline LLM operations
 - **Multiple Ollama features** - Basic generation, streaming, model listing
 - **Factory integration** - Using Ollama through the LLM factory
 - **Custom server configuration** - Connecting to different Ollama instances
+- **Context-aware workflows** - Full context support with local models
+
+### Error Demo (`error_demo.py`)
+- **Error handling** - How IntentKit handles various error scenarios
+- **Debug information** - Detailed error reporting and logging
+- **Graceful degradation** - Fallback mechanisms when things go wrong
+- **Error recovery** - Continuing execution despite individual failures
 
 ## Example Inputs
 
-The simple demo tests inputs like:
+The demos test various inputs to showcase different capabilities:
+
+### Simple Demo Inputs
 - "Hello, my name is Alice"
 - "What's 15 plus 7?"
 - "Weather in San Francisco"
 - "Help me"
 - "Multiply 8 and 3"
 
-This provides a quick way to see IntentGraph in action with minimal setup and complexity. 
+### Context Demo Inputs
+- "Hello, my name is Alice"
+- "What's my name?"
+- "Calculate 10 + 5"
+- "What was my last calculation?"
+- "Set my preference to metric units"
+
+### Ollama Demo Inputs
+- "Hello, my name is Alice"
+- "What's 15 plus 7?"
+- "Weather in San Francisco"
+- "Chat: Tell me a story about a robot"
+- "What was my last calculation?"
+
+### Error Demo Inputs
+- Invalid inputs to trigger error handling
+- Malformed requests to test error recovery
+- Edge cases to demonstrate robustness
+
+## Key Features Demonstrated
+
+### Intent Classification
+- Keyword-based classification
+- LLM-powered classification
+- Multi-intent splitting and routing
+
+### Argument Extraction
+- Regex-based extraction
+- LLM-powered extraction
+- Type validation and conversion
+
+### Context Management
+- Session persistence
+- Dependency tracking
+- Thread-safe operations
+- Audit trails
+
+### Error Handling
+- Comprehensive error reporting
+- Graceful degradation
+- Debug information
+- Error recovery
+
+### Visualization
+- Interactive HTML graphs
+- Execution path visualization
+- Node type color coding
+- Debug information display
+
+This provides a comprehensive way to see IntentKit in action with minimal setup and complexity. 

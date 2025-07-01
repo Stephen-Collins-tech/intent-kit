@@ -1,5 +1,5 @@
 from typing import Any, Callable, List, Optional, Dict, Type, Set
-from .node import IntentNode, ClassifierNode, TaxonomyNode
+from .node import IntentNode, ClassifierNode, TreeNode
 from .classifiers.llm_classifier import (
     create_llm_classifier,
     create_llm_arg_extractor,
@@ -9,7 +9,7 @@ from .classifiers.llm_classifier import (
 
 
 class TreeBuilder:
-    """Utility class for building intent taxonomy trees."""
+    """Utility class for building intent trees."""
 
     @staticmethod
     def intent_node(
@@ -23,7 +23,7 @@ class TreeBuilder:
         input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
         output_validator: Optional[Callable[[Any], bool]] = None,
         description: str = "",
-        parent: Optional[TaxonomyNode] = None
+        parent: Optional[TreeNode] = None
     ) -> IntentNode:
         """Create a new Intent node."""
         return IntentNode(
@@ -52,7 +52,7 @@ class TreeBuilder:
         input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
         output_validator: Optional[Callable[[Any], bool]] = None,
         description: str = "",
-        parent: Optional[TaxonomyNode] = None
+        parent: Optional[TreeNode] = None
     ) -> IntentNode:
         """Create a new Intent node with LLM-powered argument extraction."""
         if not extraction_prompt:
@@ -78,10 +78,10 @@ class TreeBuilder:
     def classifier_node(
         *,
         name: Optional[str] = None,
-        classifier: Callable[[str, List[TaxonomyNode], Optional[Dict[str, Any]]], Optional[TaxonomyNode]],
-        children: List[TaxonomyNode],
+        classifier: Callable[[str, List[TreeNode], Optional[Dict[str, Any]]], Optional[TreeNode]],
+        children: List[TreeNode],
         description: str = "",
-        parent: Optional[TaxonomyNode] = None
+        parent: Optional[TreeNode] = None
     ) -> ClassifierNode:
         """Create a new ClassifierNode."""
         classifier_node = ClassifierNode(
@@ -97,11 +97,11 @@ class TreeBuilder:
     def llm_classifier_node(
         *,
         name: Optional[str] = None,
-        children: List[TaxonomyNode],
+        children: List[TreeNode],
         llm_config: Dict[str, Any],
         classification_prompt: Optional[str] = None,
         description: str = "",
-        parent: Optional[TaxonomyNode] = None
+        parent: Optional[TreeNode] = None
     ) -> ClassifierNode:
         """Create a new ClassifierNode with LLM-powered classification."""
         if not classification_prompt:
