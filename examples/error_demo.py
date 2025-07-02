@@ -46,7 +46,7 @@ def main():
         name="Root",
         classifier=keyword_classifier,
         children=[
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="Greet",
                 param_schema={"name": str, "age": int},
                 handler=greet_handler,

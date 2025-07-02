@@ -1,5 +1,7 @@
 import pytest
-from intent_kit.node import IntentNode, ClassifierNode, TreeNode
+from intent_kit.node import TreeNode
+from intent_kit.handlers import HandlerNode
+from intent_kit.classifiers import ClassifierNode
 from intent_kit.tree import TreeBuilder
 from intent_kit.classifiers.keyword import keyword_classifier
 
@@ -31,7 +33,7 @@ def sample_tree(sample_handlers):
         name="Root",
         classifier=keyword_classifier,
         children=[
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="Test",
                 param_schema={"param": str},
                 handler=sample_handlers["test"],
@@ -57,14 +59,14 @@ def test_tree_node_creation():
 
 def test_intent_creation(sample_handlers):
     """Test intent node creation."""
-    intent = TreeBuilder.intent_node(
+    intent = TreeBuilder.handler_node(
         name="Test",
         param_schema={"param": str},
         handler=sample_handlers["test"],
         arg_extractor=extract_test_args,
         input_validator=validate_test_args
     )
-    assert isinstance(intent, IntentNode)
+    assert isinstance(intent, HandlerNode)
     assert intent.name == "Test"
     assert intent.param_schema == {"param": str}
     assert intent.handler == sample_handlers["test"]
@@ -117,7 +119,7 @@ def test_execute_tree_handler_error(sample_tree):
         name="Root",
         classifier=keyword_classifier,
         children=[
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="Error",
                 param_schema={"param": str},
                 handler=error_handler,
@@ -158,7 +160,7 @@ def test_intent_node_execution():
     def validate_person_args(params: dict) -> bool:
         return bool(params.get("name") and params.get("age"))
 
-    intent = IntentNode(
+    intent = HandlerNode(
         name="GreetPerson",
         param_schema={"name": str, "age": int},
         handler=test_handler,
@@ -192,7 +194,7 @@ def test_type_validation():
             "active": words[1] if len(words) > 1 else "true"
         }
 
-    intent = IntentNode(
+    intent = HandlerNode(
         name="TestTypes",
         param_schema={"count": int, "active": bool},
         handler=test_handler,

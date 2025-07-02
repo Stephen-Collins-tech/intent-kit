@@ -8,11 +8,13 @@ routing to root nodes, and result aggregation.
 from typing import Dict, Any, Optional, Callable, List
 from intent_kit.utils.logger import Logger
 from intent_kit.context import IntentContext
-from intent_kit.graph.splitters import rule_splitter
-from intent_kit.graph.splitters.splitter_types import SplitterFunction
+from intent_kit.splitters import rule_splitter
+from intent_kit.types import SplitterFunction
+from intent_kit.graph.validation import validate_splitter_routing, validate_graph_structure, validate_node_types, GraphValidationError
 # from intent_kit.graph.aggregation import aggregate_results, create_error_dict, create_no_intent_error, create_no_tree_error
 from intent_kit.node import ExecutionResult
 from intent_kit.node import ExecutionError
+from intent_kit.node.enums import NodeType
 from intent_kit.exceptions import NodeExecutionError, NodeInputValidationError, NodeOutputValidationError
 from intent_kit.node import TreeNode
 import os
@@ -55,18 +57,32 @@ class IntentGraph:
         self.visualize = visualize
         self.llm_config = llm_config
 
-    def add_root_node(self, root_node: TreeNode) -> None:
+    def add_root_node(self, root_node: TreeNode, validate: bool = True) -> None:
         """
         Add a root node to the graph.
 
         Args:
             root_node: The root node to add
+            validate: Whether to validate the graph after adding the node
         """
         if not isinstance(root_node, TreeNode):
             raise ValueError("Root node must be a TreeNode")
 
         self.root_nodes.append(root_node)
         self.logger.info(f"Added root node: {root_node.name}")
+
+        # Validate the graph after adding the node
+        if validate:
+            try:
+                self.validate_graph()
+                self.logger.info(
+                    "Graph validation passed after adding root node")
+            except GraphValidationError as e:
+                self.logger.error(
+                    f"Graph validation failed after adding root node: {e.message}")
+                # Remove the node if validation fails and re-raise the error
+                self.root_nodes.remove(root_node)
+                raise e
 
     def remove_root_node(self, root_node: TreeNode) -> None:
         """
@@ -90,6 +106,73 @@ class IntentGraph:
             List of root node names
         """
         return [node.name for node in self.root_nodes]
+
+    def validate_graph(self, validate_routing: bool = True, validate_types: bool = True) -> Dict[str, Any]:
+        """
+        Validate the graph structure and routing constraints.
+
+        Args:
+            validate_routing: Whether to validate splitter-to-classifier routing
+            validate_types: Whether to validate node types
+
+        Returns:
+            Dictionary containing validation results and statistics
+
+        Raises:
+            GraphValidationError: If validation fails
+        """
+        self.logger.info("Validating graph structure...")
+
+        # Collect all nodes from root nodes
+        all_nodes = []
+        for root_node in self.root_nodes:
+            all_nodes.extend(self._collect_all_nodes([root_node]))
+
+        # Validate node types
+        if validate_types:
+            validate_node_types(all_nodes)
+
+        # Validate splitter routing
+        if validate_routing:
+            validate_splitter_routing(all_nodes)
+
+        # Get comprehensive validation stats
+        stats = validate_graph_structure(all_nodes)
+
+        self.logger.info("Graph validation completed successfully")
+        return stats
+
+    def validate_splitter_routing(self) -> None:
+        """
+        Validate that all splitter nodes only route to classifier nodes.
+
+        Raises:
+            GraphValidationError: If any splitter node routes to a non-classifier node
+        """
+        all_nodes = []
+        for root_node in self.root_nodes:
+            all_nodes.extend(self._collect_all_nodes([root_node]))
+
+        validate_splitter_routing(all_nodes)
+
+    def _collect_all_nodes(self, nodes: List[TreeNode]) -> List[TreeNode]:
+        """Recursively collect all nodes in the graph."""
+        all_nodes = []
+        visited = set()
+
+        def collect_node(node: TreeNode):
+            if node.node_id in visited:
+                return
+            visited.add(node.node_id)
+            all_nodes.append(node)
+
+            for child in node.children:
+                collect_node(child)
+
+        for node in nodes:
+            collect_node(node)
+
+        return all_nodes
 
     def _call_splitter(self, user_input: str, debug: bool, context: Optional[IntentContext] = None, **splitter_kwargs) -> list:
         """
@@ -182,7 +265,7 @@ class IntentGraph:
                 children_results=[],
                 node_name="splitter",
                 node_path=[],
-                node_type="splitter",
+                node_type=NodeType.SPLITTER,
                 input=user_input,
                 output=None,
                 error=ExecutionError(
@@ -206,13 +289,13 @@ class IntentGraph:
                 children_results=[],
                 node_name="no_intent",
                 node_path=[],
-                node_type="no_intent",
+                node_type=NodeType.UNHANDLED_CHUNK,
                 input=user_input,
                 output=None,
                 error=ExecutionError(
                     error_type="NoIntentFound",
                     message="No intent chunks found",
-                    node_name="no_intent",
+                    node_name="unhandled_chunk",
                     node_path=[]
                 )
             )
@@ -260,7 +343,7 @@ class IntentGraph:
                         children_results=[],
                         node_name="no_root_node",
                         node_path=[],
-                        node_type="error",
+                        node_type=NodeType.UNKNOWN,
                         input=chunk_text,
                         output=None,
                         error=ExecutionError(
@@ -299,7 +382,7 @@ class IntentGraph:
                         children_results=[],
                         node_name="unknown",
                         node_path=[],
-                        node_type="error",
+                        node_type=NodeType.UNKNOWN,
                         input=chunk_text,
                         output=None,
                         error=ExecutionError(
@@ -332,7 +415,7 @@ class IntentGraph:
                     children_results=[],
                     node_name="clarify",
                     node_path=[],
-                    node_type="clarify",
+                    node_type=NodeType.CLARIFY,
                     input=chunk_text,
                     output=None,
                     error=ExecutionError(
@@ -356,7 +439,7 @@ class IntentGraph:
                     children_results=[],
                     node_name="reject",
                     node_path=[],
-                    node_type="reject",
+                    node_type=NodeType.UNKNOWN,
                     input=chunk_text,
                     output=None,
                     error=ExecutionError(
@@ -378,7 +461,7 @@ class IntentGraph:
                     children_results=[],
                     node_name="unknown_action",
                     node_path=[],
-                    node_type="error",
+                    node_type=NodeType.UNKNOWN,
                     input=chunk_text,
                     output=None,
                     error=ExecutionError(
@@ -402,7 +485,7 @@ class IntentGraph:
                 children_results=[],
                 node_name="recursion_limit",
                 node_path=[],
-                node_type="error",
+                node_type=NodeType.UNKNOWN,
                 input=user_input,
                 output=None,
                 error=ExecutionError(
@@ -474,7 +557,7 @@ class IntentGraph:
             children_results=children_results,
             node_name="intent_graph",
             node_path=[],
-            node_type="intent_graph",
+            node_type=NodeType.GRAPH,
             input=user_input,
             output=aggregated_output,
             error=aggregated_error

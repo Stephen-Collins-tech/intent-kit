@@ -11,7 +11,6 @@ from typing import Dict, Any, Optional, List
 from intent_kit.context import IntentContext
 from intent_kit.classifiers.llm_classifier import create_llm_classifier, create_llm_arg_extractor, get_default_classification_prompt, get_default_extraction_prompt
 from intent_kit.graph import IntentGraph
-from intent_kit.graph.splitters import rule_splitter, llm_splitter
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.tree import TreeBuilder
 from dotenv import load_dotenv
@@ -170,7 +169,7 @@ def build_context_aware_tree():
         name="llm_classifier",
         classifier=classifier,
         children=[
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="greet",
                 param_schema={"name": str},
                 handler=greet_handler,
@@ -180,7 +179,7 @@ def build_context_aware_tree():
                                  "last_greeted", "last_greeting_time"},
                 description="Greet the user with context tracking"
             ),
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="calculate",
                 param_schema={"operation": str, "a": float, "b": float},
                 handler=calculate_handler,
@@ -189,7 +188,7 @@ def build_context_aware_tree():
                 context_outputs={"calculation_history", "last_calculation"},
                 description="Perform calculations with history tracking"
             ),
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="weather",
                 param_schema={"location": str},
                 handler=weather_handler,
@@ -198,7 +197,7 @@ def build_context_aware_tree():
                 context_outputs={"last_weather"},
                 description="Get weather with caching"
             ),
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="show_history",
                 param_schema={},
                 handler=show_calculation_history_handler,
@@ -206,7 +205,7 @@ def build_context_aware_tree():
                 context_inputs={"calculation_history"},
                 description="Show calculation history from context"
             ),
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="help",
                 param_schema={},
                 handler=lambda context: "I can help you with greetings, calculations, weather, and showing calculation history!",
@@ -227,13 +226,8 @@ def main():
     # Create context for the session
     context = IntentContext(session_id="demo_user_123", debug=True)
 
-    # Create IntentGraph with LLM splitter
-    graph = IntentGraph(
-        splitter=lambda user_input, debug=False: llm_splitter(
-            user_input, debug, llm_client=LLM_CLIENT),
-        visualize=True,
-        llm_config=LLM_CONFIG
-    )
+    # Create IntentGraph with traditional classifier (no splitter needed for single intents)
+    graph = IntentGraph(visualize=True, llm_config=LLM_CONFIG)
     graph.add_root_node(build_context_aware_tree())
 
     # Test sequence showing context persistence

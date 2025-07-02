@@ -9,22 +9,27 @@ This library provides:
 - Interactive visualization of execution paths
 """
 
-from .node import IntentNode, ClassifierNode, TreeNode
+from .node import TreeNode, NodeType
+from .classifiers import ClassifierNode
+from .handlers import HandlerNode
+from .splitters import SplitterNode
 from .tree import TreeBuilder
 from .graph import IntentGraph
 from .context import IntentContext
 from .classifiers import keyword_classifier
 from .classifiers.llm_classifier import create_llm_classifier, create_llm_arg_extractor
-from .graph.splitters import rule_splitter, llm_splitter
+from .splitters import rule_splitter, llm_splitter
 from .services.llm_factory import LLMFactory
 
 __version__ = "0.1.0"
 
 __all__ = [
     # Core components
-    'IntentNode',
+    'HandlerNode',
     'TreeNode',
+    'NodeType',
     'ClassifierNode',
+    'SplitterNode',
     'TreeBuilder',
     'IntentGraph',
     'IntentContext',

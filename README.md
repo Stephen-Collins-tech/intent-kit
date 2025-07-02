@@ -95,7 +95,7 @@ def handle_greeting(person: str, context: IntentContext) -> str:
     return f"Hello, {person}! (Greeting #{greeting_count})"
 
 # Create intent nodes
-weather_node = TreeBuilder.intent_node(
+weather_node = TreeBuilder.handler_node(
     name="Weather",
     param_schema={"city": str},
     handler=handle_weather,
@@ -103,7 +103,7 @@ weather_node = TreeBuilder.intent_node(
     description="Get weather information for a city"
 )
 
-greeting_node = TreeBuilder.intent_node(
+greeting_node = TreeBuilder.handler_node(
     name="Greeting", 
     param_schema={"person": str},
     handler=handle_greeting,
@@ -131,7 +131,7 @@ print(result.children_results[0].output)  # Shows the actual intent output: "The
 
 ```python
 from intent_kit.graph import IntentGraph
-from intent_kit.graph.splitters import rule_splitter
+from intent_kit.splitters import rule_splitter
 from intent_kit.context import IntentContext
 
 # Create IntentGraph with rule-based splitting
@@ -176,8 +176,8 @@ weather_extractor = create_llm_arg_extractor(
     param_schema={"city": str}
 )
 
-# Create LLM-powered intent node
-weather_node = TreeBuilder.intent_node(
+# Create LLM-powered handler node
+weather_node = TreeBuilder.handler_node(
     name="Weather",
     param_schema={"city": str},
     handler=handle_weather,
@@ -201,7 +201,7 @@ root_node = TreeBuilder.classifier_node(
 ### Nodes
 
 * **ClassifierNode**: Routes input to child nodes using a classifier function.
-* **IntentNode**: Leaf nodes that execute specific intents with parameter extraction and validation.
+* **HandlerNode**: Leaf nodes that execute specific actions with parameter extraction and validation.
 
 ### Trees (Emergent)
 
@@ -225,7 +225,7 @@ name = context.get("user_name", "Unknown")
 count = context.get("greeting_count", 0)
 
 # Track dependencies in intent nodes
-weather_node = TreeBuilder.intent_node(
+weather_node = TreeBuilder.handler_node(
     name="Weather",
     param_schema={"city": str},
     handler=handle_weather,
@@ -241,9 +241,9 @@ weather_node = TreeBuilder.intent_node(
 Utility class for creating nodes:
 
 ```python
-# Create intent node
-intent_node = TreeBuilder.intent_node(
-    name="IntentName",
+# Create handler node
+handler_node = TreeBuilder.handler_node(
+    name="HandlerName",
     param_schema={"param1": str, "param2": int},
     handler=your_handler_function,
     arg_extractor=your_extractor_function,
@@ -251,7 +251,7 @@ intent_node = TreeBuilder.intent_node(
     output_validator=your_output_validator,   # Optional
     context_inputs={"field1", "field2"},      # Optional
     context_outputs={"field3", "field4"},     # Optional
-    description="Intent description"
+    description="Handler description"
 )
 
 # Create classifier node
@@ -295,7 +295,7 @@ IntentGraph enables routing to multiple intent trees and handling multi-intent u
 
 ```python
 from intent_kit.graph import IntentGraph
-from intent_kit.graph.splitters import rule_splitter, llm_splitter
+from intent_kit.splitters import rule_splitter, llm_splitter
 
 # Create IntentGraph with rule-based splitting
 graph = IntentGraph(splitter=rule_splitter, visualize=True)
@@ -416,17 +416,24 @@ pytest tests/
 intent-kit/
 ├── intent_kit/
 │   ├── __init__.py          # Main exports
-│   ├── node.py              # Node classes (ClassifierNode, IntentNode)
+│   ├── node.py              # Node classes (TreeNode)
 │   ├── tree.py              # TreeBuilder utility
 │   ├── graph/               # IntentGraph multi-intent routing
-│   │   ├── intent_graph.py  # Main IntentGraph class
-│   │   └── splitters/       # Intent splitting strategies
-│   │       ├── rule_splitter.py
-│   │       ├── llm_splitter.py
-│   │       └── splitter_types.py
+│   │   └── intent_graph.py  # Main IntentGraph class
+│   ├── splitters/           # Intent splitting strategies
+│   │   ├── node.py          # SplitterNode class
+│   │   ├── functions.py     # Splitter functions
+│   │   ├── rule_splitter.py # Rule-based splitting
+│   │   ├── llm_splitter.py  # LLM-powered splitting
+│   │   └── types.py         # Splitter types
 │   ├── classifiers/         # Classification backends
+│   │   ├── node.py          # ClassifierNode class
 │   │   ├── keyword.py       # Keyword-based classifier
 │   │   ├── llm_classifier.py # LLM-powered classifier
+│   │   ├── chunk_classifier.py # Chunk classification
+│   │   └── __init__.py
+│   ├── handlers/            # Action execution
+│   │   ├── node.py          # HandlerNode class
 │   │   └── __init__.py
 │   ├── context/             # Context and state management
 │   │   ├── dependencies.py  # Context dependency tracking

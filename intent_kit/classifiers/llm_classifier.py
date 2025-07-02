@@ -2,7 +2,7 @@
 LLM-powered classifiers for intent-kit
 
 This module provides LLM-powered classification functions that can be used
-with ClassifierNode and IntentNode.
+with ClassifierNode and HandlerNode.
 """
 
 from typing import Dict, Any, List, Optional, Callable
@@ -145,7 +145,7 @@ def create_llm_arg_extractor(
         param_schema: Parameter schema defining expected parameters
 
     Returns:
-        Argument extractor function that can be used with IntentNode
+        Argument extractor function that can be used with HandlerNode
     """
     def llm_arg_extractor(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """

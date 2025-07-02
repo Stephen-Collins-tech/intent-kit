@@ -3,7 +3,7 @@ Specific tests for llm_splitter function.
 """
 import unittest
 from unittest.mock import Mock, patch
-from intent_kit.graph.splitters.llm_splitter import llm_splitter, _create_splitting_prompt, _parse_llm_response
+from intent_kit.splitters.llm_splitter import llm_splitter, _create_splitting_prompt, _parse_llm_response
 
 
 class TestLLMSplitterFunction(unittest.TestCase):

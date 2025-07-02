@@ -141,7 +141,7 @@ This section tracks requirements and implementation progress for context-driven 
 > - ✅ **Context Dependencies**: Declarative system for specifying what fields intents read/write
 > - ✅ **Backward Compatibility**: Existing handlers work without modification, context is optional
 > - ✅ **Context as Final Parameter**: All handlers receive context as the final parameter for consistency
-> - ✅ **Enhanced IntentNode**: Supports context_inputs and context_outputs declarations
+> - ✅ **Enhanced HandlerNode**: Supports context_inputs and context_outputs declarations
 > - ✅ **Updated IntentGraph**: Passes context through all execution paths with fallback support
 > - ✅ **Demo Implementation**: Complete working example in `examples/context_demo.py`
 > - ✅ **Splitter Integration**: Basic support added, needs testing with context-aware splitters
@@ -162,7 +162,7 @@ This section tracks requirements and implementation progress for context-driven 
    - `add_root_node()`, `remove_root_node()`, `list_root_nodes()`
    - Consistent `ExecutionResult` return format
 
-2. **Function-Based Splitters** (`graph/splitters/`)
+2. **Function-Based Splitters** (`splitters/`)
    - `rule_splitter()` - Keyword-based intent splitting
    - `llm_splitter()` - LLM-powered intent splitting
    - Custom splitter function support

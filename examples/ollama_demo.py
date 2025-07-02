@@ -167,7 +167,7 @@ def build_ollama_tree():
         name="ollama_classifier",
         classifier=classifier,
         children=[
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="greet",
                 param_schema={"name": str},
                 handler=greet_handler,
@@ -177,7 +177,7 @@ def build_ollama_tree():
                                  "last_greeted", "last_greeting_time"},
                 description="Greet the user with context tracking"
             ),
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="calculate",
                 param_schema={"operation": str, "a": float, "b": float},
                 handler=calculate_handler,
@@ -186,7 +186,7 @@ def build_ollama_tree():
                 context_outputs={"calculation_history", "last_calculation"},
                 description="Perform calculations with history tracking"
             ),
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="weather",
                 param_schema={"location": str},
                 handler=weather_handler,
@@ -195,7 +195,7 @@ def build_ollama_tree():
                 context_outputs={"last_weather"},
                 description="Get weather with caching"
             ),
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="chat_demo",
                 param_schema={"message": str},
                 handler=chat_demo_handler,
@@ -204,7 +204,7 @@ def build_ollama_tree():
                 context_outputs={"conversation_history", "last_chat_time"},
                 description="Demonstrate chat functionality"
             ),
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="show_history",
                 param_schema={},
                 handler=show_calculation_history_handler,
@@ -212,7 +212,7 @@ def build_ollama_tree():
                 context_inputs={"calculation_history"},
                 description="Show calculation history from context"
             ),
-            TreeBuilder.intent_node(
+            TreeBuilder.handler_node(
                 name="help",
                 param_schema={},
                 handler=help_handler,

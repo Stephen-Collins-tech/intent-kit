@@ -5,7 +5,7 @@ from typing import Dict, List, Any, Optional, Sequence
 import re
 import json
 from intent_kit.utils.logger import Logger
-from intent_kit.graph.splitters.splitter_types import IntentChunk
+from intent_kit.types import IntentChunk
 
 
 def llm_splitter(user_input: str, debug: bool = False, llm_client=None) -> Sequence[IntentChunk]:
