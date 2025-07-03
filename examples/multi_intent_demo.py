@@ -1,14 +1,17 @@
 """
-Simple IntentGraph Demo
+Multi-Intent Demo
 
-A minimal demonstration showing how to configure an intent graph with handlers and classifiers.
+A demonstration showing how to handle multi-intent inputs using LLM-powered intelligent splitting.
 """
 
-import os
 from intent_kit import IntentGraphBuilder, handler, llm_classifier
+from intent_kit.splitters import llm_splitter
+from intent_kit.context import IntentContext
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
+
 
 # LLM configuration (optional - remove if you don't want LLM features)
 LLM_CONFIG = {
@@ -47,7 +50,7 @@ def _calculate_handler(operation: str, a: float, b: float) -> str:
 
 
 def create_intent_graph():
-    """Create and configure the intent graph."""
+    """Create and configure the intent graph for multi-intent handling."""
 
     # Define handlers
     handlers = [
@@ -56,7 +59,7 @@ def create_intent_graph():
             description="Greet the user",
             handler_func=lambda name, **kwargs: f"Hello {name}!",
             param_schema={"name": str},
-            llm_config=LLM_CONFIG  # Remove this line for rule-based extraction
+            llm_config=LLM_CONFIG
         ),
         handler(
             name="calculate",
@@ -77,8 +80,7 @@ def create_intent_graph():
             name="help",
             description="Get help",
             handler_func=lambda **kwargs: "I can help with greetings, calculations, and weather!",
-            param_schema={},
-            llm_config=LLM_CONFIG
+            param_schema={}
         )
     ]
 
@@ -90,8 +92,8 @@ def create_intent_graph():
         description="Main intent classifier"
     )
 
-    # Build and return the graph (uses default pass-through splitter)
-    return IntentGraphBuilder().root(classifier).build()
+    # Build and return the graph with LLM-powered splitter for intelligent multi-intent handling
+    return IntentGraphBuilder().root(classifier).splitter(llm_splitter).build()
 
 
 # Test the graph
@@ -99,21 +101,43 @@ if __name__ == "__main__":
     from intent_kit.context import IntentContext
 
     graph = create_intent_graph()
-    context = IntentContext(session_id="simple_demo")
+    context = IntentContext(session_id="multi_intent_demo")
 
-    test_inputs = [
+    # Test single-intent inputs (should work normally)
+    single_intent_inputs = [
         "Hello, my name is Alice",
         "What's 15 plus 7?",
         "Weather in San Francisco",
-        "Help me",
-        "Multiply 8 and 3"
+        "Help me"
     ]
 
-    for user_input in test_inputs:
+    print("=== Single Intent Tests ===")
+    for user_input in single_intent_inputs:
         print(f"\nInput: {user_input}")
         result = graph.route(user_input, context=context)
         if result.success:
             print(f"Intent: {result.node_name}")
             print(f"Output: {result.output}")
+        else:
+            print(f"Error: {result.error}")
+
+    # Test multi-intent inputs (should be split and handled)
+    multi_intent_inputs = [
+        "Hello Alice and what's the weather in San Francisco",
+        "Calculate 5 plus 3 and also greet Bob",
+        "Help me and get weather for New York",
+        "Greet John, calculate 10 times 2, and weather in London"
+    ]
+
+    print("\n=== Multi-Intent Tests ===")
+    for user_input in multi_intent_inputs:
+        print(f"\nInput: {user_input}")
+        result = graph.route(user_input, context=context)
+        if result.success:
+            print(f"Output: {result.output}")
+            if result.children_results:
+                print("Child Results:")
+                for child_result in result.children_results:
+                    print(f"  {child_result.node_name}: {child_result.output}")
         else:
             print(f"Error: {result.error}")

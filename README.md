@@ -65,10 +65,55 @@ pip install 'intent-kit[viz]'
 
 ## Quick Start
 
-### Basic Example
+### New API (Recommended)
+
+The new API provides a simplified, declarative way to build intent graphs with automatic argument extraction and LLM integration:
 
 ```python
-from intent_kit.tree import TreeBuilder
+from intent_kit import IntentGraphBuilder, handler, llm_classifier
+from intent_kit.context import IntentContext
+
+# Create handlers with automatic argument extraction
+greet_handler = handler(
+    name="greet",
+    description="Greet the user",
+    handler_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str}
+    # No llm_config = uses rule-based extraction
+)
+
+weather_handler = handler(
+    name="weather",
+    description="Get weather information for a location",
+    handler_func=lambda location: f"The weather in {location} is sunny.",
+    param_schema={"location": str}
+)
+
+# Create classifier with auto-wired children descriptions
+classifier = llm_classifier(
+    name="root",
+    children=[greet_handler, weather_handler],
+    llm_config=LLM_CONFIG,  # Optional: enables LLM-powered classification
+    description="Main intent classifier"
+)
+
+# Build the graph using the builder pattern
+graph = (
+    IntentGraphBuilder()
+    .root(classifier)
+    .build()
+)
+
+# Use the graph
+context = IntentContext(session_id="user_123")
+result = graph.route("Hello Alice", context=context)
+print(result.output)  # "Hello Alice!"
+```
+
+### Legacy API Example
+
+```python
+from intent_kit.builder import handler
 from intent_kit.classifiers import keyword_classifier
 from intent_kit.context import IntentContext
 
@@ -95,30 +140,33 @@ def handle_greeting(person: str, context: IntentContext) -> str:
     return f"Hello, {person}! (Greeting #{greeting_count})"
 
 # Create intent nodes
-weather_node = TreeBuilder.handler_node(
+weather_node = handler(
     name="Weather",
-    param_schema={"city": str},
-    handler=handle_weather,
-    arg_extractor=extract_weather_args,
-    description="Get weather information for a city"
+    description="Get weather information for a city",
+    handler_func=handle_weather,
+    param_schema={"city": str}
 )
 
-greeting_node = TreeBuilder.handler_node(
+greeting_node = handler(
     name="Greeting", 
+    description="Send a greeting to someone",
+    handler_func=handle_greeting,
     param_schema={"person": str},
-    handler=handle_greeting,
-    arg_extractor=extract_greeting_args,
-    context_outputs={"greeting_count"},
-    description="Send a greeting to someone"
+    context_outputs={"greeting_count"}
 )
 
 # Create classifier node
-root_node = TreeBuilder.classifier_node(
+from intent_kit.classifiers import ClassifierNode
+root_node = ClassifierNode(
     name="Root",
     classifier=keyword_classifier,
     children=[weather_node, greeting_node],
     description="Main intent classifier"
 )
+
+# Set parent references
+weather_node.parent = root_node
+greeting_node.parent = root_node
 
 # Execute intents with context
 context = IntentContext(session_id="user_123")
@@ -130,13 +178,45 @@ print(result.children_results[0].output)  # Shows the actual intent output: "The
 ### Advanced Example with IntentGraph
 
 ```python
-from intent_kit.graph import IntentGraph
-from intent_kit.splitters import rule_splitter
+from intent_kit import IntentGraphBuilder, handler, llm_classifier, rule_splitter_node
 from intent_kit.context import IntentContext
 
-# Create IntentGraph with rule-based splitting
-graph = IntentGraph(splitter=rule_splitter, visualize=True)
-graph.add_root_node(root_node)  # Add the root node from previous example
+# Create handlers with automatic argument extraction
+greet_handler = handler(
+    name="greet",
+    description="Greet the user",
+    handler_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str}
+)
+
+weather_handler = handler(
+    name="weather",
+    description="Get weather information for a location",
+    handler_func=lambda location: f"The weather in {location} is sunny.",
+    param_schema={"location": str}
+)
+
+# Create classifier with auto-wired children descriptions
+classifier = llm_classifier(
+    name="main_classifier",
+    children=[greet_handler, weather_handler],
+    llm_config=LLM_CONFIG,
+    description="Main intent classifier"
+)
+
+# Create splitter for multi-intent handling
+splitter = rule_splitter_node(
+    name="main_splitter",
+    children=[classifier],
+    description="Split multi-intent inputs using rule-based logic"
+)
+
+# Build the graph using the builder pattern
+graph = (
+    IntentGraphBuilder()
+    .root(splitter)
+    .build()
+)
 
 # Handle multi-intent input
 context = IntentContext(session_id="user_123")
@@ -144,7 +224,6 @@ result = graph.route("Hello Alice and what's the weather for Paris?", context=co
 
 if result.success:
     print(f"Results: {result.output}")
-    print(f"Context state: {context.get('greeting_count', 0)} greetings")
 else:
     print(f"Errors: {result.error}")
 ```
@@ -152,7 +231,7 @@ else:
 ### LLM-Powered Classification Example
 
 ```python
-from intent_kit.classifiers.llm_classifier import create_llm_classifier, create_llm_arg_extractor
+from intent_kit import handler, llm_classifier, IntentGraphBuilder
 from intent_kit.services.llm_factory import LLMFactory
 
 # Configure LLM
@@ -162,35 +241,36 @@ llm_config = {
     "api_key": "your-api-key"
 }
 
-# Create LLM-powered classifier and extractor
-classifier = create_llm_classifier(
-    llm_config=llm_config,
-    node_descriptions=[
-        "Get weather information for a location",
-        "Send a greeting to someone"
-    ]
-)
-
-weather_extractor = create_llm_arg_extractor(
-    llm_config=llm_config,
-    param_schema={"city": str}
-)
-
-# Create LLM-powered handler node
-weather_node = TreeBuilder.handler_node(
-    name="Weather",
+# Create handlers with automatic LLM-powered argument extraction
+weather_handler = handler(
+    name="weather",
+    description="Get weather information for a location",
+    handler_func=lambda city: f"The weather in {city} is sunny.",
     param_schema={"city": str},
-    handler=handle_weather,
-    arg_extractor=weather_extractor,
-    description="Get weather information for a city"
+    llm_config=llm_config  # Enables LLM-based argument extraction
 )
 
-# Create classifier node with LLM
-root_node = TreeBuilder.classifier_node(
+greet_handler = handler(
+    name="greet",
+    description="Send a greeting to someone",
+    handler_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str},
+    llm_config=llm_config
+)
+
+# Create LLM-powered classifier with auto-wired children descriptions
+root_node = llm_classifier(
     name="Root",
-    classifier=classifier,
-    children=[weather_node, greeting_node],
+    children=[weather_handler, greet_handler],
+    llm_config=llm_config,
     description="LLM-powered intent classifier"
+)
+
+# Build the graph
+graph = (
+    IntentGraphBuilder()
+    .root(root_node)
+    .build()
 )
 ```
 
@@ -236,13 +316,86 @@ weather_node = TreeBuilder.handler_node(
 )
 ```
 
-### TreeBuilder
+### New Builder API (Recommended)
 
-Utility class for creating nodes:
+The new API provides a simplified, declarative way to build intent graphs:
+
+#### handler()
+
+Creates a handler node with automatic argument extraction:
 
 ```python
+from intent_kit import handler
+
+greet_handler = handler(
+    name="greet",
+    description="Greet the user",
+    handler_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str},
+    llm_config=LLM_CONFIG  # Optional: enables LLM-based argument extraction
+)
+```
+
+#### llm_classifier()
+
+Creates an LLM-powered classifier node with auto-wired children descriptions:
+
+```python
+from intent_kit import llm_classifier
+
+classifier = llm_classifier(
+    name="root",
+    children=[greet_handler, calc_handler, weather_handler],
+    llm_config=LLM_CONFIG,
+    description="Main intent classifier"
+)
+```
+
+#### IntentGraphBuilder
+
+A fluent builder for creating IntentGraph instances:
+
+```python
+from intent_kit import IntentGraphBuilder
+
+graph = (
+    IntentGraphBuilder()
+    .root(classifier)
+    .build()
+)
+```
+
+#### Splitter Nodes
+
+For multi-intent handling:
+
+```python
+from intent_kit import llm_splitter_node, rule_splitter_node
+
+# LLM-powered splitter
+llm_splitter = llm_splitter_node(
+    name="smart_splitter",
+    children=[classifier],
+    llm_config=LLM_CONFIG
+)
+
+# Rule-based splitter
+rule_splitter = rule_splitter_node(
+    name="rule_splitter",
+    children=[classifier]
+)
+```
+
+### Legacy TreeBuilder API
+
+Utility class for creating nodes (legacy approach):
+
+```python
+from intent_kit.classifiers import ClassifierNode
+from intent_kit.handlers import HandlerNode
+
 # Create handler node
-handler_node = TreeBuilder.handler_node(
+handler_node = HandlerNode(
     name="HandlerName",
     param_schema={"param1": str, "param2": int},
     handler=your_handler_function,
@@ -255,12 +408,79 @@ handler_node = TreeBuilder.handler_node(
 )
 
 # Create classifier node
-classifier_node = TreeBuilder.classifier_node(
+classifier_node = ClassifierNode(
     name="ClassifierName",
     classifier=your_classifier_function,
     children=[child_node1, child_node2],
     description="Classifier description"
 )
+```
+
+### Argument Extraction
+
+The new API provides automatic argument extraction with two modes:
+
+#### LLM-based Extraction
+
+When `llm_config` is provided to `handler()`, it uses LLM-powered argument extraction:
+
+```python
+handler(
+    name="greet",
+    description="Greet the user",
+    handler_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str},
+    llm_config=LLM_CONFIG  # Enables LLM-based extraction
+)
+```
+
+#### Rule-based Extraction
+
+When no `llm_config` is provided, it uses simple rule-based extraction:
+
+```python
+handler(
+    name="greet",
+    description="Greet the user",
+    handler_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str}
+    # No llm_config = uses rule-based extraction
+)
+```
+
+The rule-based extractor uses simple heuristics:
+- For string parameters: extracts the last word or entire text
+- For numeric parameters: finds numbers in the text or uses defaults
+- For boolean parameters: defaults to True
+
+### Multi-Intent Handling
+
+For multi-intent scenarios, use splitter nodes:
+
+```python
+# Create a classifier for the splitter's children
+classifier = llm_classifier(
+    name="splitter_classifier",
+    children=[greet_handler, calc_handler, weather_handler],
+    llm_config=LLM_CONFIG
+)
+
+# Create LLM-powered splitter
+splitter = llm_splitter_node(
+    name="multi_intent_splitter",
+    children=[classifier],
+    llm_config=LLM_CONFIG
+)
+
+# Build the graph
+graph = (
+    IntentGraphBuilder()
+    .root(splitter)
+    .build()
+)
+
+# Test multi-intent input
+result = graph.route("Hello Alice and what's the weather in San Francisco")
 ```
 
 ### Classifiers
@@ -287,6 +507,74 @@ llm_client = LLMFactory.create_client({
 })
 
 # Available providers: openai, anthropic, google, ollama
+```
+
+### Benefits of the New API
+
+1. **Simplified Syntax**: Less boilerplate code required
+2. **Automatic Argument Extraction**: No need to manually create argument extractors
+3. **Auto-wired Classifiers**: Children descriptions are automatically included in classifier prompts
+4. **Fluent Builder Pattern**: More readable graph construction
+5. **Fallback Support**: Rule-based extraction when LLM config is not available
+6. **Backwards Compatibility**: Original API still works for advanced use cases
+
+### Migration from Legacy API
+
+#### Before (Legacy API)
+```python
+from intent_kit.classifiers.llm_classifier import create_llm_classifier, create_llm_arg_extractor
+
+# Create argument extractor
+arg_extractor = create_llm_arg_extractor(LLM_CONFIG, extraction_prompt, param_schema)
+
+# Create handler
+greet_handler = HandlerNode(
+    name="greet",
+    param_schema={"name": str},
+    handler=lambda name: f"Hello {name}!",
+    arg_extractor=arg_extractor,
+    description="Greet the user"
+)
+
+# Create classifier with manual descriptions
+classifier = ClassifierNode(
+    name="root",
+    classifier=create_llm_classifier(llm_config, prompt, descriptions),
+    children=[greet_handler],
+    description="Main classifier"
+)
+
+# Create graph
+graph = IntentGraph()
+graph.add_root_node(classifier)
+```
+
+#### After (New API)
+```python
+from intent_kit import handler, llm_classifier, IntentGraphBuilder
+
+# Create handler with automatic argument extraction
+greet_handler = handler(
+    name="greet",
+    description="Greet the user",
+    handler_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str},
+    llm_config=LLM_CONFIG
+)
+
+# Create classifier with auto-wired descriptions
+classifier = llm_classifier(
+    name="root",
+    children=[greet_handler],
+    llm_config=LLM_CONFIG
+)
+
+# Build graph using builder pattern
+graph = (
+    IntentGraphBuilder()
+    .root(classifier)
+    .build()
+)
 ```
 
 ### IntentGraph - Multi-Intent Routing
@@ -359,10 +647,12 @@ Graphs are saved to `intentkit_graphs/` directory with unique filenames based on
 
 See the `examples/` directory for complete working examples:
 
-* **`simple_demo.py`** - Basic IntentGraph with LLM integration
+* **`simple_demo.py`** - Basic IntentGraph with LLM integration using the new API
 * **`context_demo.py`** - Complete context-aware workflow example
 * **`ollama_demo.py`** - Using local Ollama models for offline processing
-* **`error_demo.py`** - Error handling demo
+* **`error_demo.py`** - Error handling demo with the new API
+* **`validation_demo.py`** - Graph validation and structure analysis
+* **`splitter_demo.py`** - Multi-intent handling with splitter nodes
 
 ### Running Examples
 
@@ -378,6 +668,12 @@ python examples/context_demo.py
 
 # Error Demo
 python examples/error_demo.py
+
+# Validation Demo
+python examples/validation_demo.py
+
+# Splitter Demo
+python examples/splitter_demo.py
 ```
 
 ---
@@ -417,7 +713,7 @@ intent-kit/
 ├── intent_kit/
 │   ├── __init__.py          # Main exports
 │   ├── node.py              # Node classes (TreeNode)
-│   ├── tree.py              # TreeBuilder utility
+│   ├── builder.py           # Builder API utility
 │   ├── graph/               # IntentGraph multi-intent routing
 │   │   └── intent_graph.py  # Main IntentGraph class
 │   ├── splitters/           # Intent splitting strategies

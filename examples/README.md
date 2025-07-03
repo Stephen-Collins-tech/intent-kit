@@ -1,164 +1,167 @@
 # IntentKit Examples
 
-This directory contains examples demonstrating IntentKit functionality.
+This directory contains simplified examples demonstrating IntentKit functionality.
 
 ## Available Examples
 
 ### Simple Demo (`simple_demo.py`)
-A basic demonstration of IntentKit with LLM-powered intent classification and argument extraction. Shows the core IntentGraph functionality with multiple AI service backends. **Now includes SplitterNode comparison!**
+A basic demonstration of IntentKit with LLM-powered intent classification and argument extraction. Shows the core IntentGraph functionality with a **pass-through splitter** (default behavior).
 
-### Splitter Demo (`splitter_demo.py`)
-**NEW!** A comprehensive demonstration of the new SplitterNode functionality. Shows how to split multi-intent user inputs using both rule-based and LLM-powered approaches. Perfect for understanding how to handle complex user requests.
-
-### Context Demo (`context_demo.py`)
-Shows how to use context and dependencies in IntentKit. Demonstrates state management, dependency tracking, and multi-turn conversations.
-
-### Ollama Demo (`ollama_demo.py`)
-Shows how to use IntentKit with local Ollama models for offline LLM processing. Great for development and testing without API costs.
+### Multi-Intent Demo (`multi_intent_demo.py`)
+**NEW!** A demonstration of multi-intent handling using the rule-based splitter. Shows how to handle complex inputs like "Hello Alice and what's the weather in San Francisco".
 
 ### Error Demo (`error_demo.py`)
-Demonstrates error handling and debugging features. Shows how IntentKit handles various error scenarios and provides detailed error information.
+A demonstration of error handling and debugging features. Shows how to handle various error scenarios and debug intent routing issues.
 
-### Validation Demo (`validation_demo.py`) - NEW!
-**NEW!** A comprehensive demonstration of the new graph validation system. Shows how to enforce splitter-to-classifier routing constraints and validate graph structure. Perfect for understanding best practices and catching configuration errors early.
+### Context Demo (`context_demo.py`)
+A demonstration of context and dependency management. Shows how handlers can read from and write to shared context.
+
+### Ollama Demo (`ollama_demo.py`)
+A demonstration of using IntentKit with local Ollama models. Shows how to configure and use local LLM models.
+
+## Default Behavior
+
+By default, IntentKit uses a **pass-through splitter** that doesn't split user input. This is the safest approach for most use cases, as it avoids accidentally splitting inputs like "What's 15 plus 7?" on mathematical operators.
+
+If you need multi-intent handling, explicitly configure the rule-based splitter:
+
+```python
+from intent_kit.splitters import rule_splitter
+
+return IntentGraphBuilder().root(classifier).splitter(rule_splitter).build()
+```
+
+## Running the Examples
+
+1. Set up your environment variables (see individual demos for requirements)
+2. Run any demo: `python examples/simple_demo.py`
+3. For Ollama demo, ensure Ollama is running and you have a model pulled
+
+## Key Features Demonstrated
+
+- **Intent Classification**: LLM-powered intent routing
+- **Argument Extraction**: Automatic parameter extraction from user input
+- **Context Management**: Shared state across handlers
+- **Error Handling**: Robust error handling and debugging
+- **Multi-Intent**: Handling complex, multi-part requests
+- **Local Models**: Using Ollama for local LLM processing
+
+## Quick Start
+
+### Minimal Example
+```python
+from intent_kit import IntentGraphBuilder, handler, llm_classifier
+
+def create_intent_graph():
+    handlers = [
+        handler(
+            name="greet",
+            description="Greet the user",
+            handler_func=lambda name: f"Hello {name}!",
+            param_schema={"name": str}
+        ),
+        handler(
+            name="calculate",
+            description="Perform a calculation",
+            handler_func=lambda operation, a, b: f"{a} {operation} {b} = {eval(f'{a} {operation} {b}')}",
+            param_schema={"operation": str, "a": float, "b": float}
+        )
+    ]
+    
+    classifier = llm_classifier(
+        name="root",
+        children=handlers,
+        llm_config={},  # Empty config uses fallback classification
+        description="Main intent classifier"
+    )
+    
+    return IntentGraphBuilder().root(classifier).build()
+
+# Use the graph
+graph = create_intent_graph()
+result = graph.route("Hello, my name is Alice")
+print(result.output)  # "Hello Alice!"
+```
 
 ## Setup Requirements
 
-### API Keys for LLM Services
+### API Keys for LLM Services (Optional)
 
-Most examples require API keys for LLM services. You can set this up in two ways:
+For LLM-powered features, you can set up API keys:
 
 #### Option 1: Environment Variables
-Set the following environment variables in your shell:
-
 ```bash
 export OPENAI_API_KEY="your-openai-api-key"
 export ANTHROPIC_API_KEY="your-anthropic-api-key"
 export GOOGLE_API_KEY="your-google-api-key"
 ```
 
-#### Option 2: .env File (Recommended for Development)
-Create a `.env` file in the project root with the following content:
-
+#### Option 2: .env File
+Create a `.env` file in the project root:
 ```
-# LLM API Keys for IntentKit Examples
 OPENAI_API_KEY=your-openai-api-key-here
 ANTHROPIC_API_KEY=your-anthropic-api-key-here
 GOOGLE_API_KEY=your-google-api-key-here
 ```
 
-**Note:** The examples use different providers by default, but you can modify the `LLM_CONFIG` in each demo to use other providers.
-
-### Installing Dependencies
-To use the .env file functionality and run all examples, install the dev dependencies:
-
-```bash
-pip install -e ".[dev]"
-```
-
-Or install required packages directly:
-
-```bash
-pip install python-dotenv
-pip install ollama  # For ollama_demo.py
-```
-
-## Ollama Demo Setup
-
-The `ollama_demo.py` demonstrates using IntentKit with local Ollama models. This is great for offline development and testing.
-
-### Prerequisites
-1. **Install Ollama**: Download and install from [https://ollama.ai/](https://ollama.ai/)
-2. **Pull a model**: Run `ollama pull llama2` (or any other model)
-3. **Install Python package**: `pip install ollama`
-4. **Start Ollama**: The Ollama service should be running locally
-
-### Running the Ollama Demo
-```bash
-python examples/ollama_demo.py
-```
-
-The Ollama demo shows:
-- Basic Ollama client usage
-- Chat functionality with messages format
-- Using Ollama through the LLM factory
-- Streaming text generation
-- Streaming chat conversations
-- Model management (listing, showing, pulling)
-- Connecting to custom Ollama servers
+**Note:** The minimal and rule-based demos work without any API keys!
 
 ## Running the Examples
 
 ```bash
-# Simple Demo (requires OpenAI API key)
+# Start with the minimal demo (no API key required)
+python examples/minimal_demo.py
+
+# Simple demo with LLM features
 python examples/simple_demo.py
 
-# Splitter Demo (NEW!)
+# Splitter demo for multi-intent handling
 python examples/splitter_demo.py
 
-# Validation Demo (NEW!)
-python examples/validation_demo.py
+# New API demo showing different configurations
+python examples/new_api_demo.py
 
-# Ollama Demo (requires Ollama installed)
-python examples/ollama_demo.py
-
-# Context Demo
-python examples/context_demo.py
-
-# Error Demo
-python examples/error_demo.py
+# Rule-based demo (no API key required)
+python examples/rule_based_demo.py
 ```
 
 ## What Each Demo Shows
 
+### Minimal Demo (`minimal_demo.py`)
+- **Simplest configuration** - Absolute minimum code needed
+- **No API dependencies** - Works without any LLM API keys
+- **Basic intent handling** - Greeting and calculation intents
+- **Fallback classification** - Uses simple keyword matching
+
 ### Simple Demo (`simple_demo.py`)
-- **LLM-powered intent classification** - Using LLMs to classify user intents
-- **LLM-powered argument extraction** - Extracting structured parameters from natural language
-- **Basic IntentGraph setup** - Creating and configuring an IntentGraph
-- **Multiple intent types** - Greeting, calculations, weather, and help requests
-- **Error handling and debug mode** - How the system handles various inputs
-- **Multiple AI backends** - OpenAI, Anthropic, Google AI integration
-- **SplitterNode comparison** - Shows traditional vs SplitterNode approaches
+- **LLM-powered classification** - Using LLMs to classify user intents
+- **LLM-powered argument extraction** - Extracting structured parameters
+- **Multiple intent types** - Greeting, calculations, weather, and help
+- **Error handling** - How the system handles various inputs
 
-### Splitter Demo (`splitter_demo.py`) - NEW!
-- **Rule-based splitting** - Using keyword-based logic to split multi-intent inputs
-- **LLM-powered splitting** - Using AI to intelligently split complex requests
-- **Multi-intent handling** - Processing inputs like "Hello Alice and what's the weather in San Francisco"
-- **SplitterNode creation** - Using TreeBuilder to create splitter nodes
-- **Child result tracking** - How splitter nodes manage multiple child executions
-- **Error handling in splits** - Handling cases where some intents fail
+### Splitter Demo (`splitter_demo.py`)
+- **Multi-intent handling** - Processing complex requests
+- **Rule-based splitting** - Keyword-based logic for splitting
+- **LLM-powered splitting** - AI-powered intelligent splitting
+- **Child result tracking** - Managing multiple executions
 
-### Context Demo (`context_demo.py`)
-- **State management** - Persistent context across multiple interactions
-- **Dependency tracking** - Declaring what fields intents read/write
-- **Multi-turn conversations** - Maintaining state between user inputs
-- **Context history** - Audit trail of all context changes
-- **Thread-safe operations** - Safe concurrent access to context
+### New API Demo (`new_api_demo.py`)
+- **Mixed configurations** - LLM-based and rule-based extraction
+- **Different handler types** - Various parameter extraction methods
+- **Auto-wired descriptions** - Automatic classifier configuration
 
-### Ollama Demo (`ollama_demo.py`)
-- **Local LLM processing** - Using Ollama for offline LLM operations
-- **Multiple Ollama features** - Basic generation, streaming, model listing
-- **Factory integration** - Using Ollama through the LLM factory
-- **Custom server configuration** - Connecting to different Ollama instances
-- **Context-aware workflows** - Full context support with local models
-
-### Error Demo (`error_demo.py`)
-- **Error handling** - How IntentKit handles various error scenarios
-- **Debug information** - Detailed error reporting and logging
-- **Graceful degradation** - Fallback mechanisms when things go wrong
-- **Error recovery** - Continuing execution despite individual failures
-
-### Validation Demo (`validation_demo.py`) - NEW!
-- **Splitter-to-classifier routing validation** - Enforcing that splitter nodes only route to classifier nodes
-- **Graph structure validation** - Checking for cycles, orphaned nodes, and proper node types
-- **Automatic validation** - Validation happens automatically when adding root nodes
-- **Manual validation** - Manual validation methods for debugging and analysis
-- **Comprehensive statistics** - Detailed graph analysis and node counting
-- **Error reporting** - Clear error messages with specific node and type information
+### Rule-Based Demo (`rule_based_demo.py`)
+- **No LLM dependencies** - Works entirely offline
+- **Fallback behavior** - Simple keyword-based classification
+- **Rule-based extraction** - Basic parameter extraction
+- **Offline development** - Perfect for testing without API costs
 
 ## Example Inputs
 
-The demos test various inputs to showcase different capabilities:
+### Minimal Demo Inputs
+- "Hello, my name is Alice"
+- "What's 15 plus 7?"
+- "Help me"
 
 ### Simple Demo Inputs
 - "Hello, my name is Alice"
@@ -166,121 +169,69 @@ The demos test various inputs to showcase different capabilities:
 - "Weather in San Francisco"
 - "Help me"
 - "Multiply 8 and 3"
-- **Multi-intent inputs:**
-  - "Hello Alice and what's the weather in San Francisco"
-  - "Calculate 5 plus 3 and also greet Bob"
 
-### Splitter Demo Inputs - NEW!
-- **Multi-intent inputs that get split:**
-  - "Hello Alice and what's the weather in San Francisco"
-  - "Calculate 5 plus 3 and also greet Bob"
-  - "Help me and get weather for New York"
-  - "Greet John, calculate 10 times 2, and weather in London"
+### Splitter Demo Inputs
+- "Hello Alice and what's the weather in San Francisco"
+- "Calculate 5 plus 3 and also greet Bob"
+- "Help me and get weather for New York"
 
-### Context Demo Inputs
-- "Hello, my name is Alice"
-- "What's my name?"
-- "Calculate 10 + 5"
-- "What was my last calculation?"
-- "Set my preference to metric units"
+## Key Concepts
 
-### Ollama Demo Inputs
-- "Hello, my name is Alice"
-- "What's 15 plus 7?"
-- "Weather in San Francisco"
-- "Chat: Tell me a story about a robot"
-- "What was my last calculation?"
-
-### Error Demo Inputs
-- Invalid inputs to trigger error handling
-- Malformed requests to test error recovery
-- Edge cases to demonstrate robustness
-
-### Validation Demo Inputs - NEW!
-- **Valid graph configurations** - Proper splitter-to-classifier routing
-- **Invalid graph configurations** - Splitter nodes routing directly to intent nodes
-- **Complex graph structures** - Multi-level graphs with nested classifiers
-- **Graph statistics** - Node counting, cycle detection, orphaned node analysis
-
-## Key Features Demonstrated
-
-### Intent Classification
-- Keyword-based classification
-- LLM-powered classification
-- Multi-intent splitting and routing
-
-### SplitterNode Functionality - NEW!
-- **Rule-based splitting** - Using conjunctions like "and", "also", "," to split inputs
-- **LLM-powered splitting** - AI-driven intelligent splitting of complex requests
-- **Multi-intent processing** - Handling multiple intents in a single user input
-- **Child result aggregation** - Collecting and organizing results from multiple intents
-- **Error handling in splits** - Graceful handling when some intents fail
-
-### Graph Validation System - NEW!
-- **Splitter-to-classifier routing constraints** - Enforcing proper pipeline structure
-- **Automatic validation** - Validation on graph construction and node addition
-- **Manual validation methods** - `validate_graph()`, `validate_splitter_routing()`
-- **Comprehensive statistics** - Node counts, cycle detection, orphaned node analysis
-- **Clear error reporting** - Specific error messages with node names and types
-- **Best practices enforcement** - Ensuring proper graph architecture
-
-### Argument Extraction
-- Regex-based extraction
-- LLM-powered extraction
-- Type validation and conversion
-
-### Context Management
-- Session persistence
-- Dependency tracking
-- Thread-safe operations
-- Audit trails
-
-### Error Handling
-- Comprehensive error reporting
-- Graceful degradation
-- Debug information
-- Error recovery
-
-### Visualization
-- Interactive HTML graphs
-- Execution path visualization
-- Node type color coding
-- Debug information display
-
-## SplitterNode Usage Examples
-
-### Creating a Rule-Based Splitter
+### Handler Configuration
 ```python
-from intent_kit.tree import TreeBuilder
+# LLM-based argument extraction
+handler(
+    name="greet",
+    description="Greet the user",
+    handler_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str},
+    llm_config=LLM_CONFIG  # Enables LLM extraction
+)
 
-splitter = TreeBuilder.rule_splitter_node(
-    name="my_splitter",
-    children=[intent1, intent2, intent3],
-    description="Split multi-intent inputs using rules"
+# Rule-based argument extraction
+handler(
+    name="greet",
+    description="Greet the user", 
+    handler_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str}
+    # No llm_config = rule-based extraction
 )
 ```
 
-### Creating an LLM-Powered Splitter
+### Classifier Configuration
 ```python
-splitter = TreeBuilder.llm_splitter_node(
-    name="smart_splitter",
-    children=[intent1, intent2, intent3],
-    llm_config={"llm_client": my_llm_client},
-    description="AI-powered intent splitting"
+# LLM-powered classification
+llm_classifier(
+    name="root",
+    children=handlers,
+    llm_config=LLM_CONFIG,
+    description="Main classifier"
+)
+
+# Fallback classification (no API key needed)
+llm_classifier(
+    name="root",
+    children=handlers,
+    llm_config={},  # Empty config uses fallback
+    description="Main classifier"
 )
 ```
 
-### Custom Splitter Function
+### Graph Building
 ```python
-def my_custom_splitter(user_input: str, debug: bool = False):
-    # Custom splitting logic
-    return ["part1", "part2", "part3"]
+# Simple graph
+graph = IntentGraphBuilder().root(classifier).build()
 
-splitter = TreeBuilder.splitter_node(
-    name="custom_splitter",
-    splitter_function=my_custom_splitter,
-    children=[intent1, intent2, intent3]
-)
+# With splitter for multi-intent
+graph = IntentGraphBuilder().root(splitter).build()
 ```
 
-This provides a comprehensive way to see IntentKit in action with minimal setup and complexity, including the new SplitterNode functionality for handling complex multi-intent scenarios. 
+## Next Steps
+
+1. **Start with `minimal_demo.py`** - Understand the basic structure
+2. **Try `rule_based_demo.py`** - See how it works without LLMs
+3. **Explore `simple_demo.py`** - Add LLM-powered features
+4. **Check `splitter_demo.py`** - Handle complex multi-intent inputs
+5. **Review `new_api_demo.py`** - Mix different configuration approaches
+
+All demos are designed to be minimal and focused on the intent graph configuration, with minimal boilerplate code. 

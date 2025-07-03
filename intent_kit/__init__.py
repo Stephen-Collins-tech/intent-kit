@@ -13,7 +13,7 @@ from .node import TreeNode, NodeType
 from .classifiers import ClassifierNode
 from .handlers import HandlerNode
 from .splitters import SplitterNode
-from .tree import TreeBuilder
+from .builder import IntentGraphBuilder, handler, llm_classifier, llm_splitter_node, rule_splitter_node, create_intent_graph
 from .graph import IntentGraph
 from .context import IntentContext
 from .classifiers import keyword_classifier
@@ -30,7 +30,7 @@ __all__ = [
     'NodeType',
     'ClassifierNode',
     'SplitterNode',
-    'TreeBuilder',
+
     'IntentGraph',
     'IntentContext',
 
@@ -45,4 +45,12 @@ __all__ = [
 
     # Services
     'LLMFactory',
+
+    # New high-level API (recommended)
+    'IntentGraphBuilder',
+    'handler',
+    'llm_classifier',
+    'llm_splitter_node',
+    'rule_splitter_node',
+    'create_intent_graph',
 ]

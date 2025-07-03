@@ -9,12 +9,9 @@ import os
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 from intent_kit.context import IntentContext
-from intent_kit.classifiers.llm_classifier import create_llm_classifier, create_llm_arg_extractor, get_default_classification_prompt, get_default_extraction_prompt
-from intent_kit.graph import IntentGraph
+from intent_kit import IntentGraphBuilder, handler, llm_classifier
 from intent_kit.services.llm_factory import LLMFactory
-from intent_kit.tree import TreeBuilder
 from dotenv import load_dotenv
-from intent_kit.node import ExecutionResult
 load_dotenv()
 
 # LLM configuration
@@ -124,95 +121,68 @@ def show_calculation_history_handler(context: IntentContext) -> str:
 
 
 def build_context_aware_tree():
-    """Build an intent tree with context-aware handlers."""
-    # LLM classifier for top-level intent
-    classifier = create_llm_classifier(
+    """Build an intent tree with context-aware handlers using the new API."""
+
+    # Create handlers using the new handler() function with context support
+    greet_handler_node = handler(
+        name="greet",
+        description="Greet the user with context tracking",
+        handler_func=greet_handler,
+        param_schema={"name": str},
         llm_config=LLM_CONFIG,
-        classification_prompt=get_default_classification_prompt(),
-        node_descriptions=[
-            "Greet the user",
-            "Perform a calculation",
-            "Get weather information",
-            "Show calculation history",
-            "Get help"
-        ]
+        context_inputs={"greeting_count", "last_greeted"},
+        context_outputs={"greeting_count",
+                         "last_greeted", "last_greeting_time"}
     )
 
-    # LLM arg extractors for each intent
-    greet_extractor = create_llm_arg_extractor(
+    calc_handler_node = handler(
+        name="calculate",
+        description="Perform calculations with history tracking",
+        handler_func=calculate_handler,
+        param_schema={"operation": str, "a": float, "b": float},
         llm_config=LLM_CONFIG,
-        extraction_prompt=get_default_extraction_prompt(),
-        param_schema={"name": str}
-    )
-    calc_extractor = create_llm_arg_extractor(
-        llm_config=LLM_CONFIG,
-        extraction_prompt=get_default_extraction_prompt(),
-        param_schema={"operation": str, "a": float, "b": float}
-    )
-    weather_extractor = create_llm_arg_extractor(
-        llm_config=LLM_CONFIG,
-        extraction_prompt=get_default_extraction_prompt(),
-        param_schema={"location": str}
-    )
-    history_extractor = create_llm_arg_extractor(
-        llm_config=LLM_CONFIG,
-        extraction_prompt=get_default_extraction_prompt(),
-        param_schema={}
-    )
-    help_extractor = create_llm_arg_extractor(
-        llm_config=LLM_CONFIG,
-        extraction_prompt=get_default_extraction_prompt(),
-        param_schema={}
+        context_inputs={"calculation_history"},
+        context_outputs={"calculation_history", "last_calculation"}
     )
 
-    return TreeBuilder.classifier_node(
+    weather_handler_node = handler(
+        name="weather",
+        description="Get weather with caching",
+        handler_func=weather_handler,
+        param_schema={"location": str},
+        llm_config=LLM_CONFIG,
+        context_inputs={"last_weather"},
+        context_outputs={"last_weather"}
+    )
+
+    history_handler_node = handler(
+        name="show_calculation_history",
+        description="Show calculation history from context",
+        handler_func=show_calculation_history_handler,
+        param_schema={},
+        llm_config=LLM_CONFIG,
+        context_inputs={"calculation_history"}
+    )
+
+    help_handler_node = handler(
+        name="help",
+        description="Get help",
+        handler_func=lambda: "I can help you with greetings, calculations, weather, and showing history!",
+        param_schema={},
+        llm_config=LLM_CONFIG
+    )
+
+    # Create classifier with auto-wired children descriptions
+    return llm_classifier(
         name="llm_classifier",
-        classifier=classifier,
         children=[
-            TreeBuilder.handler_node(
-                name="greet",
-                param_schema={"name": str},
-                handler=greet_handler,
-                arg_extractor=greet_extractor,
-                context_inputs={"greeting_count", "last_greeted"},
-                context_outputs={"greeting_count",
-                                 "last_greeted", "last_greeting_time"},
-                description="Greet the user with context tracking"
-            ),
-            TreeBuilder.handler_node(
-                name="calculate",
-                param_schema={"operation": str, "a": float, "b": float},
-                handler=calculate_handler,
-                arg_extractor=calc_extractor,
-                context_inputs={"calculation_history"},
-                context_outputs={"calculation_history", "last_calculation"},
-                description="Perform calculations with history tracking"
-            ),
-            TreeBuilder.handler_node(
-                name="weather",
-                param_schema={"location": str},
-                handler=weather_handler,
-                arg_extractor=weather_extractor,
-                context_inputs={"last_weather"},
-                context_outputs={"last_weather"},
-                description="Get weather with caching"
-            ),
-            TreeBuilder.handler_node(
-                name="show_history",
-                param_schema={},
-                handler=show_calculation_history_handler,
-                arg_extractor=history_extractor,
-                context_inputs={"calculation_history"},
-                description="Show calculation history from context"
-            ),
-            TreeBuilder.handler_node(
-                name="help",
-                param_schema={},
-                handler=lambda context: "I can help you with greetings, calculations, weather, and showing calculation history!",
-                arg_extractor=help_extractor,
-                description="Get help"
-            )
+            greet_handler_node,
+            calc_handler_node,
+            weather_handler_node,
+            history_handler_node,
+            help_handler_node
         ],
+        llm_config=LLM_CONFIG,
         description="LLM-powered intent classifier with context support"
     )
 
@@ -226,9 +196,12 @@ def main():
     # Create context for the session
     context = IntentContext(session_id="demo_user_123", debug=True)
 
-    # Create IntentGraph with traditional classifier (no splitter needed for single intents)
-    graph = IntentGraph(visualize=True, llm_config=LLM_CONFIG)
-    graph.add_root_node(build_context_aware_tree())
+    # Create IntentGraph using the new builder pattern
+    graph = (
+        IntentGraphBuilder()
+        .root(build_context_aware_tree())
+        .build()
+    )
 
     # Test sequence showing context persistence
     test_sequence = [

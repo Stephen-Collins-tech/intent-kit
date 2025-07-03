@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional, Callable, List
 from intent_kit.utils.logger import Logger
 from intent_kit.context import IntentContext
 from intent_kit.splitters import rule_splitter
-from intent_kit.types import SplitterFunction
+from intent_kit.types import SplitterFunction, IntentChunk
 from intent_kit.graph.validation import validate_splitter_routing, validate_graph_structure, validate_node_types, GraphValidationError
 # from intent_kit.graph.aggregation import aggregate_results, create_error_dict, create_no_intent_error, create_no_tree_error
 from intent_kit.node import ExecutionResult
@@ -41,18 +41,27 @@ class IntentGraph:
     Trees emerge naturally from the parent-child relationships between nodes.
     """
 
-    def __init__(self, root_nodes: Optional[List[TreeNode]] = None, splitter: SplitterFunction = rule_splitter, visualize: bool = False, llm_config: Optional[dict] = None):
+    def __init__(self, root_nodes: Optional[List[TreeNode]] = None, splitter: Optional[SplitterFunction] = None, visualize: bool = False, llm_config: Optional[dict] = None):
         """
         Initialize the IntentGraph with root nodes.
 
         Args:
             root_nodes: List of root nodes that can handle intents
-            splitter: Function to use for splitting intents (default: rule_splitter)
+            splitter: Function to use for splitting intents (default: pass-through splitter)
             visualize: If True, render the final output to an interactive graph HTML file
             llm_config: LLM configuration for chunk classification (optional)
         """
         self.root_nodes: List[TreeNode] = root_nodes or []
-        self.splitter = splitter
+
+        # Default to pass-through splitter if none provided
+        if splitter is None:
+            def pass_through_splitter(user_input: str, debug: bool = False) -> List[IntentChunk]:
+                """Pass-through splitter that doesn't split the input."""
+                return [user_input]
+            self.splitter = pass_through_splitter
+        else:
+            self.splitter = splitter
+
         self.logger = Logger(__name__)
         self.visualize = visualize
         self.llm_config = llm_config

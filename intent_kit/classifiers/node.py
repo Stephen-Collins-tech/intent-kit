@@ -58,7 +58,7 @@ class ClassifierNode(TreeNode):
             node_path=self.get_path(),
             node_type=NodeType.CLASSIFIER,
             input=user_input,
-            output={"routed_to": chosen.name},
+            output=child_result.output,  # Return the child's actual output
             error=None,
             params={
                 "chosen_child": chosen.name,
