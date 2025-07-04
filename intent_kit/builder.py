@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, Dict, Type, Set, Sequence
+from typing import Any, Callable, List, Optional, Dict, Type, Set, Sequence, Union
 from .node import TreeNode
 from .classifiers import ClassifierNode
 from .splitters import SplitterNode
@@ -14,6 +14,7 @@ from .graph import IntentGraph
 from .utils.logger import Logger
 # Import splitter functions for builder methods
 from .splitters.functions import rule_splitter, llm_splitter
+from .handlers.remediation import RemediationStrategy
 
 
 logger = Logger("builder")
@@ -114,7 +115,9 @@ def handler(
     context_inputs: Optional[Set[str]] = None,
     context_outputs: Optional[Set[str]] = None,
     input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
-    output_validator: Optional[Callable[[Any], bool]] = None
+    output_validator: Optional[Callable[[Any], bool]] = None,
+    remediation_strategies: Optional[List[Union[str,
+                                                "RemediationStrategy"]]] = None
 ) -> TreeNode:
     """Create a handler node with automatic argument extraction.
 
@@ -213,7 +216,8 @@ def handler(
         context_outputs=context_outputs,
         input_validator=input_validator,
         output_validator=output_validator,
-        description=description
+        description=description,
+        remediation_strategies=remediation_strategies
     )
 
 
@@ -223,7 +227,9 @@ def llm_classifier(
     children: List[TreeNode],
     llm_config: Dict[str, Any],
     classification_prompt: Optional[str] = None,
-    description: str = ""
+    description: str = "",
+    remediation_strategies: Optional[List[Union[str,
+                                                "RemediationStrategy"]]] = None
 ) -> TreeNode:
     """Create an LLM-powered classifier node with auto-wired children descriptions.
 
@@ -269,7 +275,8 @@ def llm_classifier(
         name=name,
         classifier=classifier,
         children=children,
-        description=description
+        description=description,
+        remediation_strategies=remediation_strategies
     )
 
     # Set parent reference for all children to this classifier node

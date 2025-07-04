@@ -1,9 +1,10 @@
-from typing import Any, Callable, Dict, Optional, Set, Type
+from typing import Any, Callable, Dict, Optional, Set, Type, List, Union
 from intent_kit.node.base import TreeNode
 from intent_kit.node.enums import NodeType
 from intent_kit.context import IntentContext
 from intent_kit.context.dependencies import declare_dependencies
 from intent_kit.node.types import ExecutionResult, ExecutionError
+from intent_kit.handlers.remediation import get_remediation_strategy, RemediationStrategy
 
 
 class HandlerNode(TreeNode):
@@ -20,7 +21,9 @@ class HandlerNode(TreeNode):
         input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
         output_validator: Optional[Callable[[Any], bool]] = None,
         description: str = "",
-        parent: Optional["TreeNode"] = None
+        parent: Optional["TreeNode"] = None,
+        remediation_strategies: Optional[List[Union[str,
+                                                    RemediationStrategy]]] = None
     ):
         super().__init__(name=name, description=description, children=[], parent=parent)
         self.param_schema = param_schema
@@ -35,6 +38,9 @@ class HandlerNode(TreeNode):
             outputs=self.context_outputs,
             description=f"Context dependencies for intent '{self.name}'"
         )
+
+        # Store remediation strategies
+        self.remediation_strategies = remediation_strategies or []
 
     @property
     def node_type(self) -> NodeType:
@@ -137,6 +143,26 @@ class HandlerNode(TreeNode):
         except Exception as e:
             self.logger.error(
                 f"Handler execution error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}")
+
+            # Try remediation strategies
+            error = ExecutionError(
+                error_type=type(e).__name__,
+                message=str(e),
+                node_name=self.name,
+                node_path=self.get_path()
+            )
+
+            remediation_result = self._execute_remediation_strategies(
+                user_input=user_input,
+                context=context,
+                original_error=error,
+                validated_params=validated_params
+            )
+
+            if remediation_result:
+                return remediation_result
+
+            # If no remediation succeeded, return the original error
             return ExecutionResult(
                 success=False,
                 node_name=self.name,
@@ -144,12 +170,7 @@ class HandlerNode(TreeNode):
                 node_type=NodeType.HANDLER,
                 input=user_input,
                 output=None,
-                error=ExecutionError(
-                    error_type=type(e).__name__,
-                    message=str(e),
-                    node_name=self.name,
-                    node_path=self.get_path()
-                ),
+                error=error,
                 params=validated_params,
                 children_results=[]
             )
@@ -204,6 +225,58 @@ class HandlerNode(TreeNode):
             params=validated_params,
             children_results=[]
         )
+
+    def _execute_remediation_strategies(
+        self,
+        user_input: str,
+        context: Optional[IntentContext] = None,
+        original_error: Optional[ExecutionError] = None,
+        validated_params: Optional[Dict[str, Any]] = None
+    ) -> Optional[ExecutionResult]:
+        """Execute remediation strategies in order until one succeeds."""
+        if not self.remediation_strategies:
+            return None
+
+        for strategy_item in self.remediation_strategies:
+            strategy: Optional[RemediationStrategy] = None
+
+            if isinstance(strategy_item, str):
+                # String ID - get from registry
+                strategy = get_remediation_strategy(strategy_item)
+                if not strategy:
+                    self.logger.warning(
+                        f"Remediation strategy '{strategy_item}' not found in registry")
+                    continue
+            elif isinstance(strategy_item, RemediationStrategy):
+                # Direct strategy object
+                strategy = strategy_item
+            else:
+                self.logger.warning(
+                    f"Invalid remediation strategy type: {type(strategy_item)}")
+                continue
+
+            try:
+                result = strategy.execute(
+                    node_name=self.name or "unknown",
+                    user_input=user_input,
+                    context=context,
+                    original_error=original_error,
+                    handler_func=self.handler,
+                    validated_params=validated_params
+                )
+                if result and result.success:
+                    self.logger.info(
+                        f"Remediation strategy '{strategy.name}' succeeded for {self.name}")
+                    return result
+                else:
+                    self.logger.warning(
+                        f"Remediation strategy '{strategy.name}' failed for {self.name}")
+            except Exception as e:
+                self.logger.error(
+                    f"Remediation strategy '{strategy.name}' error for {self.name}: {type(e).__name__}: {str(e)}")
+
+        self.logger.error(f"All remediation strategies failed for {self.name}")
+        return None
 
     def _validate_types(self, params: Dict[str, Any]) -> Dict[str, Any]:
         validated_params = {}
