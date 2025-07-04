@@ -1,0 +1,4 @@
+metric: exact_match
+threshold: 0.9
+input_file: generated/eval_set.csv
+output_file: generated/raw_outputs.json
