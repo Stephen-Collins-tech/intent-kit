@@ -45,11 +45,11 @@ class Node:
 class TreeNode(Node, ABC):
     """Base class for all nodes in the intent tree."""
 
-    def __init__(self, *, name: Optional[str] = None, description: str, children: List["TreeNode"] = [], parent: Optional["TreeNode"] = None):
+    def __init__(self, *, name: Optional[str] = None, description: str, children: Optional[List["TreeNode"]] = None, parent: Optional["TreeNode"] = None):
         super().__init__(name=name, parent=parent)
         self.logger = Logger(name or "unnamed_node")
         self.description = description
-        self.children: List["TreeNode"] = children
+        self.children: List["TreeNode"] = list(children) if children else []
         for child in self.children:
             child.parent = self
 
