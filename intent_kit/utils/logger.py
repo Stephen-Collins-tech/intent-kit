@@ -20,11 +20,173 @@ class Logger:
             return "\033[37m"  # white
         elif level == "log":
             return "\033[90m"  # gray
+        # New soft color palette using 256-color ANSI codes
+        elif level == "section_title":
+            return "\033[38;5;75m"   # Soft blue/cyan for main section titles
+        elif level == "field_label":
+            # Muted light purple for field names/labels
+            return "\033[38;5;146m"
+        elif level == "field_value":
+            return "\033[38;5;250m"  # Soft white/grey for field values
+        elif level == "timestamp":
+            return "\033[38;5;108m"  # Muted green for timestamps/numbers
+        elif level == "action":
+            return "\033[38;5;180m"  # Muted yellow/gold for actions (SET/GET)
+        elif level == "error_soft":
+            return "\033[38;5;210m"  # Soft red for errors (not aggressive)
+        elif level == "separator":
+            return "\033[38;5;241m"  # Dim grey for section separators
+        # Extended color codes for new methods (keeping for backward compatibility)
+        elif level == "bright_blue":
+            return "\033[94m"  # bright blue
+        elif level == "bright_green":
+            return "\033[92m"  # bright green
+        elif level == "bright_yellow":
+            return "\033[93m"  # bright yellow
+        elif level == "bright_red":
+            return "\033[91m"  # bright red
+        elif level == "bright_magenta":
+            return "\033[95m"  # bright magenta
+        elif level == "bright_cyan":
+            return "\033[96m"  # bright cyan
+        elif level == "bright_white":
+            return "\033[97m"  # bright white
+        elif level == "black":
+            return "\033[30m"  # black
+        elif level == "gray":
+            return "\033[90m"  # gray (same as log)
+        elif level == "light_gray":
+            return "\033[37m"  # light gray (same as white)
         else:
-            return "\033[37m"  # white
+            return "\033[37m"  # white (default)
 
     def clear_color(self):
         return "\033[0m"  # reset/clear color
+
+    def supports_color(self):
+        """Check if the terminal supports ANSI color codes."""
+        import os
+        import sys
+
+        # Check if we're in a terminal
+        if not hasattr(sys.stdout, 'isatty') or not sys.stdout.isatty():
+            return False
+
+        # Check environment variables
+        if os.environ.get('NO_COLOR'):
+            return False
+
+        # Check if we're in a dumb terminal
+        term = os.environ.get('TERM', '')
+        if term == 'dumb':
+            return False
+
+        return True
+
+    def colorize(self, text, color_name):
+        """Colorize text with a specific color if supported."""
+        if not self.supports_color():
+            return text
+        return f"{self.get_color(color_name)}{text}{self.clear_color()}"
+
+    def colorize_key_value(self, key, value, key_color="white", value_color="yellow"):
+        """Colorize a key-value pair."""
+        if not self.supports_color():
+            return f"{key}: {value}"
+
+        key_colored = self.colorize(key, key_color)
+        value_colored = self.colorize(str(value), value_color)
+        return f"{key_colored}: {value_colored}"
+
+    def colorize_header(self, text):
+        """Colorize a header/section title."""
+        return self.colorize(text, "debug")  # blue
+
+    def colorize_success(self, text):
+        """Colorize success/info text."""
+        return self.colorize(text, "info")  # green
+
+    def colorize_warning(self, text):
+        """Colorize warning text."""
+        return self.colorize(text, "warning")  # yellow
+
+    def colorize_error(self, text):
+        """Colorize error text."""
+        return self.colorize(text, "error")  # red
+
+    def colorize_metadata(self, text):
+        """Colorize metadata/secondary information."""
+        return self.colorize(text, "fatal")  # cyan
+
+    def colorize_bright(self, text, color_name):
+        """Colorize text with bright colors."""
+        bright_colors = {
+            "blue": "bright_blue",
+            "green": "bright_green",
+            "yellow": "bright_yellow",
+            "red": "bright_red",
+            "magenta": "bright_magenta",
+            "cyan": "bright_cyan",
+            "white": "bright_white"
+        }
+        color = bright_colors.get(color_name, color_name)
+        return self.colorize(text, color)
+
+    def colorize_key(self, text):
+        """Colorize keys/labels."""
+        return self.colorize(text, "bright_blue")
+
+    def colorize_value(self, text):
+        """Colorize values/data."""
+        return self.colorize(text, "bright_yellow")
+
+    def colorize_string(self, text):
+        """Colorize string values."""
+        return self.colorize(text, "bright_green")
+
+    def colorize_number(self, text):
+        """Colorize numeric values."""
+        return self.colorize(text, "bright_yellow")
+
+    def colorize_boolean(self, text):
+        """Colorize boolean values."""
+        return self.colorize(text, "bright_magenta")
+
+    def colorize_null(self, text):
+        """Colorize null/empty values."""
+        return self.colorize(text, "bright_red")
+
+    def colorize_bracket(self, text):
+        """Colorize brackets/punctuation."""
+        return self.colorize(text, "bright_cyan")
+
+    def colorize_section_title(self, text):
+        """Colorize main section titles with soft blue/cyan."""
+        return self.colorize(text, "section_title")
+
+    def colorize_field_label(self, text):
+        """Colorize field names/labels with muted light purple."""
+        return self.colorize(text, "field_label")
+
+    def colorize_field_value(self, text):
+        """Colorize field values with soft white/grey."""
+        return self.colorize(text, "field_value")
+
+    def colorize_timestamp(self, text):
+        """Colorize timestamps/numbers with muted green."""
+        return self.colorize(text, "timestamp")
+
+    def colorize_action(self, text):
+        """Colorize actions (SET/GET) with muted yellow/gold."""
+        return self.colorize(text, "action")
+
+    def colorize_error_soft(self, text):
+        """Colorize errors with soft red (not aggressive)."""
+        return self.colorize(text, "error_soft")
+
+    def colorize_separator(self, text):
+        """Colorize section separators with dim grey."""
+        return self.colorize(text, "separator")
 
     def info(self, message):
         color = self.get_color("info")

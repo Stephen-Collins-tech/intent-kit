@@ -28,7 +28,10 @@ class ClassifierNode(TreeNode):
     def execute(self, user_input: str, context: Optional[IntentContext] = None) -> ExecutionResult:
         context_dict = None
         if context:
-            context_dict = {key: context.get(key) for key in context.keys()}
+            # Only read context fields that are actually needed by the classifier
+            # For now, we'll pass an empty dict since most classifiers don't need context
+            # In the future, we could add context_inputs to ClassifierNode
+            context_dict = {}
         chosen = self.classifier(user_input, self.children, context_dict)
         if not chosen:
             self.logger.error(

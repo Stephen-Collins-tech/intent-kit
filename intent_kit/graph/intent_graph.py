@@ -6,6 +6,7 @@ routing to root nodes, and result aggregation.
 """
 
 from typing import Dict, Any, Optional, Callable, List
+from datetime import datetime
 from intent_kit.utils.logger import Logger
 from intent_kit.context import IntentContext
 from intent_kit.splitters import rule_splitter
@@ -41,7 +42,7 @@ class IntentGraph:
     Trees emerge naturally from the parent-child relationships between nodes.
     """
 
-    def __init__(self, root_nodes: Optional[List[TreeNode]] = None, splitter: Optional[SplitterFunction] = None, visualize: bool = False, llm_config: Optional[dict] = None):
+    def __init__(self, root_nodes: Optional[List[TreeNode]] = None, splitter: Optional[SplitterFunction] = None, visualize: bool = False, llm_config: Optional[dict] = None, debug_context: bool = False, context_trace: bool = False):
         """
         Initialize the IntentGraph with root nodes.
 
@@ -50,6 +51,8 @@ class IntentGraph:
             splitter: Function to use for splitting intents (default: pass-through splitter)
             visualize: If True, render the final output to an interactive graph HTML file
             llm_config: LLM configuration for chunk classification (optional)
+            debug_context: If True, enable context debugging and state tracking
+            context_trace: If True, enable detailed context tracing with timestamps
         """
         self.root_nodes: List[TreeNode] = root_nodes or []
 
@@ -65,6 +68,8 @@ class IntentGraph:
         self.logger = Logger(__name__)
         self.visualize = visualize
         self.llm_config = llm_config
+        self.debug_context = debug_context
+        self.context_trace = context_trace
 
     def add_root_node(self, root_node: TreeNode, validate: bool = True) -> None:
         """
@@ -240,7 +245,7 @@ class IntentGraph:
                 f"No specific match for chunk '{chunk}', using first root node '{self.root_nodes[0].name}' as fallback")
         return self.root_nodes[0] if self.root_nodes else None
 
-    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False, **splitter_kwargs) -> ExecutionResult:
+    def route(self, user_input: str, context: Optional[IntentContext] = None, debug: bool = False, debug_context: Optional[bool] = None, context_trace: Optional[bool] = None, **splitter_kwargs) -> ExecutionResult:
         """
         Route user input through the graph with optional context support.
 
@@ -248,15 +253,25 @@ class IntentGraph:
             user_input: The input string to process
             context: Optional context object for state sharing
             debug: Whether to print debug information
+            debug_context: Override graph-level debug_context setting
+            context_trace: Override graph-level context_trace setting
             **splitter_kwargs: Additional arguments to pass to the splitter
 
         Returns:
             ExecutionResult containing aggregated results and errors from all matched taxonomies
         """
+        # Use method parameters if provided, otherwise use graph-level settings
+        debug_context_enabled = debug_context if debug_context is not None else self.debug_context
+        context_trace_enabled = context_trace if context_trace is not None else self.context_trace
+
         if debug:
             self.logger.info(f"Processing input: {user_input}")
             if context:
                 self.logger.info(f"Using context: {context}")
+            if debug_context_enabled:
+                self.logger.info("Context debugging enabled")
+            if context_trace_enabled:
+                self.logger.info("Context tracing enabled")
 
         # Split the input into chunks
         try:
@@ -374,7 +389,21 @@ class IntentGraph:
                             f"No root node found for chunk: '{chunk_text}'")
                     continue
                 try:
+                    # Context debugging: capture state before execution
+                    context_state_before = None
+                    if debug_context_enabled and context:
+                        context_state_before = self._capture_context_state(
+                            context, f"before_{root_node.name}")
+
                     result = root_node.execute(chunk_text, context=context)
+
+                    # Context debugging: capture state after execution
+                    if debug_context_enabled and context:
+                        context_state_after = self._capture_context_state(
+                            context, f"after_{root_node.name}")
+                        self._log_context_changes(
+                            context_state_before, context_state_after, root_node.name, debug, context_trace_enabled)
+
                     if debug:
                         self.logger.info(
                             f"Root node '{root_node.name}' result: {result}")
@@ -694,3 +723,114 @@ class IntentGraph:
             paths.extend(child_paths)
 
         return paths
+
+    def _capture_context_state(self, context: IntentContext, label: str) -> Dict[str, Any]:
+        """
+        Capture the current state of the context for debugging without adding to history.
+
+        Args:
+            context: The context to capture
+            label: Label for this state capture
+
+        Returns:
+            Dictionary containing context state
+        """
+        state = {
+            "timestamp": datetime.now().isoformat(),
+            "label": label,
+            "session_id": context.session_id,
+            "fields": {},
+            "field_count": len(context.keys()),
+            "history_count": len(context.get_history()),
+            "error_count": context.error_count()
+        }
+
+        # Capture all field values directly from internal state to avoid GET operations
+        with context._global_lock:
+            for key, field in context._fields.items():
+                with field.lock:
+                    value = field.value
+                    metadata = {
+                        "created_at": field.created_at,
+                        "last_modified": field.last_modified,
+                        "modified_by": field.modified_by,
+                        "value": field.value
+                    }
+                    state["fields"][key] = {
+                        "value": value,
+                        "metadata": metadata
+                    }
+
+        return state
+
+    def _log_context_changes(self, state_before: Optional[Dict[str, Any]], state_after: Optional[Dict[str, Any]], node_name: str, debug: bool, context_trace: bool) -> None:
+        """
+        Log context changes between before and after node execution.
+
+        Args:
+            state_before: Context state before execution
+            state_after: Context state after execution
+            node_name: Name of the node that was executed
+            debug: Whether debug logging is enabled
+            context_trace: Whether detailed context tracing is enabled
+        """
+        if not state_before or not state_after:
+            return
+
+        # Basic context change logging
+        if debug:
+            field_count_before = state_before.get("field_count", 0)
+            field_count_after = state_after.get("field_count", 0)
+
+            if field_count_after > field_count_before:
+                new_fields = set(state_after["fields"].keys(
+                )) - set(state_before["fields"].keys())
+                self.logger.info(
+                    f"Node '{node_name}' added {len(new_fields)} new context fields: {new_fields}")
+            elif field_count_after < field_count_before:
+                removed_fields = set(
+                    state_before["fields"].keys()) - set(state_after["fields"].keys())
+                self.logger.info(
+                    f"Node '{node_name}' removed {len(removed_fields)} context fields: {removed_fields}")
+
+        # Detailed context tracing
+        if context_trace:
+            self._log_detailed_context_trace(
+                state_before, state_after, node_name)
+
+    def _log_detailed_context_trace(self, state_before: Dict[str, Any], state_after: Dict[str, Any], node_name: str) -> None:
+        """
+        Log detailed context trace with field-level changes.
+
+        Args:
+            state_before: Context state before execution
+            state_after: Context state after execution
+            node_name: Name of the node that was executed
+        """
+        fields_before = state_before.get("fields", {})
+        fields_after = state_after.get("fields", {})
+
+        # Find changed fields
+        changed_fields = []
+        for key in set(fields_before.keys()) | set(fields_after.keys()):
+            value_before = fields_before.get(key, {}).get(
+                "value") if key in fields_before else None
+            value_after = fields_after.get(key, {}).get(
+                "value") if key in fields_after else None
+
+            if value_before != value_after:
+                changed_fields.append({
+                    "key": key,
+                    "before": value_before,
+                    "after": value_after,
+                    "action": "modified" if key in fields_before and key in fields_after else "added" if key in fields_after else "removed"
+                })
+
+        if changed_fields:
+            self.logger.info(f"Context trace for node '{node_name}':")
+            for change in changed_fields:
+                self.logger.info(
+                    f"  {change['action'].upper()}: {change['key']} = {change['after']} (was: {change['before']})")
+        else:
+            self.logger.info(
+                f"Context trace for node '{node_name}': No changes detected")

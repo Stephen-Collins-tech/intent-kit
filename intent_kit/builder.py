@@ -25,6 +25,8 @@ class IntentGraphBuilder:
     def __init__(self):
         self._root_node: Optional[TreeNode] = None
         self._splitter = None
+        self._debug_context = False
+        self._context_trace = False
 
     def root(self, node: TreeNode) -> 'IntentGraphBuilder':
         """Set the root node for the intent graph.
@@ -63,11 +65,42 @@ class IntentGraphBuilder:
             raise ValueError("No root node set. Call .root() before .build()")
 
         if self._splitter:
-            graph = IntentGraph(splitter=self._splitter)
+            graph = IntentGraph(
+                splitter=self._splitter,
+                debug_context=self._debug_context,
+                context_trace=self._context_trace
+            )
         else:
-            graph = IntentGraph()
+            graph = IntentGraph(
+                debug_context=self._debug_context,
+                context_trace=self._context_trace
+            )
         graph.add_root_node(self._root_node)
         return graph
+
+    def debug_context(self, enabled: bool = True) -> 'IntentGraphBuilder':
+        """Enable context debugging for the intent graph.
+
+        Args:
+            enabled: Whether to enable context debugging
+
+        Returns:
+            Self for method chaining
+        """
+        self._debug_context = enabled
+        return self
+
+    def context_trace(self, enabled: bool = True) -> 'IntentGraphBuilder':
+        """Enable detailed context tracing for the intent graph.
+
+        Args:
+            enabled: Whether to enable context tracing
+
+        Returns:
+            Self for method chaining
+        """
+        self._context_trace = enabled
+        return self
 
 
 def handler(

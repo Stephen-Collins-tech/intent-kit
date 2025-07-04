@@ -4,6 +4,13 @@
 
 This document covers the open-source core engine, developer APIs, intent classification, classifier plug-ins, param extraction, reliability, and core CLI demos.
 
+### **Current API Status**
+- ✅ **IntentGraphBuilder API**: Fluent interface for building intent graphs
+- ✅ **Simplified Handler Creation**: `handler()` function with automatic argument extraction
+- ✅ **LLM Classifier Helper**: `llm_classifier()` function with auto-wired descriptions
+- ✅ **Context Integration**: All demos use IntentContext for state management
+- ✅ **Multi-Intent Demo**: Uses LLM-powered splitting for intelligent intent handling
+
 ---
 
 ## **Core Engine (OSS)**
@@ -63,6 +70,32 @@ This document covers the open-source core engine, developer APIs, intent classif
 
 ---
 
+## **Developer Experience (DX)**
+
+### **6. IntentGraphBuilder & Simplified API**
+
+* [x] **IntentGraphBuilder Class** - Fluent interface for building intent graphs
+* [x] **handler() Function** - Simplified handler creation with automatic argument extraction
+* [x] **llm_classifier() Function** - Simplified LLM classifier creation with auto-wired descriptions
+* [x] **llm_splitter_node() Function** - Simplified splitter node creation
+* [x] **rule_splitter_node() Function** - Simplified rule-based splitter creation
+* [x] **Auto-Description Wiring** - Automatic generation of node descriptions for classifiers
+* [x] **Integrated LLM Config** - Seamless LLM configuration integration
+
+**API Examples:**
+```python
+# Create handlers with automatic argument extraction
+handler = handler(name="greet", handler_func=greet_func, param_schema={"name": str}, llm_config=LLM_CONFIG)
+
+# Create LLM classifier with auto-wired descriptions
+classifier = llm_classifier(name="root", children=handlers, llm_config=LLM_CONFIG)
+
+# Build intent graph with fluent interface
+graph = IntentGraphBuilder().root(classifier).splitter(llm_splitter).build()
+```
+
+---
+
 ## **Reliability, Observability, Audit**
 
 * [x] Structured error reporting and logging.
@@ -70,11 +103,6 @@ This document covers the open-source core engine, developer APIs, intent classif
 * [x] Surface confidence/errors in API responses.
 * [x] Robust error handling with no unhandled exceptions.
 * [x] Interactive execution path visualization.
-
----
-
-## **Developer Experience (DX)**
-
 * [x] Minimal API for declaring intent trees.
 * [x] Document core APIs, cookbook, patterns.
 * [x] Comprehensive unit/integration tests.
@@ -97,6 +125,7 @@ This document covers the open-source core engine, developer APIs, intent classif
 * [x] **context_demo.py** - Complete context-aware workflow example
 * [x] **ollama_demo.py** - Local Ollama models for offline processing
 * [x] **error_demo.py** - Error handling and debugging features
+* [x] **multi_intent_demo.py** - LLM-powered multi-intent handling
 * [x] All demos documented, runnable from CLI.
 * [x] Comprehensive examples with real LLM integration.
 
@@ -139,7 +168,6 @@ This section tracks requirements and implementation progress for context-driven 
 > **Implementation Notes:**
 > - ✅ **IntentContext Class**: Thread-safe context with field-level locking, complete audit trail, and session isolation
 > - ✅ **Context Dependencies**: Declarative system for specifying what fields intents read/write
-> - ✅ **Backward Compatibility**: Existing handlers work without modification, context is optional
 > - ✅ **Context as Final Parameter**: All handlers receive context as the final parameter for consistency
 > - ✅ **Enhanced HandlerNode**: Supports context_inputs and context_outputs declarations
 > - ✅ **Updated IntentGraph**: Passes context through all execution paths with fallback support
@@ -214,6 +242,7 @@ This section tracks requirements and implementation progress for context-driven 
 - ✅ Graceful fallback from LLM to rule-based splitting
 - ✅ Comprehensive documentation with examples as focal point
 - ✅ Interactive visualization for debugging and analysis
+- ✅ **LLM-Powered Multi-Intent Demo**: Updated `multi_intent_demo.py` with intelligent splitting
 
 ---
 
@@ -230,9 +259,9 @@ This section tracks requirements and implementation progress for context-driven 
 - [ ] **Service Integration Tests**: AI service connectivity tests
 
 ### **Test Statistics:**
-- **Total Python Files**: 33
-- **Test Files**: 4
-- **Test Coverage**: ~12% (needs improvement)
+- **Total Python Files**: 34
+- **Test Files**: 6
+- **Test Coverage**: ~18% (needs improvement)
 
 ---
 
@@ -241,6 +270,126 @@ This section tracks requirements and implementation progress for context-driven 
 * [x] **Splitter interface**: Pluggable (function-based, not class-based or registry-based).
 * [ ] **Context-aware splitting** (user/session history).
 * [ ] **Async execution** (for parallel intent tree invocation).
+
+---
+
+## **Remediation Strategy Support**
+
+### **1. Node-Level Remediation System**
+
+* [ ] **Remediation Strategy Registry**
+  - Implement a pluggable remediation registry system
+  - Support both string IDs and custom callable functions
+  - Built-in strategies: `"retry_on_fail"`, `"fallback_to_another_node"`, `"self_reflect"`, `"consensus_vote"`
+
+* [ ] **API Integration**
+  - Add optional `remediation_strategies` parameter to `handler()` function
+  - Add optional `remediation_strategies` parameter to `llm_classifier()` function
+  - Support list of strategies evaluated in order on node execution failure
+
+* [ ] **Built-in Remediation Strategies**
+  - `"retry_on_fail"`: Simple retry with same parameters (max 3 attempts)
+  - `"fallback_to_another_node"`: Route to specified fallback handler
+  - `"self_reflect"`: LLM critiques its own output and retries
+  - `"consensus_vote"`: Ensemble voting among multiple LLM approaches
+  - `"retry_with_alternate_prompt"`: Retry with modified prompt template
+
+* [ ] **Execution Integration**
+  - Update node execution logic to invoke remediation strategies on failure
+  - Log/escalate if all strategies fail
+  - Maintain execution result format consistency
+
+### **2. Graph-Level Remediation (Future)**
+
+* [ ] **Graph-wide remediation strategies**
+* [ ] **Cross-node fallback mechanisms**
+* [ ] **Global error recovery policies**
+
+---
+
+## **Context Debugging and Dependency Mapping**
+
+### **3. Context Debugging Mode** ✅
+
+* [x] **Debug Context Flag**
+  - Add `debug_context` parameter to IntentGraph execution
+  - Add `context_trace` parameter for detailed tracing
+  - Opt-in feature, defaults to current behavior
+
+* [x] **Context State Collection**
+  - Collect context state after each node execution
+  - Track context mutations and field access patterns
+  - Timestamp all context operations for debugging
+
+* [x] **Debug Output Formats**
+  - Console/log output with timestamps and node names
+  - JSON structured output for programmatic analysis
+  - Configurable verbosity levels (basic, detailed, verbose)
+
+### **4. Dependency Mapping and Visualization**
+
+* [ ] **Enhanced Dependency Tracking**
+  - Leverage existing `context_inputs` and `context_outputs` parameters
+  - Track full dependency chain (which node sets what, which node consumes)
+  - Build dependency graph for visualization
+
+* [ ] **Dependency Analysis Tools**
+  - Utility to traverse graph and output dependency map
+  - Format: `"node_name" → required context keys (and where they are set)`
+  - Highlight missing/overwritten context values
+  - Detect dependency mismatches and cycles
+
+* [ ] **Visualization Enhancements**
+  - Extend existing HTML visualization to show context flow
+  - Color-code nodes by context dependencies
+  - Show context state changes in execution path
+
+### **5. Context Debugging Utilities** ✅
+
+* [x] **Context Inspection Functions**
+  - `get_context_dependencies(graph)` - Analyze full dependency map
+  - `validate_context_flow(graph, context)` - Check for missing dependencies
+  - `trace_context_execution(graph, input, context)` - Detailed execution trace
+
+* [x] **Debug Logging Integration**
+  - Integrate with existing logger system
+  - Context-aware log levels and filtering
+  - Export context traces for external analysis
+
+---
+
+## **Documentation and Examples**
+
+### **6. Remediation Strategy Documentation**
+
+* [ ] **API Documentation**
+  - Document `remediation_strategies` parameter usage
+  - Provide examples for each built-in strategy
+  - Show custom remediation strategy implementation
+
+* [ ] **Remediation Strategy Examples**
+  - Create `examples/remediation_demo.py` with comprehensive examples
+  - Show retry strategies, fallback mechanisms, and self-reflection
+  - Demonstrate error recovery patterns
+
+### **7. Context Debugging Documentation** ✅
+
+* [x] **Debug Mode Documentation**
+  - Document `debug_context` and `context_trace` parameters
+  - Show different output formats and their use cases
+  - Provide debugging workflow examples
+
+* [x] **Dependency Mapping Examples**
+  - Create `examples/context_debug_demo.py` with dependency analysis
+  - Show how to use dependency mapping tools
+  - Demonstrate context flow visualization
+
+### **8. Integration Examples**
+
+* [ ] **Combined Features Demo**
+  - Create `examples/advanced_demo.py` showing remediation + debugging
+  - Demonstrate real-world error recovery scenarios
+  - Show how debugging helps with remediation strategy development
 
 ---
 
@@ -277,4 +426,31 @@ This section tracks requirements and implementation progress for context-driven 
 * Focus on improving test coverage and documentation
 * Implement missing classifier types (regex, fuzzy, ensemble, etc.)
 * Add async support for better performance
-* Enhance context debugging and tracing capabilities 
+* Enhance context debugging and tracing capabilities
+
+---
+
+## **Implementation Priority**
+
+### **Phase 1: Context Debugging (Immediate)** ✅
+- ✅ **Context Debugging Mode**: Add `debug_context` and `context_trace` parameters
+- ✅ **Dependency Mapping**: Leverage existing `context_inputs`/`context_outputs` for analysis
+- ✅ **Debug Output Formats**: Console/log + JSON structured output
+- ✅ **Documentation**: Update docs and create `context_debug_demo.py`
+
+### **Phase 2: Basic Remediation (Next)**
+- **Remediation Registry**: Pluggable system with string IDs and callables
+- **API Integration**: Add `remediation_strategies` to `handler()` and `llm_classifier()`
+- **Built-in Strategies**: `"retry_on_fail"` and `"fallback_to_another_node"`
+- **Execution Integration**: Update node execution logic for remediation
+
+### **Phase 3: Advanced Features (Future)**
+- **Advanced Remediation**: `"self_reflect"`, `"consensus_vote"`, `"retry_with_alternate_prompt"`
+- **Graph-Level Remediation**: Cross-node fallback mechanisms
+- **Visualization Enhancements**: HTML context flow visualization
+- **Advanced Debugging**: Custom remediation/debug hooks
+
+### **Backward Compatibility**
+- All new features are opt-in, defaulting to current behavior
+- No breaking changes to existing APIs or workflows
+- Gradual migration path for existing code
