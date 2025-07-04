@@ -1,1 +1,7 @@
-THIS SHOULD BE A LINTER ERROR
+tests:
+  - input: "hello"
+    expected: "HELLO"
+  - input: "OpenAI"
+    expected: "OPENAI"
+  - input: "123abc"
+    expected: "123ABC"
