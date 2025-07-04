@@ -1,1 +1,3 @@
-THIS SHOULD BE A LINTER ERROR
+pyyaml
+tqdm
+pandas

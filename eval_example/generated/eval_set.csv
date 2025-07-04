@@ -1,0 +1,6 @@
+id,input,expected
+1,How do I close my account?,"To close your account, go to Settings > Account and select close."
+2,How do I delete my account?,"To delete your account, go to Settings > Account and select delete."
+3,How do I cancel my account?,"To cancel your account, go to Settings > Account and select cancel."
+4,I forgot my password. What do I do?,You can reset your password by clicking 'Forgot password' on the sign-in page.
+5,I forgot my PIN. What do I do?,You can reset your PIN by clicking 'Forgot PIN' on the sign-in page.
