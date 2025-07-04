@@ -14,10 +14,13 @@ A Python library for building hierarchical intent classification and execution s
 * **Error Handling**: Comprehensive error handling with detailed logging and execution tracing.
 * **Type Safety**: Full type hints and validation throughout the system.
 * **Interactive Visualization**: Generate interactive HTML graphs of execution paths (optional).
+* **Debug Output**: JSON and console output formats for debugging.
 
 ---
 
 ## Core Thesis
+
+**intent-kit is a universal intent framework with zero core dependencies that works with any classification method.**
 
 **intent-kit is built on the principle that the developer is responsible for defining the complete set of capabilities, constraints, and dependencies within their workflow domain.**
 
@@ -36,14 +39,100 @@ This explicitness is *required* for:
 * Auditability and testability (every workflow is analyzable and visualizable)
 * Business reliability (no "unknown unknowns")
 
-If you want deterministic, composable, and debuggable AI-assisted automation—where you, the developer, define and constrain the domain—**intent-kit is for you**.
+**Universal Framework Benefits:**
+* **Zero Core Dependencies**: Works anywhere with just Python standard library
+* **Any Classification Method**: Rule-based, ML models, external APIs, or LLMs
+* **Optional AI Enhancement**: Add AI capabilities when needed
+* **Works Everywhere**: From embedded systems to enterprise applications
+
+If you want deterministic, composable, and debuggable intent classification—where you, the developer, define and constrain the domain—**intent-kit is for you**.
+
+---
+
+## Universal Framework Approach
+
+intent-kit is designed as a **universal intent framework** that works with any classification method:
+
+### **Start Simple (Zero Dependencies)**
+```python
+from intent_kit import create_intent_handler, keyword_classifier, ClassifierNode
+
+# Pure rule-based classification - no external dependencies
+intent_handlers = [
+    create_intent_handler(
+        name="greet",
+        description="Greet user",
+        handler_func=lambda name: f"Hello {name}!",
+        param_schema={"name": str}
+        # No llm_config = uses rule-based extraction
+    )
+]
+
+classifier = ClassifierNode(
+    name="root",
+    classifier=keyword_classifier,  # Built-in rule-based classifier
+    children=intent_handlers
+)
+```
+
+### **Scale Up (Add Your Own Classification)**
+```python
+# Custom classification method
+def my_classifier(user_input: str, children: List[TreeNode]) -> Optional[TreeNode]:
+    # Your custom logic: database lookup, ML model, API call, etc.
+    intent = my_custom_classification_logic(user_input)
+    return find_handler_by_name(intent, children)
+
+classifier = ClassifierNode(
+    name="root",
+    classifier=my_classifier,
+    children=intent_handlers
+)
+```
+
+### **Go AI (Optional Enhancement)**
+```python
+# Add AI capabilities when needed
+from intent_kit import create_llm_classifier
+
+classifier = create_llm_classifier(
+    name="root",
+    children=intent_handlers,
+    llm_config=LLM_CONFIG  # Optional AI enhancement
+)
+```
+
+### **Mix & Match (Hybrid Approaches)**
+```python
+# Combine multiple classification methods
+def hybrid_classifier(user_input: str, children: List[TreeNode]) -> Optional[TreeNode]:
+    # Try rule-based first
+    result = keyword_classifier(user_input, children)
+    if result:
+        return result
+    
+    # Fall back to ML model
+    result = ml_classifier(user_input, children)
+    if result:
+        return result
+    
+    # Finally try LLM (if available)
+    return llm_classifier(user_input, children)
+```
+
+**This universal approach means intent-kit works for:**
+- **Embedded systems** (rule-based only)
+- **Enterprise applications** (database-driven classification)
+- **Web applications** (API-based classification)
+- **AI applications** (LLM-powered classification)
+- **Hybrid systems** (multiple classification methods)
 
 ---
 
 ## Installation
 
 ```bash
-# Basic installation (recommended: uv)
+# Basic installation (zero core dependencies - truly universal!)
 uv pip install intent-kit
 
 # With AI service support
@@ -51,12 +140,18 @@ uv pip install 'intent-kit[openai]'
 
 # With visualization support
 uv pip install 'intent-kit[viz]'
+
+# With all optional features
+uv pip install 'intent-kit[openai,viz]'
 ```
 
 Or, with plain pip:
 
 ```bash
+# Core framework (zero dependencies)
 pip install intent-kit
+
+# Optional features
 pip install 'intent-kit[openai]'
 pip install 'intent-kit[viz]'
 ```
@@ -70,11 +165,11 @@ pip install 'intent-kit[viz]'
 The new API provides a simplified, declarative way to build intent graphs with automatic argument extraction and LLM integration:
 
 ```python
-from intent_kit import IntentGraphBuilder, handler, llm_classifier
+from intent_kit import IntentGraphBuilder, create_intent_handler, create_llm_classifier
 from intent_kit.context import IntentContext
 
-# Create handlers with automatic argument extraction
-greet_handler = handler(
+# Create intent handlers with automatic argument extraction
+greet_handler = create_intent_handler(
     name="greet",
     description="Greet the user",
     handler_func=lambda name: f"Hello {name}!",
@@ -82,7 +177,7 @@ greet_handler = handler(
     # No llm_config = uses rule-based extraction
 )
 
-weather_handler = handler(
+weather_handler = create_intent_handler(
     name="weather",
     description="Get weather information for a location",
     handler_func=lambda location: f"The weather in {location} is sunny.",
@@ -90,7 +185,7 @@ weather_handler = handler(
 )
 
 # Create classifier with auto-wired children descriptions
-classifier = llm_classifier(
+classifier = create_llm_classifier(
     name="root",
     children=[greet_handler, weather_handler],
     llm_config=LLM_CONFIG,  # Optional: enables LLM-powered classification
@@ -714,6 +809,7 @@ intent-kit/
 │   ├── __init__.py          # Main exports
 │   ├── node.py              # Node classes (TreeNode)
 │   ├── builder.py           # Builder API utility
+│   │   └── intent_graph.py  # Main IntentGraph class
 │   ├── graph/               # IntentGraph multi-intent routing
 │   │   └── intent_graph.py  # Main IntentGraph class
 │   ├── splitters/           # Intent splitting strategies

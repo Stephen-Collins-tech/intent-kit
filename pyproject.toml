@@ -19,7 +19,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
 ]
-dependencies = []
+dependencies = [
+    # No core dependencies - truly universal framework
+]
 
 [project.optional-dependencies]
 openai = [

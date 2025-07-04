@@ -16,6 +16,7 @@ from .splitters import SplitterNode
 from .builder import IntentGraphBuilder, handler, llm_classifier, llm_splitter_node, rule_splitter_node, create_intent_graph
 from .graph import IntentGraph
 from .context import IntentContext
+from .context.debug import get_context_dependencies, validate_context_flow, trace_context_execution
 from .classifiers import keyword_classifier
 from .classifiers.llm_classifier import create_llm_classifier, create_llm_arg_extractor
 from .splitters import rule_splitter, llm_splitter
@@ -53,4 +54,9 @@ __all__ = [
     'llm_splitter_node',
     'rule_splitter_node',
     'create_intent_graph',
+
+    # Context debugging utilities
+    'get_context_dependencies',
+    'validate_context_flow',
+    'trace_context_execution',
 ]

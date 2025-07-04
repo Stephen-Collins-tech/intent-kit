@@ -16,6 +16,13 @@ A demonstration of error handling and debugging features. Shows how to handle va
 ### Context Demo (`context_demo.py`)
 A demonstration of context and dependency management. Shows how handlers can read from and write to shared context.
 
+### Context Debugging Demo (`context_debug_demo.py`)
+**NEW!** A comprehensive demonstration of the new context debugging features including:
+- `debug_context` and `context_trace` parameters
+- Dependency mapping and analysis with `get_context_dependencies()`
+- Context flow validation with `validate_context_flow()`
+- Debug output formats (console, JSON) with `trace_context_execution()`
+
 ### Ollama Demo (`ollama_demo.py`)
 A demonstration of using IntentKit with local Ollama models. Shows how to configure and use local LLM models.
 
