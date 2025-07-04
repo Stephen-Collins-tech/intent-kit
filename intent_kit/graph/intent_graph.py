@@ -339,7 +339,11 @@ class IntentGraph:
             chunk = chunks_to_process.pop(0)
 
             # Create a unique identifier for this chunk to avoid infinite loops
-            chunk_id = hash(chunk)
+            # Use a robust hashing strategy that works for both hashable (e.g. str)
+            # and unhashable (e.g. dict) chunk objects.
+            # Converting to `repr` preserves enough uniqueness while ensuring the
+            # object is hashable.
+            chunk_id = hash(repr(chunk))
             if chunk_id in processed_chunks:
                 continue  # Skip if we've already processed this exact chunk
             processed_chunks.add(chunk_id)

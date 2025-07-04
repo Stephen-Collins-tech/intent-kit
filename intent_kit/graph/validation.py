@@ -36,11 +36,11 @@ def validate_splitter_routing(graph_nodes: List[TreeNode]) -> None:
     logger.debug("Validating splitter-to-classifier routing constraints...")
 
     for node in graph_nodes:
-        if node.node_type == "splitter":
+        if node.node_type == NodeType.SPLITTER:
             logger.debug(f"Checking splitter node: {node.name}")
 
             for child in node.children:
-                if child.node_type != "classifier":
+                if child.node_type != NodeType.CLASSIFIER:
                     error_msg = (
                         f"Invalid pipeline: Splitter node '{node.name}' outputs to "
                         f"non-classifier node '{child.name}' of type '{child.node_type}'. "
