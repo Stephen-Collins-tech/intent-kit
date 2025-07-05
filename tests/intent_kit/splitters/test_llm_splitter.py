@@ -4,6 +4,7 @@ Specific tests for llm_splitter function.
 import unittest
 from unittest.mock import Mock, patch
 from intent_kit.splitters.llm_splitter import llm_splitter, _create_splitting_prompt, _parse_llm_response
+import pytest
 
 
 class TestLLMSplitterFunction(unittest.TestCase):
@@ -89,10 +90,8 @@ class TestLLMSplitterFunction(unittest.TestCase):
         self.mock_llm_client.generate.return_value = 'chunk1, chunk2'
         result = llm_splitter("travel help and account support",
                               llm_client=self.mock_llm_client)
-        # Should fallback to rule-based splitting since manual parsing also fails
-        self.assertEqual(len(result), 2)
-        self.assertEqual(result[0], "travel help")
-        self.assertEqual(result[1], "account support")
+        # Should now extract quoted/comma-separated items
+        self.assertEqual(result, ["chunk1", "chunk2"])
 
     def test_prompt_creation(self):
         """Test that the LLM prompt is created correctly."""
@@ -173,6 +172,48 @@ class TestLLMSplitterFunction(unittest.TestCase):
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], "cancel flight")
         self.assertEqual(result[1], "update email")
+
+
+def test_parse_llm_response_valid_json():
+    response = '["cancel flight", "update email"]'
+    result = _parse_llm_response(response)
+    assert result == ["cancel flight", "update email"]
+
+
+def test_parse_llm_response_malformed_json():
+    response = '[123]'
+    result = _parse_llm_response(response)
+    assert result == []
+
+
+def test_parse_llm_response_quoted_strings():
+    response = 'chunk1, "chunk2", chunk3'
+    result = _parse_llm_response(response)
+    assert result == ["chunk2"]
+
+
+def test_parse_llm_response_numbered_items():
+    response = '1. cancel flight\n2. update email'
+    result = _parse_llm_response(response)
+    assert result == ["cancel flight", "update email"]
+
+
+def test_parse_llm_response_dash_items():
+    response = '- cancel flight\n- update email'
+    result = _parse_llm_response(response)
+    assert result == ["cancel flight", "update email"]
+
+
+def test_parse_llm_response_empty():
+    response = ''
+    result = _parse_llm_response(response)
+    assert result == []
+
+
+def test_parse_llm_response_garbage():
+    response = 'nonsense text with no structure'
+    result = _parse_llm_response(response)
+    assert result == []
 
 
 if __name__ == '__main__':
