@@ -1,3 +1,4 @@
 pyyaml
 tqdm
 pandas
+pytest

@@ -1,0 +1,8 @@
+threshold: 1.0
+tests:
+  - input: "I want to book a flight to Paris"
+    expected: "book_flight"
+  - input: "Cancel my reservation"
+    expected: "cancel_reservation"
+  - input: "What's the weather like today?"
+    expected: "get_weather"
