@@ -6,6 +6,7 @@ import re
 import json
 from intent_kit.utils.logger import Logger
 from intent_kit.types import IntentChunk
+from intent_kit.utils.text_utils import extract_json_array_from_text
 
 
 def llm_splitter(user_input: str, debug: bool = False, llm_client=None) -> Sequence[IntentChunk]:
@@ -94,49 +95,21 @@ Your response:"""
 def _parse_llm_response(response: str) -> List[str]:
     """Parse the LLM response into the expected format."""
     logger = Logger(__name__)
-
     try:
-        # Try to extract JSON from the response
-        # Look for JSON array pattern
-        json_match = re.search(r'\[.*\]', response, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(0)
-            parsed = json.loads(json_str)
-
-            # Validate the format
-            if isinstance(parsed, list):
-                results = []
-                for item in parsed:
-                    if isinstance(item, str):
-                        results.append(item.strip())
-                return results
-
-        # If JSON parsing fails, try to extract manually
-        return _extract_manual_parsing(response)
-
-    except (json.JSONDecodeError, KeyError, TypeError) as e:
+        # Use the new utility to extract JSON array
+        parsed = extract_json_array_from_text(response)
+        if parsed and isinstance(parsed, list):
+            results = []
+            for item in parsed:
+                if isinstance(item, str):
+                    results.append(item.strip())
+            return results
+        # If JSON parsing fails, try manual extraction from the utility
+        manual = extract_json_array_from_text(
+            response, fallback_to_manual=True)
+        if manual:
+            return [str(item).strip() for item in manual]
+        return []
+    except Exception as e:
         logger.error(f"Failed to parse LLM response: {e}")
         return []
-
-
-def _extract_manual_parsing(response: str) -> List[str]:
-    """Fallback manual parsing when JSON parsing fails."""
-    logger = Logger(__name__)
-
-    # Try to extract quoted strings
-    quoted_strings = re.findall(r'"([^"]*)"', response)
-    if quoted_strings:
-        return [s.strip() for s in quoted_strings if s.strip()]
-
-    # Try to extract numbered items
-    numbered_items = re.findall(r'\d+\.\s*(.+)', response)
-    if numbered_items:
-        return [item.strip() for item in numbered_items if item.strip()]
-
-    # Try to extract dash-separated items
-    dash_items = re.findall(r'-\s*(.+)', response)
-    if dash_items:
-        return [item.strip() for item in dash_items if item.strip()]
-
-    logger.warning("Manual parsing failed, returning empty list")
-    return []
