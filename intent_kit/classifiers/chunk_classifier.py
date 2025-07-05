@@ -4,6 +4,7 @@ LLM-powered chunk classifier for intent chunks.
 from intent_kit.types import IntentChunk, IntentChunkClassification, IntentClassification, IntentAction, ClassifierOutput
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
+from intent_kit.utils.text_utils import extract_json_from_text, extract_key_value_pairs
 import json
 import re
 from typing import Optional
@@ -95,12 +96,9 @@ Your response:"""
 def _parse_classification_response(response: str, chunk_text: str) -> ClassifierOutput:
     """Parse the LLM response into a classification result."""
     try:
-        # Try to extract JSON from the response
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(0)
-            parsed = json.loads(json_str)
-
+        # Use the new utility to extract JSON
+        parsed = extract_json_from_text(response)
+        if parsed:
             # Validate required fields
             if all(key in parsed for key in ["classification", "action", "confidence", "reason"]):
                 return {
@@ -113,17 +111,33 @@ def _parse_classification_response(response: str, chunk_text: str) -> Classifier
                         "reason": str(parsed["reason"])
                     }
                 }
-
-                # If JSON parsing fails, try manual parsing
+        # If JSON parsing fails, try manual parsing
         return _manual_parse_classification(response, chunk_text)
-
-    except (json.JSONDecodeError, KeyError, ValueError) as e:
+    except (KeyError, ValueError) as e:
         logger.error(f"Failed to parse LLM classification response: {e}")
         return _manual_parse_classification(response, chunk_text)
 
 
 def _manual_parse_classification(response: str, chunk_text: str) -> ClassifierOutput:
     """Fallback manual parsing when JSON parsing fails."""
+    # Use the new utility to extract key-value pairs
+    pairs = extract_key_value_pairs(response)
+    classification = pairs.get("classification")
+    action = pairs.get("action")
+    confidence = pairs.get("confidence")
+    reason = pairs.get("reason")
+    intent_type = pairs.get("intent_type")
+    if classification and action and confidence and reason:
+        return {
+            "chunk_text": chunk_text,
+            "classification": IntentClassification(classification),
+            "intent_type": intent_type,
+            "action": IntentAction(action),
+            "metadata": {
+                "confidence": float(confidence),
+                "reason": str(reason)
+            }
+        }
     response_lower = response.lower()
 
     # Look for classification keywords
