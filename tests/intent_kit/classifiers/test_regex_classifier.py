@@ -33,7 +33,7 @@ class TestRegexClassifier(unittest.TestCase):
         """Input matching custom regex patterns should return the correct node."""
         chosen = regex_classifier("hi there", self.children)
         self.assertIsNotNone(chosen)
-        self.assertEqual(chosen.name, "Greet")
+        self.assertEqual(getattr(chosen, "name", None), "Greet")
 
     def test_match_with_fallback_name(self):
         """When no patterns provided, fallback to matching the node name (case-insensitive)."""
@@ -47,7 +47,7 @@ class TestRegexClassifier(unittest.TestCase):
         children = self.children + [weather_handler]
         chosen = regex_classifier("Tell me the weather please", children)
         self.assertIsNotNone(chosen)
-        self.assertEqual(chosen.name, "Weather")
+        self.assertEqual(getattr(chosen, "name", None), "Weather")
 
     def test_no_match_returns_none(self):
         chosen = regex_classifier("unrelated input", self.children)
