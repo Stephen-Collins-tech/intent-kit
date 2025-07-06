@@ -10,7 +10,7 @@ This library provides:
 """
 
 from .node import TreeNode, NodeType
-from .classifiers import ClassifierNode
+from .classifiers import ClassifierNode, regex_classifier
 from .handlers import HandlerNode
 from .splitters import SplitterNode
 from .builder import IntentGraphBuilder, handler, llm_classifier, llm_splitter_node, rule_splitter_node, create_intent_graph
@@ -59,4 +59,6 @@ __all__ = [
     'get_context_dependencies',
     'validate_context_flow',
     'trace_context_execution',
+
+    'regex_classifier',
 ]
