@@ -29,3 +29,5 @@ nav:
   - Quick Start: quickstart.md
   - API Reference:
       - intent_kit: api/intent_kit.md
+  - Examples:
+      - Calculator Bot: examples/calculator_bot.md

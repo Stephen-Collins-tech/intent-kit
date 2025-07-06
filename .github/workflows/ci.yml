@@ -25,7 +25,7 @@ jobs:
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip
-          pip install .[dev] ruff mypy build
+          pip install .[dev] ruff mypy build coverage pytest-cov
 
       - name: Lint (ruff)
         run: |
@@ -35,9 +35,9 @@ jobs:
         run: |
           mypy intent_kit tests || true  # allow gradual typing; remove '|| true' when clean
 
-      - name: Run tests
+      - name: Run tests with coverage
         run: |
-          pytest -q
+          pytest --cov=intent_kit --cov-report=xml -q
 
       - name: Build package
         run: |
@@ -49,6 +49,19 @@ jobs:
         with:
           name: intent-kit-build
           path: dist/
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+
+      - name: Upload to Codecov
+        if: secrets.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
 
   publish:
     needs: build
