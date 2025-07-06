@@ -1,0 +1,31 @@
+site_name: Intent-Kit
+repo_url: https://github.com/your-org/intent-kit
+edit_uri: blob/main/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.instant
+    - content.code.copy
+    - content.tabs.link
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+  - literate-nav
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Quick Start: quickstart.md
+  - API Reference:
+      - intent_kit: api/intent_kit.md
