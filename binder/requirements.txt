@@ -1,0 +1,8 @@
+-e .
+# Optional extras for AI backends and visualisation
+openai>=1.0.0
+anthropic>=0.54.0
+google-genai>=0.1.0
+ollama>=0.1.0
+networkx>=3.5
+pyvis>=0.3.2

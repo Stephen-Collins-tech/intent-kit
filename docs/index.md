@@ -1,4 +1,4 @@
-# Intent-Kit
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/your-org/intent-kit/main?urlpath=lab)
 
 Welcome to **Intent-Kit**, an open-source Python library for building hierarchical intent-classification and execution systems that can work with any AI backend – or with none at all.
 
