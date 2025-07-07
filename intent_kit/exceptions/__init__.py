@@ -4,18 +4,26 @@ Intent Kit Exceptions
 This module provides Node-related exception classes for the intent-kit project.
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Optional, List
 
 
 class NodeError(Exception):
     """Base exception for node-related errors."""
+
     pass
 
 
 class NodeExecutionError(NodeError):
     """Raised when a node execution fails."""
 
-    def __init__(self, node_name: str, error_message: str, params=None, node_id: Optional[str] = None, node_path: Optional[List[str]] = None):
+    def __init__(
+        self,
+        node_name: str,
+        error_message: str,
+        params=None,
+        node_id: Optional[str] = None,
+        node_path: Optional[List[str]] = None,
+    ):
         """
         Initialize the exception.
 
@@ -39,13 +47,21 @@ class NodeExecutionError(NodeError):
 
 class NodeValidationError(NodeError):
     """Base exception for node validation errors."""
+
     pass
 
 
 class NodeInputValidationError(NodeValidationError):
     """Raised when node input validation fails."""
 
-    def __init__(self, node_name: str, validation_error: str, input_data=None, node_id: Optional[str] = None, node_path: Optional[List[str]] = None):
+    def __init__(
+        self,
+        node_name: str,
+        validation_error: str,
+        input_data=None,
+        node_id: Optional[str] = None,
+        node_path: Optional[List[str]] = None,
+    ):
         """
         Initialize the exception.
 
@@ -70,7 +86,14 @@ class NodeInputValidationError(NodeValidationError):
 class NodeOutputValidationError(NodeValidationError):
     """Raised when node output validation fails."""
 
-    def __init__(self, node_name: str, validation_error: str, output_data=None, node_id: Optional[str] = None, node_path: Optional[List[str]] = None):
+    def __init__(
+        self,
+        node_name: str,
+        validation_error: str,
+        output_data=None,
+        node_id: Optional[str] = None,
+        node_path: Optional[List[str]] = None,
+    ):
         """
         Initialize the exception.
 

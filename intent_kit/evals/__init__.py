@@ -17,6 +17,7 @@ import yaml
 @dataclass
 class EvalTestCase:
     """A single test case with input, expected output, and optional context."""
+
     input: str
     expected: Any
     context: Dict[str, Any]
@@ -29,6 +30,7 @@ class EvalTestCase:
 @dataclass
 class Dataset:
     """A dataset containing test cases for evaluating a node."""
+
     name: str
     description: str
     node_type: str
@@ -43,6 +45,7 @@ class Dataset:
 @dataclass
 class EvalTestResult:
     """Result of a single test case evaluation."""
+
     input: str
     expected: Any
     actual: Any
@@ -85,11 +88,12 @@ class EvalResult:
     def print_summary(self) -> None:
         print(f"\nEvaluation Results for {self.dataset_name or 'Dataset'}:")
         print(
-            f"  Accuracy: {self.accuracy():.1%} ({self.passed_count()}/{self.total_count()})")
+            f"  Accuracy: {self.accuracy():.1%} ({self.passed_count()}/{self.total_count()})"
+        )
         print(f"  Passed: {self.passed_count()}")
         print(f"  Failed: {self.failed_count()}")
         if self.errors():
-            print(f"\nFailed Tests:")
+            print("\nFailed Tests:")
             for i, error in enumerate(self.errors()[:5]):
                 print(f"  {i+1}. Input: '{error.input}'")
                 print(f"     Expected: '{error.expected}'")
@@ -105,21 +109,25 @@ class EvalResult:
             results_dir = Path(__file__).parent / "results" / "latest"
             results_dir.mkdir(parents=True, exist_ok=True)
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            path = str(results_dir /
-                       f"{self.dataset_name}_eval_results_{timestamp}.csv")
-        with open(path, 'w', newline='', encoding='utf-8') as f:
+            path = str(
+                results_dir / f"{self.dataset_name}_eval_results_{timestamp}.csv"
+            )
+        with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow(['input', 'expected', 'actual',
-                            'passed', 'error', 'context'])
+            writer.writerow(
+                ["input", "expected", "actual", "passed", "error", "context"]
+            )
             for result in self.results:
-                writer.writerow([
-                    result.input,
-                    result.expected,
-                    result.actual,
-                    result.passed,
-                    result.error or '',
-                    str(result.context)
-                ])
+                writer.writerow(
+                    [
+                        result.input,
+                        result.expected,
+                        result.actual,
+                        result.passed,
+                        result.error or "",
+                        str(result.context),
+                    ]
+                )
         return str(path)
 
     def save_json(self, path: Optional[str] = None) -> str:
@@ -127,30 +135,32 @@ class EvalResult:
             results_dir = Path(__file__).parent / "results" / "latest"
             results_dir.mkdir(parents=True, exist_ok=True)
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            path = str(results_dir /
-                       f"{self.dataset_name}_eval_results_{timestamp}.json")
+            path = str(
+                results_dir / f"{self.dataset_name}_eval_results_{timestamp}.json"
+            )
         import json
+
         data = {
-            'dataset_name': self.dataset_name,
-            'summary': {
-                'accuracy': self.accuracy(),
-                'passed_count': self.passed_count(),
-                'failed_count': self.failed_count(),
-                'total_count': self.total_count()
+            "dataset_name": self.dataset_name,
+            "summary": {
+                "accuracy": self.accuracy(),
+                "passed_count": self.passed_count(),
+                "failed_count": self.failed_count(),
+                "total_count": self.total_count(),
             },
-            'results': [
+            "results": [
                 {
-                    'input': r.input,
-                    'expected': r.expected,
-                    'actual': r.actual,
-                    'passed': r.passed,
-                    'error': r.error,
-                    'context': r.context
+                    "input": r.input,
+                    "expected": r.expected,
+                    "actual": r.actual,
+                    "passed": r.passed,
+                    "error": r.error,
+                    "context": r.context,
                 }
                 for r in self.results
-            ]
+            ],
         }
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(data, f, indent=2)
         return str(path)
 
@@ -159,8 +169,7 @@ class EvalResult:
             reports_dir = Path(__file__).parent / "reports" / "latest"
             reports_dir.mkdir(parents=True, exist_ok=True)
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            path = str(reports_dir /
-                       f"{self.dataset_name}_eval_report_{timestamp}.md")
+            path = str(reports_dir / f"{self.dataset_name}_eval_report_{timestamp}.md")
         report = f"""# Evaluation Report: {self.dataset_name}
 
 **Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
@@ -189,7 +198,7 @@ class EvalResult:
                 if error.error:
                     report += f"- **Error:** {error.error}\n"
                 report += "\n"
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             f.write(report)
         return str(path)
 
@@ -198,37 +207,35 @@ def load_dataset(path: Union[str, Path]) -> Dataset:
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Dataset file not found: {path}")
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         data = yaml.safe_load(f)
-    if 'dataset' not in data:
+    if "dataset" not in data:
         raise ValueError(f"Dataset file missing 'dataset' section: {path}")
-    dataset_info = data['dataset']
-    required_fields = ['name', 'node_type', 'node_name']
+    dataset_info = data["dataset"]
+    required_fields = ["name", "node_type", "node_name"]
     for field in required_fields:
         if field not in dataset_info:
-            raise ValueError(
-                f"Dataset missing required field '{field}': {path}")
-    if 'test_cases' not in data:
+            raise ValueError(f"Dataset missing required field '{field}': {path}")
+    if "test_cases" not in data:
         raise ValueError(f"Dataset file missing 'test_cases' section: {path}")
     test_cases = []
-    for i, tc_data in enumerate(data['test_cases']):
-        if 'input' not in tc_data:
+    for i, tc_data in enumerate(data["test_cases"]):
+        if "input" not in tc_data:
             raise ValueError(f"Test case {i+1} missing 'input' field: {path}")
-        if 'expected' not in tc_data:
-            raise ValueError(
-                f"Test case {i+1} missing 'expected' field: {path}")
+        if "expected" not in tc_data:
+            raise ValueError(f"Test case {i+1} missing 'expected' field: {path}")
         test_case = EvalTestCase(
-            input=tc_data['input'],
-            expected=tc_data['expected'],
-            context=tc_data.get('context', {})
+            input=tc_data["input"],
+            expected=tc_data["expected"],
+            context=tc_data.get("context", {}),
         )
         test_cases.append(test_case)
     return Dataset(
-        name=dataset_info['name'],
-        description=dataset_info.get('description', ''),
-        node_type=dataset_info['node_type'],
-        node_name=dataset_info['node_name'],
-        test_cases=test_cases
+        name=dataset_info["name"],
+        description=dataset_info.get("description", ""),
+        node_type=dataset_info["node_type"],
+        node_name=dataset_info["node_name"],
+        test_cases=test_cases,
     )
 
 
@@ -245,19 +252,22 @@ def run_eval(
     dataset: Dataset,
     node: Any,
     comparator: Optional[Callable[[Any, Any], bool]] = None,
-    fail_fast: bool = False
+    fail_fast: bool = False,
 ) -> EvalResult:
     if comparator is None:
+
         def default_comparator(expected, actual):
             return expected == actual
+
         comparator = default_comparator
     results = []
     for test_case in dataset.test_cases:
         try:
             if callable(node):
                 actual = node(test_case.input, context=test_case.context)
-            elif hasattr(node, 'execute'):
+            elif hasattr(node, "execute"):
                 from intent_kit.context import IntentContext
+
                 context = IntentContext()
                 for key, value in test_case.context.items():
                     context.set(key, value, modified_by="eval")
@@ -266,15 +276,14 @@ def run_eval(
                 if not result.success and result.error:
                     raise Exception(result.error.message)
             else:
-                raise ValueError(
-                    "Node must be callable or have an .execute() method")
+                raise ValueError("Node must be callable or have an .execute() method")
             passed = comparator(test_case.expected, actual)
             result = EvalTestResult(
                 input=test_case.input,
                 expected=test_case.expected,
                 actual=actual,
                 passed=passed,
-                context=test_case.context
+                context=test_case.context,
             )
         except Exception as e:
             result = EvalTestResult(
@@ -283,7 +292,7 @@ def run_eval(
                 actual=None,
                 passed=False,
                 context=test_case.context,
-                error=str(e)
+                error=str(e),
             )
             if fail_fast:
                 results.append(result)
@@ -296,7 +305,7 @@ def run_eval_from_path(
     dataset_path: Union[str, Path],
     node: Any,
     comparator: Optional[Callable[[Any, Any], bool]] = None,
-    fail_fast: bool = False
+    fail_fast: bool = False,
 ) -> EvalResult:
     dataset = load_dataset(dataset_path)
     return run_eval(dataset, node, comparator, fail_fast)
@@ -307,7 +316,7 @@ def run_eval_from_module(
     module_name: str,
     node_name: str,
     comparator: Optional[Callable[[Any, Any], bool]] = None,
-    fail_fast: bool = False
+    fail_fast: bool = False,
 ) -> EvalResult:
     dataset = load_dataset(dataset_path)
     node = get_node_from_module(module_name, node_name)
@@ -326,5 +335,5 @@ __all__ = [
     "get_node_from_module",
     "run_eval",
     "run_eval_from_path",
-    "run_eval_from_module"
+    "run_eval_from_module",
 ]

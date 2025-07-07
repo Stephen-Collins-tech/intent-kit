@@ -1,22 +1,24 @@
 from typing import Optional, List, Dict, Any
 from intent_kit.splitters.node import SplitterNode
-from intent_kit.context import IntentContext
 
 
-def split_text_llm(user_input: str, debug: bool = False, context: Optional[Dict[str, Any]] = None) -> List[str]:
+def split_text_llm(
+    user_input: str, debug: bool = False, context: Optional[Dict[str, Any]] = None
+) -> List[str]:
     """Split user input into multiple intents using LLM."""
     from intent_kit.services.llm_factory import LLMFactory
 
     # Check for mock mode
     import os
+
     mock_mode = os.getenv("INTENT_KIT_MOCK_MODE") == "1"
 
     if mock_mode:
         # Mock responses for testing without API calls
         # Simple splitting based on common conjunctions
         import re
-        conjunctions = [" and ", " also ", " plus ",
-                        " as well as ", " furthermore "]
+
+        conjunctions = [" and ", " also ", " plus ", " as well as ", " furthermore "]
         for conj in conjunctions:
             if conj in user_input.lower():
                 parts = user_input.split(conj)
@@ -29,14 +31,9 @@ def split_text_llm(user_input: str, debug: bool = False, context: Optional[Dict[
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 
     if not api_key:
-        raise ValueError(
-            f"Environment variable {provider.upper()}_API_KEY not set")
+        raise ValueError(f"Environment variable {provider.upper()}_API_KEY not set")
 
-    llm_config = {
-        "provider": provider,
-        "model": "gpt-4.1-mini",
-        "api_key": api_key
-    }
+    llm_config = {"provider": provider, "model": "gpt-4.1-mini", "api_key": api_key}
 
     try:
         llm_client = LLMFactory.create_client(llm_config)
@@ -59,7 +56,7 @@ JSON array:"""
         import re
 
         # Extract JSON array from response
-        json_match = re.search(r'\[.*\]', response, re.DOTALL)
+        json_match = re.search(r"\[.*\]", response, re.DOTALL)
         if json_match:
             result = json.loads(json_match.group())
             if isinstance(result, list):
@@ -79,7 +76,7 @@ def create_splitter_node_llm():
         name="splitter_node_llm",
         splitter_function=split_text_llm,
         children=[],
-        description="Split complex user inputs into multiple intents using LLM"
+        description="Split complex user inputs into multiple intents using LLM",
     )
 
 
@@ -92,13 +89,8 @@ class SplitterWrapper:
         self.splitter_function = splitter_node.splitter_function
 
     def execute(self, user_input: str, context=None):
-        chunks = self.splitter_function(
-            user_input, debug=False, context=context)
-        return type('Result', (), {
-            'success': True,
-            'output': chunks,
-            'error': None
-        })()
+        chunks = self.splitter_function(user_input, debug=False, context=context)
+        return type("Result", (), {"success": True, "output": chunks, "error": None})()
 
 
 # Export the node creation function

@@ -7,7 +7,6 @@ rich, structured error information instead of simple strings.
 """
 
 from intent_kit import handler
-from intent_kit.builder import handler, llm_classifier
 from intent_kit.classifiers.keyword import keyword_classifier
 
 
@@ -20,7 +19,7 @@ def extract_args(user_input: str, context=None) -> dict:
 
     return {
         "name": words[0] if words else "",
-        "age": words[1] if len(words) > 1 else ""
+        "age": words[1] if len(words) > 1 else "",
     }
 
 
@@ -47,17 +46,18 @@ def main():
         name="Greet",
         description="Greet someone with their name and age",
         handler_func=greet_handler,
-        param_schema={"name": str, "age": int}
+        param_schema={"name": str, "age": int},
         # No llm_config = uses rule-based extraction
     )
 
     # Create a classifier node manually since we need a custom classifier
     from intent_kit.classifiers import ClassifierNode
+
     root_node = ClassifierNode(
         name="Root",
         classifier=keyword_classifier,
         children=[greet_handler_node],
-        description="Demo intent tree"
+        description="Demo intent tree",
     )
 
     # Set parent reference
@@ -65,11 +65,11 @@ def main():
 
     # Test cases that will trigger different types of errors
     test_cases = [
-        "Greet John 30",      # Success
-        "Greet",              # Validation failure (missing age)
-        "Greet John -5",      # Handler error (negative age)
-        "Greet John 200",     # Handler error (unrealistic age)
-        "Greet John abc",     # Type validation error (age not a number)
+        "Greet John 30",  # Success
+        "Greet",  # Validation failure (missing age)
+        "Greet John -5",  # Handler error (negative age)
+        "Greet John 200",  # Handler error (unrealistic age)
+        "Greet John abc",  # Type validation error (age not a number)
     ]
 
     for user_input in test_cases:
@@ -89,7 +89,6 @@ def main():
             for step in result.children_results:
                 node_name = step.node_name
                 node_type = step.node_type
-                success = step.success
 
                 if step.error:
                     # Now we have rich error information!

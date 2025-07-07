@@ -5,24 +5,28 @@ from intent_kit.context import IntentContext
 from intent_kit.node.base import TreeNode
 
 
-def extract_weather_args_llm(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def extract_weather_args_llm(
+    user_input: str, context: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     """Extract weather parameters using LLM."""
     from intent_kit.services.llm_factory import LLMFactory
 
     # Check for mock mode
     import os
+
     mock_mode = os.getenv("INTENT_KIT_MOCK_MODE") == "1"
 
     if mock_mode:
         # Mock responses for testing without API calls
         import re
+
         location_patterns = [
-            r'(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)',
-            r'(?:weather|temperature|forecast)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)',
-            r'(?:What\'s|How\'s)\s+(?:the\s+)?(?:weather|temperature)\s+(?:like\s+)?(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)',
-            r'(?:weather|temperature)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)',
-            r'(?:weather|temperature|forecast)\s+for\s+([A-Za-z\s]+?)(?:\?|$)',
-            r'(?:weather|temperature)\s+in\s+([A-Za-z\s]+?)(?:\?|$)'
+            r"(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)",
+            r"(?:weather|temperature|forecast)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)",
+            r"(?:What\'s|How\'s)\s+(?:the\s+)?(?:weather|temperature)\s+(?:like\s+)?(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)",
+            r"(?:weather|temperature)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)",
+            r"(?:weather|temperature|forecast)\s+for\s+([A-Za-z\s]+?)(?:\?|$)",
+            r"(?:weather|temperature)\s+in\s+([A-Za-z\s]+?)(?:\?|$)",
         ]
 
         location = "Unknown"
@@ -39,14 +43,9 @@ def extract_weather_args_llm(user_input: str, context: Optional[Dict[str, Any]] 
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 
     if not api_key:
-        raise ValueError(
-            f"Environment variable {provider.upper()}_API_KEY not set")
+        raise ValueError(f"Environment variable {provider.upper()}_API_KEY not set")
 
-    llm_config = {
-        "provider": provider,
-        "model": "gpt-4.1-mini",
-        "api_key": api_key
-    }
+    llm_config = {"provider": provider, "model": "gpt-4.1-mini", "api_key": api_key}
 
     try:
         llm_client = LLMFactory.create_client(llm_config)
@@ -80,7 +79,7 @@ JSON:"""
         import re
 
         # Extract JSON from response
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        json_match = re.search(r"\{.*\}", response, re.DOTALL)
         if json_match:
             result = json.loads(json_match.group())
             return {"location": result.get("location", "Unknown")}
@@ -89,13 +88,14 @@ JSON:"""
 
     # Fallback to regex extraction
     import re
+
     location_patterns = [
-        r'(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)',
-        r'(?:weather|temperature|forecast)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)',
-        r'(?:What\'s|How\'s)\s+(?:the\s+)?(?:weather|temperature)\s+(?:like\s+)?(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)',
-        r'(?:weather|temperature)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)',
-        r'(?:weather|temperature|forecast)\s+for\s+([A-Za-z\s]+?)(?:\?|$)',
-        r'(?:weather|temperature)\s+in\s+([A-Za-z\s]+?)(?:\?|$)'
+        r"(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)",
+        r"(?:weather|temperature|forecast)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)",
+        r"(?:What\'s|How\'s)\s+(?:the\s+)?(?:weather|temperature)\s+(?:like\s+)?(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)",
+        r"(?:weather|temperature)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)",
+        r"(?:weather|temperature|forecast)\s+for\s+([A-Za-z\s]+?)(?:\?|$)",
+        r"(?:weather|temperature)\s+in\s+([A-Za-z\s]+?)(?:\?|$)",
     ]
 
     location = "Unknown"
@@ -113,22 +113,26 @@ def weather_handler(location: str, context: IntentContext) -> str:
     return f"Weather in {location}: Sunny with a chance of rain"
 
 
-def extract_cancel_args_llm(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def extract_cancel_args_llm(
+    user_input: str, context: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
     """Extract cancellation parameters using LLM."""
     from intent_kit.services.llm_factory import LLMFactory
 
     # Check for mock mode
     import os
+
     mock_mode = os.getenv("INTENT_KIT_MOCK_MODE") == "1"
 
     if mock_mode:
         # Mock responses for testing without API calls
         import re
+
         cancel_patterns = [
-            r'cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)',
-            r'cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\?|$)',
-            r'(?:I\s+need\s+to\s+)?cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)',
-            r'(?:cancel|cancellation)\s+(?:of\s+)?(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)'
+            r"cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",
+            r"cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\?|$)",
+            r"(?:I\s+need\s+to\s+)?cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",
+            r"(?:cancel|cancellation)\s+(?:of\s+)?(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",
         ]
 
         item = "reservation"
@@ -145,14 +149,9 @@ def extract_cancel_args_llm(user_input: str, context: Optional[Dict[str, Any]] =
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 
     if not api_key:
-        raise ValueError(
-            f"Environment variable {provider.upper()}_API_KEY not set")
+        raise ValueError(f"Environment variable {provider.upper()}_API_KEY not set")
 
-    llm_config = {
-        "provider": provider,
-        "model": "gpt-3.5-turbo",
-        "api_key": api_key
-    }
+    llm_config = {"provider": provider, "model": "gpt-3.5-turbo", "api_key": api_key}
 
     try:
         llm_client = LLMFactory.create_client(llm_config)
@@ -186,7 +185,7 @@ JSON:"""
         import re
 
         # Extract JSON from response
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        json_match = re.search(r"\{.*\}", response, re.DOTALL)
         if json_match:
             result = json.loads(json_match.group())
             return {"item": result.get("item", "reservation")}
@@ -195,11 +194,12 @@ JSON:"""
 
     # Fallback to regex extraction
     import re
+
     cancel_patterns = [
-        r'cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)',
-        r'cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\?|$)',
-        r'(?:I\s+need\s+to\s+)?cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)',
-        r'(?:cancel|cancellation)\s+(?:of\s+)?(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)'
+        r"cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",
+        r"cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\?|$)",
+        r"(?:I\s+need\s+to\s+)?cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",
+        r"(?:cancel|cancellation)\s+(?:of\s+)?(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",
     ]
 
     item = "reservation"
@@ -223,7 +223,7 @@ weather_handler_node = HandlerNode(
     param_schema={"location": str},
     handler=weather_handler,
     arg_extractor=extract_weather_args_llm,
-    description="Get weather information for a location"
+    description="Get weather information for a location",
 )
 
 cancel_handler_node = HandlerNode(
@@ -231,16 +231,19 @@ cancel_handler_node = HandlerNode(
     param_schema={"item": str},
     handler=cancel_handler,
     arg_extractor=extract_cancel_args_llm,
-    description="Cancel reservations or bookings"
+    description="Cancel reservations or bookings",
 )
 
 
-def intent_classifier_llm(user_input: str, children: List[TreeNode], context: Optional[Dict[str, Any]] = None) -> Optional[TreeNode]:
+def intent_classifier_llm(
+    user_input: str, children: List[TreeNode], context: Optional[Dict[str, Any]] = None
+) -> Optional[TreeNode]:
     """Classify user intent using LLM."""
     from intent_kit.services.llm_factory import LLMFactory
 
     # Check for mock mode
     import os
+
     mock_mode = os.getenv("INTENT_KIT_MOCK_MODE") == "1"
 
     if mock_mode:
@@ -259,14 +262,9 @@ def intent_classifier_llm(user_input: str, children: List[TreeNode], context: Op
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 
     if not api_key:
-        raise ValueError(
-            f"Environment variable {provider.upper()}_API_KEY not set")
+        raise ValueError(f"Environment variable {provider.upper()}_API_KEY not set")
 
-    llm_config = {
-        "provider": provider,
-        "model": "gpt-3.5-turbo",
-        "api_key": api_key
-    }
+    llm_config = {"provider": provider, "model": "gpt-3.5-turbo", "api_key": api_key}
 
     try:
         llm_client = LLMFactory.create_client(llm_config)
@@ -303,18 +301,26 @@ Handler:"""
 
         # Fallback to keyword matching
         user_input_lower = user_input.lower()
-        if any(word in user_input_lower for word in ["weather", "temperature", "forecast"]):
+        if any(
+            word in user_input_lower for word in ["weather", "temperature", "forecast"]
+        ):
             return weather_handler_node
-        elif any(word in user_input_lower for word in ["cancel", "cancellation", "refund"]):
+        elif any(
+            word in user_input_lower for word in ["cancel", "cancellation", "refund"]
+        ):
             return cancel_handler_node
 
     except Exception as e:
         print(f"LLM classification failed: {e}")
         # Fallback to keyword matching
         user_input_lower = user_input.lower()
-        if any(word in user_input_lower for word in ["weather", "temperature", "forecast"]):
+        if any(
+            word in user_input_lower for word in ["weather", "temperature", "forecast"]
+        ):
             return weather_handler_node
-        elif any(word in user_input_lower for word in ["cancel", "cancellation", "refund"]):
+        elif any(
+            word in user_input_lower for word in ["cancel", "cancellation", "refund"]
+        ):
             return cancel_handler_node
 
     return None
@@ -325,5 +331,5 @@ classifier_node_llm = ClassifierNode(
     name="classifier_node_llm",
     classifier=intent_classifier_llm,
     children=[weather_handler_node, cancel_handler_node],
-    description="Route user intents to appropriate handlers using LLM classification"
+    description="Route user intents to appropriate handlers using LLM classification",
 )

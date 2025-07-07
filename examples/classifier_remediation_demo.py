@@ -15,15 +15,15 @@ from intent_kit.utils.logger import Logger
 from intent_kit.node.types import ExecutionResult, ExecutionError
 from intent_kit.handlers.remediation import (
     RemediationStrategy,
-    create_keyword_fallback_strategy,
-    register_remediation_strategy
+    register_remediation_strategy,
 )
 from intent_kit.context import IntentContext
-from intent_kit.builder import handler, llm_classifier, IntentGraphBuilder
+from intent_kit.builder import handler, IntentGraphBuilder
 import sys
 import os
 from typing import Optional, Callable, List
 from dotenv import load_dotenv
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Load environment variables
@@ -37,7 +37,7 @@ logger = Logger("classifier_remediation_demo")
 LLM_CONFIG = {
     "provider": "openai",
     "model": "gpt-4.1-mini",
-    "api_key": os.getenv("OPENAI_API_KEY")
+    "api_key": os.getenv("OPENAI_API_KEY"),
 }
 
 
@@ -48,7 +48,9 @@ def greet_handler(name: str, context: IntentContext) -> str:
     return f"Hello {name}! (Greeting #{greeting_count})"
 
 
-def calculate_handler(operation: str, a: float, b: float, context: IntentContext) -> str:
+def calculate_handler(
+    operation: str, a: float, b: float, context: IntentContext
+) -> str:
     """Simple calculation handler."""
     ops = {"add": "+", "plus": "+", "multiply": "*", "times": "*"}
     op = ops.get(operation.lower(), operation)
@@ -78,10 +80,11 @@ def help_handler(context: IntentContext) -> str:
 def create_failing_classifier():
     """Create a classifier that deliberately fails to trigger remediation."""
 
-    def failing_classifier(user_input: str, children: List, context: Optional[dict] = None):
+    def failing_classifier(
+        user_input: str, children: List, context: Optional[dict] = None
+    ):
         """A classifier that always fails to demonstrate remediation."""
-        logger.warning(
-            "FailingClassifier: Deliberately failing to trigger remediation")
+        logger.warning("FailingClassifier: Deliberately failing to trigger remediation")
         return None  # Always return None to trigger remediation
 
     return failing_classifier
@@ -99,15 +102,17 @@ def create_custom_classifier_fallback() -> RemediationStrategy:
             original_error: Optional[ExecutionError] = None,
             classifier_func: Optional[Callable] = None,
             available_children: Optional[List] = None,
-            **kwargs
+            **kwargs,
         ) -> Optional[ExecutionResult]:
             """Use a simple rule-based classifier as fallback."""
             self.logger.info(
-                f"CustomClassifierFallbackStrategy: Using rule-based classification for {node_name}")
+                f"CustomClassifierFallbackStrategy: Using rule-based classification for {node_name}"
+            )
 
             if not available_children:
                 self.logger.warning(
-                    f"CustomClassifierFallbackStrategy: No available children for {node_name}")
+                    f"CustomClassifierFallbackStrategy: No available children for {node_name}"
+                )
                 return None
 
             # Simple rule-based classification
@@ -116,10 +121,20 @@ def create_custom_classifier_fallback() -> RemediationStrategy:
             # Define simple rules
             rules = [
                 (["hello", "hi", "hey", "greet"], "greet"),
-                (["calculate", "compute", "math", "add",
-                 "multiply", "plus", "times"], "calculate"),
+                (
+                    [
+                        "calculate",
+                        "compute",
+                        "math",
+                        "add",
+                        "multiply",
+                        "plus",
+                        "times",
+                    ],
+                    "calculate",
+                ),
                 (["weather", "temperature", "forecast"], "weather"),
-                (["help", "assist", "support"], "help")
+                (["help", "assist", "support"], "help"),
             ]
 
             # Find matching rule
@@ -130,13 +145,14 @@ def create_custom_classifier_fallback() -> RemediationStrategy:
                         for child in available_children:
                             if child.name.lower() == intent_name:
                                 self.logger.info(
-                                    f"CustomClassifierFallbackStrategy: Matched '{child.name}' using keyword '{keyword}'")
+                                    f"CustomClassifierFallbackStrategy: Matched '{child.name}' using keyword '{keyword}'"
+                                )
 
                                 # Execute the chosen child
-                                child_result = child.execute(
-                                    user_input, context)
+                                child_result = child.execute(user_input, context)
 
                                 from intent_kit.node.enums import NodeType
+
                                 return ExecutionResult(
                                     success=True,
                                     node_name=node_name,
@@ -147,18 +163,23 @@ def create_custom_classifier_fallback() -> RemediationStrategy:
                                     error=None,
                                     params={
                                         "chosen_child": child.name,
-                                        "available_children": [c.name for c in available_children],
+                                        "available_children": [
+                                            c.name for c in available_children
+                                        ],
                                         "remediation_strategy": self.name,
-                                        "matched_keyword": keyword
+                                        "matched_keyword": keyword,
                                     },
-                                    children_results=[child_result]
+                                    children_results=[child_result],
                                 )
 
             self.logger.warning(
-                f"CustomClassifierFallbackStrategy: No rule match found for {node_name}")
+                f"CustomClassifierFallbackStrategy: No rule match found for {node_name}"
+            )
             return None
 
-    return CustomClassifierFallbackStrategy("custom_classifier_fallback", "Custom rule-based classifier fallback")
+    return CustomClassifierFallbackStrategy(
+        "custom_classifier_fallback", "Custom rule-based classifier fallback"
+    )
 
 
 def create_intent_graph():
@@ -167,7 +188,8 @@ def create_intent_graph():
     # Create custom classifier fallback strategy
     custom_classifier_strategy = create_custom_classifier_fallback()
     register_remediation_strategy(
-        "custom_classifier_fallback", custom_classifier_strategy)
+        "custom_classifier_fallback", custom_classifier_strategy
+    )
 
     # Create handlers
     handlers = [
@@ -178,7 +200,7 @@ def create_intent_graph():
             param_schema={"name": str},
             llm_config=LLM_CONFIG,
             context_inputs={"greeting_count"},
-            context_outputs={"greeting_count"}
+            context_outputs={"greeting_count"},
         ),
         handler(
             name="calculate",
@@ -187,7 +209,7 @@ def create_intent_graph():
             param_schema={"operation": str, "a": float, "b": float},
             llm_config=LLM_CONFIG,
             context_inputs={"calc_history"},
-            context_outputs={"calc_history"}
+            context_outputs={"calc_history"},
         ),
         handler(
             name="weather",
@@ -196,7 +218,7 @@ def create_intent_graph():
             param_schema={"location": str},
             llm_config=LLM_CONFIG,
             context_inputs={"weather_count"},
-            context_outputs={"weather_count"}
+            context_outputs={"weather_count"},
         ),
         handler(
             name="help",
@@ -205,8 +227,8 @@ def create_intent_graph():
             param_schema={},
             llm_config=LLM_CONFIG,
             context_inputs={"help_count"},
-            context_outputs={"help_count"}
-        )
+            context_outputs={"help_count"},
+        ),
     ]
 
     # Create classifier with a failing classifier to force remediation
@@ -221,8 +243,7 @@ def create_intent_graph():
         children=handlers,
         description="Main intent classifier with remediation",
         # Try keyword first, then custom
-        remediation_strategies=[
-            "keyword_fallback", "custom_classifier_fallback"]
+        remediation_strategies=["keyword_fallback", "custom_classifier_fallback"],
     )
 
     # Build and return the graph
@@ -233,7 +254,9 @@ def run_demo():
     """Run the classifier remediation demo."""
     print("🔄 Phase 2: Classifier Remediation System Demo")
     print("=" * 55)
-    print("This demo uses a deliberately failing classifier to showcase remediation strategies.")
+    print(
+        "This demo uses a deliberately failing classifier to showcase remediation strategies."
+    )
     print()
 
     # Create intent graph
@@ -270,19 +293,20 @@ def run_demo():
                 print(f"✅ Success: {result.output}")
                 if result.params and "remediation_strategy" in result.params:
                     print(
-                        f"🔄 Remediation used: {result.params['remediation_strategy']}")
+                        f"🔄 Remediation used: {result.params['remediation_strategy']}"
+                    )
                     if "confidence_score" in result.params:
                         print(
-                            f"📊 Confidence score: {result.params['confidence_score']:.2f}")
+                            f"📊 Confidence score: {result.params['confidence_score']:.2f}"
+                        )
                     if "matched_keyword" in result.params:
-                        print(
-                            f"🔍 Matched keyword: {result.params['matched_keyword']}")
+                        print(f"🔍 Matched keyword: {result.params['matched_keyword']}")
                     if "chosen_child" in result.params:
-                        print(
-                            f"🎯 Chosen child: {result.params['chosen_child']}")
+                        print(f"🎯 Chosen child: {result.params['chosen_child']}")
             else:
                 print(
-                    f"❌ Failed: {result.error.message if result.error else 'Unknown error'}")
+                    f"❌ Failed: {result.error.message if result.error else 'Unknown error'}"
+                )
 
         except Exception as e:
             print(f"💥 Exception: {type(e).__name__}: {str(e)}")

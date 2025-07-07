@@ -1,6 +1,7 @@
 """
 Core types for intent-kit package.
 """
+
 from typing import TypedDict, Optional, Dict, Any, Sequence, Union, Callable
 from enum import Enum
 
@@ -37,11 +38,8 @@ ClassifierOutput = IntentChunkClassification
 SplitterFunction = Callable[
     [str, bool],  # Required args: user_input, debug
     # Return type: sequence of strings or dicts with text and metadata
-    Sequence[IntentChunk]
+    Sequence[IntentChunk],
 ]
 
 # Classifier function type
-ClassifierFunction = Callable[
-    [IntentChunk],
-    ClassifierOutput
-]
+ClassifierFunction = Callable[[IntentChunk], ClassifierOutput]

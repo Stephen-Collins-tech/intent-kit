@@ -17,6 +17,7 @@ from intent_kit.utils.logger import Logger
 @dataclass
 class ContextField:
     """A lockable field in the context with metadata tracking."""
+
     value: Any
     lock: Lock = field(default_factory=Lock)
     last_modified: datetime = field(default_factory=datetime.now)
@@ -27,6 +28,7 @@ class ContextField:
 @dataclass
 class ContextHistoryEntry:
     """An entry in the context history log."""
+
     timestamp: datetime
     action: str  # 'set', 'get', 'delete'
     key: str
@@ -38,6 +40,7 @@ class ContextHistoryEntry:
 @dataclass
 class ContextErrorEntry:
     """An error entry in the context error log."""
+
     timestamp: datetime
     node_name: str
     user_input: str
@@ -78,7 +81,8 @@ class IntentContext:
 
         if self._debug:
             self.logger.info(
-                f"Created IntentContext with session_id: {self.session_id}")
+                f"Created IntentContext with session_id: {self.session_id}"
+            )
 
     def get(self, key: str, default: Any = None) -> Any:
         """
@@ -95,7 +99,8 @@ class IntentContext:
             if key not in self._fields:
                 if self._debug:
                     self.logger.debug(
-                        f"Key '{key}' not found, returning default: {default}")
+                        f"Key '{key}' not found, returning default: {default}"
+                    )
                 self._log_history("get", key, default, None)
                 return default
             field = self._fields[key]
@@ -132,7 +137,8 @@ class IntentContext:
                     field.modified_by = modified_by
                     if self._debug:
                         self.logger.debug(
-                            f"Updated field '{key}' from {old_value} to {value}")
+                            f"Updated field '{key}' from {old_value} to {value}"
+                        )
 
             self._log_history("set", key, value, modified_by)
 
@@ -150,8 +156,7 @@ class IntentContext:
         with self._global_lock:
             if key not in self._fields:
                 if self._debug:
-                    self.logger.debug(
-                        f"Attempted to delete non-existent key '{key}'")
+                    self.logger.debug(f"Attempted to delete non-existent key '{key}'")
                 self._log_history("delete", key, None, modified_by)
                 return False
 
@@ -184,7 +189,9 @@ class IntentContext:
         with self._global_lock:
             return set(self._fields.keys())
 
-    def get_history(self, key: Optional[str] = None, limit: Optional[int] = None) -> List[ContextHistoryEntry]:
+    def get_history(
+        self, key: Optional[str] = None, limit: Optional[int] = None
+    ) -> List[ContextHistoryEntry]:
         """
         Get the history of context operations.
 
@@ -198,7 +205,8 @@ class IntentContext:
         with self._global_lock:
             if key:
                 filtered_history = [
-                    entry for entry in self._history if entry.key == key]
+                    entry for entry in self._history if entry.key == key
+                ]
             else:
                 filtered_history = self._history.copy()
 
@@ -226,7 +234,7 @@ class IntentContext:
                 "created_at": field.created_at,
                 "last_modified": field.last_modified,
                 "modified_by": field.modified_by,
-                "value": field.value
+                "value": field.value,
             }
 
     def clear(self, modified_by: Optional[str] = None) -> None:
@@ -243,7 +251,9 @@ class IntentContext:
                 self.logger.debug(f"Cleared all fields: {keys}")
             self._log_history("clear", "ALL", None, modified_by)
 
-    def _log_history(self, action: str, key: str, value: Any, modified_by: Optional[str]) -> None:
+    def _log_history(
+        self, action: str, key: str, value: Any, modified_by: Optional[str]
+    ) -> None:
         """Log an operation to the history."""
         entry = ContextHistoryEntry(
             timestamp=datetime.now(),
@@ -251,12 +261,18 @@ class IntentContext:
             key=key,
             value=value,
             modified_by=modified_by,
-            session_id=self.session_id
+            session_id=self.session_id,
         )
         self._history.append(entry)
 
-    def add_error(self, node_name: str, user_input: str,
-                  error_message: str, error_type: str, params: Optional[Dict[str, Any]] = None) -> None:
+    def add_error(
+        self,
+        node_name: str,
+        user_input: str,
+        error_message: str,
+        error_type: str,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """
         Add an error to the context error log.
 
@@ -276,16 +292,18 @@ class IntentContext:
                 error_type=error_type,
                 stack_trace=traceback.format_exc(),
                 params=params,
-                session_id=self.session_id
+                session_id=self.session_id,
             )
             self._errors.append(error_entry)
 
             if self._debug:
                 self.logger.error(
-                    f"Added error to context: {node_name}: {error_message}")
+                    f"Added error to context: {node_name}: {error_message}"
+                )
 
-    def get_errors(self, node_name: Optional[str] = None,
-                   limit: Optional[int] = None) -> List[ContextErrorEntry]:
+    def get_errors(
+        self, node_name: Optional[str] = None, limit: Optional[int] = None
+    ) -> List[ContextErrorEntry]:
         """
         Get errors from the context error log.
 
@@ -301,7 +319,8 @@ class IntentContext:
 
             if node_name:
                 filtered_errors = [
-                    error for error in filtered_errors if error.node_name == node_name]
+                    error for error in filtered_errors if error.node_name == node_name
+                ]
 
             if limit:
                 filtered_errors = filtered_errors[-limit:]

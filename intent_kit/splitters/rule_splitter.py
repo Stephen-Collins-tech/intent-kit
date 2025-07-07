@@ -1,7 +1,8 @@
 """
 Rule-based intent splitter for IntentGraph.
 """
-from typing import Dict, List, Optional, Any
+
+from typing import List
 import re
 from intent_kit.utils.logger import Logger
 from intent_kit.types import IntentChunk
@@ -26,12 +27,10 @@ def rule_splitter(user_input: str, debug: bool = False) -> List[IntentChunk]:
     # Separate word and punctuation conjunctions for regex
     word_conjunctions = ["and", "also", "plus", "as well as"]
     punct_conjunctions = [",", ";"]
-    conjunctions = word_conjunctions + punct_conjunctions
 
     # Build regex pattern for conjunctions
     # For word conjunctions, use word boundaries
-    word_pattern = r"|".join(
-        [fr"\b{re.escape(conj)}\b" for conj in word_conjunctions])
+    word_pattern = r"|".join([rf"\b{re.escape(conj)}\b" for conj in word_conjunctions])
     # For punctuation, just escape them
     punct_pattern = r"|".join([re.escape(conj) for conj in punct_conjunctions])
 

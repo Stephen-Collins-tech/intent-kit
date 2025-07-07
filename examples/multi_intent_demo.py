@@ -17,7 +17,7 @@ load_dotenv()
 LLM_CONFIG = {
     "provider": "openrouter",
     "api_key": os.getenv("OPENROUTER_API_KEY"),
-    "model": "meta-llama/llama-4-maverick-17b-128e-instruct"
+    "model": "meta-llama/llama-4-maverick-17b-128e-instruct",
 }
 
 # Configure your intent graph here
@@ -36,7 +36,7 @@ def _calculate_handler(operation: str, a: float, b: float) -> str:
         "multiplied": "*",
         "divided": "/",
         "divide": "/",
-        "over": "/"
+        "over": "/",
     }
 
     # Get the mathematical operator
@@ -59,29 +59,30 @@ def create_intent_graph():
             description="Greet the user",
             handler_func=lambda name, **kwargs: f"Hello {name}!",
             param_schema={"name": str},
-            llm_config=LLM_CONFIG
+            llm_config=LLM_CONFIG,
         ),
         handler(
             name="calculate",
             description="Perform a calculation",
             handler_func=lambda operation, a, b, **kwargs: _calculate_handler(
-                operation, a, b),
+                operation, a, b
+            ),
             param_schema={"operation": str, "a": float, "b": float},
-            llm_config=LLM_CONFIG
+            llm_config=LLM_CONFIG,
         ),
         handler(
             name="weather",
             description="Get weather information",
             handler_func=lambda location, **kwargs: f"Weather in {location}: 72°F, Sunny (simulated)",
             param_schema={"location": str},
-            llm_config=LLM_CONFIG
+            llm_config=LLM_CONFIG,
         ),
         handler(
             name="help",
             description="Get help",
             handler_func=lambda **kwargs: "I can help with greetings, calculations, and weather!",
-            param_schema={}
-        )
+            param_schema={},
+        ),
     ]
 
     # Create classifier
@@ -89,7 +90,7 @@ def create_intent_graph():
         name="root",
         children=handlers,
         llm_config=LLM_CONFIG,
-        description="Main intent classifier"
+        description="Main intent classifier",
     )
 
     # Build and return the graph with LLM-powered splitter for intelligent multi-intent handling
@@ -108,7 +109,7 @@ if __name__ == "__main__":
         "Hello, my name is Alice",
         "What's 15 plus 7?",
         "Weather in San Francisco",
-        "Help me"
+        "Help me",
     ]
 
     print("=== Single Intent Tests ===")
@@ -126,7 +127,7 @@ if __name__ == "__main__":
         "Hello Alice and what's the weather in San Francisco",
         "Calculate 5 plus 3 and also greet Bob",
         "Help me and get weather for New York",
-        "Greet John, calculate 10 times 2, and weather in London"
+        "Greet John, calculate 10 times 2, and weather in London",
     ]
 
     print("\n=== Multi-Intent Tests ===")

@@ -7,11 +7,12 @@ from .classifiers.llm_classifier import (
     create_llm_classifier,
     create_llm_arg_extractor,
     get_default_classification_prompt,
-    get_default_extraction_prompt
+    get_default_extraction_prompt,
 )
 from .types import IntentChunk
 from .graph import IntentGraph
 from .utils.logger import Logger
+
 # Import splitter functions for builder methods
 from .splitters.functions import rule_splitter, llm_splitter
 from .handlers.remediation import RemediationStrategy
@@ -29,7 +30,7 @@ class IntentGraphBuilder:
         self._debug_context = False
         self._context_trace = False
 
-    def root(self, node: TreeNode) -> 'IntentGraphBuilder':
+    def root(self, node: TreeNode) -> "IntentGraphBuilder":
         """Set the root node for the intent graph.
 
         Args:
@@ -41,7 +42,7 @@ class IntentGraphBuilder:
         self._root_node = node
         return self
 
-    def splitter(self, splitter_func) -> 'IntentGraphBuilder':
+    def splitter(self, splitter_func) -> "IntentGraphBuilder":
         """Set a custom splitter function for the intent graph.
 
         Args:
@@ -69,17 +70,16 @@ class IntentGraphBuilder:
             graph = IntentGraph(
                 splitter=self._splitter,
                 debug_context=self._debug_context,
-                context_trace=self._context_trace
+                context_trace=self._context_trace,
             )
         else:
             graph = IntentGraph(
-                debug_context=self._debug_context,
-                context_trace=self._context_trace
+                debug_context=self._debug_context, context_trace=self._context_trace
             )
         graph.add_root_node(self._root_node)
         return graph
 
-    def debug_context(self, enabled: bool = True) -> 'IntentGraphBuilder':
+    def debug_context(self, enabled: bool = True) -> "IntentGraphBuilder":
         """Enable context debugging for the intent graph.
 
         Args:
@@ -91,7 +91,7 @@ class IntentGraphBuilder:
         self._debug_context = enabled
         return self
 
-    def context_trace(self, enabled: bool = True) -> 'IntentGraphBuilder':
+    def context_trace(self, enabled: bool = True) -> "IntentGraphBuilder":
         """Enable detailed context tracing for the intent graph.
 
         Args:
@@ -116,8 +116,7 @@ def handler(
     context_outputs: Optional[Set[str]] = None,
     input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
     output_validator: Optional[Callable[[Any], bool]] = None,
-    remediation_strategies: Optional[List[Union[str,
-                                                "RemediationStrategy"]]] = None
+    remediation_strategies: Optional[List[Union[str, "RemediationStrategy"]]] = None,
 ) -> TreeNode:
     """Create a handler node with automatic argument extraction.
 
@@ -157,15 +156,17 @@ def handler(
         )
     else:
         # Use simple rule-based extraction as fallback
-        def simple_arg_extractor(text: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        def simple_arg_extractor(
+            text: str, context: Optional[Dict[str, Any]] = None
+        ) -> Dict[str, Any]:
             """Simple rule-based argument extractor."""
             extracted = {}
 
             # For each parameter, try to extract it using simple rules
             for param_name, param_type in param_schema.items():
-                if param_type == str:
+                if isinstance(param_type, type) and param_type is str:
                     # For string parameters, try to find relevant text
-                    if param_name.lower() in ['name', 'location', 'operation']:
+                    if param_name.lower() in ["name", "location", "operation"]:
                         # Extract the last word as a simple heuristic
                         words = text.split()
                         if words:
@@ -173,35 +174,36 @@ def handler(
                     else:
                         # Default: use the entire text for string params
                         extracted[param_name] = text.strip()
-                elif param_type in [int, float]:
+                elif isinstance(param_type, type) and param_type in [int, float]:
                     # For numeric parameters, try to find numbers in text
                     import re
-                    numbers = re.findall(r'\d+(?:\.\d+)?', text)
+
+                    numbers = re.findall(r"\d+(?:\.\d+)?", text)
                     if numbers:
                         try:
                             extracted[param_name] = param_type(numbers[0])
                         except (ValueError, IndexError):
                             # Use default values for common parameters
-                            if param_name in ['a', 'first']:
+                            if param_name in ["a", "first"]:
                                 extracted[param_name] = param_type(10)
-                            elif param_name in ['b', 'second']:
+                            elif param_name in ["b", "second"]:
                                 extracted[param_name] = param_type(5)
                             else:
                                 extracted[param_name] = param_type(0)
                     else:
                         # Use default values
-                        if param_name in ['a', 'first']:
+                        if param_name in ["a", "first"]:
                             extracted[param_name] = param_type(10)
-                        elif param_name in ['b', 'second']:
+                        elif param_name in ["b", "second"]:
                             extracted[param_name] = param_type(5)
                         else:
                             extracted[param_name] = param_type(0)
                 else:
                     # For other types, use a default value
-                    if param_type == bool:
-                        extracted[param_name] = True
+                    if isinstance(param_type, type) and param_type is bool:
+                        extracted[param_name] = True  # type: ignore
                     else:
-                        extracted[param_name] = None
+                        extracted[param_name] = None  # type: ignore
 
             return extracted
 
@@ -217,7 +219,7 @@ def handler(
         input_validator=input_validator,
         output_validator=output_validator,
         description=description,
-        remediation_strategies=remediation_strategies
+        remediation_strategies=remediation_strategies,
     )
 
 
@@ -228,8 +230,7 @@ def llm_classifier(
     llm_config: Dict[str, Any],
     classification_prompt: Optional[str] = None,
     description: str = "",
-    remediation_strategies: Optional[List[Union[str,
-                                                "RemediationStrategy"]]] = None
+    remediation_strategies: Optional[List[Union[str, "RemediationStrategy"]]] = None,
 ) -> TreeNode:
     """Create an LLM-powered classifier node with auto-wired children descriptions.
 
@@ -256,13 +257,14 @@ def llm_classifier(
     # Auto-wire children descriptions for the classifier
     node_descriptions = []
     for child in children:
-        if hasattr(child, 'description') and child.description:
+        if hasattr(child, "description") and child.description:
             node_descriptions.append(f"{child.name}: {child.description}")
         else:
             # Use name as fallback if no description
             node_descriptions.append(child.name)
             logger.warning(
-                f"Child node '{child.name}' has no description, using name as fallback")
+                f"Child node '{child.name}' has no description, using name as fallback"
+            )
 
     if not classification_prompt:
         classification_prompt = get_default_classification_prompt()
@@ -276,7 +278,7 @@ def llm_classifier(
         classifier=classifier,
         children=children,
         description=description,
-        remediation_strategies=remediation_strategies
+        remediation_strategies=remediation_strategies,
     )
 
     # Set parent reference for all children to this classifier node
@@ -291,7 +293,7 @@ def llm_splitter_node(
     name: str,
     children: List[TreeNode],
     llm_config: Dict[str, Any],
-    description: str = ""
+    description: str = "",
 ) -> TreeNode:
     """Create an LLM-powered splitter node for multi-intent handling.
 
@@ -311,10 +313,13 @@ def llm_splitter_node(
         ...     llm_config=LLM_CONFIG
         ... )
     """
+
     # Create a wrapper function that provides the LLM client to llm_splitter
-    def llm_splitter_wrapper(user_input: str, debug: bool = False) -> Sequence[IntentChunk]:
+    def llm_splitter_wrapper(
+        user_input: str, debug: bool = False
+    ) -> Sequence[IntentChunk]:
         # Extract LLM client from config
-        llm_client = llm_config.get('llm_client')
+        llm_client = llm_config.get("llm_client")
         return llm_splitter(user_input, debug, llm_client)
 
     splitter_node = SplitterNode(
@@ -322,7 +327,7 @@ def llm_splitter_node(
         splitter_function=llm_splitter_wrapper,
         children=children,
         description=description,
-        llm_client=llm_config.get('llm_client')
+        llm_client=llm_config.get("llm_client"),
     )
 
     # Set parent reference for all children to this splitter node
@@ -333,10 +338,7 @@ def llm_splitter_node(
 
 
 def rule_splitter_node(
-    *,
-    name: str,
-    children: List[TreeNode],
-    description: str = ""
+    *, name: str, children: List[TreeNode], description: str = ""
 ) -> TreeNode:
     """Create a rule-based splitter node for multi-intent handling.
 
@@ -358,7 +360,7 @@ def rule_splitter_node(
         name=name,
         splitter_function=rule_splitter,
         children=children,
-        description=description
+        description=description,
     )
 
     # Set parent reference for all children to this splitter node
@@ -369,9 +371,7 @@ def rule_splitter_node(
 
 
 # Convenience function for creating a complete graph
-def create_intent_graph(
-    root_node: TreeNode
-) -> IntentGraph:
+def create_intent_graph(root_node: TreeNode) -> IntentGraph:
     """Create an IntentGraph with the given root node.
 
     Args:

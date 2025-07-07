@@ -1,0 +1,6 @@
+# Used for docs site generation
+mkdocs>=1.5.0
+mkdocs-material>=9.5.17
+mkdocstrings[python]>=0.24.0
+mkdocs-literate-nav>=0.6.0>=0.6.0
+ipykernel>=6.0.0

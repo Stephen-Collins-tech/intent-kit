@@ -22,7 +22,7 @@ class Logger:
             return "\033[90m"  # gray
         # New soft color palette using 256-color ANSI codes
         elif level == "section_title":
-            return "\033[38;5;75m"   # Soft blue/cyan for main section titles
+            return "\033[38;5;75m"  # Soft blue/cyan for main section titles
         elif level == "field_label":
             # Muted light purple for field names/labels
             return "\033[38;5;146m"
@@ -69,16 +69,16 @@ class Logger:
         import sys
 
         # Check if we're in a terminal
-        if not hasattr(sys.stdout, 'isatty') or not sys.stdout.isatty():
+        if not hasattr(sys.stdout, "isatty") or not sys.stdout.isatty():
             return False
 
         # Check environment variables
-        if os.environ.get('NO_COLOR'):
+        if os.environ.get("NO_COLOR"):
             return False
 
         # Check if we're in a dumb terminal
-        term = os.environ.get('TERM', '')
-        if term == 'dumb':
+        term = os.environ.get("TERM", "")
+        if term == "dumb":
             return False
 
         return True
@@ -127,7 +127,7 @@ class Logger:
             "red": "bright_red",
             "magenta": "bright_magenta",
             "cyan": "bright_cyan",
-            "white": "bright_white"
+            "white": "bright_white",
         }
         color = bright_colors.get(color_name, color_name)
         return self.colorize(text, color)

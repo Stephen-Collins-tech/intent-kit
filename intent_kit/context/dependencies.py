@@ -13,6 +13,7 @@ from . import IntentContext
 @dataclass
 class ContextDependencies:
     """Declares what context fields an intent reads and writes."""
+
     inputs: Set[str]  # Fields this intent reads from context
     outputs: Set[str]  # Fields this intent writes to context
     description: str = ""  # Human-readable description of dependencies
@@ -31,7 +32,9 @@ class ContextAwareHandler(Protocol):
         ...
 
 
-def declare_dependencies(inputs: Set[str], outputs: Set[str], description: str = "") -> ContextDependencies:
+def declare_dependencies(
+    inputs: Set[str], outputs: Set[str], description: str = ""
+) -> ContextDependencies:
     """
     Create a context dependency declaration.
 
@@ -43,17 +46,11 @@ def declare_dependencies(inputs: Set[str], outputs: Set[str], description: str =
     Returns:
         ContextDependencies object
     """
-    return ContextDependencies(
-        inputs=inputs,
-        outputs=outputs,
-        description=description
-    )
+    return ContextDependencies(inputs=inputs, outputs=outputs, description=description)
 
 
 def validate_context_dependencies(
-    dependencies: ContextDependencies,
-    context: IntentContext,
-    strict: bool = False
+    dependencies: ContextDependencies, context: IntentContext, strict: bool = False
 ) -> Dict[str, Any]:
     """
     Validate that required context fields are available.
@@ -71,22 +68,21 @@ def validate_context_dependencies(
             - warnings: List[str]
     """
     available_fields = context.keys()
-    missing_inputs = dependencies.inputs - available_fields
-    available_inputs = dependencies.inputs & available_fields
+    missing_inputs: set = dependencies.inputs - available_fields
+    available_inputs: set = dependencies.inputs & available_fields
 
     warnings = []
     if missing_inputs and strict:
         warnings.append(f"Missing required context inputs: {missing_inputs}")
 
     if missing_inputs and not strict:
-        warnings.append(
-            f"Optional context inputs not available: {missing_inputs}")
+        warnings.append(f"Optional context inputs not available: {missing_inputs}")
 
     return {
         "valid": len(missing_inputs) == 0 or not strict,
         "missing_inputs": missing_inputs,
         "available_inputs": available_inputs,
-        "warnings": warnings
+        "warnings": warnings,
     }
 
 
@@ -103,9 +99,9 @@ def merge_dependencies(*dependencies: ContextDependencies) -> ContextDependencie
     if not dependencies:
         return declare_dependencies(set(), set(), "Empty dependencies")
 
-    merged_inputs = set()
-    merged_outputs = set()
-    descriptions = []
+    merged_inputs: set = set()
+    merged_outputs: set = set()
+    descriptions: list = []
 
     for dep in dependencies:
         merged_inputs.update(dep.inputs)
@@ -119,7 +115,7 @@ def merge_dependencies(*dependencies: ContextDependencies) -> ContextDependencie
     return ContextDependencies(
         inputs=merged_inputs,
         outputs=merged_outputs,
-        description="; ".join(descriptions) if descriptions else ""
+        description="; ".join(descriptions) if descriptions else "",
     )
 
 
@@ -140,35 +136,37 @@ def analyze_handler_dependencies(handler: Any) -> Optional[ContextDependencies]:
         return None
 
     # Check if handler has explicit dependencies
-    if hasattr(handler, 'context_dependencies'):
+    if hasattr(handler, "context_dependencies"):
         return handler.context_dependencies
 
     # Check if handler has dependency annotations
-    if hasattr(handler, '__annotations__'):
+    if hasattr(handler, "__annotations__"):
         annotations = handler.__annotations__
-        if 'context_inputs' in annotations and 'context_outputs' in annotations:
-            inputs = getattr(handler, 'context_inputs', set())
-            outputs = getattr(handler, 'context_outputs', set())
+        if "context_inputs" in annotations and "context_outputs" in annotations:
+            inputs: set = getattr(handler, "context_inputs", set())
+            outputs: set = getattr(handler, "context_outputs", set())
             return declare_dependencies(inputs, outputs)
 
     # Check docstring for dependency hints
-    if hasattr(handler, '__doc__') and handler.__doc__:
+    if hasattr(handler, "__doc__") and handler.__doc__:
         doc = handler.__doc__.lower()
         inputs = set()
         outputs = set()
 
         # Simple pattern matching for common phrases
-        if 'context' in doc:
-            if 'read' in doc or 'get' in doc:
+        if "context" in doc:
+            if "read" in doc or "get" in doc:
                 # This is a heuristic - in practice, explicit declarations are better
                 pass
-            if 'write' in doc or 'set' in doc or 'update' in doc:
+            if "write" in doc or "set" in doc or "update" in doc:
                 pass
 
     return None
 
 
-def create_dependency_graph(nodes: Dict[str, ContextDependencies]) -> Dict[str, Set[str]]:
+def create_dependency_graph(
+    nodes: Dict[str, ContextDependencies],
+) -> Dict[str, Set[str]]:
     """
     Create a dependency graph from node dependencies.
 
@@ -178,7 +176,7 @@ def create_dependency_graph(nodes: Dict[str, ContextDependencies]) -> Dict[str, 
     Returns:
         Dict mapping node names to sets of dependent nodes
     """
-    graph = {}
+    graph: Dict[str, Set[str]] = {}
 
     for node_name, deps in nodes.items():
         graph[node_name] = set()
