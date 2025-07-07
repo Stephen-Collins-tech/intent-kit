@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Callable, List, Optional, Dict, Type, Set, Sequence
+from typing import List, Optional
 from abc import ABC, abstractmethod
 from intent_kit.utils.logger import Logger
 from intent_kit.context import IntentContext
@@ -21,7 +21,7 @@ class Node:
 
     def get_path(self) -> List[str]:
         path = []
-        node = self
+        node: Optional["Node"] = self
         while node:
             path.append(node.name)
             node = node.parent
@@ -32,7 +32,7 @@ class Node:
 
     def get_uuid_path(self) -> List[str]:
         path = []
-        node = self
+        node: Optional["Node"] = self
         while node:
             path.append(node.node_id)
             node = node.parent
@@ -45,7 +45,14 @@ class Node:
 class TreeNode(Node, ABC):
     """Base class for all nodes in the intent tree."""
 
-    def __init__(self, *, name: Optional[str] = None, description: str, children: Optional[List["TreeNode"]] = None, parent: Optional["TreeNode"] = None):
+    def __init__(
+        self,
+        *,
+        name: Optional[str] = None,
+        description: str,
+        children: Optional[List["TreeNode"]] = None,
+        parent: Optional["TreeNode"] = None,
+    ):
         super().__init__(name=name, parent=parent)
         self.logger = Logger(name or "unnamed_node")
         self.description = description
@@ -59,6 +66,8 @@ class TreeNode(Node, ABC):
         return NodeType.UNKNOWN
 
     @abstractmethod
-    def execute(self, user_input: str, context: Optional[IntentContext] = None) -> ExecutionResult:
+    def execute(
+        self, user_input: str, context: Optional[IntentContext] = None
+    ) -> ExecutionResult:
         """Execute the node with the given user input and optional context."""
         pass

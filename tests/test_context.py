@@ -3,9 +3,12 @@ Tests for the IntentContext system.
 """
 
 import pytest
-from datetime import datetime
-from intent_kit.context import IntentContext, ContextField, ContextHistoryEntry
-from intent_kit.context.dependencies import ContextDependencies, declare_dependencies, validate_context_dependencies, merge_dependencies
+from intent_kit.context import IntentContext
+from intent_kit.context.dependencies import (
+    declare_dependencies,
+    validate_context_dependencies,
+    merge_dependencies,
+)
 
 
 class TestIntentContext:
@@ -140,8 +143,11 @@ class TestIntentContext:
 
         def worker(thread_id):
             for i in range(10):
-                context.set(f"thread_{thread_id}_key_{i}",
-                            f"value_{i}", modified_by=f"thread_{thread_id}")
+                context.set(
+                    f"thread_{thread_id}_key_{i}",
+                    f"value_{i}",
+                    modified_by=f"thread_{thread_id}",
+                )
                 # Small delay to increase chance of race conditions
                 time.sleep(0.001)
                 value = context.get(f"thread_{thread_id}_key_{i}")
@@ -174,7 +180,7 @@ class TestContextDependencies:
         deps = declare_dependencies(
             inputs={"input1", "input2"},
             outputs={"output1"},
-            description="Test dependencies"
+            description="Test dependencies",
         )
 
         assert deps.inputs == {"input1", "input2"}
@@ -188,8 +194,7 @@ class TestContextDependencies:
         context.set("input2", "value2")
 
         deps = declare_dependencies(
-            inputs={"input1", "input2", "missing_input"},
-            outputs={"output1"}
+            inputs={"input1", "input2", "missing_input"}, outputs={"output1"}
         )
 
         result = validate_context_dependencies(deps, context, strict=False)
@@ -204,8 +209,7 @@ class TestContextDependencies:
         context.set("input1", "value1")
 
         deps = declare_dependencies(
-            inputs={"input1", "missing_input"},
-            outputs={"output1"}
+            inputs={"input1", "missing_input"}, outputs={"output1"}
         )
 
         result = validate_context_dependencies(deps, context, strict=True)

@@ -1,18 +1,25 @@
 """
 LLM-powered chunk classifier for intent chunks.
 """
-from intent_kit.types import IntentChunk, IntentChunkClassification, IntentClassification, IntentAction, ClassifierOutput
+
+from intent_kit.types import (
+    IntentChunk,
+    IntentClassification,
+    IntentAction,
+    ClassifierOutput,
+)
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
 from intent_kit.utils.text_utils import extract_json_from_text, extract_key_value_pairs
-import json
 import re
 from typing import Optional
 
 logger = Logger(__name__)
 
 
-def classify_intent_chunk(chunk: IntentChunk, llm_config: Optional[dict] = None) -> ClassifierOutput:
+def classify_intent_chunk(
+    chunk: IntentChunk, llm_config: Optional[dict] = None
+) -> ClassifierOutput:
     """
     LLM-powered classifier for intent chunks.
 
@@ -23,8 +30,9 @@ def classify_intent_chunk(chunk: IntentChunk, llm_config: Optional[dict] = None)
     Returns:
         Classification result with action to take
     """
-    chunk_text = chunk["text"] if isinstance(
-        chunk, dict) and "text" in chunk else str(chunk)
+    chunk_text = (
+        chunk["text"] if isinstance(chunk, dict) and "text" in chunk else str(chunk)
+    )
 
     # Fallback for empty chunks
     if not chunk_text.strip():
@@ -33,7 +41,7 @@ def classify_intent_chunk(chunk: IntentChunk, llm_config: Optional[dict] = None)
             "classification": IntentClassification.INVALID,
             "intent_type": None,
             "action": IntentAction.REJECT,
-            "metadata": {"confidence": 0.0, "reason": "Empty chunk"}
+            "metadata": {"confidence": 0.0, "reason": "Empty chunk"},
         }
 
     # If no LLM config provided, use fallback logic
@@ -55,12 +63,14 @@ def classify_intent_chunk(chunk: IntentChunk, llm_config: Optional[dict] = None)
         else:
             # Fallback if LLM parsing fails
             logger.warning(
-                f"LLM classification parsing failed, using fallback for: {chunk_text}")
+                f"LLM classification parsing failed, using fallback for: {chunk_text}"
+            )
             return _fallback_classify(chunk_text)
 
     except Exception as e:
         logger.error(
-            f"LLM classification failed: {e}, using fallback for: {chunk_text}")
+            f"LLM classification failed: {e}, using fallback for: {chunk_text}"
+        )
         return _fallback_classify(chunk_text)
 
 
@@ -100,7 +110,10 @@ def _parse_classification_response(response: str, chunk_text: str) -> Classifier
         parsed = extract_json_from_text(response)
         if parsed:
             # Validate required fields
-            if all(key in parsed for key in ["classification", "action", "confidence", "reason"]):
+            if all(
+                key in parsed
+                for key in ["classification", "action", "confidence", "reason"]
+            ):
                 return {
                     "chunk_text": chunk_text,
                     "classification": IntentClassification(parsed["classification"]),
@@ -108,8 +121,8 @@ def _parse_classification_response(response: str, chunk_text: str) -> Classifier
                     "action": IntentAction(parsed["action"]),
                     "metadata": {
                         "confidence": float(parsed["confidence"]),
-                        "reason": str(parsed["reason"])
-                    }
+                        "reason": str(parsed["reason"]),
+                    },
                 }
         # If JSON parsing fails, try manual parsing
         return _manual_parse_classification(response, chunk_text)
@@ -133,10 +146,7 @@ def _manual_parse_classification(response: str, chunk_text: str) -> ClassifierOu
             "classification": IntentClassification(classification),
             "intent_type": intent_type,
             "action": IntentAction(action),
-            "metadata": {
-                "confidence": float(confidence),
-                "reason": str(reason)
-            }
+            "metadata": {"confidence": float(confidence), "reason": str(reason)},
         }
     response_lower = response.lower()
 
@@ -147,7 +157,7 @@ def _manual_parse_classification(response: str, chunk_text: str) -> ClassifierOu
             "classification": IntentClassification.ATOMIC,
             "intent_type": "ExampleIntentType",
             "action": IntentAction.HANDLE,
-            "metadata": {"confidence": 0.7, "reason": "Manually parsed as atomic"}
+            "metadata": {"confidence": 0.7, "reason": "Manually parsed as atomic"},
         }
     elif "composite" in response_lower or "split" in response_lower:
         return {
@@ -155,7 +165,7 @@ def _manual_parse_classification(response: str, chunk_text: str) -> ClassifierOu
             "classification": IntentClassification.COMPOSITE,
             "intent_type": None,
             "action": IntentAction.SPLIT,
-            "metadata": {"confidence": 0.7, "reason": "Manually parsed as composite"}
+            "metadata": {"confidence": 0.7, "reason": "Manually parsed as composite"},
         }
     elif "ambiguous" in response_lower or "clarify" in response_lower:
         return {
@@ -163,7 +173,7 @@ def _manual_parse_classification(response: str, chunk_text: str) -> ClassifierOu
             "classification": IntentClassification.AMBIGUOUS,
             "intent_type": None,
             "action": IntentAction.CLARIFY,
-            "metadata": {"confidence": 0.5, "reason": "Manually parsed as ambiguous"}
+            "metadata": {"confidence": 0.5, "reason": "Manually parsed as ambiguous"},
         }
     else:
         return {
@@ -171,7 +181,7 @@ def _manual_parse_classification(response: str, chunk_text: str) -> ClassifierOu
             "classification": IntentClassification.INVALID,
             "intent_type": None,
             "action": IntentAction.REJECT,
-            "metadata": {"confidence": 0.3, "reason": "Manually parsed as invalid"}
+            "metadata": {"confidence": 0.3, "reason": "Manually parsed as invalid"},
         }
 
 
@@ -184,22 +194,11 @@ def _fallback_classify(chunk_text: str) -> ClassifierOutput:
             "classification": IntentClassification.AMBIGUOUS,
             "intent_type": None,
             "action": IntentAction.CLARIFY,
-            "metadata": {"confidence": 0.4, "reason": "Too short to classify"}
+            "metadata": {"confidence": 0.4, "reason": "Too short to classify"},
         }
 
-    # Only split on clear multi-intent patterns
-    multi_intent_patterns = [
-        r'\band\b.*\band\b',  # Multiple "and"s
-        r'[^,]*,[^,]*,[^,]*',  # Multiple commas
-        r'first.*second',      # Ordinal patterns
-        r'one.*two',           # Number patterns
-        r'\band\b',            # Single "and" between distinct actions
-        r'\bplus\b',           # "plus" conjunction
-        r'\balso\b',           # "also" conjunction
-    ]
-
     # Check for single conjunctions that likely indicate multiple intents
-    single_conjunctions = [r'\band\b', r'\bplus\b', r'\balso\b']
+    single_conjunctions = [r"\band\b", r"\bplus\b", r"\balso\b"]
     for pattern in single_conjunctions:
         if re.search(pattern, chunk_text, re.IGNORECASE):
             # Check if the parts around the conjunction look like separate actions
@@ -207,15 +206,27 @@ def _fallback_classify(chunk_text: str) -> ClassifierOutput:
             if len(parts) == 2:
                 part1, part2 = parts[0].strip(), parts[1].strip()
                 # If both parts have action verbs, likely composite
-                action_verbs = ['cancel', 'book', 'update',
-                                'get', 'show', 'calculate', 'greet']
-                if any(verb in part1.lower() for verb in action_verbs) and any(verb in part2.lower() for verb in action_verbs):
+                action_verbs = [
+                    "cancel",
+                    "book",
+                    "update",
+                    "get",
+                    "show",
+                    "calculate",
+                    "greet",
+                ]
+                if any(verb in part1.lower() for verb in action_verbs) and any(
+                    verb in part2.lower() for verb in action_verbs
+                ):
                     return {
                         "chunk_text": chunk_text,
                         "classification": IntentClassification.COMPOSITE,
                         "intent_type": None,
                         "action": IntentAction.SPLIT,
-                        "metadata": {"confidence": 0.8, "reason": f"Detected multi-intent pattern with conjunction: {pattern}"}
+                        "metadata": {
+                            "confidence": 0.8,
+                            "reason": f"Detected multi-intent pattern with conjunction: {pattern}",
+                        },
                     }
 
     # Default to atomic
@@ -224,5 +235,5 @@ def _fallback_classify(chunk_text: str) -> ClassifierOutput:
         "classification": IntentClassification.ATOMIC,
         "intent_type": "ExampleIntentType",
         "action": IntentAction.HANDLE,
-        "metadata": {"confidence": 0.9, "reason": "Single clear intent detected"}
+        "metadata": {"confidence": 0.9, "reason": "Single clear intent detected"},
     }

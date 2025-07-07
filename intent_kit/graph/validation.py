@@ -5,7 +5,7 @@ This module provides validation functions to ensure proper routing constraints
 and graph structure in intent graphs.
 """
 
-from typing import List, Set, Dict, Any, Optional
+from typing import List, Dict, Any, Optional
 from intent_kit.node import TreeNode
 from intent_kit.node.enums import NodeType
 from intent_kit.utils.logger import Logger
@@ -14,7 +14,13 @@ from intent_kit.utils.logger import Logger
 class GraphValidationError(Exception):
     """Exception raised when graph validation fails."""
 
-    def __init__(self, message: str, node_name: Optional[str] = None, child_name: Optional[str] = None, child_type: Optional[NodeType] = None):
+    def __init__(
+        self,
+        message: str,
+        node_name: Optional[str] = None,
+        child_name: Optional[str] = None,
+        child_type: Optional[NodeType] = None,
+    ):
         self.message = message
         self.node_name = node_name
         self.child_name = child_name
@@ -51,11 +57,12 @@ def validate_splitter_routing(graph_nodes: List[TreeNode]) -> None:
                         message=error_msg,
                         node_name=node.name,
                         child_name=child.name,
-                        child_type=child.node_type
+                        child_type=child.node_type,
                     )
                 else:
                     logger.debug(
-                        f"  ✓ Splitter '{node.name}' correctly routes to classifier '{child.name}'")
+                        f"  ✓ Splitter '{node.name}' correctly routes to classifier '{child.name}'"
+                    )
 
     logger.info("Splitter routing validation passed ✓")
 
@@ -77,7 +84,7 @@ def validate_graph_structure(graph_nodes: List[TreeNode]) -> Dict[str, Any]:
     all_nodes = _collect_all_nodes(graph_nodes)
 
     # Count nodes by type
-    node_counts = {}
+    node_counts: Dict[Any, int] = {}
     for node in all_nodes:
         node_type = node.node_type
         node_counts[node_type] = node_counts.get(node_type, 0) + 1
@@ -102,11 +109,13 @@ def validate_graph_structure(graph_nodes: List[TreeNode]) -> Dict[str, Any]:
         "routing_valid": routing_valid,
         "has_cycles": has_cycles,
         "orphaned_nodes": [node.name for node in orphaned_nodes],
-        "orphaned_count": len(orphaned_nodes)
+        "orphaned_count": len(orphaned_nodes),
     }
 
-    logger.info(f"Graph validation complete: {stats['total_nodes']} total nodes, "
-                f"routing valid: {routing_valid}, cycles: {has_cycles}")
+    logger.info(
+        f"Graph validation complete: {stats['total_nodes']} total nodes, "
+        f"routing valid: {routing_valid}, cycles: {has_cycles}"
+    )
 
     return stats
 
@@ -189,9 +198,7 @@ def validate_node_types(nodes: List[TreeNode]) -> None:
             error_msg = f"Invalid node type '{node.node_type}' for node '{node.name}'. Valid types: {NodeType}"
             logger.error(error_msg)
             raise GraphValidationError(
-                message=error_msg,
-                node_name=node.name,
-                child_type=node.node_type
+                message=error_msg, node_name=node.name, child_type=node.node_type
             )
 
     logger.info("Node type validation passed ✓")

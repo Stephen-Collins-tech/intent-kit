@@ -1,0 +1,28 @@
+site_name: intent-kit
+site_description: Open-source Python framework for intent classification and execution
+site_url: https://docs.intentkit.io
+repo_url: https://github.com/Stephen-Collins-tech/intent-kit
+
+theme:
+  name: material
+
+plugins:
+  - search
+  - mkdocstrings
+  - literate-nav
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - API Reference:
+      - intent_kit: api_reference.md
+  - Examples:
+      - Calculator Bot: examples/calculator-bot.md
+      - Context-Aware Chatbot: examples/context-aware-chatbot.md
+      - Multi-Intent Routing: examples/multi-intent-routing.md

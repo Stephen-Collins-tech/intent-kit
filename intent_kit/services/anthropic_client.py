@@ -15,6 +15,7 @@ class AnthropicClient:
         """Get the Anthropic client."""
         try:
             import anthropic
+
             return anthropic.Anthropic(api_key=self.api_key)
         except ImportError:
             raise ImportError(
@@ -26,6 +27,7 @@ class AnthropicClient:
         if self._client is None:
             try:
                 import anthropic
+
                 self._client = anthropic.Anthropic(api_key=self.api_key)
             except ImportError:
                 raise ImportError(
@@ -36,15 +38,15 @@ class AnthropicClient:
         """Generate text using Anthropic's Claude model."""
         self._ensure_imported()
         response = self._client.messages.create(
-            model=model,
-            max_tokens=1000,
-            messages=[{"role": "user", "content": prompt}]
+            model=model, max_tokens=1000, messages=[{"role": "user", "content": prompt}]
         )
         content = response.content
         logger.debug(f"Anthropic generate response: {content}")
         return str(content) if content else ""
 
     # Keep generate_text as an alias for backward compatibility
-    def generate_text(self, prompt: str, model: str = "claude-3-sonnet-20240229") -> str:
+    def generate_text(
+        self, prompt: str, model: str = "claude-3-sonnet-20240229"
+    ) -> str:
         """Alias for generate method (backward compatibility)."""
         return self.generate(prompt, model)

@@ -30,10 +30,16 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or "sk-mock-openai"
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or "sk-mock-gemini"
 
-LLM_CONFIG_1 = {"provider": "openai",
-                "model": "gpt-4.1-mini", "api_key": OPENAI_API_KEY}
-LLM_CONFIG_2 = {"provider": "google",
-                "model": "gemini-2.5-flash", "api_key": GOOGLE_API_KEY}
+LLM_CONFIG_1 = {
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "api_key": OPENAI_API_KEY,
+}
+LLM_CONFIG_2 = {
+    "provider": "google",
+    "model": "gemini-2.5-flash",
+    "api_key": GOOGLE_API_KEY,
+}
 
 # --- Core Handler: Simulates model confusion and ambiguity ---
 
@@ -68,24 +74,27 @@ handlers = [
         description="Uses self-reflection if it fails on ambiguous reviews.",
         handler_func=analyze_sentiment,
         param_schema={"review_text": str},
-        remediation_strategies=[create_self_reflect_strategy(
-            LLM_CONFIG_1, max_reflections=1)],
+        remediation_strategies=[
+            create_self_reflect_strategy(LLM_CONFIG_1, max_reflections=1)
+        ],
     ),
     handler(
         name="consensus_vote_sentiment",
         description="Uses consensus voting between two LLMs on conflicting reviews.",
         handler_func=analyze_sentiment,
         param_schema={"review_text": str},
-        remediation_strategies=[create_consensus_vote_strategy(
-            [LLM_CONFIG_1, LLM_CONFIG_2], vote_threshold=0.5)],
+        remediation_strategies=[
+            create_consensus_vote_strategy(
+                [LLM_CONFIG_1, LLM_CONFIG_2], vote_threshold=0.5
+            )
+        ],
     ),
     handler(
         name="alternate_prompt_sentiment",
         description="Retries with alternate prompt if ambiguous input causes a failure.",
         handler_func=analyze_sentiment,
         param_schema={"review_text": str},
-        remediation_strategies=[
-            create_alternate_prompt_strategy(LLM_CONFIG_1)],
+        remediation_strategies=[create_alternate_prompt_strategy(LLM_CONFIG_1)],
     ),
 ]
 
@@ -94,22 +103,24 @@ def main():
     context = IntentContext()
     print("=== Advanced Remediation Strategies Demo ===\n")
 
-    print("This demo shows how self-reflection, consensus voting, and alternate prompts can recover\n"
-          "from ambiguous or conflicting results in real-world sentiment analysis tasks.\n")
+    print(
+        "This demo shows how self-reflection, consensus voting, and alternate prompts can recover\n"
+        "from ambiguous or conflicting results in real-world sentiment analysis tasks.\n"
+    )
 
     # Each case is designed to *require* remediation.
     test_cases = [
         (
             "This product is not bad at all, actually quite good!",
-            "Triggers self-reflection: Model may misinterpret 'not bad'."
+            "Triggers self-reflection: Model may misinterpret 'not bad'.",
         ),
         (
             "I hate the design but love the features, not my favorite but not bad.",
-            "Triggers consensus voting: LLMs likely to disagree on mixed sentiment."
+            "Triggers consensus voting: LLMs likely to disagree on mixed sentiment.",
         ),
         (
             "Okay, fine, whatever, not bad I guess, meh",
-            "Triggers alternate prompt: All terms are vague, likely to fail first try."
+            "Triggers alternate prompt: All terms are vague, likely to fail first try.",
         ),
     ]
 
@@ -120,8 +131,7 @@ def main():
         print(f"Case: {case_desc}")
 
         try:
-            result: ExecutionResult = h.execute(
-                user_input=review_text, context=context)
+            result: ExecutionResult = h.execute(user_input=review_text, context=context)
             print(f"Success: {result.success}")
             print(f"Output:  {result.output}")
             if result.error:
@@ -135,7 +145,9 @@ def main():
     print("• Alternate prompt: Handler retries with a new prompt if it can't answer.")
 
     if "mock" in OPENAI_API_KEY or "mock" in GOOGLE_API_KEY:
-        print("\n💡 Pro Tip: For real LLM behavior, add your OpenAI and Gemini API keys to a .env file.")
+        print(
+            "\n💡 Pro Tip: For real LLM behavior, add your OpenAI and Gemini API keys to a .env file."
+        )
 
 
 if __name__ == "__main__":

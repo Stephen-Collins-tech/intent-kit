@@ -7,13 +7,15 @@ particularly for handling LLM responses and other structured text data.
 
 import json
 import re
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from intent_kit.utils.logger import Logger
 
 logger = Logger(__name__)
 
 
-def extract_json_from_text(text: Optional[str], fallback_to_manual: bool = True) -> Optional[Dict[str, Any]]:
+def extract_json_from_text(
+    text: Optional[str], fallback_to_manual: bool = True
+) -> Optional[Dict[str, Any]]:
     """
     Extract JSON object from text, handling various formats and edge cases.
     Now also supports extracting from ```json ... ``` blocks.
@@ -22,7 +24,7 @@ def extract_json_from_text(text: Optional[str], fallback_to_manual: bool = True)
         return None
 
     # First, look for a ```json ... ``` block
-    json_block = re.search(r'```json\s*([\s\S]*?)```', text, re.IGNORECASE)
+    json_block = re.search(r"```json\s*([\s\S]*?)```", text, re.IGNORECASE)
     if json_block:
         json_str = json_block.group(1).strip()
         try:
@@ -31,7 +33,7 @@ def extract_json_from_text(text: Optional[str], fallback_to_manual: bool = True)
             logger.debug(f"JSON decode error in ```json block: {e}")
 
     # Try to find JSON object pattern
-    json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', text, re.DOTALL)
+    json_match = re.search(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", text, re.DOTALL)
     if json_match:
         json_str = json_match.group(0)
         try:
@@ -40,8 +42,7 @@ def extract_json_from_text(text: Optional[str], fallback_to_manual: bool = True)
             logger.debug(f"JSON decode error: {e}")
 
     # Try to find JSON array pattern
-    array_match = re.search(
-        r'\[[^\[\]]*(?:\{[^{}]*\}[^\[\]]*)*\]', text, re.DOTALL)
+    array_match = re.search(r"\[[^\[\]]*(?:\{[^{}]*\}[^\[\]]*)*\]", text, re.DOTALL)
     if array_match:
         json_str = array_match.group(0)
         try:
@@ -55,7 +56,9 @@ def extract_json_from_text(text: Optional[str], fallback_to_manual: bool = True)
     return None
 
 
-def extract_json_array_from_text(text: Optional[str], fallback_to_manual: bool = True) -> Optional[List[Any]]:
+def extract_json_array_from_text(
+    text: Optional[str], fallback_to_manual: bool = True
+) -> Optional[List[Any]]:
     """
     Extract JSON array from text, handling various formats and edge cases.
     Now also supports extracting from ```json ... ``` blocks.
@@ -64,7 +67,7 @@ def extract_json_array_from_text(text: Optional[str], fallback_to_manual: bool =
         return None
 
     # First, look for a ```json ... ``` block
-    json_block = re.search(r'```json\s*([\s\S]*?)```', text, re.IGNORECASE)
+    json_block = re.search(r"```json\s*([\s\S]*?)```", text, re.IGNORECASE)
     if json_block:
         json_str = json_block.group(1).strip()
         try:
@@ -75,8 +78,7 @@ def extract_json_array_from_text(text: Optional[str], fallback_to_manual: bool =
             logger.debug(f"JSON array decode error in ```json block: {e}")
 
     # Try to find JSON array pattern
-    array_match = re.search(
-        r'\[[^\[\]]*(?:\{[^{}]*\}[^\[\]]*)*\]', text, re.DOTALL)
+    array_match = re.search(r"\[[^\[\]]*(?:\{[^{}]*\}[^\[\]]*)*\]", text, re.DOTALL)
     if array_match:
         json_str = array_match.group(0)
         try:
@@ -113,13 +115,13 @@ def extract_key_value_pairs(text: Optional[str]) -> Dict[str, Any]:
         pairs[key.strip()] = _clean_value(value.strip())
 
     # Pattern 2: key: value
-    kv_pattern2 = re.findall(r'(\w+)\s*:\s*([^,\n}]+)', text)
+    kv_pattern2 = re.findall(r"(\w+)\s*:\s*([^,\n}]+)", text)
     for key, value in kv_pattern2:
         if key not in pairs:  # Don't override quoted keys
             pairs[key.strip()] = _clean_value(value.strip())
 
     # Pattern 3: key = value
-    kv_pattern3 = re.findall(r'(\w+)\s*=\s*([^,\n}]+)', text)
+    kv_pattern3 = re.findall(r"(\w+)\s*=\s*([^,\n}]+)", text)
     for key, value in kv_pattern3:
         if key not in pairs:
             pairs[key.strip()] = _clean_value(value.strip())
@@ -161,27 +163,31 @@ def clean_for_deserialization(text: Optional[str]) -> str:
         return ""
 
     # Remove common LLM response artifacts
-    text = re.sub(r'```json\s*', '', text)
-    text = re.sub(r'```\s*$', '', text)
-    text = re.sub(r'^```\s*', '', text)
+    text = re.sub(r"```json\s*", "", text)
+    text = re.sub(r"```\s*$", "", text)
+    text = re.sub(r"^```\s*", "", text)
 
     # Fix common JSON issues
-    text = re.sub(r'([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:',
-                  r'\1"\2":', text)  # Quote unquoted keys
-    text = re.sub(r':\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([,}])',
-                  r': "\1"\2', text)  # Quote unquoted string values
+    text = re.sub(
+        r"([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:", r'\1"\2":', text
+    )  # Quote unquoted keys
+    text = re.sub(
+        r":\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([,}])", r': "\1"\2', text
+    )  # Quote unquoted string values
 
     # Normalize spacing around colons
-    text = re.sub(r':\s+', ': ', text)
+    text = re.sub(r":\s+", ": ", text)
 
     # Fix trailing commas
-    text = re.sub(r',\s*}', '}', text)
-    text = re.sub(r',\s*]', ']', text)
+    text = re.sub(r",\s*}", "}", text)
+    text = re.sub(r",\s*]", "]", text)
 
     return text.strip()
 
 
-def extract_structured_data(text: Optional[str], expected_type: str = "auto") -> Tuple[Optional[Any], str]:
+def extract_structured_data(
+    text: Optional[str], expected_type: str = "auto"
+) -> Tuple[Optional[Any], str]:
     """
     Extract structured data from text with type detection.
 
@@ -198,14 +204,13 @@ def extract_structured_data(text: Optional[str], expected_type: str = "auto") ->
     # For auto detection, try to determine the type first
     if expected_type == "auto":
         # Check if it looks like a JSON array
-        if text.strip().startswith('[') and text.strip().endswith(']'):
-            json_array = extract_json_array_from_text(
-                text, fallback_to_manual=False)
+        if text.strip().startswith("[") and text.strip().endswith("]"):
+            json_array = extract_json_array_from_text(text, fallback_to_manual=False)
             if json_array:
                 return json_array, "json_array"
 
         # Check if it looks like a JSON object
-        if text.strip().startswith('{') and text.strip().endswith('}'):
+        if text.strip().startswith("{") and text.strip().endswith("}"):
             json_obj = extract_json_from_text(text, fallback_to_manual=False)
             if json_obj:
                 return json_obj, "json_object"
@@ -218,8 +223,7 @@ def extract_structured_data(text: Optional[str], expected_type: str = "auto") ->
 
     # Try JSON array
     if expected_type in ["auto", "list"]:
-        json_array = extract_json_array_from_text(
-            text, fallback_to_manual=False)
+        json_array = extract_json_array_from_text(text, fallback_to_manual=False)
         if json_array:
             return json_array, "json_array"
 
@@ -247,7 +251,7 @@ def _manual_json_extraction(text: str) -> Optional[Dict[str, Any]]:
     """Manually extract JSON-like object from text."""
     # Try to extract from common patterns first
     # Pattern: { key: value, key2: value2 }
-    brace_pattern = re.search(r'\{([^}]+)\}', text)
+    brace_pattern = re.search(r"\{([^}]+)\}", text)
     if brace_pattern:
         content = brace_pattern.group(1)
         pairs = extract_key_value_pairs(content)
@@ -264,7 +268,6 @@ def _manual_json_extraction(text: str) -> Optional[Dict[str, Any]]:
 
 def _manual_array_extraction(text: str) -> Optional[List[Any]]:
     """Manually extract array-like data from text."""
-    results = []
 
     # Extract quoted strings
     quoted_strings = re.findall(r'"([^"]*)"', text)
@@ -272,17 +275,17 @@ def _manual_array_extraction(text: str) -> Optional[List[Any]]:
         return [s.strip() for s in quoted_strings if s.strip()]
 
     # Extract numbered items
-    numbered_items = re.findall(r'\d+\.\s*(.+)', text)
+    numbered_items = re.findall(r"\d+\.\s*(.+)", text)
     if numbered_items:
         return [item.strip() for item in numbered_items if item.strip()]
 
     # Extract dash-separated items
-    dash_items = re.findall(r'-\s*(.+)', text)
+    dash_items = re.findall(r"-\s*(.+)", text)
     if dash_items:
         return [item.strip() for item in dash_items if item.strip()]
 
     # Extract comma-separated items
-    comma_items = re.findall(r'([^,]+)', text)
+    comma_items = re.findall(r"([^,]+)", text)
     if comma_items:
         cleaned_items = [item.strip() for item in comma_items if item.strip()]
         if len(cleaned_items) > 1:
@@ -294,8 +297,8 @@ def _manual_array_extraction(text: str) -> Optional[List[Any]]:
 def _extract_clean_string(text: str) -> Optional[str]:
     """Extract a clean string from text."""
     # Remove common artifacts
-    text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
-    text = re.sub(r'`.*?`', '', text)
+    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+    text = re.sub(r"`.*?`", "", text)
 
     # Extract content between quotes
     quoted = re.findall(r'"([^"]*)"', text)
@@ -315,13 +318,13 @@ def _clean_value(value: str) -> Any:
     value = value.strip()
 
     # Try to convert to appropriate type
-    if value.lower() in ['true', 'false']:
-        return value.lower() == 'true'
-    elif value.lower() == 'null':
+    if value.lower() in ["true", "false"]:
+        return value.lower() == "true"
+    elif value.lower() == "null":
         return None
     elif value.isdigit():
         return int(value)
-    elif re.match(r'^\d+\.\d+$', value):
+    elif re.match(r"^\d+\.\d+$", value):
         return float(value)
     elif value.startswith('"') and value.endswith('"'):
         return value[1:-1]
@@ -329,7 +332,9 @@ def _clean_value(value: str) -> Any:
         return value
 
 
-def validate_json_structure(data: Any, required_keys: Optional[List[str]] = None) -> bool:
+def validate_json_structure(
+    data: Any, required_keys: Optional[List[str]] = None
+) -> bool:
     """
     Validate that extracted data has the expected structure.
 

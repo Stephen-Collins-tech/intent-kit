@@ -1,6 +1,7 @@
 """
 Enums for the node system.
 """
+
 from enum import Enum
 
 

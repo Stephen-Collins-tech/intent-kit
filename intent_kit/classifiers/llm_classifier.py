@@ -15,9 +15,7 @@ logger = Logger("llm_classifier")
 
 
 def create_llm_classifier(
-    llm_config: Dict[str, Any],
-    classification_prompt: str,
-    node_descriptions: List[str]
+    llm_config: Dict[str, Any], classification_prompt: str, node_descriptions: List[str]
 ) -> Callable[[str, List[TreeNode], Optional[Dict[str, Any]]], Optional[TreeNode]]:
     """
     Create an LLM-powered classifier function.
@@ -30,7 +28,12 @@ def create_llm_classifier(
     Returns:
         Classifier function that can be used with ClassifierNode
     """
-    def llm_classifier(user_input: str, children: List[TreeNode], context: Optional[Dict[str, Any]] = None) -> Optional[TreeNode]:
+
+    def llm_classifier(
+        user_input: str,
+        children: List[TreeNode],
+        context: Optional[Dict[str, Any]] = None,
+    ) -> Optional[TreeNode]:
         """
         LLM-powered classifier that selects the most appropriate child node.
 
@@ -54,12 +57,14 @@ def create_llm_classifier(
             # Build the classification prompt
             prompt = classification_prompt.format(
                 user_input=user_input,
-                node_descriptions="\n".join([
-                    f"{i+1}. {child.name}: {child.description}"
-                    for i, child in enumerate(children)
-                ]),
+                node_descriptions="\n".join(
+                    [
+                        f"{i+1}. {child.name}: {child.description}"
+                        for i, child in enumerate(children)
+                    ]
+                ),
                 num_nodes=len(children),
-                context_info=context_info
+                context_info=context_info,
             )
 
             # Get LLM response
@@ -75,24 +80,25 @@ def create_llm_classifier(
                 # Make patterns more specific to avoid matching context numbers like years/timestamps
                 number_patterns = [
                     # Match 1-2 digit numbers after "choice"
-                    r'choice.*?(\d{1,2})',
+                    r"choice.*?(\d{1,2})",
                     # Match 1-2 digit numbers after "answer"
-                    r'answer.*?(\d{1,2})',
+                    r"answer.*?(\d{1,2})",
                     # Match 1-2 digit numbers after "number"
-                    r'number.*?(\d{1,2})',
+                    r"number.*?(\d{1,2})",
                     # Match 1-2 digit numbers after "select"
-                    r'select.*?(\d{1,2})',
+                    r"select.*?(\d{1,2})",
                     # Match 1-2 digit numbers after "option"
-                    r'option.*?(\d{1,2})',
-                    r'^(\d{1,2})$',  # Match standalone 1-2 digit numbers
+                    r"option.*?(\d{1,2})",
+                    r"^(\d{1,2})$",  # Match standalone 1-2 digit numbers
                     # Match 1-2 digit numbers with optional whitespace
-                    r'^(\d{1,2})\s*$',
+                    r"^(\d{1,2})\s*$",
                 ]
 
                 selected_index = None
                 for pattern in number_patterns:
-                    match = re.search(pattern, response_text,
-                                      re.IGNORECASE | re.MULTILINE)
+                    match = re.search(
+                        pattern, response_text, re.IGNORECASE | re.MULTILINE
+                    )
                     if match:
                         # Convert to 0-based
                         selected_index = int(match.group(1)) - 1
@@ -101,7 +107,7 @@ def create_llm_classifier(
                 # If no pattern matched, try to parse the entire response as a number
                 if selected_index is None:
                     # Clean up the response text - remove markdown formatting, asterisks, etc.
-                    cleaned_text = re.sub(r'[^\d]', '', response_text)
+                    cleaned_text = re.sub(r"[^\d]", "", response_text)
                     if cleaned_text:
                         # Only take the first 1-2 digits to avoid long numbers like years
                         first_digits = cleaned_text[:2]
@@ -113,14 +119,17 @@ def create_llm_classifier(
                     return children[selected_index]
                 else:
                     logger.warning(
-                        f"LLM returned invalid index: {selected_index} (valid range: 0-{len(children)-1})")
+                        f"LLM returned invalid index: {selected_index} (valid range: 0-{len(children)-1})"
+                    )
                     logger.warning(
-                        f"Available children: {[child.name for child in children]}")
+                        f"Available children: {[child.name for child in children]}"
+                    )
                     logger.warning(f"Raw LLM response: {response_text}")
                     return None
             except ValueError as e:
                 logger.warning(
-                    f"LLM response could not be parsed as integer: {response}")
+                    f"LLM response could not be parsed as integer: {response}"
+                )
                 logger.warning(f"Parse error: {e}")
                 return None
 
@@ -132,9 +141,7 @@ def create_llm_classifier(
 
 
 def create_llm_arg_extractor(
-    llm_config: Dict[str, Any],
-    extraction_prompt: str,
-    param_schema: Dict[str, Any]
+    llm_config: Dict[str, Any], extraction_prompt: str, param_schema: Dict[str, Any]
 ) -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
     """
     Create an LLM-powered argument extractor function.
@@ -147,7 +154,10 @@ def create_llm_arg_extractor(
     Returns:
         Argument extractor function that can be used with HandlerNode
     """
-    def llm_arg_extractor(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+
+    def llm_arg_extractor(
+        user_input: str, context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """
         LLM-powered argument extractor that extracts parameters from user input.
 
@@ -168,16 +178,18 @@ def create_llm_arg_extractor(
                 context_info += "\nUse this context information to help extract more accurate parameters."
 
             # Build the extraction prompt
-            param_descriptions = "\n".join([
-                f"- {param_name}: {param_type.__name__}"
-                for param_name, param_type in param_schema.items()
-            ])
+            param_descriptions = "\n".join(
+                [
+                    f"- {param_name}: {param_type.__name__}"
+                    for param_name, param_type in param_schema.items()
+                ]
+            )
 
             prompt = extraction_prompt.format(
                 user_input=user_input,
                 param_descriptions=param_descriptions,
                 param_names=", ".join(param_schema.keys()),
-                context_info=context_info
+                context_info=context_info,
             )
 
             # Get LLM response
@@ -194,11 +206,11 @@ def create_llm_arg_extractor(
             extracted_params = {}
 
             # Simple parsing: look for "param_name: value" patterns
-            lines = response.strip().split('\n')
+            lines = response.strip().split("\n")
             for line in lines:
                 line = line.strip()
-                if ':' in line:
-                    key, value = line.split(':', 1)
+                if ":" in line:
+                    key, value = line.split(":", 1)
                     key = key.strip()
                     value = value.strip()
                     if key in param_schema:
