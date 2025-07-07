@@ -5,7 +5,6 @@ run_node_eval.py
 Run evaluations on sample nodes using datasets.
 """
 
-from intent_kit.node.types import ExecutionResult
 from intent_kit.context import IntentContext
 from typing import Dict, Any, List, Optional
 from pathlib import Path
@@ -15,10 +14,8 @@ import os
 import importlib
 import argparse
 from dotenv import load_dotenv
-import json
 import csv
 from datetime import datetime
-import uuid
 
 # Add text similarity imports
 from difflib import SequenceMatcher

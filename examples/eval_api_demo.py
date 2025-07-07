@@ -5,6 +5,7 @@ eval_api_demo.py
 Demonstration of the new intent-kit evaluation API.
 """
 
+from dotenv import load_dotenv
 from intent_kit.evals import (
     load_dataset,
     run_eval,
@@ -14,6 +15,8 @@ from intent_kit.evals import (
     Dataset
 )
 from intent_kit.evals.sample_nodes.classifier_node_llm import classifier_node_llm
+
+load_dotenv()
 
 
 def demo_basic_usage():
@@ -37,7 +40,7 @@ def demo_basic_usage():
     json_path = result.save_json()
     md_path = result.save_markdown()
 
-    print(f"Results saved to:")
+    print("Results saved to:")
     print(f"  CSV: {csv_path}")
     print(f"  JSON: {json_path}")
     print(f"  Markdown: {md_path}")

@@ -4,7 +4,7 @@ LLM Factory for intent-kit
 This module provides a factory for creating LLM clients based on provider configuration.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from intent_kit.services.openai_client import OpenAIClient
 from intent_kit.services.anthropic_client import AnthropicClient
 from intent_kit.services.google_client import GoogleClient
@@ -86,8 +86,6 @@ class LLMFactory:
 
         # Extract optional parameters
         model = llm_config.get("model")
-        max_tokens = llm_config.get("max_tokens")
-        temperature = llm_config.get("temperature")
 
         # For now, we'll use the default generate method
         # In the future, we can extend this to pass additional parameters

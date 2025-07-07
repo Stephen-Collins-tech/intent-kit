@@ -9,7 +9,6 @@ from intent_kit.evals.run_node_eval import load_dataset, get_node_from_module, e
 import yaml
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-import sys
 import pathlib
 from dotenv import load_dotenv
 load_dotenv()
@@ -59,7 +58,7 @@ def run_all_evaluations():
 
     if not args.quiet:
         print("Generating comprehensive report...")
-    report = generate_comprehensive_report(
+    generate_comprehensive_report(
         results, str(output_path), run_timestamp=run_timestamp, mock_mode=args.mock)
 
     # Also write timestamped copy to date-based archive directory

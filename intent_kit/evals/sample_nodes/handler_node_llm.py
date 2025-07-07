@@ -1,7 +1,6 @@
 from typing import Optional, Dict, Any
 from intent_kit.handlers.node import HandlerNode
 from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult
 
 
 def extract_booking_args_llm(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:

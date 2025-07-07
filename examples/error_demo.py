@@ -7,7 +7,6 @@ rich, structured error information instead of simple strings.
 """
 
 from intent_kit import handler
-from intent_kit.builder import handler, llm_classifier
 from intent_kit.classifiers.keyword import keyword_classifier
 
 
@@ -89,7 +88,6 @@ def main():
             for step in result.children_results:
                 node_name = step.node_name
                 node_type = step.node_type
-                success = step.success
 
                 if step.error:
                     # Now we have rich error information!

@@ -2,9 +2,8 @@
 Specific tests for llm_splitter function.
 """
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from intent_kit.splitters.llm_splitter import llm_splitter, _create_splitting_prompt, _parse_llm_response
-import pytest
 
 
 class TestLLMSplitterFunction(unittest.TestCase):

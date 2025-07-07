@@ -163,7 +163,7 @@ def handler(
 
             # For each parameter, try to extract it using simple rules
             for param_name, param_type in param_schema.items():
-                if param_type == str:
+                if isinstance(param_type, type) and param_type is str:
                     # For string parameters, try to find relevant text
                     if param_name.lower() in ['name', 'location', 'operation']:
                         # Extract the last word as a simple heuristic
@@ -173,7 +173,7 @@ def handler(
                     else:
                         # Default: use the entire text for string params
                         extracted[param_name] = text.strip()
-                elif param_type in [int, float]:
+                elif isinstance(param_type, type) and param_type in [int, float]:
                     # For numeric parameters, try to find numbers in text
                     import re
                     numbers = re.findall(r'\d+(?:\.\d+)?', text)
@@ -198,7 +198,7 @@ def handler(
                             extracted[param_name] = param_type(0)
                 else:
                     # For other types, use a default value
-                    if param_type == bool:
+                    if isinstance(param_type, type) and param_type is bool:
                         extracted[param_name] = True
                     else:
                         extracted[param_name] = None

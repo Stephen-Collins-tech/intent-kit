@@ -499,8 +499,6 @@ class RetryWithAlternatePromptStrategy(RemediationStrategy):
                 f"RetryWithAlternatePromptStrategy: Missing handler_func or validated_params for {node_name}")
             return None
 
-        from intent_kit.services.llm_factory import LLMFactory
-        llm_client = LLMFactory.create_client(self.llm_config)
 
         # Try different parameter modification strategies
         modification_strategies = [

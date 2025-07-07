@@ -1,11 +1,10 @@
 """
 LLM-powered chunk classifier for intent chunks.
 """
-from intent_kit.types import IntentChunk, IntentChunkClassification, IntentClassification, IntentAction, ClassifierOutput
+from intent_kit.types import IntentChunk, IntentClassification, IntentAction, ClassifierOutput
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
 from intent_kit.utils.text_utils import extract_json_from_text, extract_key_value_pairs
-import json
 import re
 from typing import Optional
 
@@ -186,17 +185,6 @@ def _fallback_classify(chunk_text: str) -> ClassifierOutput:
             "action": IntentAction.CLARIFY,
             "metadata": {"confidence": 0.4, "reason": "Too short to classify"}
         }
-
-    # Only split on clear multi-intent patterns
-    multi_intent_patterns = [
-        r'\band\b.*\band\b',  # Multiple "and"s
-        r'[^,]*,[^,]*,[^,]*',  # Multiple commas
-        r'first.*second',      # Ordinal patterns
-        r'one.*two',           # Number patterns
-        r'\band\b',            # Single "and" between distinct actions
-        r'\bplus\b',           # "plus" conjunction
-        r'\balso\b',           # "also" conjunction
-    ]
 
     # Check for single conjunctions that likely indicate multiple intents
     single_conjunctions = [r'\band\b', r'\bplus\b', r'\balso\b']

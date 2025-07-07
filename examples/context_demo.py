@@ -7,7 +7,6 @@ between different steps of a workflow and across multiple user interactions.
 
 import os
 from datetime import datetime
-from typing import Dict, Any, Optional, List
 from intent_kit.context import IntentContext
 from intent_kit import IntentGraphBuilder, handler, llm_classifier
 from intent_kit.services.llm_factory import LLMFactory
@@ -88,7 +87,6 @@ def weather_handler(location: str, context: IntentContext) -> str:
     # Check if we've already fetched weather for this location recently
     last_weather = context.get("last_weather", {})
     if last_weather.get("location") == location:
-        time_diff = datetime.now().isoformat()
         return f"Weather in {location}: {last_weather.get('data')} (cached)"
 
     # Simulate weather data
@@ -229,7 +227,7 @@ def main():
 
                 # Show execution path if available
                 if result.children_results:
-                    print(f"  Execution Path:")
+                    print("  Execution Path:")
                     for i, child_result in enumerate(result.children_results):
                         path_str = '.'.join(child_result.node_path)
                         print(
@@ -244,7 +242,7 @@ def main():
                             print(f"       Error: {child_result.error}")
 
                 # Show context state after execution
-                print(f"  Context state:")
+                print("  Context state:")
                 print(
                     f"    Greeting count: {context.get('greeting_count', 0)}")
                 print(
@@ -272,21 +270,21 @@ def main():
             print(f"  Error: {e}")
 
     # Show final context state
-    print(f"\n--- Final Context State ---")
+    print("\n--- Final Context State ---")
     print(f"Session ID: {context.session_id}")
     print(f"Total fields: {len(context.keys())}")
     print(f"History entries: {len(context.get_history())}")
     print(f"Error count: {context.error_count()}")
 
     # Show some context history
-    print(f"\n--- Context History (last 5 entries) ---")
+    print("\n--- Context History (last 5 entries) ---")
     for entry in context.get_history(limit=5):
         print(f"  {entry.timestamp}: {entry.action} '{entry.key}' = {entry.value}")
 
     # Show recent errors if any
     errors = context.get_errors(limit=3)
     if errors:
-        print(f"\n--- Recent Errors (last 3) ---")
+        print("\n--- Recent Errors (last 3) ---")
         for error in errors:
             print(
                 f"  [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name}")

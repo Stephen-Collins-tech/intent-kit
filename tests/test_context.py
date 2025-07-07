@@ -3,9 +3,8 @@ Tests for the IntentContext system.
 """
 
 import pytest
-from datetime import datetime
-from intent_kit.context import IntentContext, ContextField, ContextHistoryEntry
-from intent_kit.context.dependencies import ContextDependencies, declare_dependencies, validate_context_dependencies, merge_dependencies
+from intent_kit.context import IntentContext
+from intent_kit.context.dependencies import declare_dependencies, validate_context_dependencies, merge_dependencies
 
 
 class TestIntentContext:

@@ -2,7 +2,6 @@
 Specific tests for rule_splitter function.
 """
 import unittest
-from unittest.mock import Mock
 from intent_kit.splitters.rule_splitter import rule_splitter
 
 

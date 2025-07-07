@@ -1,6 +1,5 @@
 from typing import Optional, List, Dict, Any
 from intent_kit.splitters.node import SplitterNode
-from intent_kit.context import IntentContext
 
 
 def split_text_llm(user_input: str, debug: bool = False, context: Optional[Dict[str, Any]] = None) -> List[str]:

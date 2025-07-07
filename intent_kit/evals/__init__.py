@@ -89,7 +89,7 @@ class EvalResult:
         print(f"  Passed: {self.passed_count()}")
         print(f"  Failed: {self.failed_count()}")
         if self.errors():
-            print(f"\nFailed Tests:")
+            print("\nFailed Tests:")
             for i, error in enumerate(self.errors()[:5]):
                 print(f"  {i+1}. Input: '{error.input}'")
                 print(f"     Expected: '{error.expected}'")

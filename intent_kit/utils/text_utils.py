@@ -7,7 +7,7 @@ particularly for handling LLM responses and other structured text data.
 
 import json
 import re
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from intent_kit.utils.logger import Logger
 
 logger = Logger(__name__)
@@ -264,7 +264,6 @@ def _manual_json_extraction(text: str) -> Optional[Dict[str, Any]]:
 
 def _manual_array_extraction(text: str) -> Optional[List[Any]]:
     """Manually extract array-like data from text."""
-    results = []
 
     # Extract quoted strings
     quoted_strings = re.findall(r'"([^"]*)"', text)

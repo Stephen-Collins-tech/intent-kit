@@ -152,7 +152,7 @@ class OllamaClient:
     def is_available(cls) -> bool:
         """Check if Ollama package is available."""
         try:
-            from ollama import Client
-            return True
+            import importlib.util
+            return importlib.util.find_spec("ollama") is not None
         except ImportError:
             return False

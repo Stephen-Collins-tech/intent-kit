@@ -1,6 +1,6 @@
 """Service registry for intentify with optional dependencies."""
 
-from typing import Dict, Type, Optional, Any
+from typing import Dict, Type, Any
 from .google_client import GoogleClient
 from .anthropic_client import AnthropicClient
 from .openai_client import OpenAIClient

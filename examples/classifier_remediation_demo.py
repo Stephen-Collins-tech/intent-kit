@@ -15,11 +15,10 @@ from intent_kit.utils.logger import Logger
 from intent_kit.node.types import ExecutionResult, ExecutionError
 from intent_kit.handlers.remediation import (
     RemediationStrategy,
-    create_keyword_fallback_strategy,
     register_remediation_strategy
 )
 from intent_kit.context import IntentContext
-from intent_kit.builder import handler, llm_classifier, IntentGraphBuilder
+from intent_kit.builder import handler, IntentGraphBuilder
 import sys
 import os
 from typing import Optional, Callable, List

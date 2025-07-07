@@ -2,7 +2,6 @@
 Tests for the remediation strategies.
 """
 
-import pytest
 import json
 from unittest.mock import Mock, patch, MagicMock
 from intent_kit.handlers.remediation import (
@@ -22,8 +21,7 @@ from intent_kit.handlers.remediation import (
     create_consensus_vote_strategy,
     create_alternate_prompt_strategy
 )
-from intent_kit.node.types import ExecutionResult, ExecutionError
-from intent_kit.node.enums import NodeType
+from intent_kit.node.types import ExecutionError
 from intent_kit.context import IntentContext
 from intent_kit.utils.text_utils import extract_json_from_text
 

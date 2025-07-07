@@ -1,7 +1,6 @@
 from typing import Any, Callable, List, Optional, Dict, Union
 from intent_kit.node.base import TreeNode
 from intent_kit.node.enums import NodeType
-from intent_kit.utils.logger import Logger
 from intent_kit.context import IntentContext
 from intent_kit.node.types import ExecutionResult, ExecutionError
 from intent_kit.handlers.remediation import get_remediation_strategy, RemediationStrategy

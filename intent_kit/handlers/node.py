@@ -286,13 +286,13 @@ class HandlerNode(TreeNode):
                     f"Missing required parameter '{param_name}' for intent '{self.name}' (Path: {'.'.join(self.get_path())})")
                 raise Exception(f"Missing required parameter '{param_name}'")
             param_value = params[param_name]
-            if expected_type == str:
+            if isinstance(expected_type, type) and expected_type is str:
                 if not isinstance(param_value, str):
                     self.logger.error(
                         f"Parameter '{param_name}' must be a string, got {type(param_value).__name__} for intent '{self.name}' (Path: {'.'.join(self.get_path())})")
                     raise Exception(
                         f"Parameter '{param_name}' must be a string, got {type(param_value).__name__}")
-            elif expected_type == int:
+            elif isinstance(expected_type, type) and expected_type is int:
                 try:
                     param_value = int(param_value)
                 except (ValueError, TypeError) as e:
@@ -300,7 +300,7 @@ class HandlerNode(TreeNode):
                         f"Parameter '{param_name}' must be an integer, got {type(param_value).__name__} for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}")
                     raise Exception(
                         f"Parameter '{param_name}' must be an integer, got {type(param_value).__name__}: {type(e).__name__}: {str(e)}")
-            elif expected_type == float:
+            elif isinstance(expected_type, type) and expected_type is float:
                 try:
                     param_value = float(param_value)
                 except (ValueError, TypeError) as e:
@@ -308,7 +308,7 @@ class HandlerNode(TreeNode):
                         f"Parameter '{param_name}' must be a number, got {type(param_value).__name__} for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}")
                     raise Exception(
                         f"Parameter '{param_name}' must be a number, got {type(param_value).__name__}: {type(e).__name__}: {str(e)}")
-            elif expected_type == bool:
+            elif isinstance(expected_type, type) and expected_type is bool:
                 if isinstance(param_value, str):
                     param_value = param_value.lower() in ('true', '1', 'yes', 'on')
                 elif not isinstance(param_value, bool):

@@ -1,10 +1,8 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 from intent_kit.node.base import TreeNode
 from intent_kit.node.enums import NodeType
-from intent_kit.utils.logger import Logger
 from intent_kit.context import IntentContext
 from intent_kit.node.types import ExecutionResult, ExecutionError
-from intent_kit.types import IntentChunk
 
 
 class SplitterNode(TreeNode):

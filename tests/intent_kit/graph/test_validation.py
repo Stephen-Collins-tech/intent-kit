@@ -6,7 +6,7 @@ Simple test script to verify the validation functionality.
 from intent_kit.builder import handler, rule_splitter_node
 from intent_kit.classifiers import ClassifierNode
 from intent_kit.graph import IntentGraph
-from intent_kit.graph.validation import GraphValidationError, validate_splitter_routing
+from intent_kit.graph.validation import GraphValidationError
 
 
 def test_valid_graph():

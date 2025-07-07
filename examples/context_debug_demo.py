@@ -6,7 +6,7 @@ Demonstrates the new context debugging features in under 150 lines.
 
 import os
 from intent_kit import IntentGraphBuilder, handler, llm_classifier
-from intent_kit import get_context_dependencies, validate_context_flow, trace_context_execution
+from intent_kit import trace_context_execution
 from intent_kit.context import IntentContext
 from dotenv import load_dotenv
 

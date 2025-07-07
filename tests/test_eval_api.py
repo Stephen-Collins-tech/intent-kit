@@ -11,7 +11,6 @@ from intent_kit.evals import (
     load_dataset,
     run_eval,
     run_eval_from_path,
-    run_eval_from_module,
     EvalTestCase,
     Dataset,
     EvalTestResult,

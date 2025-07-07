@@ -15,8 +15,6 @@ Usage:
 from intent_kit.utils.logger import Logger
 from intent_kit.handlers.remediation import (
     RemediationStrategy,
-    create_retry_strategy,
-    create_fallback_strategy,
     register_remediation_strategy
 )
 from intent_kit.node.types import ExecutionResult, ExecutionError

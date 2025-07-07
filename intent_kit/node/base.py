@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Callable, List, Optional, Dict, Type, Set, Sequence
+from typing import List, Optional
 from abc import ABC, abstractmethod
 from intent_kit.utils.logger import Logger
 from intent_kit.context import IntentContext
