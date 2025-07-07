@@ -15,6 +15,7 @@ class OllamaClient:
         """Get the Ollama client."""
         try:
             from ollama import Client
+
             return Client(host=self.base_url)
         except ImportError:
             raise ImportError(
@@ -26,6 +27,7 @@ class OllamaClient:
         if self._client is None:
             try:
                 from ollama import Client
+
                 self._client = Client(host=self.base_url)
             except ImportError:
                 raise ImportError(
@@ -36,11 +38,8 @@ class OllamaClient:
         """Generate text using Ollama model."""
         self._ensure_imported()
         try:
-            response = self._client.generate(
-                model=model,
-                prompt=prompt
-            )
-            content = response['response']
+            response = self._client.generate(model=model, prompt=prompt)
+            content = response["response"]
             logger.debug(f"Ollama generate response: {content}")
             return str(content) if content else ""
         except Exception as e:
@@ -51,12 +50,8 @@ class OllamaClient:
         """Generate text using Ollama model with streaming."""
         self._ensure_imported()
         try:
-            for chunk in self._client.generate(
-                model=model,
-                prompt=prompt,
-                stream=True
-            ):
-                yield chunk['response']
+            for chunk in self._client.generate(model=model, prompt=prompt, stream=True):
+                yield chunk["response"]
         except Exception as e:
             logger.error(f"Error streaming with Ollama: {e}")
             raise
@@ -65,11 +60,8 @@ class OllamaClient:
         """Chat with Ollama model using messages format."""
         self._ensure_imported()
         try:
-            response = self._client.chat(
-                model=model,
-                messages=messages
-            )
-            content = response['message']['content']
+            response = self._client.chat(model=model, messages=messages)
+            content = response["message"]["content"]
             logger.debug(f"Ollama chat response: {content}")
             return str(content) if content else ""
         except Exception as e:
@@ -80,12 +72,8 @@ class OllamaClient:
         """Chat with Ollama model using messages format with streaming."""
         self._ensure_imported()
         try:
-            for chunk in self._client.chat(
-                model=model,
-                messages=messages,
-                stream=True
-            ):
-                yield chunk['message']['content']
+            for chunk in self._client.chat(model=model, messages=messages, stream=True):
+                yield chunk["message"]["content"]
         except Exception as e:
             logger.error(f"Error streaming chat with Ollama: {e}")
             raise
@@ -98,20 +86,19 @@ class OllamaClient:
             logger.debug(f"Ollama list response: {models_response}")
 
             # The correct type is ListResponse, which has a .models attribute
-            if hasattr(models_response, 'models'):
+            if hasattr(models_response, "models"):
                 models = models_response.models
             else:
-                logger.error(
-                    f"Unexpected response structure: {models_response}")
+                logger.error(f"Unexpected response structure: {models_response}")
                 return []
 
             # Each model is a ListResponse.Model with a .model attribute
             model_names = []
             for model in models:
-                if hasattr(model, 'model') and model.model:
+                if hasattr(model, "model") and model.model:
                     model_names.append(model.model)
-                elif isinstance(model, dict) and 'model' in model:
-                    model_names.append(model['model'])
+                elif isinstance(model, dict) and "model" in model:
+                    model_names.append(model["model"])
                 elif isinstance(model, str):
                     model_names.append(model)
                 else:
@@ -153,6 +140,7 @@ class OllamaClient:
         """Check if Ollama package is available."""
         try:
             import importlib.util
+
             return importlib.util.find_spec("ollama") is not None
         except ImportError:
             return False

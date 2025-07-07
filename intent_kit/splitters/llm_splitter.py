@@ -1,13 +1,16 @@
 """
 LLM-based intent splitter for IntentGraph.
 """
+
 from typing import List, Sequence
 from intent_kit.utils.logger import Logger
 from intent_kit.types import IntentChunk
 from intent_kit.utils.text_utils import extract_json_array_from_text
 
 
-def llm_splitter(user_input: str, debug: bool = False, llm_client=None) -> Sequence[IntentChunk]:
+def llm_splitter(
+    user_input: str, debug: bool = False, llm_client=None
+) -> Sequence[IntentChunk]:
     """
     LLM-based intent splitter using AI models.
 
@@ -27,9 +30,11 @@ def llm_splitter(user_input: str, debug: bool = False, llm_client=None) -> Seque
     if not llm_client:
         if debug:
             logger.warning(
-                "No LLM client available, falling back to rule-based splitting")
+                "No LLM client available, falling back to rule-based splitting"
+            )
         # Fallback to rule-based splitting
         from .rule_splitter import rule_splitter
+
         return rule_splitter(user_input, debug)
 
     try:
@@ -58,17 +63,19 @@ def llm_splitter(user_input: str, debug: bool = False, llm_client=None) -> Seque
             # If no valid results, fallback to rule-based
             if debug:
                 logger.warning(
-                    "LLM parsing returned no results, falling back to rule-based")
+                    "LLM parsing returned no results, falling back to rule-based"
+                )
             from .rule_splitter import rule_splitter
+
             return rule_splitter(user_input, debug)
 
     except Exception as e:
         if debug:
-            logger.error(
-                f"LLM splitting failed: {e}, falling back to rule-based")
+            logger.error(f"LLM splitting failed: {e}, falling back to rule-based")
 
         # Fallback to rule-based splitting
         from .rule_splitter import rule_splitter
+
         return rule_splitter(user_input, debug)
 
 
@@ -103,8 +110,7 @@ def _parse_llm_response(response: str) -> List[str]:
                     results.append(item.strip())
             return results
         # If JSON parsing fails, try manual extraction from the utility
-        manual = extract_json_array_from_text(
-            response, fallback_to_manual=True)
+        manual = extract_json_array_from_text(response, fallback_to_manual=True)
         if manual:
             return [str(item).strip() for item in manual]
         return []

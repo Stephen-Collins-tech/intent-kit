@@ -15,7 +15,7 @@ Usage:
 from intent_kit.utils.logger import Logger
 from intent_kit.handlers.remediation import (
     RemediationStrategy,
-    register_remediation_strategy
+    register_remediation_strategy,
 )
 from intent_kit.node.types import ExecutionResult, ExecutionError
 from intent_kit.context import IntentContext
@@ -24,6 +24,7 @@ import sys
 import os
 from typing import Optional
 from dotenv import load_dotenv
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Load environment variables
@@ -37,11 +38,13 @@ logger = Logger("remediation_demo")
 LLM_CONFIG = {
     "provider": "openai",
     "model": "gpt-4.1-mini",
-    "api_key": os.getenv("OPENAI_API_KEY")
+    "api_key": os.getenv("OPENAI_API_KEY"),
 }
 
 
-def unreliable_calculator(operation: str, a: float, b: float, context: IntentContext) -> str:
+def unreliable_calculator(
+    operation: str, a: float, b: float, context: IntentContext
+) -> str:
     """
     A deliberately unreliable calculator that fails randomly to demonstrate remediation.
     """
@@ -50,7 +53,8 @@ def unreliable_calculator(operation: str, a: float, b: float, context: IntentCon
     # Simulate random failures (30% failure rate)
     if random.random() < 0.3:
         raise Exception(
-            "Random calculation failure - this is expected for demo purposes")
+            "Random calculation failure - this is expected for demo purposes"
+        )
 
     ops = {"add": "+", "plus": "+", "multiply": "*", "times": "*"}
     op = ops.get(operation.lower(), operation)
@@ -63,7 +67,9 @@ def unreliable_calculator(operation: str, a: float, b: float, context: IntentCon
     return f"{a} {operation} {b} = {result}"
 
 
-def reliable_calculator(operation: str, a: float, b: float, context: IntentContext) -> str:
+def reliable_calculator(
+    operation: str, a: float, b: float, context: IntentContext
+) -> str:
     """
     A reliable fallback calculator that always works.
     """
@@ -95,11 +101,10 @@ def create_custom_remediation_strategy() -> RemediationStrategy:
             user_input: str,
             context: Optional[IntentContext] = None,
             original_error: Optional[ExecutionError] = None,
-            **kwargs
+            **kwargs,
         ) -> Optional[ExecutionResult]:
             """Log the error and return a simple message."""
-            self.logger.info(
-                f"LogAndContinueStrategy: Handling error for {node_name}")
+            self.logger.info(f"LogAndContinueStrategy: Handling error for {node_name}")
 
             from intent_kit.node.types import ExecutionResult
             from intent_kit.node.enums import NodeType
@@ -112,11 +117,13 @@ def create_custom_remediation_strategy() -> RemediationStrategy:
                 input=user_input,
                 output=f"Operation completed with warnings (original error: {original_error.message if original_error else 'unknown'})",
                 error=None,
-                params=kwargs.get('validated_params', {}),
-                children_results=[]
+                params=kwargs.get("validated_params", {}),
+                children_results=[],
             )
 
-    return LogAndContinueStrategy("log_and_continue", "Log error and continue with warning")
+    return LogAndContinueStrategy(
+        "log_and_continue", "Log error and continue with warning"
+    )
 
 
 def create_intent_graph():
@@ -137,9 +144,8 @@ def create_intent_graph():
             llm_config=LLM_CONFIG,
             context_inputs={"calc_history"},
             context_outputs={"calc_history"},
-            remediation_strategies=["retry_on_fail"]  # Built-in retry strategy
+            remediation_strategies=["retry_on_fail"],  # Built-in retry strategy
         ),
-
         # Handler with fallback strategy
         handler(
             name="reliable_calc",
@@ -150,9 +156,8 @@ def create_intent_graph():
             context_inputs={"calc_history"},
             context_outputs={"calc_history"},
             # Built-in fallback strategy
-            remediation_strategies=["fallback_to_another_node"]
+            remediation_strategies=["fallback_to_another_node"],
         ),
-
         # Handler with custom remediation strategy
         handler(
             name="simple_greet",
@@ -162,8 +167,8 @@ def create_intent_graph():
             llm_config=LLM_CONFIG,
             context_inputs={"greeting_count"},
             context_outputs={"greeting_count"},
-            remediation_strategies=["log_and_continue"]  # Custom strategy
-        )
+            remediation_strategies=["log_and_continue"],  # Custom strategy
+        ),
     ]
 
     # Create classifier
@@ -171,7 +176,7 @@ def create_intent_graph():
         name="root",
         children=handlers,
         llm_config=LLM_CONFIG,
-        description="Main intent classifier with remediation"
+        description="Main intent classifier with remediation",
     )
 
     # Build and return the graph
@@ -195,7 +200,7 @@ def run_demo():
         "What is 10 times 2?",
         "Hello Alice",
         "Add 7 and 4",
-        "Multiply 3 by 6"
+        "Multiply 3 by 6",
     ]
 
     print("\n📋 Test Cases:")
@@ -212,7 +217,8 @@ def run_demo():
                 print(f"✅ Success: {result.output}")
             else:
                 print(
-                    f"❌ Failed: {result.error.message if result.error else 'Unknown error'}")
+                    f"❌ Failed: {result.error.message if result.error else 'Unknown error'}"
+                )
 
         except Exception as e:
             print(f"💥 Exception: {type(e).__name__}: {str(e)}")

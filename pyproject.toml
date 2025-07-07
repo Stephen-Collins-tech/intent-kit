@@ -52,6 +52,7 @@ dev = [
     "tqdm",
     "pyyaml",
     "black>=24.4.2",
+    "black[jupyter]>=24.4.2",
     "ruff>=0.4.7",
     "mypy>=1.10.0",
     "pre-commit>=3.6.0",
@@ -62,6 +63,8 @@ dev = [
     "mkdocstrings[python]>=0.24.0",
     "mkdocs-literate-nav>=0.6.0",
     "ipykernel>=6.0.0",
+    "types-pyyaml>=6.0.12.20250516",
+    "types-networkx>=3.5.0.20250701",
 ]
 viz = [
     "networkx>=3.5",

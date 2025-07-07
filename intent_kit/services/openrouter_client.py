@@ -15,9 +15,9 @@ class OpenRouterClient:
         """Get the OpenRouter client."""
         try:
             import openai
+
             return openai.OpenAI(
-                api_key=self.api_key,
-                base_url="https://openrouter.ai/api/v1"
+                api_key=self.api_key, base_url="https://openrouter.ai/api/v1"
             )
         except ImportError:
             raise ImportError(
@@ -29,9 +29,9 @@ class OpenRouterClient:
         if self._client is None:
             try:
                 import openai
+
                 self._client = openai.OpenAI(
-                    api_key=self.api_key,
-                    base_url="https://openrouter.ai/api/v1"
+                    api_key=self.api_key, base_url="https://openrouter.ai/api/v1"
                 )
             except ImportError:
                 raise ImportError(
@@ -42,9 +42,7 @@ class OpenRouterClient:
         """Generate text using OpenRouter model."""
         self._ensure_imported()
         response = self._client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=1000
+            model=model, messages=[{"role": "user", "content": prompt}], max_tokens=1000
         )
         content = response.choices[0].message.content
         logger.debug(f"OpenRouter generate response: {content}")

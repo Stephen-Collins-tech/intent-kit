@@ -14,14 +14,13 @@ from intent_kit.evals import (
     EvalTestCase,
     Dataset,
     EvalTestResult,
-    EvalResult
+    EvalResult,
 )
 
 
 def test_load_dataset():
     """Test loading a dataset from YAML."""
-    dataset = load_dataset(
-        "intent_kit/evals/datasets/classifier_node_llm.yaml")
+    dataset = load_dataset("intent_kit/evals/datasets/classifier_node_llm.yaml")
 
     assert dataset.name == "classifier_node_llm"
     assert dataset.node_type == "classifier"
@@ -47,7 +46,7 @@ def test_load_dataset_malformed():
     import tempfile
     import yaml
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump({"invalid": "data"}, f)
         temp_path = f.name
 
@@ -60,11 +59,7 @@ def test_load_dataset_malformed():
 
 def test_test_case_defaults():
     """Test EvalTestCase with default context."""
-    test_case = EvalTestCase(
-        input="test input",
-        expected="test expected",
-        context={}
-    )
+    test_case = EvalTestCase(input="test input", expected="test expected", context={})
 
     assert test_case.input == "test input"
     assert test_case.expected == "test expected"
@@ -79,7 +74,7 @@ def test_dataset_defaults():
         description="",
         node_type="test",
         node_name="test_node",
-        test_cases=test_cases
+        test_cases=test_cases,
     )
 
     assert dataset.description == ""
@@ -90,12 +85,12 @@ def test_eval_result_methods():
     results = [
         EvalTestResult("input1", "expected1", "actual1", True, {}),
         EvalTestResult("input2", "expected2", "actual2", False, {}),
-        EvalTestResult("input3", "expected3", "actual3", True, {})
+        EvalTestResult("input3", "expected3", "actual3", True, {}),
     ]
 
     eval_result = EvalResult(results, "test_dataset")
 
-    assert eval_result.accuracy() == 2/3
+    assert eval_result.accuracy() == 2 / 3
     assert eval_result.passed_count() == 2
     assert eval_result.failed_count() == 1
     assert eval_result.total_count() == 3
@@ -117,12 +112,13 @@ def test_eval_result_empty():
 
 def test_run_eval_with_callable():
     """Test run_eval with a callable node."""
+
     def simple_node(input_text, context=None):
         return f"Processed: {input_text}"
 
     test_cases = [
         EvalTestCase("hello", "Processed: hello", {}),
-        EvalTestCase("world", "Processed: world", {})
+        EvalTestCase("world", "Processed: world", {}),
     ]
 
     dataset = Dataset(
@@ -130,7 +126,7 @@ def test_run_eval_with_callable():
         description="Test dataset",
         node_type="test",
         node_name="simple_node",
-        test_cases=test_cases
+        test_cases=test_cases,
     )
 
     result = run_eval(dataset, simple_node)
@@ -142,6 +138,7 @@ def test_run_eval_with_callable():
 
 def test_run_eval_with_error():
     """Test run_eval with a node that raises exceptions."""
+
     def error_node(input_text, context=None):
         if "error" in input_text.lower():
             raise ValueError("Intentional error")
@@ -151,7 +148,7 @@ def test_run_eval_with_error():
         EvalTestCase("hello", "success", {}),
         # This will fail due to exception
         EvalTestCase("error", "success", {}),
-        EvalTestCase("world", "success", {})
+        EvalTestCase("world", "success", {}),
     ]
 
     dataset = Dataset(
@@ -159,12 +156,12 @@ def test_run_eval_with_error():
         description="Test dataset",
         node_type="test",
         node_name="error_node",
-        test_cases=test_cases
+        test_cases=test_cases,
     )
 
     result = run_eval(dataset, error_node)
 
-    assert result.accuracy() == 2/3
+    assert result.accuracy() == 2 / 3
     assert not result.all_passed()
     assert result.failed_count() == 1
     assert result.errors()[0].error == "Intentional error"
@@ -172,6 +169,7 @@ def test_run_eval_with_error():
 
 def test_run_eval_fail_fast():
     """Test run_eval with fail_fast=True."""
+
     def error_node(input_text, context=None):
         if "error" in input_text.lower():
             raise ValueError("Intentional error")
@@ -182,7 +180,7 @@ def test_run_eval_fail_fast():
         # This will fail and stop execution
         EvalTestCase("error", "success", {}),
         # This won't run due to fail_fast
-        EvalTestCase("world", "success", {})
+        EvalTestCase("world", "success", {}),
     ]
 
     dataset = Dataset(
@@ -190,7 +188,7 @@ def test_run_eval_fail_fast():
         description="Test dataset",
         node_type="test",
         node_name="error_node",
-        test_cases=test_cases
+        test_cases=test_cases,
     )
 
     result = run_eval(dataset, error_node, fail_fast=True)
@@ -202,6 +200,7 @@ def test_run_eval_fail_fast():
 
 def test_run_eval_custom_comparator():
     """Test run_eval with custom comparator."""
+
     def simple_node(input_text, context=None):
         return input_text.upper()
 
@@ -210,7 +209,7 @@ def test_run_eval_custom_comparator():
 
     test_cases = [
         EvalTestCase("hello", "HELLO", {}),
-        EvalTestCase("world", "WORLD", {})
+        EvalTestCase("world", "WORLD", {}),
     ]
 
     dataset = Dataset(
@@ -218,11 +217,10 @@ def test_run_eval_custom_comparator():
         description="Test dataset",
         node_type="test",
         node_name="simple_node",
-        test_cases=test_cases
+        test_cases=test_cases,
     )
 
-    result = run_eval(dataset, simple_node,
-                      comparator=case_insensitive_comparator)
+    result = run_eval(dataset, simple_node, comparator=case_insensitive_comparator)
 
     assert result.accuracy() == 1.0
     assert result.all_passed()
@@ -230,6 +228,7 @@ def test_run_eval_custom_comparator():
 
 def test_run_eval_from_path():
     """Test run_eval_from_path convenience function."""
+
     def simple_node(input_text, context=None):
         return f"Processed: {input_text}"
 
@@ -242,18 +241,18 @@ def test_run_eval_from_path():
             "name": "test_dataset",
             "description": "Test dataset",
             "node_type": "test",
-            "node_name": "simple_node"
+            "node_name": "simple_node",
         },
         "test_cases": [
             {
                 "input": "hello",
                 "expected": "Processed: hello",
-                "context": {"user_id": "test"}
+                "context": {"user_id": "test"},
             }
-        ]
+        ],
     }
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(test_data, f)
         temp_path = f.name
 
@@ -269,15 +268,15 @@ def test_save_results():
     """Test saving results to different formats."""
     results = [
         EvalTestResult("input1", "expected1", "actual1", True, {}),
-        EvalTestResult("input2", "expected2", "actual2",
-                       False, {}, "test error")
+        EvalTestResult("input2", "expected2", "actual2", False, {}, "test error"),
     ]
 
     eval_result = EvalResult(results, "test_dataset")
 
     # Test CSV save
     import tempfile
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
         csv_path = f.name
 
     try:
@@ -287,7 +286,7 @@ def test_save_results():
         Path(csv_path).unlink()
 
     # Test JSON save
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json_path = f.name
 
     try:
@@ -297,7 +296,7 @@ def test_save_results():
         Path(json_path).unlink()
 
     # Test Markdown save
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
         md_path = f.name
 
     try:

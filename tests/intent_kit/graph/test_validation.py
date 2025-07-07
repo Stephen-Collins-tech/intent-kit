@@ -18,7 +18,7 @@ def test_valid_graph():
         name="greet",
         description="Greet the user",
         handler_func=lambda name: f"Hello {name}!",
-        param_schema={"name": str}
+        param_schema={"name": str},
     )
 
     # Create classifier node manually since we need a custom classifier
@@ -26,7 +26,7 @@ def test_valid_graph():
         name="main_classifier",
         classifier=lambda text, children, context: children[0],
         children=[greet_node],
-        description="Main classifier"
+        description="Main classifier",
     )
 
     # Set parent reference
@@ -36,7 +36,7 @@ def test_valid_graph():
     splitter_node = rule_splitter_node(
         name="main_splitter",
         children=[classifier_node],  # Routes to classifier - VALID
-        description="Split multi-intent inputs"
+        description="Split multi-intent inputs",
     )
 
     # Create graph and validate
@@ -55,14 +55,14 @@ def test_invalid_graph():
         name="greet",
         description="Greet the user",
         handler_func=lambda name: f"Hello {name}!",
-        param_schema={"name": str}
+        param_schema={"name": str},
     )
 
     # Create splitter node that routes directly to intent nodes (INVALID)
     splitter_node = rule_splitter_node(
         name="invalid_splitter",
         children=[greet_node],  # Routes directly to intent - INVALID
-        description="Invalid splitter"
+        description="Invalid splitter",
     )
 
     # Create graph and try to validate

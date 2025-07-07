@@ -12,7 +12,6 @@ from .types import SplitterFunction
 __all__ = [
     # Node class
     "SplitterNode",
-
     # Splitter functions
     "rule_splitter",
     "llm_splitter",

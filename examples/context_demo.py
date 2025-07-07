@@ -11,13 +11,14 @@ from intent_kit.context import IntentContext
 from intent_kit import IntentGraphBuilder, handler, llm_classifier
 from intent_kit.services.llm_factory import LLMFactory
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # LLM configuration
 LLM_CONFIG = {
     "provider": "openrouter",
     "api_key": os.getenv("OPENROUTER_API_KEY"),
-    "model": "meta-llama/llama-4-maverick-17b-128e-instruct"
+    "model": "meta-llama/llama-4-maverick-17b-128e-instruct",
 }
 
 # Create LLM client
@@ -33,13 +34,16 @@ def greet_handler(name: str, context: IntentContext) -> str:
     # Update context
     context.set("greeting_count", greeting_count + 1, modified_by="greet")
     context.set("last_greeted", name, modified_by="greet")
-    context.set("last_greeting_time",
-                datetime.now().isoformat(), modified_by="greet")
+    context.set("last_greeting_time", datetime.now().isoformat(), modified_by="greet")
 
-    return f"Hello {name}! (Greeting #{greeting_count + 1}, last greeted: {last_greeted})"
+    return (
+        f"Hello {name}! (Greeting #{greeting_count + 1}, last greeted: {last_greeted})"
+    )
 
 
-def calculate_handler(operation: str, a: float, b: float, context: IntentContext) -> str:
+def calculate_handler(
+    operation: str, a: float, b: float, context: IntentContext
+) -> str:
     """Calculate handler with history tracking."""
     result = None
 
@@ -68,16 +72,21 @@ def calculate_handler(operation: str, a: float, b: float, context: IntentContext
 
     # Store calculation history in context
     calc_history = context.get("calculation_history", [])
-    calc_history.append({
-        "operation": operation_display,
-        "a": a,
-        "b": b,
-        "result": result,
-        "timestamp": datetime.now().isoformat()
-    })
+    calc_history.append(
+        {
+            "operation": operation_display,
+            "a": a,
+            "b": b,
+            "result": result,
+            "timestamp": datetime.now().isoformat(),
+        }
+    )
     context.set("calculation_history", calc_history, modified_by="calculate")
-    context.set("last_calculation",
-                f"{a} {operation_display} {b} = {result}", modified_by="calculate")
+    context.set(
+        "last_calculation",
+        f"{a} {operation_display} {b} = {result}",
+        modified_by="calculate",
+    )
 
     return f"{a} {operation_display} {b} = {result}"
 
@@ -93,11 +102,15 @@ def weather_handler(location: str, context: IntentContext) -> str:
     weather_data = f"72°F, Sunny (simulated for {location})"
 
     # Store in context
-    context.set("last_weather", {
-        "location": location,
-        "data": weather_data,
-        "timestamp": datetime.now().isoformat()
-    }, modified_by="weather")
+    context.set(
+        "last_weather",
+        {
+            "location": location,
+            "data": weather_data,
+            "timestamp": datetime.now().isoformat(),
+        },
+        modified_by="weather",
+    )
 
     return f"Weather in {location}: {weather_data}"
 
@@ -129,8 +142,7 @@ def build_context_aware_tree():
         param_schema={"name": str},
         llm_config=LLM_CONFIG,
         context_inputs={"greeting_count", "last_greeted"},
-        context_outputs={"greeting_count",
-                         "last_greeted", "last_greeting_time"}
+        context_outputs={"greeting_count", "last_greeted", "last_greeting_time"},
     )
 
     calc_handler_node = handler(
@@ -140,7 +152,7 @@ def build_context_aware_tree():
         param_schema={"operation": str, "a": float, "b": float},
         llm_config=LLM_CONFIG,
         context_inputs={"calculation_history"},
-        context_outputs={"calculation_history", "last_calculation"}
+        context_outputs={"calculation_history", "last_calculation"},
     )
 
     weather_handler_node = handler(
@@ -150,7 +162,7 @@ def build_context_aware_tree():
         param_schema={"location": str},
         llm_config=LLM_CONFIG,
         context_inputs={"last_weather"},
-        context_outputs={"last_weather"}
+        context_outputs={"last_weather"},
     )
 
     history_handler_node = handler(
@@ -159,7 +171,7 @@ def build_context_aware_tree():
         handler_func=show_calculation_history_handler,
         param_schema={},
         llm_config=LLM_CONFIG,
-        context_inputs={"calculation_history"}
+        context_inputs={"calculation_history"},
     )
 
     help_handler_node = handler(
@@ -167,7 +179,7 @@ def build_context_aware_tree():
         description="Get help",
         handler_func=lambda: "I can help you with greetings, calculations, weather, and showing history!",
         param_schema={},
-        llm_config=LLM_CONFIG
+        llm_config=LLM_CONFIG,
     )
 
     # Create classifier with auto-wired children descriptions
@@ -178,10 +190,10 @@ def build_context_aware_tree():
             calc_handler_node,
             weather_handler_node,
             history_handler_node,
-            help_handler_node
+            help_handler_node,
         ],
         llm_config=LLM_CONFIG,
-        description="LLM-powered intent classifier with context support"
+        description="LLM-powered intent classifier with context support",
     )
 
 
@@ -189,17 +201,13 @@ def main():
     print("IntentKit Context Demo")
     print("This demo shows how context can be shared between workflow steps.")
     print("You must set a valid API key in LLM_CONFIG for this to work.")
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
 
     # Create context for the session
     context = IntentContext(session_id="demo_user_123", debug=True)
 
     # Create IntentGraph using the new builder pattern
-    graph = (
-        IntentGraphBuilder()
-        .root(build_context_aware_tree())
-        .build()
-    )
+    graph = IntentGraphBuilder().root(build_context_aware_tree()).build()
 
     # Test sequence showing context persistence
     test_sequence = [
@@ -209,7 +217,7 @@ def main():
         "Hi again",  # Should show greeting count
         "What's 8 times 3?",
         "Weather in San Francisco again",  # Should show cached result
-        "What was my last calculation?"  # Should show context access
+        "What was my last calculation?",  # Should show context access
     ]
 
     for i, user_input in enumerate(test_sequence, 1):
@@ -229,28 +237,27 @@ def main():
                 if result.children_results:
                     print("  Execution Path:")
                     for i, child_result in enumerate(result.children_results):
-                        path_str = '.'.join(child_result.node_path)
+                        path_str = ".".join(child_result.node_path)
                         print(
-                            f"    {i+1}. {child_result.node_name} ({child_result.node_type}) - Path: {path_str}")
+                            f"    {i+1}. {child_result.node_name} ({child_result.node_type}) - Path: {path_str}"
+                        )
                         if child_result.params:
-                            print(
-                                f"       Params: {child_result.params}")
+                            print(f"       Params: {child_result.params}")
                         if child_result.output:
-                            print(
-                                f"       Output: {child_result.output}")
+                            print(f"       Output: {child_result.output}")
                         if child_result.error:
                             print(f"       Error: {child_result.error}")
 
                 # Show context state after execution
                 print("  Context state:")
+                print(f"    Greeting count: {context.get('greeting_count', 0)}")
+                print(f"    Last greeted: {context.get('last_greeted', 'None')}")
                 print(
-                    f"    Greeting count: {context.get('greeting_count', 0)}")
+                    f"    Calc history: {len(context.get('calculation_history', []))} entries"
+                )
                 print(
-                    f"    Last greeted: {context.get('last_greeted', 'None')}")
-                print(
-                    f"    Calc history: {len(context.get('calculation_history', []))} entries")
-                print(
-                    f"    Last weather: {context.get('last_weather', {}).get('location', 'None')}")
+                    f"    Last weather: {context.get('last_weather', {}).get('location', 'None')}"
+                )
             else:
                 print(f"  Error: {result.error}")
 
@@ -264,7 +271,8 @@ def main():
                 print(f"  Context errors: {len(errors)} total")
                 for error in errors[-2:]:  # Show last 2 errors
                     print(
-                        f"    [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name}: {error.error_message}")
+                        f"    [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name}: {error.error_message}"
+                    )
 
         except Exception as e:
             print(f"  Error: {e}")
@@ -286,8 +294,7 @@ def main():
     if errors:
         print("\n--- Recent Errors (last 3) ---")
         for error in errors:
-            print(
-                f"  [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name}")
+            print(f"  [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name}")
             print(f"    Input: {error.user_input}")
             print(f"    Error: {error.error_message}")
             if error.params:

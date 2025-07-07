@@ -1,9 +1,14 @@
 """
 Specific tests for llm_splitter function.
 """
+
 import unittest
 from unittest.mock import Mock
-from intent_kit.splitters.llm_splitter import llm_splitter, _create_splitting_prompt, _parse_llm_response
+from intent_kit.splitters.llm_splitter import (
+    llm_splitter,
+    _create_splitting_prompt,
+    _parse_llm_response,
+)
 
 
 class TestLLMSplitterFunction(unittest.TestCase):
@@ -19,8 +24,7 @@ class TestLLMSplitterFunction(unittest.TestCase):
             '["cancel my flight", "update my email"]'
         )
         result = llm_splitter(
-            "Cancel my flight and update my email",
-            llm_client=self.mock_llm_client
+            "Cancel my flight and update my email", llm_client=self.mock_llm_client
         )
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], "cancel my flight")
@@ -28,31 +32,25 @@ class TestLLMSplitterFunction(unittest.TestCase):
 
     def test_llm_splitting_success_single_intent(self):
         """Test successful LLM-based splitting with single intent."""
-        self.mock_llm_client.generate.return_value = (
-            '["I need travel help"]'
-        )
-        result = llm_splitter(
-            "I need travel help",
-            llm_client=self.mock_llm_client
-        )
+        self.mock_llm_client.generate.return_value = '["I need travel help"]'
+        result = llm_splitter("I need travel help", llm_client=self.mock_llm_client)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0], "I need travel help")
 
     def test_llm_splitting_fallback_no_client(self):
         """Test fallback to rule-based when no LLM client provided."""
         # Should fallback to rule_splitter
-        result = llm_splitter(
-            "travel help and account support", llm_client=None)
+        result = llm_splitter("travel help and account support", llm_client=None)
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], "travel help")
         self.assertEqual(result[1], "account support")
 
     def test_llm_splitting_fallback_exception(self):
         """Test fallback to rule-based when LLM raises exception."""
-        self.mock_llm_client.generate.side_effect = Exception(
-            "LLM service unavailable")
-        result = llm_splitter("travel help and account support",
-                              llm_client=self.mock_llm_client)
+        self.mock_llm_client.generate.side_effect = Exception("LLM service unavailable")
+        result = llm_splitter(
+            "travel help and account support", llm_client=self.mock_llm_client
+        )
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], "travel help")
         self.assertEqual(result[1], "account support")
@@ -60,8 +58,9 @@ class TestLLMSplitterFunction(unittest.TestCase):
     def test_llm_splitting_fallback_invalid_json(self):
         """Test fallback to rule-based when LLM returns invalid JSON."""
         self.mock_llm_client.generate.return_value = "invalid json response"
-        result = llm_splitter("travel help and account support",
-                              llm_client=self.mock_llm_client)
+        result = llm_splitter(
+            "travel help and account support", llm_client=self.mock_llm_client
+        )
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], "travel help")
         self.assertEqual(result[1], "account support")
@@ -69,26 +68,29 @@ class TestLLMSplitterFunction(unittest.TestCase):
     def test_llm_splitting_fallback_empty_response(self):
         """Test fallback to rule-based when LLM returns empty response."""
         self.mock_llm_client.generate.return_value = ""
-        result = llm_splitter("travel help and account support",
-                              llm_client=self.mock_llm_client)
+        result = llm_splitter(
+            "travel help and account support", llm_client=self.mock_llm_client
+        )
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], "travel help")
         self.assertEqual(result[1], "account support")
 
     def test_llm_splitting_fallback_no_results(self):
         """Test fallback to rule-based when LLM parsing returns no results."""
-        self.mock_llm_client.generate.return_value = '[]'
-        result = llm_splitter("travel help and account support",
-                              llm_client=self.mock_llm_client)
+        self.mock_llm_client.generate.return_value = "[]"
+        result = llm_splitter(
+            "travel help and account support", llm_client=self.mock_llm_client
+        )
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], "travel help")
         self.assertEqual(result[1], "account support")
 
     def test_llm_splitting_manual_parsing_fallback(self):
         """Test manual parsing fallback when JSON parsing fails."""
-        self.mock_llm_client.generate.return_value = 'chunk1, chunk2'
-        result = llm_splitter("travel help and account support",
-                              llm_client=self.mock_llm_client)
+        self.mock_llm_client.generate.return_value = "chunk1, chunk2"
+        result = llm_splitter(
+            "travel help and account support", llm_client=self.mock_llm_client
+        )
         # Should now extract quoted/comma-separated items
         self.assertEqual(result, ["chunk1", "chunk2"])
 
@@ -101,9 +103,7 @@ class TestLLMSplitterFunction(unittest.TestCase):
 
     def test_debug_logging(self):
         """Test debug logging functionality."""
-        self.mock_llm_client.generate.return_value = (
-            '["travel help"]'
-        )
+        self.mock_llm_client.generate.return_value = '["travel help"]'
         # Should not raise, just exercise debug path
         result = llm_splitter(
             "travel help", debug=True, llm_client=self.mock_llm_client
@@ -113,9 +113,7 @@ class TestLLMSplitterFunction(unittest.TestCase):
 
     def test_llm_client_called_with_prompt(self):
         """Test that LLM client is called with the generated prompt."""
-        self.mock_llm_client.generate.return_value = (
-            '["travel help"]'
-        )
+        self.mock_llm_client.generate.return_value = '["travel help"]'
         llm_splitter("travel help", llm_client=self.mock_llm_client)
         self.mock_llm_client.generate.assert_called_once()
         call_args = self.mock_llm_client.generate.call_args[0][0]
@@ -137,7 +135,7 @@ class TestLLMSplitterFunction(unittest.TestCase):
 
     def test_parse_llm_response_malformed_json(self):
         """Test parsing of malformed JSON response."""
-        response = '[123]'  # Not strings
+        response = "[123]"  # Not strings
         result = _parse_llm_response(response)
         self.assertEqual(len(result), 0)
 
@@ -158,7 +156,7 @@ class TestLLMSplitterFunction(unittest.TestCase):
 
     def test_parse_llm_response_numbered_items(self):
         """Test manual parsing with numbered items."""
-        response = '1. cancel flight\n2. update email'
+        response = "1. cancel flight\n2. update email"
         result = _parse_llm_response(response)
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], "cancel flight")
@@ -166,7 +164,7 @@ class TestLLMSplitterFunction(unittest.TestCase):
 
     def test_parse_llm_response_dash_items(self):
         """Test manual parsing with dash-separated items."""
-        response = '- cancel flight\n- update email'
+        response = "- cancel flight\n- update email"
         result = _parse_llm_response(response)
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], "cancel flight")
@@ -180,7 +178,7 @@ def test_parse_llm_response_valid_json():
 
 
 def test_parse_llm_response_malformed_json():
-    response = '[123]'
+    response = "[123]"
     result = _parse_llm_response(response)
     assert result == []
 
@@ -192,28 +190,28 @@ def test_parse_llm_response_quoted_strings():
 
 
 def test_parse_llm_response_numbered_items():
-    response = '1. cancel flight\n2. update email'
+    response = "1. cancel flight\n2. update email"
     result = _parse_llm_response(response)
     assert result == ["cancel flight", "update email"]
 
 
 def test_parse_llm_response_dash_items():
-    response = '- cancel flight\n- update email'
+    response = "- cancel flight\n- update email"
     result = _parse_llm_response(response)
     assert result == ["cancel flight", "update email"]
 
 
 def test_parse_llm_response_empty():
-    response = ''
+    response = ""
     result = _parse_llm_response(response)
     assert result == []
 
 
 def test_parse_llm_response_garbage():
-    response = 'nonsense text with no structure'
+    response = "nonsense text with no structure"
     result = _parse_llm_response(response)
     assert result == []
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

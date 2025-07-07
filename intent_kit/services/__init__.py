@@ -11,10 +11,10 @@ class ServiceRegistry:
     """Registry for AI services with optional dependencies."""
 
     _services: Dict[str, Type] = {
-        'google': GoogleClient,
-        'anthropic': AnthropicClient,
-        'openai': OpenAIClient,
-        'ollama': OllamaClient,
+        "google": GoogleClient,
+        "anthropic": AnthropicClient,
+        "openai": OpenAIClient,
+        "ollama": OllamaClient,
     }
 
     @classmethod
@@ -22,7 +22,7 @@ class ServiceRegistry:
         """Get a dictionary of service names and their availability."""
         available = {}
         for name, service_class in cls._services.items():
-            if hasattr(service_class, 'is_available'):
+            if hasattr(service_class, "is_available"):
                 available[name] = service_class.is_available()
             else:
                 available[name] = True  # Assume available if no check method
@@ -36,7 +36,7 @@ class ServiceRegistry:
 
         service_class = cls._services[service_name]
 
-        if hasattr(service_class, 'is_available') and not service_class.is_available():
+        if hasattr(service_class, "is_available") and not service_class.is_available():
             raise ImportError(
                 f"Service '{service_name}' is not available. "
                 f"Install required dependencies: pip install intentify[openai]"
@@ -48,6 +48,7 @@ class ServiceRegistry:
     def register_service(cls, name: str, service_class: Type):
         """Register a new service class."""
         cls._services[name] = service_class
+
 
 # Convenience functions
 

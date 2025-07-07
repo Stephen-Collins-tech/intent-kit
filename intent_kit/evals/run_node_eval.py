@@ -23,10 +23,12 @@ import re
 
 load_dotenv()
 
+_first_test_case: dict = {}
+
 
 def load_dataset(dataset_path: Path) -> Dict[str, Any]:
     """Load a dataset from YAML file."""
-    with open(dataset_path, 'r') as f:
+    with open(dataset_path, "r") as f:
         return yaml.safe_load(f)
 
 
@@ -40,7 +42,15 @@ def get_node_from_module(module_name: str, node_name: str):
         return None
 
 
-def save_raw_results_to_csv(dataset_name: str, test_case: Dict[str, Any], actual_output: Any, success: bool, error: Optional[str] = None, similarity_score: Optional[float] = None, run_timestamp: Optional[str] = None):
+def save_raw_results_to_csv(
+    dataset_name: str,
+    test_case: Dict[str, Any],
+    actual_output: Any,
+    success: bool,
+    error: Optional[str] = None,
+    similarity_score: Optional[float] = None,
+    run_timestamp: Optional[str] = None,
+):
     """Save raw evaluation results to CSV files."""
     # Create organized results directory structure
     today = datetime.now().strftime("%Y-%m-%d")
@@ -61,24 +71,21 @@ def save_raw_results_to_csv(dataset_name: str, test_case: Dict[str, Any], actual
 
     # Prepare row data
     row_data = {
-        "timestamp": importlib.import_module('datetime').datetime.now().isoformat(),
+        "timestamp": importlib.import_module("datetime").datetime.now().isoformat(),
         "input": test_case["input"],
         "expected": test_case["expected"],
         "actual": actual_output,
         "success": success,
         "similarity_score": similarity_score or "",
         "error": error or "",
-        "context": str(test_case.get("context", {}))
+        "context": str(test_case.get("context", {})),
     }
 
     # Check if this is the first test case (to write header)
     global _first_test_case
-    if not hasattr(save_raw_results_to_csv, '_first_test_case'):
-        save_raw_results_to_csv._first_test_case = {}
-
-    is_first = dataset_name not in save_raw_results_to_csv._first_test_case
+    is_first = dataset_name not in _first_test_case
     if is_first:
-        save_raw_results_to_csv._first_test_case[dataset_name] = True
+        _first_test_case[dataset_name] = True
         # Clear both files for new evaluation run
         if csv_file.exists():
             csv_file.unlink()
@@ -86,7 +93,7 @@ def save_raw_results_to_csv(dataset_name: str, test_case: Dict[str, Any], actual
             date_csv_file.unlink()
 
     # Write to latest directory
-    with open(csv_file, 'a', newline='', encoding='utf-8') as f:
+    with open(csv_file, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=row_data.keys())
         if is_first:
             writer.writeheader()
@@ -94,7 +101,7 @@ def save_raw_results_to_csv(dataset_name: str, test_case: Dict[str, Any], actual
 
     # Write to date-based directory for archiving (always write header for new file)
     write_header = not date_csv_file.exists()
-    with open(date_csv_file, 'a', newline='', encoding='utf-8') as f:
+    with open(date_csv_file, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=row_data.keys())
         if write_header:
             writer.writeheader()
@@ -105,9 +112,10 @@ def save_raw_results_to_csv(dataset_name: str, test_case: Dict[str, Any], actual
 
 def similarity_score(text1: str, text2: str) -> float:
     """Calculate similarity score between two texts."""
+
     # Normalize texts for comparison
     def normalize(text):
-        return re.sub(r'\s+', ' ', text.lower().strip())
+        return re.sub(r"\s+", " ", text.lower().strip())
 
     norm1 = normalize(text1)
     norm2 = normalize(text2)
@@ -116,7 +124,9 @@ def similarity_score(text1: str, text2: str) -> float:
     return SequenceMatcher(None, norm1, norm2).ratio()
 
 
-def chunks_similarity_score(expected_chunks: List[str], actual_chunks: List[str], threshold: float = 0.8) -> tuple[bool, float]:
+def chunks_similarity_score(
+    expected_chunks: List[str], actual_chunks: List[str], threshold: float = 0.8
+) -> tuple[bool, float]:
     """Calculate similarity score between expected and actual chunks."""
     if len(expected_chunks) != len(actual_chunks):
         return False, 0.0
@@ -130,32 +140,32 @@ def chunks_similarity_score(expected_chunks: List[str], actual_chunks: List[str]
     return avg_score >= threshold, avg_score
 
 
-def evaluate_node(node, test_cases: List[Dict[str, Any]], dataset_name: str) -> Dict[str, Any]:
+def evaluate_node(
+    node, test_cases: List[Dict[str, Any]], dataset_name: str
+) -> Dict[str, Any]:
     """Evaluate a node against test cases."""
-    results = {
+    results: Dict[str, Any] = {
         "dataset": dataset_name,
         "total_cases": len(test_cases),
         "correct": 0,
         "incorrect": 0,
         "errors": [],
         "details": [],
-        "raw_results_file": f"intent_kit/evals/results/latest/{dataset_name}_results.csv"
+        "raw_results_file": f"intent_kit/evals/results/latest/{dataset_name}_results.csv",
     }
 
     # Generate a unique run timestamp for this evaluation
     run_timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     # Check if this node needs persistent context (like handler_node_llm)
-    needs_persistent_context = hasattr(
-        node, 'name') and 'handler_node_llm' in node.name
+    needs_persistent_context = hasattr(node, "name") and "handler_node_llm" in node.name
 
     # Create persistent context if needed
     persistent_context = None
     if needs_persistent_context:
         persistent_context = IntentContext()
         # Initialize booking count for handler_node_llm
-        persistent_context.set(
-            "booking_count", 0, modified_by="evaluation_init")
+        persistent_context.set("booking_count", 0, modified_by="evaluation_init")
 
     for i, test_case in enumerate(test_cases):
         user_input = test_case["input"]
@@ -186,78 +196,117 @@ def evaluate_node(node, test_cases: List[Dict[str, Any]], dataset_name: str) -> 
                     # For splitters, compare lists using similarity
                     if isinstance(expected, list):
                         correct, similarity_score_val = chunks_similarity_score(
-                            expected, actual_output)
+                            expected, actual_output
+                        )
                     else:
                         correct = False
                 else:
                     # For handlers and classifiers, compare strings
-                    correct = str(actual_output).strip().lower() == str(
-                        expected).strip().lower()
+                    correct = (
+                        str(actual_output).strip().lower()
+                        == str(expected).strip().lower()
+                    )
 
                 if correct:
                     results["correct"] += 1
                 else:
                     results["incorrect"] += 1
-                    results["errors"].append({
-                        "case": i + 1,
-                        "input": user_input,
-                        "expected": expected,
-                        "actual": actual_output,
-                        "similarity_score": similarity_score_val,
-                        "type": "incorrect_output"
-                    })
+                    results["errors"].append(
+                        {
+                            "case": i + 1,
+                            "input": user_input,
+                            "expected": expected,
+                            "actual": actual_output,
+                            "similarity_score": similarity_score_val,
+                            "type": "incorrect_output",
+                        }
+                    )
 
                 # Save raw result to CSV
                 save_raw_results_to_csv(
-                    dataset_name, test_case, actual_output, correct, similarity_score=similarity_score_val, run_timestamp=run_timestamp)
+                    dataset_name,
+                    test_case,
+                    actual_output,
+                    correct,
+                    similarity_score=similarity_score_val,
+                    run_timestamp=run_timestamp,
+                )
             else:
                 results["incorrect"] += 1
                 error_msg = result.error.message if result.error else "Unknown error"
-                results["errors"].append({
-                    "case": i + 1,
-                    "input": user_input,
-                    "expected": expected,
-                    "actual": None,
-                    "type": "execution_failed",
-                    "error": error_msg
-                })
+                results["errors"].append(
+                    {
+                        "case": i + 1,
+                        "input": user_input,
+                        "expected": expected,
+                        "actual": None,
+                        "type": "execution_failed",
+                        "error": error_msg,
+                    }
+                )
 
                 # Save raw result to CSV
                 save_raw_results_to_csv(
-                    dataset_name, test_case, None, False, error_msg, run_timestamp=run_timestamp)
+                    dataset_name,
+                    test_case,
+                    None,
+                    False,
+                    error_msg,
+                    run_timestamp=run_timestamp,
+                )
 
         except Exception as e:
             results["incorrect"] += 1
             error_msg = str(e)
-            results["errors"].append({
-                "case": i + 1,
-                "input": user_input,
-                "expected": expected,
-                "actual": None,
-                "type": "exception",
-                "error": error_msg
-            })
+            results["errors"].append(
+                {
+                    "case": i + 1,
+                    "input": user_input,
+                    "expected": expected,
+                    "actual": None,
+                    "type": "exception",
+                    "error": error_msg,
+                }
+            )
 
             # Save raw result to CSV
             save_raw_results_to_csv(
-                dataset_name, test_case, None, False, error_msg, run_timestamp=run_timestamp)
+                dataset_name,
+                test_case,
+                None,
+                False,
+                error_msg,
+                run_timestamp=run_timestamp,
+            )
 
         # Store detailed results
-        results["details"].append({
-            "case": i + 1,
-            "input": user_input,
-            "expected": expected,
-            "actual": result.output if 'result' in locals() else None,
-            "success": result.success if 'result' in locals() else False,
-            "error": result.error.message if 'result' in locals() and result.error else None
-        })
+        results["details"].append(
+            {
+                "case": i + 1,
+                "input": user_input,
+                "expected": expected,
+                "actual": result.output if "result" in locals() else None,
+                "success": result.success if "result" in locals() else False,
+                "error": (
+                    result.error.message
+                    if "result" in locals() and result.error
+                    else None
+                ),
+            }
+        )
 
-    results["accuracy"] = results["correct"] / \
-        results["total_cases"] if results["total_cases"] > 0 else 0
+    results["accuracy"] = (
+        results["correct"] / results["total_cases"] if results["total_cases"] > 0 else 0
+    )
     return results
 
 
-def generate_markdown_report(results: List[Dict[str, Any]], output_path: Path, run_timestamp: Optional[str] = None, mock_mode: bool = False):
+def generate_markdown_report(
+    results: List[Dict[str, Any]],
+    output_path: Path,
+    run_timestamp: Optional[str] = None,
+    mock_mode: bool = False,
+):
     """Generate a markdown report from evaluation results."""
     # Generate the report content
     mock_indicator = " (MOCK MODE)" if mock_mode else ""
@@ -291,11 +340,13 @@ def generate_markdown_report(results: List[Dict[str, Any]], output_path: Path, r
                 report_content += f"- **Case {error['case']}**: {error['input']}\n"
                 report_content += f"  - Expected: `{error['expected']}`\n"
                 report_content += f"  - Actual: `{error['actual']}`\n"
-                if error.get('error'):
+                if error.get("error"):
                     report_content += f"  - Error: {error['error']}\n"
                 report_content += "\n"
             if len(result["errors"]) > 5:
-                report_content += f"- ... and {len(result['errors']) - 5} more errors\n\n"
+                report_content += (
+                    f"- ... and {len(result['errors']) - 5} more errors\n\n"
+                )
 
     # Detailed results table
     report_content += "## Detailed Results\n\n"
@@ -305,7 +356,7 @@ def generate_markdown_report(results: List[Dict[str, Any]], output_path: Path, r
         report_content += f"| {result['dataset']} | {result['accuracy']:.1%} | {result['correct']} | {result['total_cases']} | `{result['raw_results_file']}` |\n"
 
     # Write to the specified output path
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         f.write(report_content)
 
     today = datetime.now().strftime("%Y-%m-%d")
@@ -315,9 +366,10 @@ def generate_markdown_report(results: List[Dict[str, Any]], output_path: Path, r
     date_reports_dir.mkdir(parents=True, exist_ok=True)
 
     # Create date-based filename
-    date_output_path = date_reports_dir / \
-        f"{output_path.stem}_{run_timestamp}{output_path.suffix}"
-    with open(date_output_path, 'w') as f:
+    date_output_path = (
+        date_reports_dir / f"{output_path.stem}_{run_timestamp}{output_path.suffix}"
+    )
+    with open(date_output_path, "w") as f:
         f.write(report_content)
 
 
@@ -332,7 +384,7 @@ def main():
     # Load LLM configuration if provided
     llm_config = {}
     if args.llm_config:
-        with open(args.llm_config, 'r') as f:
+        with open(args.llm_config, "r") as f:
             llm_config = yaml.safe_load(f)
 
         # Set environment variables for API keys
@@ -373,9 +425,13 @@ def main():
 
         # Determine module name based on node name
         if "llm" in node_name:
-            module_name = f"intent_kit.evals.sample_nodes.{node_name.split('_')[0]}_node_llm"
+            module_name = (
+                f"intent_kit.evals.sample_nodes.{node_name.split('_')[0]}_node_llm"
+            )
         else:
-            module_name = f"intent_kit.evals.sample_nodes.{node_name.split('_')[0]}_node"
+            module_name = (
+                f"intent_kit.evals.sample_nodes.{node_name.split('_')[0]}_node"
+            )
 
         # Load node
         node = get_node_from_module(module_name, node_name)
@@ -391,7 +447,8 @@ def main():
         # Print results
         accuracy = result["accuracy"]
         print(
-            f"  Accuracy: {accuracy:.1%} ({result['correct']}/{result['total_cases']})")
+            f"  Accuracy: {accuracy:.1%} ({result['correct']}/{result['total_cases']})"
+        )
         print(f"  Raw results saved to: {result['raw_results_file']}")
 
         if result["errors"]:
@@ -419,8 +476,7 @@ def main():
 
             output_path = reports_dir / "evaluation_report.md"
 
-        generate_markdown_report(results, output_path,
-                                 run_timestamp=run_timestamp)
+        generate_markdown_report(results, output_path, run_timestamp=run_timestamp)
         print(f"\nReport generated: {output_path}")
 
         # Print summary
@@ -428,7 +484,8 @@ def main():
         total_correct = sum(r["correct"] for r in results)
         overall_accuracy = total_correct / total_cases if total_cases > 0 else 0
         print(
-            f"\nOverall Accuracy: {overall_accuracy:.1%} ({total_correct}/{total_cases})")
+            f"\nOverall Accuracy: {overall_accuracy:.1%} ({total_correct}/{total_cases})"
+        )
 
 
 if __name__ == "__main__":

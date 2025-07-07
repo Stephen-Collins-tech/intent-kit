@@ -10,7 +10,7 @@ from intent_kit.utils.text_utils import (
     is_deserializable_json,
     clean_for_deserialization,
     extract_structured_data,
-    validate_json_structure
+    validate_json_structure,
 )
 import json
 
@@ -26,7 +26,7 @@ class TestTextUtils(unittest.TestCase):
 
     def test_extract_json_from_text_invalid_json(self):
         """Test extracting invalid JSON from text."""
-        text = 'Here is the response: {key: value, number: 42}'
+        text = "Here is the response: {key: value, number: 42}"
         result = extract_json_from_text(text)
         self.assertEqual(result, {"key": "value", "number": 42})
 
@@ -38,7 +38,7 @@ class TestTextUtils(unittest.TestCase):
 
     def test_extract_json_from_text_no_json(self):
         """Test extracting JSON when none exists."""
-        text = 'This is just plain text'
+        text = "This is just plain text"
         result = extract_json_from_text(text)
         self.assertIsNone(result)
 
@@ -50,13 +50,13 @@ class TestTextUtils(unittest.TestCase):
 
     def test_extract_json_array_from_text_manual_extraction(self):
         """Test manual extraction of array-like data."""
-        text = '1. First item\n2. Second item\n3. Third item'
+        text = "1. First item\n2. Second item\n3. Third item"
         result = extract_json_array_from_text(text)
         self.assertEqual(result, ["First item", "Second item", "Third item"])
 
     def test_extract_json_array_from_text_dash_items(self):
         """Test extracting dash-separated items."""
-        text = '- Item one\n- Item two\n- Item three'
+        text = "- Item one\n- Item two\n- Item three"
         result = extract_json_array_from_text(text)
         self.assertEqual(result, ["Item one", "Item two", "Item three"])
 
@@ -68,13 +68,13 @@ class TestTextUtils(unittest.TestCase):
 
     def test_extract_key_value_pairs_unquoted_keys(self):
         """Test extracting key-value pairs with unquoted keys."""
-        text = 'name: John, age: 30, active: true'
+        text = "name: John, age: 30, active: true"
         result = extract_key_value_pairs(text)
         self.assertEqual(result, {"name": "John", "age": 30, "active": True})
 
     def test_extract_key_value_pairs_equals_sign(self):
         """Test extracting key-value pairs with equals sign."""
-        text = 'name = John, age = 30, active = true'
+        text = "name = John, age = 30, active = true"
         result = extract_key_value_pairs(text)
         self.assertEqual(result, {"name": "John", "age": 30, "active": True})
 
@@ -86,7 +86,7 @@ class TestTextUtils(unittest.TestCase):
 
     def test_is_deserializable_json_invalid(self):
         """Test checking invalid JSON."""
-        text = '{key: value}'
+        text = "{key: value}"
         result = is_deserializable_json(text)
         self.assertFalse(result)
 
@@ -130,21 +130,21 @@ class TestTextUtils(unittest.TestCase):
 
     def test_extract_structured_data_manual_object(self):
         """Test extracting structured data with manual object extraction."""
-        text = 'key: value, number: 42'
+        text = "key: value, number: 42"
         data, method = extract_structured_data(text, "dict")
         self.assertEqual(data, {"key": "value", "number": 42})
         self.assertEqual(method, "manual_object")
 
     def test_extract_structured_data_manual_array(self):
         """Test extracting structured data with manual array extraction."""
-        text = '1. Item one\n2. Item two'
+        text = "1. Item one\n2. Item two"
         data, method = extract_structured_data(text, "list")
         self.assertEqual(data, ["Item one", "Item two"])
         self.assertEqual(method, "manual_array")
 
     def test_extract_structured_data_string(self):
         """Test extracting structured data as string."""
-        text = 'This is a simple string'
+        text = "This is a simple string"
         data, method = extract_structured_data(text, "string")
         self.assertEqual(data, "This is a simple string")
         self.assertEqual(method, "string")
@@ -220,28 +220,28 @@ class TestTextUtils(unittest.TestCase):
         self.assertEqual(result, {})
 
     def test_extract_json_from_text_json_block(self):
-        text = '''Here is a block:
+        text = """Here is a block:
         ```json
         {"foo": "bar", "num": 123}
         ```
-        '''
+        """
         result = extract_json_from_text(text)
         self.assertEqual(result, {"foo": "bar", "num": 123})
 
     def test_extract_json_array_from_text_json_block(self):
-        text = '''Some output:
+        text = """Some output:
         ```json
         ["a", "b", "c"]
         ```
-        '''
+        """
         result = extract_json_array_from_text(text)
         self.assertEqual(result, ["a", "b", "c"])
 
     def test_extract_json_from_text_json_block_malformed(self):
-        text = '''```json\n{"foo": "bar", "num": }```'''
+        text = """```json\n{"foo": "bar", "num": }```"""
         result = extract_json_from_text(text)
-        self.assertEqual(result, {'foo': 'bar', 'num': ''})
+        self.assertEqual(result, {"foo": "bar", "num": ""})
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

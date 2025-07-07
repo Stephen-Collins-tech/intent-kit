@@ -15,6 +15,7 @@ class OpenAIClient:
         """Get the OpenAI client."""
         try:
             import openai
+
             return openai.OpenAI(api_key=self.api_key)
         except ImportError:
             raise ImportError(
@@ -26,6 +27,7 @@ class OpenAIClient:
         if self._client is None:
             try:
                 import openai
+
                 self._client = openai.OpenAI(api_key=self.api_key)
             except ImportError:
                 raise ImportError(
@@ -36,9 +38,7 @@ class OpenAIClient:
         """Generate text using OpenAI's GPT model."""
         self._ensure_imported()
         response = self._client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=1000
+            model=model, messages=[{"role": "user", "content": prompt}], max_tokens=1000
         )
         content = response.choices[0].message.content
         return str(content) if content else ""

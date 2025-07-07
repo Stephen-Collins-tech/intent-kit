@@ -15,6 +15,7 @@ class GoogleClient:
         """Get the Google GenAI client."""
         try:
             from google import genai
+
             return genai.Client(api_key=self.api_key)
         except ImportError:
             raise ImportError(
@@ -26,6 +27,7 @@ class GoogleClient:
         if self._client is None:
             try:
                 from google import genai
+
                 self._client = genai.Client(api_key=self.api_key)
             except ImportError:
                 raise ImportError(

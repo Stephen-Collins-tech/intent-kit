@@ -12,7 +12,7 @@ from intent_kit.evals import (
     run_eval_from_path,
     run_eval_from_module,
     EvalTestCase,
-    Dataset
+    Dataset,
 )
 from intent_kit.evals.sample_nodes.classifier_node_llm import classifier_node_llm
 
@@ -24,8 +24,7 @@ def demo_basic_usage():
     print("=== Basic Usage Demo ===")
 
     # Load dataset
-    dataset = load_dataset(
-        "intent_kit/evals/datasets/classifier_node_llm.yaml")
+    dataset = load_dataset("intent_kit/evals/datasets/classifier_node_llm.yaml")
     print(f"Loaded dataset: {dataset.name}")
     print(f"Test cases: {len(dataset.test_cases)}")
 
@@ -52,8 +51,7 @@ def demo_from_path():
     print("\n=== From Path Demo ===")
 
     result = run_eval_from_path(
-        "intent_kit/evals/datasets/classifier_node_llm.yaml",
-        classifier_node_llm
+        "intent_kit/evals/datasets/classifier_node_llm.yaml", classifier_node_llm
     )
 
     result.print_summary()
@@ -67,7 +65,7 @@ def demo_from_module():
     result = run_eval_from_module(
         "intent_kit/evals/datasets/classifier_node_llm.yaml",
         "intent_kit.evals.sample_nodes.classifier_node_llm",
-        "classifier_node_llm"
+        "classifier_node_llm",
     )
 
     result.print_summary()
@@ -87,7 +85,7 @@ def demo_custom_comparator():
     result = run_eval_from_path(
         "intent_kit/evals/datasets/classifier_node_llm.yaml",
         classifier_node_llm,
-        comparator=case_insensitive_comparator
+        comparator=case_insensitive_comparator,
     )
 
     result.print_summary()
@@ -101,7 +99,7 @@ def demo_fail_fast():
     result = run_eval_from_path(
         "intent_kit/evals/datasets/classifier_node_llm.yaml",
         classifier_node_llm,
-        fail_fast=True
+        fail_fast=True,
     )
 
     print(f"Fail-fast evaluation completed with {result.total_count()} tests")
@@ -117,13 +115,13 @@ def demo_programmatic_dataset():
         EvalTestCase(
             input="What's the weather like in Paris?",
             expected="Weather in Paris: Sunny with a chance of rain",
-            context={"user_id": "demo_user"}
+            context={"user_id": "demo_user"},
         ),
         EvalTestCase(
             input="Cancel my flight",
             expected="Successfully cancelled flight",
-            context={"user_id": "demo_user"}
-        )
+            context={"user_id": "demo_user"},
+        ),
     ]
 
     # Create dataset
@@ -132,7 +130,7 @@ def demo_programmatic_dataset():
         description="Programmatically created test dataset",
         node_type="classifier",
         node_name="classifier_node_llm",
-        test_cases=test_cases
+        test_cases=test_cases,
     )
 
     # Run evaluation
@@ -155,15 +153,9 @@ def demo_error_handling():
     # Create a simple test case
     test_cases = [
         EvalTestCase(
-            input="What's the weather like?",
-            expected="Weather response",
-            context={}
+            input="What's the weather like?", expected="Weather response", context={}
         ),
-        EvalTestCase(
-            input="Hello there",
-            expected="Default response",
-            context={}
-        )
+        EvalTestCase(input="Hello there", expected="Default response", context={}),
     ]
 
     dataset = Dataset(
@@ -171,7 +163,7 @@ def demo_error_handling():
         description="Testing error handling",
         node_type="test",
         node_name="broken_node",
-        test_cases=test_cases
+        test_cases=test_cases,
     )
 
     result = run_eval(dataset, broken_node)
@@ -195,7 +187,7 @@ def main():
         demo_custom_comparator,
         demo_fail_fast,
         demo_programmatic_dataset,
-        demo_error_handling
+        demo_error_handling,
     ]
 
     results = []
