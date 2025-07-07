@@ -801,6 +801,67 @@ pytest tests/
 
 ---
 
+## Evaluation & Benchmarking
+
+intent-kit provides a built-in evaluation framework for benchmarking intent graphs and nodes against real datasets. This is separate from unit/integration tests and is designed for large-scale, reproducible evaluation.
+
+The evaluation framework is now part of the main `intent_kit` package and can be imported as:
+
+```python
+from intent_kit.evals import run_all_evaluations, evaluate_node, generate_markdown_report
+```
+
+**Organized Structure:**
+- **Latest results**: Always available in `intent_kit/evals/results/latest/` and `intent_kit/evals/reports/latest/`
+- **Date-based archives**: Historical runs are automatically archived in date-based directories
+- **Clean separation**: Reports and raw results are organized separately for easy access
+
+### Running All Evals
+
+To run all evaluations and generate comprehensive markdown reports:
+
+```bash
+# Run with real API calls (requires API keys)
+uv run run-evals
+
+# Run in mock mode (no API keys required)
+uv run run-evals --mock
+```
+
+- Generates a comprehensive report at `reports/comprehensive_report.md`
+- Generates individual reports for each dataset in `reports/`
+- Mock mode uses simulated responses for testing without API costs
+
+### Running a Specific Eval
+
+To run a specific node evaluation (with markdown output):
+
+```bash
+uv run eval-node --dataset handler_node_llm --output reports/my_eval_report.md
+```
+
+- Replace `handler_node_llm` with any dataset name (without .yaml extension)
+- Add `--output <file.md>` to save the report to a specific file
+- Reports are automatically saved to `reports/` directory
+
+### Adding New Evals
+- Add new YAML datasets to `intent_kit/evals/datasets/`
+- Add corresponding node implementations to `intent_kit/evals/sample_nodes/`
+- The framework will automatically discover and evaluate them
+
+### Where are the results?
+- **Latest reports**: `intent_kit/evals/reports/latest/`
+- **Latest results**: `intent_kit/evals/results/latest/`
+- **Date-based archives**: `intent_kit/evals/reports/YYYY-MM-DD/` and `intent_kit/evals/results/YYYY-MM-DD/`
+- Reports are in markdown format for easy sharing and review
+- Raw results are in CSV format for detailed analysis
+
+### When to use evals vs. tests?
+- **Unit/Integration tests** (in `tests/`): For correctness, fast feedback, and CI
+- **Evals** (in `intent_kit/evals/`): For benchmarking, regression, and real-world performance
+
+---
+
 ## Project Structure
 
 ```
@@ -837,6 +898,13 @@ intent-kit/
 │   │   ├── google_client.py
 │   │   ├── ollama_client.py
 │   │   └── __init__.py
+│   ├── evals/               # Evaluation framework
+│   │   ├── __init__.py      # Evaluation exports
+│   │   ├── run_all_evals.py # Run all evaluations
+│   │   ├── run_node_eval.py # Individual node evaluation
+│   │   ├── datasets/        # Evaluation datasets
+│   │   ├── sample_nodes/    # Sample nodes for evaluation
+│   │   └── reports/         # Generated evaluation reports
 │   ├── types.py             # Type definitions
 │   ├── exceptions/          # Custom exceptions
 │   └── utils/               # Utilities
@@ -856,3 +924,134 @@ intent-kit/
 ## License
 
 MIT License
+
+## Evaluation API
+
+The evaluation API provides a clean Python interface for testing your nodes against YAML datasets.
+
+### Basic Usage
+
+```python
+from intent_kit.evals import load_dataset, run_eval
+from intent_kit.evals.sample_nodes.classifier_node_llm import classifier_node_llm
+
+# Load a dataset
+dataset = load_dataset("intent_kit/evals/datasets/classifier_node_llm.yaml")
+
+# Run evaluation
+result = run_eval(dataset, classifier_node_llm)
+
+# Check results
+print(f"Accuracy: {result.accuracy():.1%}")
+print(f"Passed: {result.passed_count()}/{result.total_count()}")
+
+# Save results (using default locations)
+csv_path = result.save_csv()
+json_path = result.save_json()
+md_path = result.save_markdown()
+
+# Or specify custom paths
+result.save_csv("my_results.csv")
+result.save_json("my_results.json")
+result.save_markdown("my_report.md")
+```
+
+### Convenience Functions
+
+```python
+from intent_kit.evals import run_eval_from_path, run_eval_from_module
+
+# Evaluate from file path
+result = run_eval_from_path(
+    "intent_kit/evals/datasets/classifier_node_llm.yaml",
+    classifier_node_llm
+)
+
+# Evaluate with module loading
+result = run_eval_from_module(
+    "intent_kit/evals/datasets/classifier_node_llm.yaml",
+    "intent_kit.evals.sample_nodes.classifier_node_llm",
+    "classifier_node_llm"
+)
+```
+
+### Custom Comparison
+
+```python
+# Case-insensitive comparison
+def case_insensitive_comparator(expected, actual):
+    return str(expected).lower().strip() == str(actual).lower().strip()
+
+result = run_eval(dataset, node, comparator=case_insensitive_comparator)
+```
+
+### Programmatic Datasets
+
+```python
+from intent_kit.evals import EvalTestCase, Dataset
+
+# Create test cases programmatically
+test_cases = [
+    EvalTestCase(
+        input="What's the weather like?",
+        expected="Weather response",
+        context={"user_id": "test"}
+    )
+]
+
+dataset = Dataset(
+    name="my_dataset",
+    description="Custom test dataset",
+    node_type="classifier",
+    node_name="my_node",
+    test_cases=test_cases
+)
+
+result = run_eval(dataset, my_node)
+```
+
+### Dataset Format
+
+YAML datasets should follow this format:
+
+```yaml
+dataset:
+  name: "my_dataset"
+  description: "Test dataset for my node"
+  node_type: "classifier"
+  node_name: "my_node"
+
+test_cases:
+  - input: "What's the weather like in New York?"
+    expected: "Weather in New York: Sunny with a chance of rain"
+    context:
+      user_id: "user123"
+  
+  - input: "Cancel my flight"
+    expected: "Successfully cancelled flight"
+    context:
+      user_id: "user123"
+```
+
+### Error Handling
+
+The API handles errors gracefully:
+
+- **Node exceptions**: Caught and recorded in results
+- **Missing files**: Clear error messages
+- **Malformed datasets**: Validation with helpful error messages
+- **Fail-fast option**: Stop evaluation on first failure
+
+```python
+# Fail-fast evaluation
+result = run_eval(dataset, node, fail_fast=True)
+```
+
+### Output Locations
+
+By default, results are saved to the existing intent-kit directory structure:
+
+- **CSV/JSON results**: `intent_kit/evals/results/latest/`
+- **Markdown reports**: `intent_kit/evals/reports/latest/`
+
+Files are automatically timestamped to avoid conflicts. You can also specify custom paths if needed.

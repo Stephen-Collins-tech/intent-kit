@@ -1,0 +1,56 @@
+dataset:
+  name: "classifier_node_llm"
+  description: "Test LLM-powered intent classification for weather and cancellation handlers"
+  node_type: "classifier"
+  node_name: "classifier_node_llm"
+
+test_cases:
+  - input: "What's the weather like in New York?"
+    expected: "Weather in New York: Sunny with a chance of rain"
+    context:
+      user_id: "user123"
+    
+  - input: "How's the temperature in London?"
+    expected: "Weather in London: Sunny with a chance of rain"
+    context:
+      user_id: "user123"
+    
+  - input: "Can you tell me the weather forecast for Tokyo?"
+    expected: "Weather in Tokyo: Sunny with a chance of rain"
+    context:
+      user_id: "user123"
+    
+  - input: "What's the weather like today?"
+    expected: "Weather in Unknown: Sunny with a chance of rain"
+    context:
+      user_id: "user123"
+    
+  - input: "I need to cancel my flight reservation"
+    expected: "Successfully cancelled flight reservation"
+    context:
+      user_id: "user123"
+    
+  - input: "Cancel my hotel booking"
+    expected: "Successfully cancelled hotel booking"
+    context:
+      user_id: "user123"
+    
+  - input: "I want to cancel my restaurant reservation"
+    expected: "Successfully cancelled restaurant reservation"
+    context:
+      user_id: "user123"
+    
+  - input: "Please cancel my appointment"
+    expected: "Successfully cancelled appointment"
+    context:
+      user_id: "user123"
+    
+  - input: "Cancel my subscription"
+    expected: "Successfully cancelled subscription"
+    context:
+      user_id: "user123"
+    
+  - input: "I need to cancel my order"
+    expected: "Successfully cancelled order"
+    context:
+      user_id: "user123" 
