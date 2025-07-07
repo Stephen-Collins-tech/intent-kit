@@ -260,11 +260,13 @@ def evaluate_node(node, test_cases: List[Dict[str, Any]], dataset_name: str) -> 
     return results
 
 
-def generate_markdown_report(results: List[Dict[str, Any]], output_path: Path, run_timestamp: Optional[str] = None):
+def generate_markdown_report(results: List[Dict[str, Any]], output_path: Path, run_timestamp: Optional[str] = None, mock_mode: bool = False):
     """Generate a markdown report from evaluation results."""
     # Generate the report content
-    report_content = "# Node Evaluation Report\n\n"
-    report_content += f"Generated on: {importlib.import_module('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    mock_indicator = " (MOCK MODE)" if mock_mode else ""
+    report_content = f"# Node Evaluation Report{mock_indicator}\n\n"
+    report_content += f"Generated on: {importlib.import_module('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+    report_content += f"Mode: {'Mock (simulated responses)' if mock_mode else 'Live (real API calls)'}\n\n"
 
     # Summary
     report_content += "## Summary\n\n"

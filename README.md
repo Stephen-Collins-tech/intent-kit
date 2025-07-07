@@ -821,11 +821,16 @@ from intent_kit.evals import run_all_evaluations, evaluate_node, generate_markdo
 To run all evaluations and generate comprehensive markdown reports:
 
 ```bash
+# Run with real API calls (requires API keys)
 uv run run-evals
+
+# Run in mock mode (no API keys required)
+uv run run-evals --mock
 ```
 
 - Generates a comprehensive report at `reports/comprehensive_report.md`
 - Generates individual reports for each dataset in `reports/`
+- Mock mode uses simulated responses for testing without API costs
 
 ### Running a Specific Eval
 

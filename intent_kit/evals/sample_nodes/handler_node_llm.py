@@ -8,8 +8,29 @@ def extract_booking_args_llm(user_input: str, context: Optional[Dict[str, Any]] 
     """Extract booking parameters using LLM."""
     from intent_kit.services.llm_factory import LLMFactory
 
-    # Configure LLM (you can change this to any supported provider)
+    # Check for mock mode
     import os
+    mock_mode = os.getenv("INTENT_KIT_MOCK_MODE") == "1"
+
+    if mock_mode:
+        # Mock responses for testing without API calls
+        import re
+        # Simple regex extraction for mock mode
+        dest_match = re.search(
+            r'(?:to|for|in)\s+([A-Za-z\s]+?)(?:\s|$)', user_input, re.IGNORECASE)
+        destination = dest_match.group(1).strip() if dest_match else "Unknown"
+
+        date_match = re.search(r'(?:for|on)\s+(\w+\s+\w+)',
+                               user_input, re.IGNORECASE)
+        date = date_match.group(1) if date_match else "ASAP"
+
+        return {
+            "destination": destination,
+            "date": date,
+            "user_id": context.get("user_id", "anonymous") if context else "anonymous"
+        }
+
+    # Configure LLM (you can change this to any supported provider)
     provider = "openai"  # or "anthropic", "google", "ollama"
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 

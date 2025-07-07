@@ -28,6 +28,8 @@ def run_all_evaluations():
     parser.add_argument("--quiet", action="store_true",
                         help="Suppress output messages")
     parser.add_argument("--llm-config", help="Path to LLM configuration file")
+    parser.add_argument("--mock", action="store_true",
+                        help="Run in mock mode without real API calls")
 
     # Parse args if called as script, otherwise use defaults
     try:
@@ -50,13 +52,15 @@ def run_all_evaluations():
         output_path = reports_dir / "comprehensive_report.md"
 
     if not args.quiet:
-        print("Running all evaluations...")
-    results = run_all_evaluations_internal(args.llm_config)
+        mode = "MOCK" if args.mock else "LIVE"
+        print(f"Running all evaluations in {mode} mode...")
+    results = run_all_evaluations_internal(
+        args.llm_config, mock_mode=args.mock)
 
     if not args.quiet:
         print("Generating comprehensive report...")
     report = generate_comprehensive_report(
-        results, str(output_path), run_timestamp=run_timestamp)
+        results, str(output_path), run_timestamp=run_timestamp, mock_mode=args.mock)
 
     # Also write timestamped copy to date-based archive directory
     date_comprehensive_report_path = date_reports_dir / \
@@ -91,7 +95,7 @@ def run_all_evaluations():
     return True
 
 
-def run_all_evaluations_internal(llm_config_path: Optional[str] = None) -> List[Dict[str, Any]]:
+def run_all_evaluations_internal(llm_config_path: Optional[str] = None, mock_mode: bool = False) -> List[Dict[str, Any]]:
     """Run evaluations on all datasets and return results."""
     dataset_dir = pathlib.Path(__file__).parent / "datasets"
     results = []
@@ -107,7 +111,13 @@ def run_all_evaluations_internal(llm_config_path: Optional[str] = None) -> List[
             if "api_key" in config:
                 env_var = f"{provider.upper()}_API_KEY"
                 os.environ[env_var] = config["api_key"]
-                print(f"Set {env_var} environment variable")
+                print(f"Set {env_var} environment variable (key obfuscated)")
+
+    # Set mock mode environment variable
+    if mock_mode:
+        import os
+        os.environ["INTENT_KIT_MOCK_MODE"] = "1"
+        print("Running in MOCK mode - using simulated responses")
 
     for dataset_file in dataset_dir.glob("*.yaml"):
         print(f"Evaluating {dataset_file.name}...")
@@ -136,13 +146,14 @@ def run_all_evaluations_internal(llm_config_path: Optional[str] = None) -> List[
 
         # Print results
         accuracy = result["accuracy"]
+        mode_indicator = "[MOCK]" if mock_mode else ""
         print(
-            f"  Accuracy: {accuracy:.1%} ({result['correct']}/{result['total_cases']})")
+            f"  Accuracy: {accuracy:.1%} ({result['correct']}/{result['total_cases']}) {mode_indicator}")
 
     return results
 
 
-def generate_comprehensive_report(results: List[Dict[str, Any]], output_file: Optional[str] = None, run_timestamp: str = "") -> str:
+def generate_comprehensive_report(results: List[Dict[str, Any]], output_file: Optional[str] = None, run_timestamp: str = "", mock_mode: bool = False) -> str:
     """Generate a comprehensive markdown report for all evaluations."""
 
     total_datasets = len(results)
@@ -155,9 +166,13 @@ def generate_comprehensive_report(results: List[Dict[str, Any]], output_file: Op
         1 for r in results if r["accuracy"] >= 0.8)  # 80% threshold
     failed_datasets = total_datasets - passed_datasets
 
-    report = f"""# Comprehensive Evaluation Report
+    # Add mock mode indicator
+    mock_indicator = " (MOCK MODE)" if mock_mode else ""
+
+    report = f"""# Comprehensive Evaluation Report{mock_indicator}
 
 **Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  
+**Mode:** {'Mock (simulated responses)' if mock_mode else 'Live (real API calls)'}  
 **Total Datasets:** {total_datasets}  
 **Total Tests:** {total_tests}  
 **Overall Accuracy:** {overall_accuracy:.1%}

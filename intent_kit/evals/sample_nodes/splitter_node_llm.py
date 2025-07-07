@@ -7,8 +7,24 @@ def split_text_llm(user_input: str, debug: bool = False, context: Optional[Dict[
     """Split user input into multiple intents using LLM."""
     from intent_kit.services.llm_factory import LLMFactory
 
-    # Configure LLM
+    # Check for mock mode
     import os
+    mock_mode = os.getenv("INTENT_KIT_MOCK_MODE") == "1"
+
+    if mock_mode:
+        # Mock responses for testing without API calls
+        # Simple splitting based on common conjunctions
+        import re
+        conjunctions = [" and ", " also ", " plus ",
+                        " as well as ", " furthermore "]
+        for conj in conjunctions:
+            if conj in user_input.lower():
+                parts = user_input.split(conj)
+                return [part.strip() for part in parts if part.strip()]
+        # If no conjunctions found, return as single intent
+        return [user_input]
+
+    # Configure LLM
     provider = "openai"
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 

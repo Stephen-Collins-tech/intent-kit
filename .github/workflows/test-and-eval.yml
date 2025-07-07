@@ -9,6 +9,10 @@ on:
 jobs:
   test-and-eval:
     runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -23,5 +27,5 @@ jobs:
           uv sync --dev
       - name: Tests
         run: uv run pytest -q
-      - name: Evaluations
-        run: uv run python -m intent_kit.evals.run_all_evals --quiet
+      - name: Evaluations (Mock Mode)
+        run: uv run python -m intent_kit.evals.run_all_evals --quiet --mock

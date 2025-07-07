@@ -9,8 +9,32 @@ def extract_weather_args_llm(user_input: str, context: Optional[Dict[str, Any]] 
     """Extract weather parameters using LLM."""
     from intent_kit.services.llm_factory import LLMFactory
 
-    # Configure LLM
+    # Check for mock mode
     import os
+    mock_mode = os.getenv("INTENT_KIT_MOCK_MODE") == "1"
+
+    if mock_mode:
+        # Mock responses for testing without API calls
+        import re
+        location_patterns = [
+            r'(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)',
+            r'(?:weather|temperature|forecast)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)',
+            r'(?:What\'s|How\'s)\s+(?:the\s+)?(?:weather|temperature)\s+(?:like\s+)?(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)',
+            r'(?:weather|temperature)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)',
+            r'(?:weather|temperature|forecast)\s+for\s+([A-Za-z\s]+?)(?:\?|$)',
+            r'(?:weather|temperature)\s+in\s+([A-Za-z\s]+?)(?:\?|$)'
+        ]
+
+        location = "Unknown"
+        for pattern in location_patterns:
+            location_match = re.search(pattern, user_input, re.IGNORECASE)
+            if location_match:
+                location = location_match.group(1).strip()
+                break
+
+        return {"location": location}
+
+    # Configure LLM
     provider = "openai"  # or "anthropic", "google", "ollama"
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 
@@ -93,8 +117,30 @@ def extract_cancel_args_llm(user_input: str, context: Optional[Dict[str, Any]] =
     """Extract cancellation parameters using LLM."""
     from intent_kit.services.llm_factory import LLMFactory
 
-    # Configure LLM
+    # Check for mock mode
     import os
+    mock_mode = os.getenv("INTENT_KIT_MOCK_MODE") == "1"
+
+    if mock_mode:
+        # Mock responses for testing without API calls
+        import re
+        cancel_patterns = [
+            r'cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)',
+            r'cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\?|$)',
+            r'(?:I\s+need\s+to\s+)?cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)',
+            r'(?:cancel|cancellation)\s+(?:of\s+)?(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)'
+        ]
+
+        item = "reservation"
+        for pattern in cancel_patterns:
+            cancel_match = re.search(pattern, user_input, re.IGNORECASE)
+            if cancel_match:
+                item = cancel_match.group(1).strip()
+                break
+
+        return {"item": item}
+
+    # Configure LLM
     provider = "openai"  # or "anthropic", "google", "ollama"
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 
@@ -193,8 +239,22 @@ def intent_classifier_llm(user_input: str, children: List[TreeNode], context: Op
     """Classify user intent using LLM."""
     from intent_kit.services.llm_factory import LLMFactory
 
-    # Configure LLM
+    # Check for mock mode
     import os
+    mock_mode = os.getenv("INTENT_KIT_MOCK_MODE") == "1"
+
+    if mock_mode:
+        # Mock responses for testing without API calls
+        if "weather" in user_input.lower():
+            # Return first child (weather handler)
+            return children[0] if children else None
+        elif "cancel" in user_input.lower():
+            # Return second child (cancel handler)
+            return children[1] if len(children) > 1 else None
+        else:
+            return children[0] if children else None  # Default to first child
+
+    # Configure LLM
     provider = "openai"  # or "anthropic", "google", "ollama"
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 
