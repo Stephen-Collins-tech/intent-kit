@@ -181,7 +181,11 @@ def create_llm_arg_extractor(
             )
 
             # Get LLM response
-            logger.debug(f"LLM arg extractor config: {llm_config}")
+            # Obfuscate API key in debug log
+            safe_config = llm_config.copy()
+            if "api_key" in safe_config:
+                safe_config["api_key"] = "***OBFUSCATED***"
+            logger.debug(f"LLM arg extractor config: {safe_config}")
             logger.debug(f"LLM arg extractor prompt: {prompt}")
             response = LLMFactory.generate_with_config(llm_config, prompt)
 

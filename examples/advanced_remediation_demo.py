@@ -28,12 +28,12 @@ from intent_kit.handlers.remediation import (
 # --- Setup LLM configs ---
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or "sk-mock-openai"
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or "sk-mock-gemini"
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or "sk-mock-gemini"
 
 LLM_CONFIG_1 = {"provider": "openai",
                 "model": "gpt-4.1-mini", "api_key": OPENAI_API_KEY}
 LLM_CONFIG_2 = {"provider": "google",
-                "model": "gemini-2.5-flash", "api_key": GEMINI_API_KEY}
+                "model": "gemini-2.5-flash", "api_key": GOOGLE_API_KEY}
 
 # --- Core Handler: Simulates model confusion and ambiguity ---
 
@@ -134,7 +134,7 @@ def main():
     print("• Consensus voting: Multiple models must agree before output is accepted.")
     print("• Alternate prompt: Handler retries with a new prompt if it can't answer.")
 
-    if "mock" in OPENAI_API_KEY or "mock" in GEMINI_API_KEY:
+    if "mock" in OPENAI_API_KEY or "mock" in GOOGLE_API_KEY:
         print("\n💡 Pro Tip: For real LLM behavior, add your OpenAI and Gemini API keys to a .env file.")
 
 
