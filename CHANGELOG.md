@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.2.0-alpha] - YYYY-MM-DD
+## [0.2.0-alpha] - 2025-07-07
 
 ### Added
 - Experimental CI/CD pipeline with linting, type checking, test coverage reporting via Codecov, and trusted publishing.
