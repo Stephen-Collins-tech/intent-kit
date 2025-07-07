@@ -1,5 +1,12 @@
 # intent-kit
 
+<!-- Badges -->
+
+[![CI](https://github.com/intent-kit/intent-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/intent-kit/intent-kit/actions/workflows/ci.yml)
+[![Coverage Status](https://codecov.io/gh/intent-kit/intent-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/intent-kit/intent-kit)
+[![Documentation](https://img.shields.io/badge/docs-online-blue)](https://intent-kit.github.io)
+[![PyPI](https://img.shields.io/pypi/v/intent-kit)](https://pypi.org/project/intent-kit)
+
 A Python library for building hierarchical intent classification and execution systems with support for multiple AI service backends.
 
 ## Features

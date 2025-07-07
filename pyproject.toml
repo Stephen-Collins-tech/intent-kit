@@ -51,8 +51,19 @@ dev = [
     "python-dotenv>=1.0.0",
     "tqdm",
     "pyyaml",
+    "black>=24.4.2",
+    "ruff>=0.4.7",
+    "mypy>=1.10.0",
+    "pre-commit>=3.6.0",
+    "build>=1.2.1",
+    "twine>=5.1.0",
 ]
 viz = [
     "networkx>=3.5",
     "pyvis>=0.3.2",
+]
+docs = [
+    "mkdocs-material>=9.5.17",
+    "mkdocstrings[python]>=0.24.0",
+    "mkdocs-literate-nav>=0.6.0",
 ]
