@@ -36,8 +36,9 @@ run-evals = "intent_kit.evals.run_all_evals:run_all_evaluations"
 eval-node = "intent_kit.evals.run_node_eval:main"
 eval-api-demo = "examples.eval_api_demo:main"
 
-[tool.setuptools]
-packages = ["intent_kit"] 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["intent_kit*"]
 
 [dependency-groups]
 dev = [
