@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "intent-kit"
+name = "intent_kit"
 version = "0.1.0"
 description = "An open-source Python library for building intent classification and execution systems that work with any AI backend."
 authors = [
@@ -57,13 +57,13 @@ dev = [
     "pre-commit>=3.6.0",
     "build>=1.2.1",
     "twine>=5.1.0",
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.5.17",
+    "mkdocstrings[python]>=0.24.0",
+    "mkdocs-literate-nav>=0.6.0",
+    "ipykernel>=6.0.0",
 ]
 viz = [
     "networkx>=3.5",
     "pyvis>=0.3.2",
-]
-docs = [
-    "mkdocs-material>=9.5.17",
-    "mkdocstrings[python]>=0.24.0",
-    "mkdocs-literate-nav>=0.6.0",
 ]

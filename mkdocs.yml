@@ -1,6 +1,6 @@
 site_name: intent-kit
 site_description: Open-source Python framework for intent classification and execution
-site_url: https://Stephen-Collins-tech.github.io/intent-kit
+site_url: https://docs.intentkit.io
 repo_url: https://github.com/Stephen-Collins-tech/intent-kit
 
 theme:
