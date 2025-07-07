@@ -36,6 +36,11 @@ ENV/
 htmlcov/
 .pytest_cache/
 .tox/
+reports/
+
+# Evaluation Results
+intent_kit/evals/results/
+intent_kit/evals/reports/
 
 # Visualization
 intentkit_graphs/
