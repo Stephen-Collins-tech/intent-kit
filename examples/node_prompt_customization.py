@@ -82,7 +82,8 @@ def advanced_usage_example():
             
             Extracted Parameters:
             """
-        }
+        },
+        suppress_warnings=True  # Acknowledge risks to silence warnings
     )
     
     calc_handler = handler(
@@ -110,7 +111,8 @@ def advanced_usage_example():
             
             Extracted Parameters:
             """
-        }
+        },
+        suppress_warnings=True  # Acknowledge risks to silence warnings
     )
     
     # Create classifier with custom classification prompt
@@ -139,7 +141,8 @@ def advanced_usage_example():
             
             Your choice (number only):
             """
-        }
+        },
+        suppress_warnings=True  # Acknowledge risks to silence warnings
     )
     
     print("⚠️  Advanced usage created successfully")

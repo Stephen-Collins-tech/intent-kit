@@ -118,6 +118,7 @@ def handler(
     output_validator: Optional[Callable[[Any], bool]] = None,
     remediation_strategies: Optional[List[Union[str, "RemediationStrategy"]]] = None,
     custom_prompts: Optional[Dict[str, str]] = None,
+    suppress_warnings: bool = False,
 ) -> TreeNode:
     """Create a handler node with automatic argument extraction.
 
@@ -137,6 +138,8 @@ def handler(
                        Advanced feature - use with caution. Keys can include:
                        - 'extraction': Custom argument extraction prompt
                        If not provided, uses default prompts.
+        suppress_warnings: If True, suppresses warning messages for custom prompts.
+                          Only use when you acknowledge the risks of custom prompts.
 
     Returns:
         Configured HandlerNode
@@ -159,7 +162,8 @@ def handler(
         ...     llm_config=LLM_CONFIG,
         ...     custom_prompts={
         ...         "extraction": "Custom extraction prompt template with {user_input} and {param_descriptions}"
-        ...     }
+        ...     },
+        ...     suppress_warnings=True  # Acknowledge risks to silence warnings
         ... )
     """
     # Create argument extractor based on configuration
@@ -242,6 +246,7 @@ def handler(
         description=description,
         remediation_strategies=remediation_strategies,
         custom_prompts=custom_prompts,
+        suppress_warnings=suppress_warnings,
     )
 
 
@@ -254,6 +259,7 @@ def llm_classifier(
     description: str = "",
     remediation_strategies: Optional[List[Union[str, "RemediationStrategy"]]] = None,
     custom_prompts: Optional[Dict[str, str]] = None,
+    suppress_warnings: bool = False,
 ) -> TreeNode:
     """Create an LLM-powered classifier node with auto-wired children descriptions.
 
@@ -267,6 +273,8 @@ def llm_classifier(
                        Advanced feature - use with caution. Keys can include:
                        - 'classification': Custom classification prompt
                        If not provided, uses default prompts.
+        suppress_warnings: If True, suppresses warning messages for custom prompts.
+                          Only use when you acknowledge the risks of custom prompts.
 
     Returns:
         Configured ClassifierNode with auto-wired children descriptions
@@ -285,7 +293,8 @@ def llm_classifier(
         ...     llm_config=LLM_CONFIG,
         ...     custom_prompts={
         ...         "classification": "Custom classification prompt with {user_input} and {node_descriptions}"
-        ...     }
+        ...     },
+        ...     suppress_warnings=True  # Acknowledge risks to silence warnings
         ... )
     """
     if not children:
@@ -321,6 +330,7 @@ def llm_classifier(
         description=description,
         remediation_strategies=remediation_strategies,
         custom_prompts=custom_prompts,
+        suppress_warnings=suppress_warnings,
     )
 
     # Set parent reference for all children to this classifier node

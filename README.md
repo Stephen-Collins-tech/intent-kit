@@ -357,7 +357,8 @@ greet_handler = handler(
         
         Extracted Parameters:
         """
-    }
+    },
+    suppress_warnings=True  # Acknowledge risks to silence warnings
 )
 
 classifier = llm_classifier(
@@ -379,7 +380,8 @@ classifier = llm_classifier(
         
         Your choice (number only):
         """
-    }
+    },
+    suppress_warnings=True  # Acknowledge risks to silence warnings
 )
 ```
 

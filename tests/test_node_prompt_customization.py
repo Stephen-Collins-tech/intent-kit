@@ -148,7 +148,7 @@ class TestNodePromptCustomization:
         llm_config = {"provider": "openai", "model": "gpt-4"}
         
         with patch('intent_kit.utils.logger.Logger.warning') as mock_warning:
-            # Create handler with custom prompts
+            # Create handler with custom prompts (should log warning)
             handler(
                 name="test_handler",
                 description="Test handler",
@@ -165,6 +165,56 @@ class TestNodePromptCustomization:
             warning_message = mock_warning.call_args[0][0]
             assert "custom prompts" in warning_message.lower()
             assert "advanced feature" in warning_message.lower()
+
+    def test_custom_prompts_suppress_warnings(self):
+        """Test that warnings can be suppressed when suppress_warnings=True."""
+        # Mock LLM config
+        llm_config = {"provider": "openai", "model": "gpt-4"}
+        
+        with patch('intent_kit.utils.logger.Logger.warning') as mock_warning:
+            # Create handler with custom prompts and suppressed warnings
+            handler_node = handler(
+                name="test_handler",
+                description="Test handler",
+                handler_func=lambda x: f"Hello {x}",
+                param_schema={"name": str},
+                llm_config=llm_config,
+                custom_prompts={
+                    "extraction": "Custom extraction prompt"
+                },
+                suppress_warnings=True
+            )
+            
+            # Verify no warning was logged
+            mock_warning.assert_not_called()
+            
+            # Verify the node has suppress_warnings set
+            assert handler_node.is_suppressing_warnings()
+
+    def test_suppress_warnings_property(self):
+        """Test the is_suppressing_warnings property."""
+        # Create a concrete test class
+        class TestTreeNode(TreeNode):
+            def execute(self, user_input: str, context=None):
+                return None
+        
+        # Test with warnings not suppressed
+        node = TestTreeNode(
+            name="test",
+            description="Test node",
+            custom_prompts={"extraction": "custom prompt"},
+            suppress_warnings=False
+        )
+        assert not node.is_suppressing_warnings()
+        
+        # Test with warnings suppressed
+        node = TestTreeNode(
+            name="test",
+            description="Test node",
+            custom_prompts={"extraction": "custom prompt"},
+            suppress_warnings=True
+        )
+        assert node.is_suppressing_warnings()
 
     def test_multiple_custom_prompts(self):
         """Test that multiple custom prompts can be set."""

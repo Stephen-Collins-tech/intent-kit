@@ -13,21 +13,23 @@ This document summarizes the complete implementation of node-level prompt custom
    - Added `custom_prompts` property to access custom prompts
    - Added `get_custom_prompt()` method for prompt retrieval with fallback
    - Added `has_custom_prompts()` method to check if custom prompts are set
-   - Added warning logging when custom prompts are used
+   - Added `suppress_warnings` parameter to control warning logging
+   - Added `is_suppressing_warnings()` method to check warning suppression status
+   - Added warning logging when custom prompts are used (configurable)
 
 2. **HandlerNode Support**
-   - Updated `HandlerNode` constructor to accept `custom_prompts` parameter
+   - Updated `HandlerNode` constructor to accept `custom_prompts` and `suppress_warnings` parameters
    - Modified `handler()` builder function to support custom extraction prompts
    - Custom prompts take priority over builder-level `extraction_prompt` parameter
 
 3. **ClassifierNode Support**
-   - Updated `ClassifierNode` constructor to accept `custom_prompts` parameter
+   - Updated `ClassifierNode` constructor to accept `custom_prompts` and `suppress_warnings` parameters
    - Modified `llm_classifier()` builder function to support custom classification prompts
    - Custom prompts take priority over builder-level `classification_prompt` parameter
 
 4. **Builder Function Updates**
-   - Updated `handler()` function to support `custom_prompts` parameter
-   - Updated `llm_classifier()` function to support `custom_prompts` parameter
+   - Updated `handler()` function to support `custom_prompts` and `suppress_warnings` parameters
+   - Updated `llm_classifier()` function to support `custom_prompts` and `suppress_warnings` parameters
    - Added comprehensive documentation with examples and warnings
 
 ### ✅ Documentation and Examples
@@ -49,8 +51,9 @@ This document summarizes the complete implementation of node-level prompt custom
 
 ### ✅ Safety and Warnings
 
-1. **Clear Warnings**
-   - Warning messages logged when custom prompts are used
+1. **Configurable Warnings**
+   - Warning messages logged when custom prompts are used (default behavior)
+   - `suppress_warnings=True` parameter allows users to silence warnings when they acknowledge risks
    - Documentation emphasizes advanced/expert-only nature
    - Clear guidance on when to use custom prompts
 
@@ -78,17 +81,20 @@ class TreeNode(Node, ABC):
         children: Optional[List["TreeNode"]] = None,
         parent: Optional["TreeNode"] = None,
         custom_prompts: Optional[Dict[str, str]] = None,  # NEW
+        suppress_warnings: bool = False,  # NEW
     ):
         # ... existing code ...
         
         # Advanced feature: Custom prompt overrides
         self._custom_prompts = custom_prompts or {}
+        self._suppress_warnings = suppress_warnings
         
-        if custom_prompts:
+        if custom_prompts and not suppress_warnings:
             self.logger.warning(
                 f"Node '{self.name}' is using custom prompts. "
                 "This is an advanced feature that may affect performance. "
-                "If you experience issues, revert to default prompts before troubleshooting."
+                "If you experience issues, revert to default prompts before troubleshooting. "
+                "To suppress this warning, set suppress_warnings=True when creating the node."
             )
 
     @property
@@ -103,6 +109,10 @@ class TreeNode(Node, ABC):
     def has_custom_prompts(self) -> bool:
         """Check if this node has any custom prompts set."""
         return bool(self._custom_prompts)
+
+    def is_suppressing_warnings(self) -> bool:
+        """Check if warnings are suppressed for this node."""
+        return self._suppress_warnings
 ```
 
 ### Builder Function Updates
@@ -122,6 +132,7 @@ def handler(
     output_validator: Optional[Callable[[Any], bool]] = None,
     remediation_strategies: Optional[List[Union[str, "RemediationStrategy"]]] = None,
     custom_prompts: Optional[Dict[str, str]] = None,  # NEW
+    suppress_warnings: bool = False,  # NEW
 ) -> TreeNode:
     # ... existing code ...
     
@@ -138,6 +149,7 @@ def handler(
     return HandlerNode(
         # ... existing parameters ...
         custom_prompts=custom_prompts,  # NEW
+        suppress_warnings=suppress_warnings,  # NEW
     )
 ```
 
@@ -180,7 +192,8 @@ greet_handler = handler(
         
         Extracted Parameters:
         """
-    }
+    },
+    suppress_warnings=True  # Acknowledge risks to silence warnings
 )
 ```
 
@@ -201,12 +214,13 @@ greet_handler = handler(
 ## Testing Results
 
 ✅ All tests pass successfully:
-- TreeNode base class supports custom_prompts parameter
+- TreeNode base class supports custom_prompts and suppress_warnings parameters
 - Custom prompts are stored and accessible
 - Default prompts fallback when custom prompts not set
 - Handler nodes support custom extraction prompts
 - Classifier nodes support custom classification prompts
-- Warning messages are logged for custom prompt usage
+- Warning messages are logged for custom prompt usage (configurable)
+- suppress_warnings parameter correctly controls warning logging
 
 ## Files Modified/Created
 

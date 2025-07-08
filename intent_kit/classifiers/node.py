@@ -23,6 +23,7 @@ class ClassifierNode(TreeNode):
         parent: Optional["TreeNode"] = None,
         remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
         custom_prompts: Optional[Dict[str, str]] = None,
+        suppress_warnings: bool = False,
     ):
         super().__init__(
             name=name, 
@@ -30,6 +31,7 @@ class ClassifierNode(TreeNode):
             children=children, 
             parent=parent,
             custom_prompts=custom_prompts,
+            suppress_warnings=suppress_warnings,
         )
         self.classifier = classifier
         self.remediation_strategies = remediation_strategies or []

@@ -53,6 +53,7 @@ class TreeNode(Node, ABC):
         children: Optional[List["TreeNode"]] = None,
         parent: Optional["TreeNode"] = None,
         custom_prompts: Optional[Dict[str, str]] = None,
+        suppress_warnings: bool = False,
     ):
         super().__init__(name=name, parent=parent)
         self.logger = Logger(name or "unnamed_node")
@@ -65,12 +66,14 @@ class TreeNode(Node, ABC):
         # WARNING: This is for advanced users only. Custom prompts can degrade performance
         # and cause unexpected behavior. If you experience issues, revert to default prompts.
         self._custom_prompts = custom_prompts or {}
+        self._suppress_warnings = suppress_warnings
         
-        if custom_prompts:
+        if custom_prompts and not suppress_warnings:
             self.logger.warning(
                 f"Node '{self.name}' is using custom prompts. "
                 "This is an advanced feature that may affect performance. "
-                "If you experience issues, revert to default prompts before troubleshooting."
+                "If you experience issues, revert to default prompts before troubleshooting. "
+                "To suppress this warning, set suppress_warnings=True when creating the node."
             )
 
     @property
@@ -99,6 +102,10 @@ class TreeNode(Node, ABC):
     def has_custom_prompts(self) -> bool:
         """Check if this node has any custom prompts set."""
         return bool(self._custom_prompts)
+
+    def is_suppressing_warnings(self) -> bool:
+        """Check if warnings are suppressed for this node."""
+        return self._suppress_warnings
 
     @abstractmethod
     def execute(

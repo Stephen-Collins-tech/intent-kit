@@ -74,7 +74,8 @@ greet_handler = handler(
         
         Extracted Parameters:
         """
-    }
+    },
+    suppress_warnings=True  # Acknowledge risks to silence warnings
 )
 ```
 
@@ -119,6 +120,36 @@ classifier = llm_classifier(
     }
 )
 ```
+
+## Warning Suppression
+
+By default, nodes with custom prompts will log warning messages to alert you about the advanced nature of this feature. If you acknowledge the risks and want to suppress these warnings, you can set `suppress_warnings=True`:
+
+```python
+# With warnings (default)
+handler = handler(
+    name="test",
+    description="Test handler",
+    handler_func=lambda x: f"Hello {x}!",
+    param_schema={"name": str},
+    llm_config=LLM_CONFIG,
+    custom_prompts={"extraction": "Custom prompt..."}
+    # Warning will be logged
+)
+
+# Without warnings (acknowledge risks)
+handler = handler(
+    name="test",
+    description="Test handler", 
+    handler_func=lambda x: f"Hello {x}!",
+    param_schema={"name": str},
+    llm_config=LLM_CONFIG,
+    custom_prompts={"extraction": "Custom prompt..."},
+    suppress_warnings=True  # No warnings logged
+)
+```
+
+**Note**: Only use `suppress_warnings=True` when you fully understand the risks of custom prompts and are prepared to handle any issues that may arise.
 
 ## Prompt Template Variables
 
