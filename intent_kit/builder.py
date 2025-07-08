@@ -117,6 +117,7 @@ def handler(
     input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
     output_validator: Optional[Callable[[Any], bool]] = None,
     remediation_strategies: Optional[List[Union[str, "RemediationStrategy"]]] = None,
+    custom_prompts: Optional[Dict[str, str]] = None,
 ) -> TreeNode:
     """Create a handler node with automatic argument extraction.
 
@@ -132,6 +133,10 @@ def handler(
         context_outputs: Optional set of context keys this handler writes to
         input_validator: Optional function to validate extracted parameters
         output_validator: Optional function to validate handler output
+        custom_prompts: Optional dictionary of custom prompts for this node.
+                       Advanced feature - use with caution. Keys can include:
+                       - 'extraction': Custom argument extraction prompt
+                       If not provided, uses default prompts.
 
     Returns:
         Configured HandlerNode
@@ -144,12 +149,28 @@ def handler(
         ...     param_schema={"name": str},
         ...     llm_config=LLM_CONFIG
         ... )
+        
+    Advanced Usage (Expert Only):
+        >>> greet_handler = handler(
+        ...     name="greet",
+        ...     description="Greet the user",
+        ...     handler_func=lambda name: f"Hello {name}!",
+        ...     param_schema={"name": str},
+        ...     llm_config=LLM_CONFIG,
+        ...     custom_prompts={
+        ...         "extraction": "Custom extraction prompt template with {user_input} and {param_descriptions}"
+        ...     }
+        ... )
     """
     # Create argument extractor based on configuration
     if llm_config:
         # Use LLM-based extraction
         if not extraction_prompt:
-            extraction_prompt = get_default_extraction_prompt()
+            # Check for custom extraction prompt first
+            if custom_prompts and "extraction" in custom_prompts:
+                extraction_prompt = custom_prompts["extraction"]
+            else:
+                extraction_prompt = get_default_extraction_prompt()
 
         arg_extractor = create_llm_arg_extractor(
             llm_config, extraction_prompt, param_schema
@@ -220,6 +241,7 @@ def handler(
         output_validator=output_validator,
         description=description,
         remediation_strategies=remediation_strategies,
+        custom_prompts=custom_prompts,
     )
 
 
@@ -231,6 +253,7 @@ def llm_classifier(
     classification_prompt: Optional[str] = None,
     description: str = "",
     remediation_strategies: Optional[List[Union[str, "RemediationStrategy"]]] = None,
+    custom_prompts: Optional[Dict[str, str]] = None,
 ) -> TreeNode:
     """Create an LLM-powered classifier node with auto-wired children descriptions.
 
@@ -240,6 +263,10 @@ def llm_classifier(
         llm_config: LLM configuration for classification
         classification_prompt: Optional custom classification prompt
         description: Optional description of the classifier
+        custom_prompts: Optional dictionary of custom prompts for this node.
+                       Advanced feature - use with caution. Keys can include:
+                       - 'classification': Custom classification prompt
+                       If not provided, uses default prompts.
 
     Returns:
         Configured ClassifierNode with auto-wired children descriptions
@@ -249,6 +276,16 @@ def llm_classifier(
         ...     name="root",
         ...     children=[greet_handler, calc_handler, weather_handler],
         ...     llm_config=LLM_CONFIG
+        ... )
+        
+    Advanced Usage (Expert Only):
+        >>> classifier = llm_classifier(
+        ...     name="root",
+        ...     children=[greet_handler, calc_handler, weather_handler],
+        ...     llm_config=LLM_CONFIG,
+        ...     custom_prompts={
+        ...         "classification": "Custom classification prompt with {user_input} and {node_descriptions}"
+        ...     }
         ... )
     """
     if not children:
@@ -267,7 +304,11 @@ def llm_classifier(
             )
 
     if not classification_prompt:
-        classification_prompt = get_default_classification_prompt()
+        # Check for custom classification prompt first
+        if custom_prompts and "classification" in custom_prompts:
+            classification_prompt = custom_prompts["classification"]
+        else:
+            classification_prompt = get_default_classification_prompt()
 
     classifier = create_llm_classifier(
         llm_config, classification_prompt, node_descriptions
@@ -279,6 +320,7 @@ def llm_classifier(
         children=children,
         description=description,
         remediation_strategies=remediation_strategies,
+        custom_prompts=custom_prompts,
     )
 
     # Set parent reference for all children to this classifier node

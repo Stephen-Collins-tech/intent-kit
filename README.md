@@ -312,6 +312,93 @@ graph = (
 
 ---
 
+## Advanced Features
+
+### Node-Level Prompt Customization
+
+**⚠️ Advanced Feature - Use with Caution**
+
+Node-level prompt customization allows you to override the default prompts used by LLM-powered nodes. This is an **expert-only feature** that should be used sparingly.
+
+**Default Behavior (Recommended):**
+```python
+# Uses optimized default prompts
+greet_handler = handler(
+    name="greet",
+    description="Greet the user",
+    handler_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str},
+    llm_config=LLM_CONFIG
+)
+```
+
+**Advanced Usage (Expert Only):**
+```python
+# Custom prompts for specialized use cases
+greet_handler = handler(
+    name="greet",
+    description="Greet the user",
+    handler_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str},
+    llm_config=LLM_CONFIG,
+    custom_prompts={
+        "extraction": """
+        You are a specialized name extractor for greeting users.
+        
+        User Input: {user_input}
+        Required Parameters: {param_descriptions}
+        {context_info}
+        
+        Instructions:
+        - Extract the person's name from the user input
+        - Look for names after words like "hello", "hi", "greet"
+        - If no name is found, use "there" as default
+        - Return as: "name: [extracted_name]"
+        
+        Extracted Parameters:
+        """
+    }
+)
+
+classifier = llm_classifier(
+    name="root",
+    children=[greet_handler, calc_handler],
+    llm_config=LLM_CONFIG,
+    custom_prompts={
+        "classification": """
+        You are a specialized intent classifier for a customer service bot.
+        
+        User Input: {user_input}
+        Available Intents: {node_descriptions}
+        {context_info}
+        
+        Instructions:
+        - Classify the user's intent based on the available options
+        - Return only the number (1-{num_nodes}) corresponding to your choice
+        - If no intent matches, return 0
+        
+        Your choice (number only):
+        """
+    }
+)
+```
+
+**⚠️ Important Warnings:**
+- **Performance Impact**: Custom prompts can degrade performance
+- **Debugging Complexity**: Issues with custom prompts can be difficult to troubleshoot
+- **Support Limitations**: Always mention custom prompt usage when reporting issues
+- **Default Recommendation**: Use default prompts for most use cases
+
+**When to Use Custom Prompts:**
+1. You have a specific domain requiring specialized prompting
+2. You've thoroughly tested default prompts and found them insufficient
+3. You understand the risks and are prepared to troubleshoot
+4. You're an advanced user with prompt engineering experience
+
+For more information, see [Node-Level Prompt Customization](docs/node_prompt_customization.md).
+
+---
+
 ## Core Concepts
 
 ### Nodes

@@ -22,9 +22,14 @@ class ClassifierNode(TreeNode):
         description: str = "",
         parent: Optional["TreeNode"] = None,
         remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
+        custom_prompts: Optional[Dict[str, str]] = None,
     ):
         super().__init__(
-            name=name, description=description, children=children, parent=parent
+            name=name, 
+            description=description, 
+            children=children, 
+            parent=parent,
+            custom_prompts=custom_prompts,
         )
         self.classifier = classifier
         self.remediation_strategies = remediation_strategies or []
