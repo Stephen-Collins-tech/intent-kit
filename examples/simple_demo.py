@@ -5,8 +5,8 @@ A minimal demonstration showing how to configure an intent graph with handlers a
 """
 
 import os
-from intent_kit import IntentGraphBuilder, handler, llm_classifier
 from dotenv import load_dotenv
+from intent_kit import IntentGraphBuilder, handler, llm_classifier
 
 load_dotenv()
 

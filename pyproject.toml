@@ -19,9 +19,6 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
 ]
-dependencies = [
-    # No core dependencies - truly universal framework
-]
 
 [project.optional-dependencies]
 openai = [
@@ -66,6 +63,7 @@ dev = [
     "ipykernel>=6.0.0",
     "types-pyyaml>=6.0.12.20250516",
     "types-networkx>=3.5.0.20250701",
+    "python-dotenv>=1.1.1",
 ]
 viz = [
     "networkx>=3.5",
