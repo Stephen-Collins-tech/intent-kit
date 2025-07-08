@@ -22,9 +22,15 @@ classifiers = [
 
 [project.optional-dependencies]
 openai = [
-    "anthropic>=0.54.0",
-    "google-genai>=0.1.0",
     "openai>=1.0.0",
+]
+anthropic = [
+    "anthropic>=0.54.0",
+]
+google = [
+    "google-genai>=0.1.0",
+]
+ollama = [
     "ollama>=0.1.0",
 ]
 
