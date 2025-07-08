@@ -57,7 +57,7 @@ class LLMFactory:
         # For other providers, API key is required
         if not api_key:
             raise ValueError(
-                "LLM config must include 'api_key' for provider: {provider}"
+                f"LLM config must include 'api_key' for provider: {provider}"
             )
 
         if provider == "openai":
