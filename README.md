@@ -63,11 +63,11 @@ intent-kit is designed as a **universal intent framework** that works with any c
 
 ### **Start Simple (Zero Dependencies)**
 ```python
-from intent_kit import create_intent_handler, keyword_classifier, ClassifierNode
+from intent_kit import handler, keyword_classifier, ClassifierNode
 
 # Pure rule-based classification - no external dependencies
 intent_handlers = [
-    create_intent_handler(
+    handler(
         name="greet",
         description="Greet user",
         handler_func=lambda name: f"Hello {name}!",
@@ -101,9 +101,9 @@ classifier = ClassifierNode(
 ### **Go AI (Optional Enhancement)**
 ```python
 # Add AI capabilities when needed
-from intent_kit import create_llm_classifier
+from intent_kit import llm_classifier
 
-classifier = create_llm_classifier(
+classifier = llm_classifier(
     name="root",
     children=intent_handlers,
     llm_config=LLM_CONFIG  # Optional AI enhancement
@@ -168,32 +168,30 @@ pip install 'intent-kit[viz]'
 
 ## Quick Start
 
-### New API (Recommended)
-
-The new API provides a simplified, declarative way to build intent graphs with automatic argument extraction and LLM integration:
+The API provides a simplified, declarative way to build intent graphs with automatic argument extraction and LLM integration:
 
 ```python
-from intent_kit import IntentGraphBuilder, create_intent_handler, create_llm_classifier
+from intent_kit import IntentGraphBuilder, handler, llm_classifier
 from intent_kit.context import IntentContext
 
 # Create intent handlers with automatic argument extraction
-greet_handler = create_intent_handler(
+greet_handler = handler(
     name="greet",
     description="Greet the user",
-    handler_func=lambda name: f"Hello {name}!",
+    handler_func=lambda name, **kwargs: f"Hello {name}!",
     param_schema={"name": str}
     # No llm_config = uses rule-based extraction
 )
 
-weather_handler = create_intent_handler(
+weather_handler = handler(
     name="weather",
     description="Get weather information for a location",
-    handler_func=lambda location: f"The weather in {location} is sunny.",
+    handler_func=lambda location, **kwargs: f"The weather in {location} is sunny.",
     param_schema={"location": str}
 )
 
 # Create classifier with auto-wired children descriptions
-classifier = create_llm_classifier(
+classifier = llm_classifier(
     name="root",
     children=[greet_handler, weather_handler],
     llm_config=LLM_CONFIG,  # Optional: enables LLM-powered classification
@@ -211,71 +209,6 @@ graph = (
 context = IntentContext(session_id="user_123")
 result = graph.route("Hello Alice", context=context)
 print(result.output)  # "Hello Alice!"
-```
-
-### Legacy API Example
-
-```python
-from intent_kit.builder import handler
-from intent_kit.classifiers import keyword_classifier
-from intent_kit.context import IntentContext
-
-import re
-
-# Define argument extractors
-def extract_weather_args(user_input: str) -> dict:
-    """Extract city from user input."""
-    match = re.search(r'weather (?:for|in) (\w+)', user_input, re.IGNORECASE)
-    return {"city": match.group(1) if match else "Unknown"}
-
-def extract_greeting_args(user_input: str) -> dict:
-    """Extract person name from user input."""
-    match = re.search(r'hello (\w+)', user_input, re.IGNORECASE)
-    return {"person": match.group(1) if match else "there"}
-
-# Define handlers
-def handle_weather(city: str, context: IntentContext) -> str:
-    return f"The weather in {city} is sunny."
-
-def handle_greeting(person: str, context: IntentContext) -> str:
-    greeting_count = context.get("greeting_count", 0) + 1
-    context.set("greeting_count", greeting_count, modified_by="greet")
-    return f"Hello, {person}! (Greeting #{greeting_count})"
-
-# Create intent nodes
-weather_node = handler(
-    name="Weather",
-    description="Get weather information for a city",
-    handler_func=handle_weather,
-    param_schema={"city": str}
-)
-
-greeting_node = handler(
-    name="Greeting", 
-    description="Send a greeting to someone",
-    handler_func=handle_greeting,
-    param_schema={"person": str},
-    context_outputs={"greeting_count"}
-)
-
-# Create classifier node
-from intent_kit.classifiers import ClassifierNode
-root_node = ClassifierNode(
-    name="Root",
-    classifier=keyword_classifier,
-    children=[weather_node, greeting_node],
-    description="Main intent classifier"
-)
-
-# Set parent references
-weather_node.parent = root_node
-greeting_node.parent = root_node
-
-# Execute intents with context
-context = IntentContext(session_id="user_123")
-result = root_node.execute("What's the weather for Paris?", context=context)
-print(result.output)  # Shows the classifier's routing result
-print(result.children_results[0].output)  # Shows the actual intent output: "The weather in Paris is sunny."
 ```
 
 ### Advanced Example with IntentGraph
@@ -348,7 +281,7 @@ llm_config = {
 weather_handler = handler(
     name="weather",
     description="Get weather information for a location",
-    handler_func=lambda city: f"The weather in {city} is sunny.",
+    handler_func=lambda city, **kwargs: f"The weather in {city} is sunny.",
     param_schema={"city": str},
     llm_config=llm_config  # Enables LLM-based argument extraction
 )
@@ -356,7 +289,7 @@ weather_handler = handler(
 greet_handler = handler(
     name="greet",
     description="Send a greeting to someone",
-    handler_func=lambda name: f"Hello {name}!",
+    handler_func=lambda name, **kwargs: f"Hello {name}!",
     param_schema={"name": str},
     llm_config=llm_config
 )
@@ -408,7 +341,7 @@ name = context.get("user_name", "Unknown")
 count = context.get("greeting_count", 0)
 
 # Track dependencies in intent nodes
-weather_node = TreeBuilder.handler_node(
+weather_node = handler(
     name="Weather",
     param_schema={"city": str},
     handler=handle_weather,
@@ -419,9 +352,9 @@ weather_node = TreeBuilder.handler_node(
 )
 ```
 
-### New Builder API (Recommended)
+### Builder API
 
-The new API provides a simplified, declarative way to build intent graphs:
+The API provides a simplified, declarative way to build intent graphs:
 
 #### handler()
 
@@ -431,12 +364,12 @@ Creates a handler node with automatic argument extraction:
 from intent_kit import handler
 
 greet_handler = handler(
-    name="greet",
-    description="Greet the user",
-    handler_func=lambda name: f"Hello {name}!",
-    param_schema={"name": str},
-    llm_config=LLM_CONFIG  # Optional: enables LLM-based argument extraction
-)
+        name="greet",
+        description="Greet the user",
+        handler_func=lambda name, **kwargs: f"Hello {name}!",
+        param_schema={"name": str},
+        llm_config=LLM_CONFIG  # Optional: enables LLM-based argument extraction
+    )
 ```
 
 #### llm_classifier()
@@ -521,7 +454,7 @@ classifier_node = ClassifierNode(
 
 ### Argument Extraction
 
-The new API provides automatic argument extraction with two modes:
+The API provides automatic argument extraction with two modes:
 
 #### LLM-based Extraction
 
@@ -612,7 +545,7 @@ llm_client = LLMFactory.create_client({
 # Available providers: openai, anthropic, google, ollama
 ```
 
-### Benefits of the New API
+### Benefits of the API
 
 1. **Simplified Syntax**: Less boilerplate code required
 2. **Automatic Argument Extraction**: No need to manually create argument extractors
@@ -621,64 +554,7 @@ llm_client = LLMFactory.create_client({
 5. **Fallback Support**: Rule-based extraction when LLM config is not available
 6. **Backwards Compatibility**: Original API still works for advanced use cases
 
-### Migration from Legacy API
 
-#### Before (Legacy API)
-```python
-from intent_kit.classifiers.llm_classifier import create_llm_classifier, create_llm_arg_extractor
-
-# Create argument extractor
-arg_extractor = create_llm_arg_extractor(LLM_CONFIG, extraction_prompt, param_schema)
-
-# Create handler
-greet_handler = HandlerNode(
-    name="greet",
-    param_schema={"name": str},
-    handler=lambda name: f"Hello {name}!",
-    arg_extractor=arg_extractor,
-    description="Greet the user"
-)
-
-# Create classifier with manual descriptions
-classifier = ClassifierNode(
-    name="root",
-    classifier=create_llm_classifier(llm_config, prompt, descriptions),
-    children=[greet_handler],
-    description="Main classifier"
-)
-
-# Create graph
-graph = IntentGraph()
-graph.add_root_node(classifier)
-```
-
-#### After (New API)
-```python
-from intent_kit import handler, llm_classifier, IntentGraphBuilder
-
-# Create handler with automatic argument extraction
-greet_handler = handler(
-    name="greet",
-    description="Greet the user",
-    handler_func=lambda name: f"Hello {name}!",
-    param_schema={"name": str},
-    llm_config=LLM_CONFIG
-)
-
-# Create classifier with auto-wired descriptions
-classifier = llm_classifier(
-    name="root",
-    children=[greet_handler],
-    llm_config=LLM_CONFIG
-)
-
-# Build graph using builder pattern
-graph = (
-    IntentGraphBuilder()
-    .root(classifier)
-    .build()
-)
-```
 
 ### IntentGraph - Multi-Intent Routing
 
@@ -748,14 +624,43 @@ Graphs are saved to `intentkit_graphs/` directory with unique filenames based on
 
 ## Examples
 
-See the `examples/` directory for complete working examples:
+The `examples/` directory contains comprehensive demonstrations of IntentKit functionality. Each example is designed to be minimal and focused on specific features.
 
-* **`simple_demo.py`** - Basic IntentGraph with LLM integration using the new API
-* **`context_demo.py`** - Complete context-aware workflow example
-* **`ollama_demo.py`** - Using local Ollama models for offline processing
-* **`error_demo.py`** - Error handling demo with the new API
-* **`validation_demo.py`** - Graph validation and structure analysis
-* **`splitter_demo.py`** - Multi-intent handling with splitter nodes
+### Available Examples
+
+#### Simple Demo (`simple_demo.py`)
+A basic demonstration of IntentKit with LLM-powered intent classification and argument extraction. Shows the core IntentGraph functionality with a **pass-through splitter** (default behavior).
+
+#### Multi-Intent Demo (`multi_intent_demo.py`)
+A demonstration of multi-intent handling using the rule-based splitter. Shows how to handle complex inputs like "Hello Alice and what's the weather in San Francisco".
+
+#### Error Demo (`error_demo.py`)
+A demonstration of error handling and debugging features. Shows how to handle various error scenarios and debug intent routing issues.
+
+#### Context Demo (`context_demo.py`)
+A demonstration of context and dependency management. Shows how handlers can read from and write to shared context.
+
+#### Context Debugging Demo (`context_debug_demo.py`)
+A comprehensive demonstration of context debugging features including:
+- `debug_context` and `context_trace` parameters
+- Dependency mapping and analysis with `get_context_dependencies()`
+- Context flow validation with `validate_context_flow()`
+- Debug output formats (console, JSON) with `trace_context_execution()`
+
+#### Ollama Demo (`ollama_demo.py`)
+A demonstration of using IntentKit with local Ollama models. Shows how to configure and use local LLM models.
+
+### Default Behavior
+
+By default, IntentKit uses a **pass-through splitter** that doesn't split user input. This is the safest approach for most use cases, as it avoids accidentally splitting inputs like "What's 15 plus 7?" on mathematical operators.
+
+If you need multi-intent handling, explicitly configure the rule-based splitter:
+
+```python
+from intent_kit.splitters import rule_splitter
+
+return IntentGraphBuilder().root(classifier).splitter(rule_splitter).build()
+```
 
 ### Running Examples
 
@@ -772,11 +677,95 @@ python examples/context_demo.py
 # Error Demo
 python examples/error_demo.py
 
-# Validation Demo
-python examples/validation_demo.py
+# Multi-Intent Demo
+python examples/multi_intent_demo.py
 
-# Splitter Demo
-python examples/splitter_demo.py
+# Context Debug Demo
+python examples/context_debug_demo.py
+```
+
+### Setup Requirements
+
+#### API Keys for LLM Services (Optional)
+
+For LLM-powered features, you can set up API keys:
+
+**Option 1: Environment Variables**
+```bash
+export OPENAI_API_KEY="your-openai-api-key"
+export ANTHROPIC_API_KEY="your-anthropic-api-key"
+export GOOGLE_API_KEY="your-google-api-key"
+```
+
+**Option 2: .env File**
+Create a `.env` file in the project root:
+```
+OPENAI_API_KEY=your-openai-api-key-here
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
+GOOGLE_API_KEY=your-google-api-key-here
+```
+
+**Note:** Many demos work without any API keys using fallback classification!
+
+### Key Features Demonstrated
+
+- **Intent Classification**: LLM-powered intent routing
+- **Argument Extraction**: Automatic parameter extraction from user input
+- **Context Management**: Shared state across handlers
+- **Error Handling**: Robust error handling and debugging
+- **Multi-Intent**: Handling complex, multi-part requests
+- **Local Models**: Using Ollama for local LLM processing
+
+### Example Inputs
+
+**Simple Demo Inputs:**
+- "Hello, my name is Alice"
+- "What's 15 plus 7?"
+- "Weather in San Francisco"
+- "Help me"
+- "Multiply 8 and 3"
+
+**Multi-Intent Demo Inputs:**
+- "Hello Alice and what's the weather in San Francisco"
+- "Calculate 5 plus 3 and also greet Bob"
+- "Help me and get weather for New York"
+
+### Minimal Example
+
+Here's the absolute minimum code needed to get started:
+
+```python
+from intent_kit import IntentGraphBuilder, handler, llm_classifier
+
+def create_intent_graph():
+    handlers = [
+        handler(
+            name="greet",
+            description="Greet the user",
+            handler_func=lambda name, **kwargs: f"Hello {name}!",
+            param_schema={"name": str}
+        ),
+        handler(
+            name="calculate",
+            description="Perform a calculation",
+            handler_func=lambda operation, a, b, **kwargs: f"{a} {operation} {b} = {eval(f'{a} {operation} {b}')}",
+            param_schema={"operation": str, "a": float, "b": float}
+        )
+    ]
+    
+    classifier = llm_classifier(
+        name="root",
+        children=handlers,
+        llm_config={},  # Empty config uses fallback classification
+        description="Main intent classifier"
+    )
+    
+    return IntentGraphBuilder().root(classifier).build()
+
+# Use the graph
+graph = create_intent_graph()
+result = graph.route("Hello, my name is Alice")
+print(result.output)  # "Hello Alice!"
 ```
 
 ---
