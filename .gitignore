@@ -53,5 +53,5 @@ dist/
 build/ 
 
 .env
-
+coverage.xml
 repomix-output.*

@@ -5,7 +5,7 @@
 [![CI](https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml)
 [![Coverage Status](https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/Stephen-Collins-tech/intent-kit)
 [![Documentation](https://img.shields.io/badge/docs-online-blue)](https://docs.intentkit.io)
-[![PyPI](https://img.shields.io/pypi/v/intent-kit)](https://pypi.org/project/intent-kit)
+[![PyPI](https://img.shields.io/pypi/v/intentkit-py)](https://pypi.org/project/intentkit-py)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Stephen-Collins-tech/intent-kit/HEAD?filepath=examples%2Fsimple_demo.ipynb)
 
 A Python library for building hierarchical intent classification and execution systems with support for multiple AI service backends.
