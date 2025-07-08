@@ -143,14 +143,21 @@ def hybrid_classifier(user_input: str, children: List[TreeNode]) -> Optional[Tre
 # Basic installation (zero core dependencies - truly universal!)
 uv pip install intent-kit
 
-# With AI service support
-uv pip install 'intent-kit[openai]'
+# With specific AI provider support
+uv pip install 'intent-kit[openai]'      # OpenAI (GPT models)
+uv pip install 'intent-kit[anthropic]'   # Anthropic (Claude models)
+uv pip install 'intent-kit[google]'      # Google (Gemini models)
+uv pip install 'intent-kit[ollama]'      # Ollama (local models)
 
 # With visualization support
 uv pip install 'intent-kit[viz]'
 
+# With multiple providers
+uv pip install 'intent-kit[openai,anthropic]'
+uv pip install 'intent-kit[openai,google,viz]'
+
 # With all optional features
-uv pip install 'intent-kit[openai,viz]'
+uv pip install 'intent-kit[openai,anthropic,google,ollama,viz]'
 ```
 
 Or, with plain pip:
@@ -159,9 +166,18 @@ Or, with plain pip:
 # Core framework (zero dependencies)
 pip install intent-kit
 
-# Optional features
-pip install 'intent-kit[openai]'
+# With specific AI provider support
+pip install 'intent-kit[openai]'      # OpenAI (GPT models)
+pip install 'intent-kit[anthropic]'   # Anthropic (Claude models)
+pip install 'intent-kit[google]'      # Google (Gemini models)
+pip install 'intent-kit[ollama]'      # Ollama (local models)
+
+# With visualization support
 pip install 'intent-kit[viz]'
+
+# With multiple providers
+pip install 'intent-kit[openai,anthropic]'
+pip install 'intent-kit[openai,google,viz]'
 ```
 
 ---
