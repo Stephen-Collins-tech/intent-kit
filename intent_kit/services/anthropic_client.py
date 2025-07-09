@@ -34,7 +34,7 @@ class AnthropicClient:
                     "Anthropic package not installed. Install with: pip install anthropic"
                 )
 
-    def generate(self, prompt: str, model: str = "claude-3-sonnet-20240229") -> str:
+    def generate(self, prompt: str, model: str = "claude-sonnet-4-20250514") -> str:
         """Generate text using Anthropic's Claude model."""
         self._ensure_imported()
         response = self._client.messages.create(
@@ -46,7 +46,7 @@ class AnthropicClient:
 
     # Keep generate_text as an alias for backward compatibility
     def generate_text(
-        self, prompt: str, model: str = "claude-3-sonnet-20240229"
+        self, prompt: str, model: str = "claude-sonnet-4-20250514"
     ) -> str:
         """Alias for generate method (backward compatibility)."""
         return self.generate(prompt, model)
