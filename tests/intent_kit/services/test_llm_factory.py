@@ -172,14 +172,14 @@ class TestLLMFactory:
         llm_config = {
             "provider": "anthropic",
             "api_key": "test-api-key",
-            "model": "claude-3-sonnet",
+            "model": "claude-4-sonnet",
         }
 
         result = LLMFactory.generate_with_config(llm_config, "Test prompt")
 
         assert result == "Generated response"
         mock_client.generate.assert_called_once_with(
-            "Test prompt", model="claude-3-sonnet"
+            "Test prompt", model="claude-4-sonnet"
         )
 
     @patch("intent_kit.services.llm_factory.GoogleClient")

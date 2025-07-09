@@ -4,7 +4,7 @@ LLM Factory for intent-kit
 This module provides a factory for creating LLM clients based on provider configuration.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from intent_kit.services.openai_client import OpenAIClient
 from intent_kit.services.anthropic_client import AnthropicClient
 from intent_kit.services.google_client import GoogleClient
@@ -19,7 +19,7 @@ class LLMFactory:
     """Factory for creating LLM clients."""
 
     @staticmethod
-    def create_client(llm_config: Dict[str, Any]):
+    def create_client(llm_config: Optional[Dict[str, Any]]):
         """
         Create an LLM client based on the configuration.
 

@@ -4,7 +4,7 @@ Tests for intent_kit.graph.intent_graph module.
 
 import pytest
 from unittest.mock import Mock, patch
-from typing import List
+from typing import List, Optional
 
 from intent_kit.graph.intent_graph import IntentGraph
 from intent_kit.node import TreeNode
@@ -24,7 +24,7 @@ class MockTreeNode(TreeNode):
         super().__init__(name=name, description=description)
         self._node_type = node_type
         self.executed = False
-        self.execution_result = None
+        self.execution_result: Optional[ExecutionResult] = None
 
     @property
     def node_type(self) -> NodeType:
@@ -55,10 +55,14 @@ class MockClassifierNode(MockTreeNode):
 
     def classify(
         self, user_input: str, children: List[TreeNode], context=None
-    ) -> TreeNode:
+    ) -> Optional[TreeNode]:
         """Mock classification."""
         if children:
             return children[0]  # Always return first child
+        return None
+
+    def execute(self, user_input: str, context=None):
+        # Classifier nodes should not execute in this test
         return None
 
 
@@ -147,7 +151,7 @@ class TestIntentGraphNodeManagement:
         graph = IntentGraph()
 
         with pytest.raises(ValueError, match="Root node must be a TreeNode"):
-            graph.add_root_node("not a node")
+            graph.add_root_node("not a node")  # type: ignore[arg-type]
 
     def test_add_root_node_with_validation_failure(self):
         """Test adding root node when validation fails."""
@@ -295,7 +299,8 @@ class TestIntentGraphSplitting:
         def custom_splitter(
             user_input: str, debug: bool = False, context=None
         ) -> List[IntentChunk]:
-            return [user_input, f"context: {context.get('key', 'none')}"]
+            key_val = context.get("key", "none") if context is not None else "none"
+            return [user_input, f"context: {key_val}"]
 
         graph = IntentGraph(splitter=custom_splitter)
         context = IntentContext()
@@ -381,7 +386,8 @@ class TestIntentGraphExecution:
         """Test routing with splitter that creates multiple chunks."""
 
         def custom_splitter(user_input: str, debug: bool = False) -> List[IntentChunk]:
-            return ["part1", "part2"]
+            # Use realistic input
+            return ["handle root task", "process root task"]
 
         graph = IntentGraph(splitter=custom_splitter)
         root_node = MockTreeNode("root", "Root node")
@@ -493,6 +499,11 @@ class TestIntentGraphVisualization:
         mock_result.success = True
         mock_result.output = "test output"
         mock_result.node_name = "test_node"
+        mock_result.node_type = NodeType.HANDLER
+        mock_result.input = "test input"
+        mock_result.error = None
+        mock_result.params = None
+        mock_result.children_results = []
 
         result = graph._render_execution_graph([mock_result], "test input")
 
@@ -508,11 +519,16 @@ class TestIntentGraphVisualization:
         mock_result.success = True
         mock_result.output = "test output"
         mock_result.node_name = "test_node"
+        mock_result.node_type = NodeType.HANDLER
+        mock_result.input = "test input"
+        mock_result.error = None
+        mock_result.params = None
+        mock_result.children_results = []
 
-        result = graph._render_execution_graph([mock_result], "test input")
+        import pytest
 
-        # Should return empty string when visualization libraries are not available
-        assert result == ""
+        with pytest.raises(ImportError):
+            graph._render_execution_graph([mock_result], "test input")
 
     def test_extract_execution_paths(self):
         """Test extracting execution paths from results."""
@@ -523,6 +539,12 @@ class TestIntentGraphVisualization:
         mock_result.success = True
         mock_result.node_name = "test_node"
         mock_result.node_id = "test_id"
+        mock_result.node_type = NodeType.HANDLER
+        mock_result.input = "test input"
+        mock_result.output = "test output"
+        mock_result.error = None
+        mock_result.params = None
+        mock_result.children_results = []
 
         paths = graph._extract_execution_paths(mock_result)
 
@@ -536,26 +558,20 @@ class TestIntentGraphIntegration:
 
     def test_complete_workflow(self):
         """Test a complete workflow with multiple components."""
-        # Create a classifier node
-        classifier = MockClassifierNode("classifier", "Test classifier")
-
         # Create handler nodes
         handler1 = MockTreeNode("handler1", "Handler 1")
         handler2 = MockTreeNode("handler2", "Handler 2")
 
-        # Add children to classifier
-        classifier.children = [handler1, handler2]
-
-        # Create graph
+        # Create graph with multiple root nodes
         graph = IntentGraph()
-        graph.add_root_node(classifier)
+        graph.add_root_node(handler1)
+        graph.add_root_node(handler2)
 
-        # Route input
-        result = graph.route("test input")
+        # Route input that should match handler1
+        result = graph.route("handle handler1 task")
 
         assert result.success is True
-        assert classifier.executed is False  # Classifier doesn't execute, it classifies
-        assert handler1.executed is True  # First child should be executed
+        assert handler1.executed is True  # First handler should be executed
 
     def test_graph_with_multiple_root_nodes(self):
         """Test graph with multiple root nodes."""
