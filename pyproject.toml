@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "intentkit-py"
-version = "0.1.6"
+version = "0.1.7"
 description = "An open-source Python library for building intent classification and execution systems that work with any AI backend."
 authors = [
     {name = "Stephen Collins", email = "stephen@stephencollins.tech"}
