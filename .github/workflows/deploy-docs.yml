@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  deployments: write
+  contents: read
+
 jobs:
   docs:
     runs-on: ubuntu-latest
@@ -28,4 +32,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: intent-kit-docs
           directory: site
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          gitHubToken: ${{ secrets.GH_DEPLOY_TOKEN }}
