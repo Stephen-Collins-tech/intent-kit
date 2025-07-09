@@ -20,7 +20,7 @@ class EvalTestCase:
 
     input: str
     expected: Any
-    context: Dict[str, Any]
+    context: Optional[Dict[str, Any]]
 
     def __post_init__(self):
         if self.context is None:
@@ -32,7 +32,7 @@ class Dataset:
     """A dataset containing test cases for evaluating a node."""
 
     name: str
-    description: str
+    description: Optional[str]
     node_type: str
     node_name: str
     test_cases: List[EvalTestCase]
@@ -50,7 +50,7 @@ class EvalTestResult:
     expected: Any
     actual: Any
     passed: bool
-    context: Dict[str, Any]
+    context: Optional[Dict[str, Any]]
     error: Optional[str] = None
 
     def __post_init__(self):
@@ -269,8 +269,9 @@ def run_eval(
                 from intent_kit.context import IntentContext
 
                 context = IntentContext()
-                for key, value in test_case.context.items():
-                    context.set(key, value, modified_by="eval")
+                if test_case.context:
+                    for key, value in test_case.context.items():
+                        context.set(key, value, modified_by="eval")
                 result = node.execute(test_case.input, context)
                 actual = result.output if result.success else None
                 if not result.success and result.error:
