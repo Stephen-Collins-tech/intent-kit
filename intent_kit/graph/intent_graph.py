@@ -219,13 +219,20 @@ class IntentGraph:
         Args:
             user_input: The input string to process
             debug: Whether to enable debug logging
-            context: Optional context object (not passed to splitter)
+            context: Optional context object to pass to splitter
             **splitter_kwargs: Additional arguments for the splitter
 
         Returns:
             List of intent chunks
         """
-        result = self.splitter(user_input, debug, **splitter_kwargs)
+        # Pass context to splitter if it accepts it
+        try:
+            result = self.splitter(
+                user_input, debug, context=context, **splitter_kwargs
+            )
+        except TypeError:
+            # Fallback for splitters that don't accept context
+            result = self.splitter(user_input, debug, **splitter_kwargs)
         return list(result)  # Convert Sequence to list
 
     def _route_chunk_to_root_node(
@@ -242,6 +249,16 @@ class IntentGraph:
             The root node to handle this chunk, or None if no match found
         """
         if not self.root_nodes:
+            return None
+
+        # Classify the chunk to determine action
+        classification = classify_intent_chunk(chunk, self.llm_config)
+        action = classification.get("action")
+
+        # If action is reject, return None
+        if action == IntentAction.REJECT:
+            if debug:
+                self.logger.info(f"Chunk '{chunk}' rejected by classifier")
             return None
 
         # Simple routing logic: try to find a root node that matches the chunk
@@ -313,6 +330,25 @@ class IntentGraph:
                 self.logger.info("Context debugging enabled")
             if context_trace_enabled:
                 self.logger.info("Context tracing enabled")
+
+        # Check if there are any root nodes available
+        if not self.root_nodes:
+            return ExecutionResult(
+                success=False,
+                params=None,
+                children_results=[],
+                node_name="no_root_nodes",
+                node_path=[],
+                node_type=NodeType.UNKNOWN,
+                input=user_input,
+                output=None,
+                error=ExecutionError(
+                    error_type="NoRootNodesAvailable",
+                    message="No root nodes available",
+                    node_name="no_root_nodes",
+                    node_path=[],
+                ),
+            )
 
         # Split the input into chunks
         try:
@@ -436,6 +472,33 @@ class IntentGraph:
                         )
 
                     result = root_node.execute(chunk_text, context=context)
+
+                    if result is None:
+                        error_result = ExecutionResult(
+                            success=False,
+                            params=None,
+                            children_results=[],
+                            node_name=root_node.name,
+                            node_path=[],
+                            node_type=root_node.node_type,
+                            input=chunk_text,
+                            output=None,
+                            error=ExecutionError(
+                                error_type="NodeExecutionReturnedNone",
+                                message=f"Node '{root_node.name}' execute() returned None instead of ExecutionResult.",
+                                node_name=root_node.name,
+                                node_path=[],
+                            ),
+                        )
+                        children_results.append(error_result)
+                        all_errors.append(
+                            f"Node '{root_node.name}' execute() returned None."
+                        )
+                        if debug:
+                            self.logger.error(
+                                f"Node '{root_node.name}' execute() returned None instead of ExecutionResult."
+                            )
+                        continue
 
                     # Context debugging: capture state after execution
                     if debug_context_enabled and context:
@@ -594,6 +657,33 @@ class IntentGraph:
         # Determine overall success and create aggregated result
         overall_success = len(all_errors) == 0 and len(children_results) > 0
 
+        # If there's only one successful result and no errors, return it directly
+        if (
+            len(children_results) == 1
+            and len(all_errors) == 0
+            and children_results[0].success
+        ):
+            result = children_results[0]
+            # Add visualization if requested
+            if self.visualize:
+                try:
+                    html_path = self._render_execution_graph(
+                        children_results, user_input
+                    )
+                    if html_path:
+                        if result.output is None:
+                            result.output = {"visualization_html": html_path}
+                        elif isinstance(result.output, dict):
+                            result.output["visualization_html"] = html_path
+                        else:
+                            result.output = {
+                                "output": result.output,
+                                "visualization_html": html_path,
+                            }
+                except Exception as e:
+                    self.logger.error(f"Visualization failed: {e}")
+            return result
+
         # Aggregate outputs and params
         aggregated_output = (
             all_outputs
@@ -663,6 +753,9 @@ class IntentGraph:
         """
         Render the execution path as an interactive HTML graph and return the file path.
         """
+        if not self.visualize:
+            return ""
+
         if not VIZ_AVAILABLE:
             raise ImportError(
                 "networkx and pyvis are required for visualization. Please install with: uv pip install 'intent-kit[viz]'"
@@ -774,6 +867,7 @@ class IntentGraph:
                 "output": result.output,
                 "error": result.error,
                 "params": result.params,
+                "node_id": getattr(result, "node_id", None),
             }
         )
 
@@ -819,6 +913,8 @@ class IntentGraph:
                         "value": field.value,
                     }
                     state["fields"][key] = {"value": value, "metadata": metadata}
+                    # Also add the key directly to the state for backward compatibility
+                    state[key] = value
 
         return state
 

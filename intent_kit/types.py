@@ -34,12 +34,8 @@ IntentChunk = Union[str, Dict[str, Any]]
 # The output of the classifier is:
 ClassifierOutput = IntentChunkClassification
 
-# Single splitter function type
-SplitterFunction = Callable[
-    [str, bool],  # Required args: user_input, debug
-    # Return type: sequence of strings or dicts with text and metadata
-    Sequence[IntentChunk],
-]
+# Single splitter function type - can accept additional kwargs like context
+SplitterFunction = Callable[..., Sequence[IntentChunk]]
 
 # Classifier function type
 ClassifierFunction = Callable[[IntentChunk], ClassifierOutput]
