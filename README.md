@@ -8,19 +8,19 @@
 <!-- Badges -->
 <p align="center">
   <a href="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml">
-    <img src="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg" alt="CI"/>
+    <img src="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg" alt="CI" style="text-decoration: none;"/>
   </a>
   <a href="https://codecov.io/gh/Stephen-Collins-tech/intent-kit">
-    <img src="https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg" alt="Coverage Status"/>
+    <img src="https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg" alt="Coverage Status" style="text-decoration: none;"/>
   </a>
   <a href="https://docs.intentkit.io">
-    <img src="https://img.shields.io/badge/docs-online-blue" alt="Documentation"/>
+    <img src="https://img.shields.io/badge/docs-online-blue" alt="Documentation" style="text-decoration: none;"/>
   </a>
   <a href="https://pypi.org/project/intentkit-py">
-    <img src="https://img.shields.io/pypi/v/intentkit-py" alt="PyPI"/>
+    <img src="https://img.shields.io/pypi/v/intentkit-py" alt="PyPI" style="text-decoration: none;"/>
   </a>
   <a href="https://mybinder.org/v2/gh/Stephen-Collins-tech/intent-kit/HEAD?filepath=examples%2Fsimple_demo.ipynb">
-    <img src="https://mybinder.org/badge_logo.svg" alt="Binder"/>
+    <img src="https://mybinder.org/badge_logo.svg" alt="Binder" style="text-decoration: none;"/>
   </a>
 </p>
 
