@@ -2,7 +2,6 @@
 Tests for intent_kit.exceptions module.
 """
 
-import pytest
 
 from intent_kit.exceptions import (
     NodeError,

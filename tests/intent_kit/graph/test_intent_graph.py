@@ -3,15 +3,15 @@ Tests for intent_kit.graph.intent_graph module.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from typing import List, Dict, Any
+from unittest.mock import Mock, patch
+from typing import List
 
 from intent_kit.graph.intent_graph import IntentGraph
 from intent_kit.node import TreeNode
 from intent_kit.node.enums import NodeType
-from intent_kit.types import IntentChunk, SplitterFunction
+from intent_kit.types import IntentChunk
 from intent_kit.context import IntentContext
-from intent_kit.node import ExecutionResult, ExecutionError
+from intent_kit.node import ExecutionResult
 from intent_kit.graph.validation import GraphValidationError
 
 
@@ -321,7 +321,7 @@ class TestIntentGraphRouting:
                 "metadata": {"confidence": 0.9, "reason": "Match found"}
             }
             
-            result = graph._route_chunk_to_root_node("test input")
+            graph._route_chunk_to_root_node("test input")
             
             mock_classify.assert_called_once()
             call_args = mock_classify.call_args[0]

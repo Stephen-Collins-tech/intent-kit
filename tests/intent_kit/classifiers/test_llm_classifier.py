@@ -2,9 +2,7 @@
 Tests for intent_kit.classifiers.llm_classifier module.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any, List
+from unittest.mock import patch
 
 from intent_kit.classifiers.llm_classifier import (
     create_llm_classifier,
@@ -12,7 +10,6 @@ from intent_kit.classifiers.llm_classifier import (
     get_default_classification_prompt,
     get_default_extraction_prompt,
 )
-from intent_kit.node import TreeNode
 
 
 class MockTreeNode:
@@ -471,8 +468,6 @@ class TestLLMClassifierIntegration:
         node_descriptions = ["Single node"]
         
         classifier = create_llm_classifier(llm_config, classification_prompt, node_descriptions)
-        
-        children = [MockTreeNode("single", "Single node")]
         
         # Should work with single child
         assert classifier is not None

@@ -2,8 +2,7 @@
 Tests for intent_kit.classifiers.chunk_classifier module.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch
 
 from intent_kit.classifiers.chunk_classifier import (
     classify_intent_chunk,

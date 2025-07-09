@@ -2,14 +2,13 @@
 Tests for intent_kit.handlers.node module.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any, Callable, Set, Optional
+from unittest.mock import Mock, patch
+from typing import Dict, Any, Optional
 
 from intent_kit.handlers.node import HandlerNode
 from intent_kit.node.enums import NodeType
 from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult, ExecutionError
+from intent_kit.node.types import ExecutionResult
 
 
 class TestHandlerNodeInitialization:

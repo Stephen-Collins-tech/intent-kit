@@ -3,7 +3,7 @@ Tests for intent_kit.services.llm_factory module.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.services.openai_client import OpenAIClient

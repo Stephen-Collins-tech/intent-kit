@@ -3,8 +3,8 @@ Tests for intent_kit.builder module.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any, List, Callable
+from unittest.mock import Mock
+from typing import Dict, Any
 
 from intent_kit.builder import (
     IntentGraphBuilder,
@@ -72,7 +72,9 @@ class TestIntentGraphBuilder:
     def test_splitter_method(self):
         """Test setting a custom splitter function."""
         builder = IntentGraphBuilder()
-        splitter_func = lambda x: []
+        
+        def splitter_func(x):
+            return []
         
         result = builder.splitter(splitter_func)
         
@@ -133,7 +135,9 @@ class TestIntentGraphBuilder:
         """Test building IntentGraph with root node and splitter."""
         builder = IntentGraphBuilder()
         root_node = MockTreeNode("root", "Root node")
-        splitter_func = lambda x: []
+        
+        def splitter_func(x):
+            return []
         
         builder.root(root_node).splitter(splitter_func)
         graph = builder.build()
@@ -165,7 +169,9 @@ class TestIntentGraphBuilder:
         """Test method chaining functionality."""
         builder = IntentGraphBuilder()
         root_node = MockTreeNode("root", "Root node")
-        splitter_func = lambda x: []
+        
+        def splitter_func(x):
+            return []
         
         result = (builder
                  .root(root_node)
@@ -622,7 +628,9 @@ class TestBuilderIntegration:
     def test_builder_with_all_options(self):
         """Test builder with all available options."""
         root_node = MockTreeNode("root", "Root node")
-        splitter_func = lambda x: []
+        
+        def splitter_func(x):
+            return []
         
         graph = (IntentGraphBuilder()
                 .root(root_node)
