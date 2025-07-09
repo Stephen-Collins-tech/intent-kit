@@ -1,14 +1,29 @@
-# intent-kit
+<p align="center">
+  <img src="assets/logo.png" alt="Intent Kit Logo" height="100" style="border-radius: 16px;"/>
+</p>
+
+<h1 align="center">intent-kit</h1>
+<p align="center">A Python library for building intent-driven workflows with LLMs.</p>
 
 <!-- Badges -->
+<p align="center">
+  <a href="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml">
+    <img src="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg" alt="CI"/>
+  </a>
+  <a href="https://codecov.io/gh/Stephen-Collins-tech/intent-kit">
+    <img src="https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg" alt="Coverage Status"/>
+  </a>
+  <a href="https://docs.intentkit.io">
+    <img src="https://img.shields.io/badge/docs-online-blue" alt="Documentation"/>
+  </a>
+  <a href="https://pypi.org/project/intentkit-py">
+    <img src="https://img.shields.io/pypi/v/intentkit-py" alt="PyPI"/>
+  </a>
+  <a href="https://mybinder.org/v2/gh/Stephen-Collins-tech/intent-kit/HEAD?filepath=examples%2Fsimple_demo.ipynb">
+    <img src="https://mybinder.org/badge_logo.svg" alt="Binder"/>
+  </a>
+</p>
 
-[![CI](https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml)
-[![Coverage Status](https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/Stephen-Collins-tech/intent-kit)
-[![Documentation](https://img.shields.io/badge/docs-online-blue)](https://docs.intentkit.io)
-[![PyPI](https://img.shields.io/pypi/v/intentkit-py)](https://pypi.org/project/intentkit-py)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Stephen-Collins-tech/intent-kit/HEAD?filepath=examples%2Fsimple_demo.ipynb)
-
-A Python library for building intent-driven workflows with LLMs.
 
 ## Features
 
