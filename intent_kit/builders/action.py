@@ -31,8 +31,9 @@ class ActionBuilder(Builder):
         self.context_outputs: Optional[Set[str]] = None
         self.input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None
         self.output_validator: Optional[Callable[[Any], bool]] = None
-        self.remediation_strategies: Optional[List[Union[str,
-                                                         RemediationStrategy]]] = None
+        self.remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = (
+            None
+        )
 
     def with_action(self, action_func: Callable[..., Any]) -> "ActionBuilder":
         """Set the action function.
@@ -106,7 +107,9 @@ class ActionBuilder(Builder):
         self.context_outputs = context_outputs
         return self
 
-    def with_input_validator(self, input_validator: Callable[[Dict[str, Any]], bool]) -> "ActionBuilder":
+    def with_input_validator(
+        self, input_validator: Callable[[Dict[str, Any]], bool]
+    ) -> "ActionBuilder":
         """Set the input validator function.
 
         Args:
@@ -118,7 +121,9 @@ class ActionBuilder(Builder):
         self.input_validator = input_validator
         return self
 
-    def with_output_validator(self, output_validator: Callable[[Any], bool]) -> "ActionBuilder":
+    def with_output_validator(
+        self, output_validator: Callable[[Any], bool]
+    ) -> "ActionBuilder":
         """Set the output validator function.
 
         Args:
@@ -130,7 +135,9 @@ class ActionBuilder(Builder):
         self.output_validator = output_validator
         return self
 
-    def with_remediation_strategies(self, strategies: List[Union[str, RemediationStrategy]]) -> "ActionBuilder":
+    def with_remediation_strategies(
+        self, strategies: List[Union[str, RemediationStrategy]]
+    ) -> "ActionBuilder":
         """Set remediation strategies.
 
         Args:
@@ -152,17 +159,19 @@ class ActionBuilder(Builder):
             ValueError: If required fields are missing
         """
         # Validate required fields using base class method
-        self._validate_required_fields([
-            ("action function", self.action_func, "with_action"),
-            ("parameter schema", self.param_schema, "with_param_schema"),
-        ])
+        self._validate_required_fields(
+            [
+                ("action function", self.action_func, "with_action"),
+                ("parameter schema", self.param_schema, "with_param_schema"),
+            ]
+        )
 
         # Create argument extractor
         arg_extractor = create_arg_extractor(
             param_schema=self.param_schema,
             llm_config=self.llm_config,
             extraction_prompt=self.extraction_prompt,
-            node_name=self.name
+            node_name=self.name,
         )
 
         # Type assertion since validation ensures these are not None

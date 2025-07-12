@@ -11,6 +11,7 @@ import os
 from intent_kit.builders import IntentGraphBuilder
 from intent_kit.context import IntentContext
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
@@ -68,7 +69,7 @@ def main():
     llm_config = {
         "provider": "openrouter",
         "model": "google/gemma-3-27b-it",
-        "api_key": openrouter_api_key
+        "api_key": openrouter_api_key,
     }
 
     # Define the JSON graph specification with LLM classifier as root
@@ -80,7 +81,12 @@ def main():
                 "name": "llm_classifier_node",
                 "description": "LLM-powered intent classifier (Gemma via OpenRouter)",
                 "llm_config": llm_config,
-                "children": ["greet_action", "calculate_action", "weather_action", "help_action"]
+                "children": [
+                    "greet_action",
+                    "calculate_action",
+                    "weather_action",
+                    "help_action",
+                ],
             },
             "greet_action": {
                 "type": "action",
@@ -90,21 +96,17 @@ def main():
                 "param_schema": {"name": "str"},
                 "llm_config": llm_config,  # Add LLM config for parameter extraction
                 "context_inputs": [],
-                "context_outputs": []
+                "context_outputs": [],
             },
             "calculate_action": {
                 "type": "action",
                 "name": "calculate_action",
                 "description": "Perform calculations",
                 "function": "calculate",
-                "param_schema": {
-                    "operation": "str",
-                    "a": "float",
-                    "b": "float"
-                },
+                "param_schema": {"operation": "str", "a": "float", "b": "float"},
                 "llm_config": llm_config,  # Add LLM config for parameter extraction
                 "context_inputs": [],
-                "context_outputs": []
+                "context_outputs": [],
             },
             "weather_action": {
                 "type": "action",
@@ -114,7 +116,7 @@ def main():
                 "param_schema": {"location": "str"},
                 "llm_config": llm_config,  # Add LLM config for parameter extraction
                 "context_inputs": [],
-                "context_outputs": []
+                "context_outputs": [],
             },
             "help_action": {
                 "type": "action",
@@ -124,28 +126,33 @@ def main():
                 "param_schema": {},
                 "llm_config": llm_config,  # Add LLM config for parameter extraction
                 "context_inputs": [],
-                "context_outputs": []
-            }
-        }
+                "context_outputs": [],
+            },
+        },
     }
 
     print("=== IntentGraphBuilder JSON API Demo (LLM Classifier) ===\n")
 
     # Create the graph using JSON specification
     print("1. Creating IntentGraph from JSON specification...")
-    graph = IntentGraphBuilder().with_json(
-        json_graph).with_functions(function_registry).build()
+    graph = (
+        IntentGraphBuilder()
+        .with_json(json_graph)
+        .with_functions(function_registry)
+        .build()
+    )
     print("✅ Graph created successfully!")
 
     # Validate the graph
     print("\n2. Validating graph structure...")
     try:
-        validation_results = IntentGraphBuilder().with_json(
-            json_graph).validate_json_graph()
+        validation_results = (
+            IntentGraphBuilder().with_json(json_graph).validate_json_graph()
+        )
         print("✅ Graph validation passed!")
         print(f"   - Nodes: {validation_results['node_count']}")
         print(f"   - Edges: {validation_results['edge_count']}")
-        if validation_results['warnings']:
+        if validation_results["warnings"]:
             print(f"   - Warnings: {validation_results['warnings']}")
     except ValueError as e:
         print(f"❌ Graph validation failed: {e}")
@@ -161,7 +168,7 @@ def main():
         "This is an unknown request",
         "I want to multiply 7 and 8",
         "Tell me the temperature in Paris",
-        "How do I use this bot?"
+        "How do I use this bot?",
     ]
 
     context = IntentContext()
@@ -174,7 +181,8 @@ def main():
                 print(f"✅ Success: {result.output}")
             else:
                 print(
-                    f"❌ Failed: {result.error.message if result.error else 'Unknown error'}")
+                    f"❌ Failed: {result.error.message if result.error else 'Unknown error'}"
+                )
         except Exception as e:
             print(f"❌ Exception: {e}")
 

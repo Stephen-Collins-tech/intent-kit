@@ -158,16 +158,14 @@ def evaluate_node(
     run_timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     # Check if this node needs persistent context (like action_node_llm)
-    needs_persistent_context = hasattr(
-        node, "name") and "action_node_llm" in node.name
+    needs_persistent_context = hasattr(node, "name") and "action_node_llm" in node.name
 
     # Create persistent context if needed
     persistent_context = None
     if needs_persistent_context:
         persistent_context = IntentContext()
         # Initialize booking count for action_node_llm
-        persistent_context.set(
-            "booking_count", 0, modified_by="evaluation_init")
+        persistent_context.set("booking_count", 0, modified_by="evaluation_init")
 
     for i, test_case in enumerate(test_cases):
         user_input = test_case["input"]
@@ -298,8 +296,7 @@ def evaluate_node(
         )
 
     results["accuracy"] = (
-        results["correct"] /
-        results["total_cases"] if results["total_cases"] > 0 else 0
+        results["correct"] / results["total_cases"] if results["total_cases"] > 0 else 0
     )
     return results
 
@@ -370,8 +367,7 @@ def generate_markdown_report(
 
     # Create date-based filename
     date_output_path = (
-        date_reports_dir /
-        f"{output_path.stem}_{run_timestamp}{output_path.suffix}"
+        date_reports_dir / f"{output_path.stem}_{run_timestamp}{output_path.suffix}"
     )
     with open(date_output_path, "w") as f:
         f.write(report_content)
@@ -480,8 +476,7 @@ def main():
 
             output_path = reports_dir / "evaluation_report.md"
 
-        generate_markdown_report(results, output_path,
-                                 run_timestamp=run_timestamp)
+        generate_markdown_report(results, output_path, run_timestamp=run_timestamp)
         print(f"\nReport generated: {output_path}")
 
         # Print summary

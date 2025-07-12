@@ -28,8 +28,7 @@ class ClassifierNode(TreeNode):
         children: List["TreeNode"],
         description: str = "",
         parent: Optional["TreeNode"] = None,
-        remediation_strategies: Optional[List[Union[str,
-                                                    RemediationStrategy]]] = None,
+        remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
     ):
         super().__init__(
             name=name, description=description, children=children, parent=parent

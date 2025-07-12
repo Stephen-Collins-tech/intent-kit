@@ -27,10 +27,19 @@ def greet_function(name: str) -> str:
 def calculate_function(operation: str, a: float, b: float) -> str:
     """Perform a calculation and return the result."""
     operation_map = {
-        "plus": "+", "add": "+", "addition": "+", "sum": "+",
-        "minus": "-", "subtract": "-", "subtraction": "-",
-        "times": "*", "multiply": "*", "multiplication": "*",
-        "divided": "/", "divide": "/", "division": "/",
+        "plus": "+",
+        "add": "+",
+        "addition": "+",
+        "sum": "+",
+        "minus": "-",
+        "subtract": "-",
+        "subtraction": "-",
+        "times": "*",
+        "multiply": "*",
+        "multiplication": "*",
+        "divided": "/",
+        "divide": "/",
+        "division": "/",
     }
     math_op = operation_map.get(operation.lower(), operation)
     try:
@@ -62,19 +71,40 @@ def smart_classifier(user_input: str, children, context=None):
     input_lower = user_input.lower()
 
     # Greeting patterns
-    if any(word in input_lower for word in ["hello", "hi", "greet", "name", "introduce"]):
+    if any(
+        word in input_lower for word in ["hello", "hi", "greet", "name", "introduce"]
+    ):
         return children[0]  # greet action
 
     # Calculation patterns
-    elif any(word in input_lower for word in ["calculate", "math", "+", "-", "*", "/", "plus", "times", "add", "subtract"]):
+    elif any(
+        word in input_lower
+        for word in [
+            "calculate",
+            "math",
+            "+",
+            "-",
+            "*",
+            "/",
+            "plus",
+            "times",
+            "add",
+            "subtract",
+        ]
+    ):
         return children[1]  # calculate action
 
     # Weather patterns
-    elif any(word in input_lower for word in ["weather", "temperature", "forecast", "climate"]):
+    elif any(
+        word in input_lower
+        for word in ["weather", "temperature", "forecast", "climate"]
+    ):
         return children[2]  # weather action
 
     # Help patterns
-    elif any(word in input_lower for word in ["help", "assist", "support", "what can you do"]):
+    elif any(
+        word in input_lower for word in ["help", "assist", "support", "what can you do"]
+    ):
         return children[3]  # help action
 
     # Default to help
@@ -106,7 +136,12 @@ def main():
                 "name": "main_classifier",
                 "classifier_function": "smart_classifier",
                 "description": "Smart intent classifier",
-                "children": ["greet_action", "calculate_action", "weather_action", "help_action"]
+                "children": [
+                    "greet_action",
+                    "calculate_action",
+                    "weather_action",
+                    "help_action",
+                ],
             },
             "greet_action": {
                 "type": "action",
@@ -116,7 +151,7 @@ def main():
                 "param_schema": {"name": "str"},
                 "llm_config": LLM_CONFIG,  # Enable LLM-based extraction
                 "context_inputs": [],
-                "context_outputs": []
+                "context_outputs": [],
             },
             "calculate_action": {
                 "type": "action",
@@ -126,7 +161,7 @@ def main():
                 "param_schema": {"operation": "str", "a": "float", "b": "float"},
                 "llm_config": LLM_CONFIG,  # Enable LLM-based extraction
                 "context_inputs": [],
-                "context_outputs": []
+                "context_outputs": [],
             },
             "weather_action": {
                 "type": "action",
@@ -136,7 +171,7 @@ def main():
                 "param_schema": {"location": "str"},
                 "llm_config": LLM_CONFIG,  # Enable LLM-based extraction
                 "context_inputs": [],
-                "context_outputs": []
+                "context_outputs": [],
             },
             "help_action": {
                 "type": "action",
@@ -145,15 +180,19 @@ def main():
                 "function": "help_function",
                 "param_schema": {},
                 "context_inputs": [],
-                "context_outputs": []
-            }
-        }
+                "context_outputs": [],
+            },
+        },
     }
 
     # Create the graph using the Builder pattern
     print("Creating IntentGraph using Builder pattern...")
-    graph = IntentGraphBuilder().with_json(json_graph).with_functions(
-        function_registry).build()
+    graph = (
+        IntentGraphBuilder()
+        .with_json(json_graph)
+        .with_functions(function_registry)
+        .build()
+    )
     print("✅ Graph created successfully!")
 
     # Test with various natural language inputs
@@ -182,7 +221,8 @@ def main():
             print(f"   Action: {result.node_name}")
         else:
             print(
-                f"   Error: {result.error.message if result.error else 'Unknown error'}")
+                f"   Error: {result.error.message if result.error else 'Unknown error'}"
+            )
 
     print(f"\n🎉 Demo completed! {len(test_inputs)} inputs processed.")
     print("\n💡 Key Features Demonstrated:")

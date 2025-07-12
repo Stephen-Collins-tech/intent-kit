@@ -67,8 +67,7 @@ class TestRuleSplitter(unittest.TestCase):
 
     def test_multiple_conjunctions(self):
         """Test input with multiple conjunctions."""
-        result = rule_splitter(
-            "travel help, account support and booking flights")
+        result = rule_splitter("travel help, account support and booking flights")
         self.assertEqual(len(result), 3)
         self.assertEqual(result[0], "travel help")
         self.assertEqual(result[1], "account support")
@@ -76,11 +75,9 @@ class TestRuleSplitter(unittest.TestCase):
 
     def test_no_match_found(self):
         """Test when no conjunctions are found."""
-        result = rule_splitter(
-            "I need help with something completely unrelated")
+        result = rule_splitter("I need help with something completely unrelated")
         self.assertEqual(len(result), 1)
-        self.assertEqual(
-            result[0], "I need help with something completely unrelated")
+        self.assertEqual(result[0], "I need help with something completely unrelated")
 
     def test_empty_input(self):
         """Test handling of empty input."""

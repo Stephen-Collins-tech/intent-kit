@@ -76,8 +76,7 @@ def validate_context_dependencies(
         warnings.append(f"Missing required context inputs: {missing_inputs}")
 
     if missing_inputs and not strict:
-        warnings.append(
-            f"Optional context inputs not available: {missing_inputs}")
+        warnings.append(f"Optional context inputs not available: {missing_inputs}")
 
     return {
         "valid": len(missing_inputs) == 0 or not strict,

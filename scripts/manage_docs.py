@@ -21,7 +21,7 @@ class DocManager:
     def load_structure(self):
         """Load the documentation structure from JSON file."""
         if self.structure_file.exists():
-            with open(self.structure_file, 'r') as f:
+            with open(self.structure_file, "r") as f:
                 self.structure = json.load(f)
         else:
             self.structure = self._create_default_structure()
@@ -29,7 +29,7 @@ class DocManager:
 
     def save_structure(self):
         """Save the documentation structure to JSON file."""
-        with open(self.structure_file, 'w') as f:
+        with open(self.structure_file, "w") as f:
             json.dump(self.structure, f, indent=2)
 
     def _create_default_structure(self) -> Dict:
@@ -43,24 +43,24 @@ class DocManager:
                         "intent_graphs.md": {
                             "title": "Intent Graphs",
                             "description": "Understanding the core architecture",
-                            "status": "complete"
+                            "status": "complete",
                         },
                         "nodes_and_actions.md": {
                             "title": "Nodes and Actions",
                             "description": "Building blocks of intent graphs",
-                            "status": "complete"
+                            "status": "complete",
                         },
                         "context_system.md": {
                             "title": "Context System",
                             "description": "State management and dependency tracking",
-                            "status": "pending"
+                            "status": "pending",
                         },
                         "remediation.md": {
                             "title": "Remediation",
                             "description": "Error handling and recovery strategies",
-                            "status": "pending"
-                        }
-                    }
+                            "status": "pending",
+                        },
+                    },
                 },
                 "api": {
                     "title": "API Reference",
@@ -69,24 +69,24 @@ class DocManager:
                         "intent_graph_builder.md": {
                             "title": "IntentGraphBuilder",
                             "description": "Fluent interface for building graphs",
-                            "status": "pending"
+                            "status": "pending",
                         },
                         "node_types.md": {
                             "title": "Node Types",
                             "description": "Action, Classifier, and Splitter nodes",
-                            "status": "pending"
+                            "status": "pending",
                         },
                         "context_api.md": {
                             "title": "Context API",
                             "description": "Context management and debugging",
-                            "status": "pending"
+                            "status": "pending",
                         },
                         "remediation_api.md": {
                             "title": "Remediation API",
                             "description": "Error handling strategies",
-                            "status": "pending"
-                        }
-                    }
+                            "status": "pending",
+                        },
+                    },
                 },
                 "configuration": {
                     "title": "Configuration",
@@ -95,19 +95,19 @@ class DocManager:
                         "json_serialization.md": {
                             "title": "JSON Serialization",
                             "description": "Define graphs in JSON",
-                            "status": "complete"
+                            "status": "complete",
                         },
                         "llm_integration.md": {
                             "title": "LLM Integration",
                             "description": "OpenAI, Anthropic, Google, Ollama",
-                            "status": "pending"
+                            "status": "pending",
                         },
                         "function_registry.md": {
                             "title": "Function Registry",
                             "description": "Managing function mappings",
-                            "status": "pending"
-                        }
-                    }
+                            "status": "pending",
+                        },
+                    },
                 },
                 "examples": {
                     "title": "Examples",
@@ -116,24 +116,24 @@ class DocManager:
                         "basic_examples.md": {
                             "title": "Basic Examples",
                             "description": "Simple intent graphs",
-                            "status": "pending"
+                            "status": "pending",
                         },
                         "advanced_examples.md": {
                             "title": "Advanced Examples",
                             "description": "Complex workflows",
-                            "status": "pending"
+                            "status": "pending",
                         },
                         "multi_intent_routing.md": {
                             "title": "Multi-Intent Routing",
                             "description": "Handling multiple intents",
-                            "status": "pending"
+                            "status": "pending",
                         },
                         "context_workflows.md": {
                             "title": "Context Workflows",
                             "description": "Stateful conversations",
-                            "status": "pending"
-                        }
-                    }
+                            "status": "pending",
+                        },
+                    },
                 },
                 "development": {
                     "title": "Development",
@@ -142,20 +142,20 @@ class DocManager:
                         "testing.md": {
                             "title": "Testing",
                             "description": "Unit tests and integration testing",
-                            "status": "pending"
+                            "status": "pending",
                         },
                         "evaluation.md": {
                             "title": "Evaluation",
                             "description": "Performance evaluation and benchmarking",
-                            "status": "pending"
+                            "status": "pending",
                         },
                         "debugging.md": {
                             "title": "Debugging",
                             "description": "Debugging tools and techniques",
-                            "status": "pending"
-                        }
-                    }
-                }
+                            "status": "pending",
+                        },
+                    },
+                },
             }
         }
 
@@ -177,8 +177,7 @@ class DocManager:
                 print()
         else:
             for section_name, section_data in self.structure["sections"].items():
-                print(
-                    f"\n{section_data['title']} - {section_data['description']}")
+                print(f"\n{section_data['title']} - {section_data['description']}")
                 print("=" * 60)
 
                 for filename, file_data in section_data["files"].items():
@@ -222,14 +221,14 @@ class DocManager:
 [Add reference content here]
 """
 
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             f.write(template)
 
         # Update structure
         self.structure["sections"][section]["files"][filename] = {
             "title": title,
             "description": description,
-            "status": "pending"
+            "status": "pending",
         }
         self.save_structure()
 
@@ -275,7 +274,9 @@ class DocManager:
         del self.structure["sections"][section]["files"][filename]
         self.save_structure()
 
-    def move_file(self, old_section: str, old_filename: str, new_section: str, new_filename: str):
+    def move_file(
+        self, old_section: str, old_filename: str, new_section: str, new_filename: str
+    ):
         """Move a file from one section to another."""
         if old_section not in self.structure["sections"]:
             print(f"Source section '{old_section}' not found.")
@@ -286,8 +287,7 @@ class DocManager:
             return
 
         if old_filename not in self.structure["sections"][old_section]["files"]:
-            print(
-                f"File '{old_filename}' not found in section '{old_section}'.")
+            print(f"File '{old_filename}' not found in section '{old_section}'.")
             return
 
         old_path = self.docs_dir / old_section / old_filename
@@ -323,24 +323,27 @@ class DocManager:
         for section_name, section_data in self.structure["sections"].items():
             section_files = len(section_data["files"])
             section_complete = sum(
-                1 for f in section_data["files"].values() if f["status"] == "complete")
+                1 for f in section_data["files"].values() if f["status"] == "complete"
+            )
 
             total_files += section_files
             complete_files += section_complete
 
-            completion = (section_complete / section_files *
-                          100) if section_files > 0 else 0
+            completion = (
+                (section_complete / section_files * 100) if section_files > 0 else 0
+            )
             print(
-                f"\n{section_data['title']}: {section_complete}/{section_files} ({completion:.1f}%)")
+                f"\n{section_data['title']}: {section_complete}/{section_files} ({completion:.1f}%)"
+            )
 
             for filename, file_data in section_data["files"].items():
                 status_icon = "✅" if file_data["status"] == "complete" else "⏳"
                 print(f"  {status_icon} {file_data['title']}")
 
         overall_completion = (
-            complete_files / total_files * 100) if total_files > 0 else 0
-        print(
-            f"\nOverall: {complete_files}/{total_files} ({overall_completion:.1f}%)")
+            (complete_files / total_files * 100) if total_files > 0 else 0
+        )
+        print(f"\nOverall: {complete_files}/{total_files} ({overall_completion:.1f}%)")
 
     def validate_links(self):
         """Validate that all files referenced in the structure exist."""
@@ -364,18 +367,18 @@ class DocManager:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Manage intent-kit documentation")
-    parser.add_argument("command", choices=[
-                        "list", "create", "update", "delete", "move", "report", "validate"])
+    parser = argparse.ArgumentParser(description="Manage intent-kit documentation")
+    parser.add_argument(
+        "command",
+        choices=["list", "create", "update", "delete", "move", "report", "validate"],
+    )
     parser.add_argument("--section", help="Section name")
     parser.add_argument("--filename", help="File name")
     parser.add_argument("--title", help="File title")
     parser.add_argument("--description", help="File description")
     parser.add_argument("--new-section", help="New section name (for move)")
     parser.add_argument("--new-filename", help="New filename (for move)")
-    parser.add_argument(
-        "--status", choices=["pending", "complete"], help="File status")
+    parser.add_argument("--status", choices=["pending", "complete"], help="File status")
 
     args = parser.parse_args()
 
@@ -387,10 +390,12 @@ def main():
     elif args.command == "create":
         if not all([args.section, args.filename, args.title, args.description]):
             print(
-                "create command requires --section, --filename, --title, and --description")
+                "create command requires --section, --filename, --title, and --description"
+            )
             return
         doc_manager.create_file(
-            args.section, args.filename, args.title, args.description)
+            args.section, args.filename, args.title, args.description
+        )
 
     elif args.command == "update":
         if not all([args.section, args.filename]):
@@ -420,10 +425,12 @@ def main():
     elif args.command == "move":
         if not all([args.section, args.filename, args.new_section, args.new_filename]):
             print(
-                "move command requires --section, --filename, --new-section, and --new-filename")
+                "move command requires --section, --filename, --new-section, and --new-filename"
+            )
             return
-        doc_manager.move_file(args.section, args.filename,
-                              args.new_section, args.new_filename)
+        doc_manager.move_file(
+            args.section, args.filename, args.new_section, args.new_filename
+        )
 
     elif args.command == "report":
         doc_manager.generate_report()

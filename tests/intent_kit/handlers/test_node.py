@@ -521,14 +521,12 @@ class TestHandlerNodeIntegration:
 
         handler = HandlerNode(
             name="user_handler",
-            param_schema={"name": str, "age": int,
-                          "email": str, "active": bool},
+            param_schema={"name": str, "age": int, "email": str, "active": bool},
             handler=handler_func,
             arg_extractor=arg_extractor,
         )
 
-        result = handler.execute(
-            "User John age 25 email john@example.com active")
+        result = handler.execute("User John age 25 email john@example.com active")
 
         assert result.success is True
         assert "John" in result.output if result.output is not None else False

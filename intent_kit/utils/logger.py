@@ -196,14 +196,14 @@ class ColorManager:
 class Logger:
     # Valid log levels in logical order (from most verbose to least)
     VALID_LOG_LEVELS = [
-        "trace",      # Most verbose - detailed execution flow
-        "debug",      # Debug information for development
-        "info",       # General information
-        "warning",    # Warnings that don't stop execution
-        "error",      # Errors that affect functionality
-        "critical",   # Critical errors that may cause failure
-        "fatal",      # Fatal errors that will cause termination
-        "off"         # No logging
+        "trace",  # Most verbose - detailed execution flow
+        "debug",  # Debug information for development
+        "info",  # General information
+        "warning",  # Warnings that don't stop execution
+        "error",  # Errors that affect functionality
+        "critical",  # Critical errors that may cause failure
+        "fatal",  # Fatal errors that will cause termination
+        "off",  # No logging
     ]
 
     def __init__(self, name, level=""):
@@ -246,7 +246,8 @@ class Logger:
         if hasattr(self.color_manager, name):
             return getattr(self.color_manager, name)
         raise AttributeError(
-            f"'{self.__class__.__name__}' object has no attribute '{name}'")
+            f"'{self.__class__.__name__}' object has no attribute '{name}'"
+        )
 
     def info(self, message):
         if not self.should_log("info"):

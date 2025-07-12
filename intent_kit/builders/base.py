@@ -49,7 +49,9 @@ class Builder(ABC):
         """
         pass
 
-    def _validate_required_field(self, field_name: str, field_value: Any, method_name: str) -> None:
+    def _validate_required_field(
+        self, field_name: str, field_value: Any, method_name: str
+    ) -> None:
         """Validate that a required field is set.
 
         Args:

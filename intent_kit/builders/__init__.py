@@ -11,5 +11,10 @@ from .classifier import ClassifierBuilder
 from .splitter import SplitterBuilder
 from .graph import IntentGraphBuilder
 
-__all__ = ["Builder", "ActionBuilder",
-           "ClassifierBuilder", "SplitterBuilder", "IntentGraphBuilder"]
+__all__ = [
+    "Builder",
+    "ActionBuilder",
+    "ClassifierBuilder",
+    "SplitterBuilder",
+    "IntentGraphBuilder",
+]

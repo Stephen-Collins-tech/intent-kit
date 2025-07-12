@@ -3,7 +3,7 @@ Node implementations for intent-kit.
 
 This package contains all node types organized into subpackages:
 - classifiers: Classifier node implementations
-- actions: Action node implementations  
+- actions: Action node implementations
 - splitters: Splitter node implementations
 """
 

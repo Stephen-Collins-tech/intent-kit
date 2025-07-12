@@ -419,8 +419,7 @@ class TestCreateLLMArgExtractor:
         """Test that API keys are obfuscated in debug logs."""
         mock_generate.return_value = "name: John"
 
-        llm_config = {"provider": "openai",
-                      "model": "gpt-4", "api_key": "secret-key"}
+        llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "secret-key"}
         extraction_prompt = "Extract parameters: {user_input}\n{param_descriptions}"
         param_schema = {"name": str}
 
@@ -523,8 +522,7 @@ class TestLLMClassifierIntegration:
         """Test argument extractor with complex parameter schema."""
         llm_config = {"provider": "openai", "model": "gpt-4"}
         extraction_prompt = "Extract parameters: {user_input}\n{param_descriptions}"
-        param_schema = {"name": str, "age": int,
-                        "email": str, "preferences": list}
+        param_schema = {"name": str, "age": int, "email": str, "preferences": list}
 
         extractor = create_llm_arg_extractor(
             llm_config, extraction_prompt, param_schema

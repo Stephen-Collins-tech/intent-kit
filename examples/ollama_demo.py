@@ -26,10 +26,14 @@ def _greet_action(name: str, **kwargs) -> str:
 def _calculate_action(operation: str, a: float, b: float, **kwargs) -> str:
     """Perform a calculation."""
     operation_map = {
-        "plus": "+", "add": "+",
-        "minus": "-", "subtract": "-",
-        "times": "*", "multiply": "*",
-        "divided": "/", "divide": "/",
+        "plus": "+",
+        "add": "+",
+        "minus": "-",
+        "subtract": "-",
+        "times": "*",
+        "multiply": "*",
+        "divided": "/",
+        "divide": "/",
     }
     math_op = operation_map.get(operation.lower(), operation)
 
