@@ -78,21 +78,6 @@ def create_llm_classifier(
 
                 # Look for patterns like "Your choice (number only): 3" or "The choice is: 3"
                 # Make patterns more specific to avoid matching context numbers like years/timestamps
-                number_patterns = [
-                    # Match 1-2 digit numbers after "choice"
-                    r"choice.*?(\d{1,2})",
-                    # Match 1-2 digit numbers after "answer"
-                    r"answer.*?(\d{1,2})",
-                    # Match 1-2 digit numbers after "number"
-                    r"number.*?(\d{1,2})",
-                    # Match 1-2 digit numbers after "select"
-                    r"select.*?(\d{1,2})",
-                    # Match 1-2 digit numbers after "option"
-                    r"option.*?(\d{1,2})",
-                    r"^(\d{1,2})$",  # Match standalone 1-2 digit numbers
-                    # Match 1-2 digit numbers with optional whitespace
-                    r"^(\d{1,2})\s*$",
-                ]
 
                 logger.debug(
                     f"Response text BEFORE SELECTED_INDEX PROBLEM: {response_text}")

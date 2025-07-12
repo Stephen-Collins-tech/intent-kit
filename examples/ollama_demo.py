@@ -7,7 +7,6 @@ A minimal demonstration showing how to use IntentGraph with local Ollama models.
 
 from intent_kit import IntentGraphBuilder, action, llm_classifier
 from intent_kit.context import IntentContext
-from datetime import datetime
 
 # Ollama LLM configuration
 OLLAMA_CONFIG = {

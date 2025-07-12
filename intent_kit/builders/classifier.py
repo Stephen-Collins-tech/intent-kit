@@ -5,7 +5,7 @@ This module provides a builder class for creating ClassifierNode instances
 with a more readable and type-safe approach.
 """
 
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Callable, List, Optional, Union
 from intent_kit.node import TreeNode
 from intent_kit.node.classifiers import ClassifierNode
 from intent_kit.node.actions import RemediationStrategy

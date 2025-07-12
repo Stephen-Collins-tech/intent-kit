@@ -302,13 +302,13 @@ class ActionNode(TreeNode):
 
             param_value = params[param_name]
             try:
-                if param_type == str:
+                if param_type is str:
                     validated_params[param_name] = str(param_value)
-                elif param_type == int:
+                elif param_type is int:
                     validated_params[param_name] = int(param_value)
-                elif param_type == float:
+                elif param_type is float:
                     validated_params[param_name] = float(param_value)
-                elif param_type == bool:
+                elif param_type is bool:
                     if isinstance(param_value, str):
                         validated_params[param_name] = param_value.lower() in (
                             'true', '1', 'yes', 'on')
