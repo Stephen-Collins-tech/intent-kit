@@ -18,9 +18,6 @@
   <a href="https://pypi.org/project/intentkit-py">
     <img src="https://img.shields.io/pypi/v/intentkit-py" alt="PyPI"/>
   </a>
-  <a href="https://mybinder.org/v2/gh/Stephen-Collins-tech/intent-kit/HEAD?filepath=examples%2Fsimple_demo.ipynb">
-    <img src="https://mybinder.org/badge_logo.svg" alt="Binder"/>
-  </a>
 </p>
 
 ---
