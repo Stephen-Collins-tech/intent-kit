@@ -1,7 +1,6 @@
 # OpenRouter client wrapper for intent-kit
 # Requires: pip install openai
 
-import re
 from intent_kit.utils.logger import Logger
 
 logger = Logger("openrouter_service")

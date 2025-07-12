@@ -142,7 +142,7 @@ def main():
     try:
         validation_results = IntentGraphBuilder().with_json(
             json_graph).validate_json_graph()
-        print(f"✅ Graph validation passed!")
+        print("✅ Graph validation passed!")
         print(f"   - Nodes: {validation_results['node_count']}")
         print(f"   - Edges: {validation_results['edge_count']}")
         if validation_results['warnings']:

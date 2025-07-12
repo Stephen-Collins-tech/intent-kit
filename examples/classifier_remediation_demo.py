@@ -17,8 +17,6 @@ from intent_kit.context import IntentContext
 from intent_kit.node.types import ExecutionResult
 from intent_kit import action
 from intent_kit.node.actions import (
-    create_classifier_fallback_strategy,
-    create_keyword_fallback_strategy,
     register_remediation_strategy,
 )
 from typing import Optional, Callable, List
@@ -88,7 +86,6 @@ def create_custom_classifier_fallback():
     """Create a custom classifier fallback strategy."""
     from intent_kit.node.actions import RemediationStrategy
     from intent_kit.node.types import ExecutionResult, ExecutionError
-    from intent_kit.node.enums import NodeType
 
     class CustomClassifierFallbackStrategy(RemediationStrategy):
         def __init__(self):

@@ -18,8 +18,6 @@ from intent_kit.context import IntentContext
 from intent_kit.node.types import ExecutionResult
 from intent_kit import action
 from intent_kit.node.actions import (
-    create_retry_strategy,
-    create_fallback_strategy,
     register_remediation_strategy,
 )
 from intent_kit.node.types import ExecutionError

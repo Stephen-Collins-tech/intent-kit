@@ -6,7 +6,6 @@ with a more readable and type-safe approach.
 """
 
 from typing import List, Dict, Any, Optional, Callable, Union
-import json
 from intent_kit.node import TreeNode
 from intent_kit.graph import IntentGraph
 from .base import Builder
@@ -443,7 +442,6 @@ class IntentGraphBuilder(Builder):
 
     def _create_llm_classifier_node(self, node_id: str, name: str, description: str, node_spec: Dict[str, Any], function_registry: Dict[str, Callable]) -> TreeNode:
         """Create an LLM ClassifierNode from specification."""
-        from intent_kit.utils.node_factory import llm_classifier
 
         if "llm_config" not in node_spec:
             raise ValueError(

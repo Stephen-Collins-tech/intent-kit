@@ -6,13 +6,10 @@ This script provides CRUD operations for managing documentation files.
 It helps organize, create, update, and maintain documentation structure.
 """
 
-import os
-import sys
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
-import yaml
+from typing import Dict, Optional
 
 
 class DocManager:
