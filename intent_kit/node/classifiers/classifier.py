@@ -6,11 +6,11 @@ that uses a classifier to select child nodes.
 """
 
 from typing import Any, Callable, List, Optional, Dict, Union
-from .base import TreeNode
-from .enums import NodeType
-from .types import ExecutionResult, ExecutionError
+from ..base import TreeNode
+from ..enums import NodeType
+from ..types import ExecutionResult, ExecutionError
 from intent_kit.context import IntentContext
-from .handlers.remediation import (
+from ..actions.remediation import (
     get_remediation_strategy,
     RemediationStrategy,
 )

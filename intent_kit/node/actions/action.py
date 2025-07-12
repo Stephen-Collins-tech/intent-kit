@@ -293,7 +293,7 @@ class ActionNode(TreeNode):
 
     def _validate_types(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Validate and convert parameter types according to the schema."""
-        validated_params = {}
+        validated_params: Dict[str, Any] = {}
         for param_name, param_type in self.param_schema.items():
             if param_name not in params:
                 raise ValueError(f"Missing required parameter: {param_name}")

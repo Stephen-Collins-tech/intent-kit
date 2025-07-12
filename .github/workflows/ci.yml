@@ -22,12 +22,12 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: uv sync --dev
-      - name: Ruff
-        run: uv run ruff check .
+      - name: Lint (Ruff)
+        run: uv run lint
       - name: Black
         run: uv run black --check .
-      - name: mypy
-        run: uv run mypy intent_kit tests
+      - name: Typecheck (mypy)
+        run: uv run typecheck
 
   test:
     runs-on: ubuntu-latest

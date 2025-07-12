@@ -4,7 +4,7 @@ Tests for the remediation strategies.
 
 import json
 from unittest.mock import Mock, patch, MagicMock
-from intent_kit.handlers.remediation import (
+from intent_kit.node.actions.remediation import (
     RemediationStrategy,
     RetryOnFailStrategy,
     FallbackToAnotherNodeStrategy,

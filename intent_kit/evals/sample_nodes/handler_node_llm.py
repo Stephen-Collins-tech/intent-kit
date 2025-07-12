@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from intent_kit.node.handlers import HandlerNode
+from intent_kit.node.actions.action import ActionNode as HandlerNode
 from intent_kit.context import IntentContext
 
 
@@ -56,7 +56,7 @@ Return a JSON object with these exact fields:
 
 Rules:
 - If the user says "book a flight to X", extract X as destination
-- If the user says "travel to X", extract X as destination  
+- If the user says "travel to X", extract X as destination
 - If the user says "fly to X", extract X as destination
 - If the user says "go to X", extract X as destination
 - For dates, extract the exact date mentioned (e.g., "next Friday", "December 15th", "tomorrow")
@@ -131,7 +131,7 @@ def booking_handler(destination: str, date: str, context: IntentContext) -> str:
 handler_node_llm = HandlerNode(
     name="handler_node_llm",
     param_schema={"destination": str, "date": str},
-    handler=booking_handler,
+    action=booking_handler,
     arg_extractor=extract_booking_args_llm,
     context_inputs={"user_id"},
     context_outputs={"booking_count", "last_destination"},
