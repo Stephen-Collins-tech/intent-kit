@@ -6,7 +6,7 @@ with ClassifierNode and HandlerNode.
 """
 
 from typing import Dict, Any, List, Optional, Callable
-from ..node import TreeNode
+from ..base import TreeNode
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
 import re
@@ -59,7 +59,7 @@ def create_llm_classifier(
                 user_input=user_input,
                 node_descriptions="\n".join(
                     [
-                        f"{i+1}. {child.name}: {child.description}"
+                        f"{i}. {child.name}: {child.description}"
                         for i, child in enumerate(children)
                     ]
                 ),
@@ -94,15 +94,27 @@ def create_llm_classifier(
                     r"^(\d{1,2})\s*$",
                 ]
 
+                logger.debug(
+                    f"Response text BEFORE SELECTED_INDEX PROBLEM: {response_text}")
                 selected_index = None
-                for pattern in number_patterns:
-                    match = re.search(
-                        pattern, response_text, re.IGNORECASE | re.MULTILINE
-                    )
-                    if match:
-                        # Convert to 0-based
-                        selected_index = int(match.group(1)) - 1
-                        break
+                match = re.search(
+                    r"^(\d{1,2})\s*$", response_text, re.IGNORECASE | re.MULTILINE)
+                logger.debug(f"Match: {match}")
+                if match:
+                    # Parse the number and validate it's in the correct range
+                    parsed_number = int(match.group(1))
+                    logger.debug(
+                        f"LLM returned number: {parsed_number} (response: {response_text})")
+                    logger.debug(
+                        f"Children: {[child.name for child in children]}")
+                    logger.debug(f"Selected index: {selected_index}")
+
+                    selected_index = parsed_number
+                    logger.debug(
+                        f"Selected index after assignment: {selected_index}")
+                else:
+                    logger.debug(
+                        f"No number pattern matched: {response_text}")
 
                 # If no pattern matched, try to parse the entire response as a number
                 if selected_index is None:
@@ -112,8 +124,21 @@ def create_llm_classifier(
                         # Only take the first 1-2 digits to avoid long numbers like years
                         first_digits = cleaned_text[:2]
                         if first_digits.isdigit():
-                            # Convert to 0-based
-                            selected_index = int(first_digits) - 1
+                            parsed_number = int(first_digits)
+
+                            # Handle both 0-based and 1-based indexing
+                            if parsed_number == 0:
+                                # If LLM returns 0, treat it as "no valid choice" unless it's the only option
+                                if len(children) == 1:
+                                    selected_index = 0  # Only option
+                                else:
+                                    selected_index = None  # No valid choice
+                            elif parsed_number >= 1 and parsed_number <= len(children):
+                                # Convert 1-based to 0-based
+                                selected_index = parsed_number - 1
+                            else:
+                                # Invalid number
+                                selected_index = None
 
                 if selected_index is not None and 0 <= selected_index < len(children):
                     return children[selected_index]
@@ -178,9 +203,13 @@ def create_llm_arg_extractor(
                 context_info += "\nUse this context information to help extract more accurate parameters."
 
             # Build the extraction prompt
+            logger.debug(f"LLM arg extractor param_schema: {param_schema}")
+            logger.debug(
+                f"LLM arg extractor param_schema types: {[(name, type(param_type)) for name, param_type in param_schema.items()]}")
+
             param_descriptions = "\n".join(
                 [
-                    f"- {param_name}: {param_type.__name__}"
+                    f"- {param_name}: {param_type.__name__ if hasattr(param_type, '__name__') else str(param_type)}"
                     for param_name, param_type in param_schema.items()
                 ]
             )

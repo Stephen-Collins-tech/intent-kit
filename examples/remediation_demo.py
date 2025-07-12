@@ -1,100 +1,99 @@
 #!/usr/bin/env python3
 """
-Remediation Demo - Phase 2 Basic Remediation System
+Remediation Demo
 
-This demo showcases the new remediation system with:
-- Retry strategies for transient failures
-- Fallback strategies for permanent failures
-- Custom remediation strategies
-- Error handling and logging
+This script demonstrates basic remediation strategies in intent-kit:
+  - Retry on failure
+  - Fallback to another action
+  - Custom remediation strategies
 
 Usage:
     python examples/remediation_demo.py
 """
 
-from intent_kit.utils.logger import Logger
-from intent_kit.handlers.remediation import (
-    RemediationStrategy,
+import os
+import random
+from dotenv import load_dotenv
+from intent_kit.context import IntentContext
+from intent_kit.node.types import ExecutionResult
+from intent_kit import action
+from intent_kit.node.actions import (
+    create_retry_strategy,
+    create_fallback_strategy,
     register_remediation_strategy,
 )
-from intent_kit.node.types import ExecutionResult, ExecutionError
-from intent_kit.context import IntentContext
-from intent_kit.builder import handler, llm_classifier, IntentGraphBuilder
-import sys
-import os
+from intent_kit.node.types import ExecutionError
+from intent_kit.node.enums import NodeType
 from typing import Optional
-from dotenv import load_dotenv
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Load environment variables
+# --- Setup LLM config ---
 load_dotenv()
-
-
-# Configure logging
-logger = Logger("remediation_demo")
-
-# LLM config using environment variables
 LLM_CONFIG = {
-    "provider": "openai",
-    "model": "gpt-4.1-mini",
-    "api_key": os.getenv("OPENAI_API_KEY"),
+    "provider": "openrouter",
+    "api_key": os.getenv("OPENROUTER_API_KEY"),
+    "model": "meta-llama/llama-4-maverick-17b-128e-instruct",
 }
 
 
-def unreliable_calculator(
-    operation: str, a: float, b: float, context: IntentContext
-) -> str:
-    """
-    A deliberately unreliable calculator that fails randomly to demonstrate remediation.
-    """
-    import random
-
-    # Simulate random failures (30% failure rate)
-    if random.random() < 0.3:
-        raise Exception(
-            "Random calculation failure - this is expected for demo purposes"
-        )
-
-    ops = {"add": "+", "plus": "+", "multiply": "*", "times": "*"}
-    op = ops.get(operation.lower(), operation)
-    result = eval(f"{a} {op} {b}")
-
-    history = context.get("calc_history", [])
-    history.append(f"{a} {operation} {b} = {result}")
-    context.set("calc_history", history, "unreliable_calculator")
-
-    return f"{a} {operation} {b} = {result}"
+# --- Core Actions ---
 
 
-def reliable_calculator(
-    operation: str, a: float, b: float, context: IntentContext
-) -> str:
-    """
-    A reliable fallback calculator that always works.
-    """
-    ops = {"add": "+", "plus": "+", "multiply": "*", "times": "*"}
-    op = ops.get(operation.lower(), operation)
-    result = eval(f"{a} {op} {b}")
+def unreliable_calculator(operation: str, a: float, b: float, context: IntentContext) -> str:
+    """Unreliable calculator that sometimes fails."""
+    if random.random() < 0.3:  # 30% chance of failure
+        raise ValueError("Random calculation failure")
 
-    history = context.get("calc_history", [])
-    history.append(f"{a} {operation} {b} = {result} (fallback)")
-    context.set("calc_history", history, "reliable_calculator")
+    # Map word operations to mathematical operators
+    operation_map = {
+        "plus": "+", "add": "+",
+        "minus": "-", "subtract": "-",
+        "times": "*", "multiply": "*",
+        "divided": "/", "divide": "/",
+    }
+    math_op = operation_map.get(operation.lower(), operation)
 
-    return f"FALLBACK: {a} {operation} {b} = {result}"
+    try:
+        result = eval(f"{a} {math_op} {b}")
+        return f"{a} {operation} {b} = {result}"
+    except (SyntaxError, ZeroDivisionError) as e:
+        raise ValueError(f"Calculation error: {str(e)}")
+
+
+def reliable_calculator(operation: str, a: float, b: float, context: IntentContext) -> str:
+    """Reliable calculator as fallback."""
+    # Map word operations to mathematical operators
+    operation_map = {
+        "plus": "+", "add": "+",
+        "minus": "-", "subtract": "-",
+        "times": "*", "multiply": "*",
+        "divided": "/", "divide": "/",
+    }
+    math_op = operation_map.get(operation.lower(), operation)
+
+    try:
+        result = eval(f"{a} {math_op} {b}")
+        return f"{a} {operation} {b} = {result} (reliable)"
+    except (SyntaxError, ZeroDivisionError) as e:
+        return f"Error: Cannot calculate {a} {operation} {b} - {str(e)}"
 
 
 def simple_greeter(name: str, context: IntentContext) -> str:
-    """Simple greeting handler."""
-    greeting_count = context.get("greeting_count", 0) + 1
-    context.set("greeting_count", greeting_count, "simple_greeter")
-    return f"Hello {name}! (Greeting #{greeting_count})"
+    """Simple greeter with custom remediation."""
+    if random.random() < 0.2:  # 20% chance of failure
+        raise ValueError("Random greeting failure")
+
+    return f"Hello {name}! Nice to meet you."
 
 
-def create_custom_remediation_strategy() -> RemediationStrategy:
+def create_custom_remediation_strategy():
     """Create a custom remediation strategy that logs and continues."""
+    from intent_kit.node.actions import RemediationStrategy
 
     class LogAndContinueStrategy(RemediationStrategy):
+        def __init__(self):
+            super().__init__("log_and_continue", "Log error and return default response")
+
         def execute(
             self,
             node_name: str,
@@ -103,27 +102,22 @@ def create_custom_remediation_strategy() -> RemediationStrategy:
             original_error: Optional[ExecutionError] = None,
             **kwargs,
         ) -> Optional[ExecutionResult]:
-            """Log the error and return a simple message."""
-            self.logger.info(f"LogAndContinueStrategy: Handling error for {node_name}")
-
-            from intent_kit.node.types import ExecutionResult
-            from intent_kit.node.enums import NodeType
+            self.logger.warning(
+                f"LogAndContinue: {node_name} failed, continuing with default")
 
             return ExecutionResult(
                 success=True,
                 node_name=node_name,
                 node_path=[node_name],
-                node_type=NodeType.HANDLER,
+                node_type=NodeType.ACTION,
                 input=user_input,
-                output=f"Operation completed with warnings (original error: {original_error.message if original_error else 'unknown'})",
+                output="Default response due to error",
                 error=None,
-                params=kwargs.get("validated_params", {}),
+                params={},
                 children_results=[],
             )
 
-    return LogAndContinueStrategy(
-        "log_and_continue", "Log error and continue with warning"
-    )
+    return LogAndContinueStrategy()
 
 
 def create_intent_graph():
@@ -133,24 +127,25 @@ def create_intent_graph():
     custom_strategy = create_custom_remediation_strategy()
     register_remediation_strategy("log_and_continue", custom_strategy)
 
-    # Create handlers with different remediation strategies
-    handlers = [
-        # Handler with retry strategy
-        handler(
+    # Create actions with different remediation strategies
+    actions = [
+        # Action with retry strategy
+        action(
             name="unreliable_calc",
             description="Unreliable calculator with retry strategy",
-            handler_func=unreliable_calculator,
+            action_func=unreliable_calculator,
             param_schema={"operation": str, "a": float, "b": float},
             llm_config=LLM_CONFIG,
             context_inputs={"calc_history"},
             context_outputs={"calc_history"},
-            remediation_strategies=["retry_on_fail"],  # Built-in retry strategy
+            # Built-in retry strategy
+            remediation_strategies=["retry_on_fail"],
         ),
-        # Handler with fallback strategy
-        handler(
+        # Action with fallback strategy
+        action(
             name="reliable_calc",
             description="Reliable calculator as fallback",
-            handler_func=reliable_calculator,
+            action_func=reliable_calculator,
             param_schema={"operation": str, "a": float, "b": float},
             llm_config=LLM_CONFIG,
             context_inputs={"calc_history"},
@@ -158,11 +153,11 @@ def create_intent_graph():
             # Built-in fallback strategy
             remediation_strategies=["fallback_to_another_node"],
         ),
-        # Handler with custom remediation strategy
-        handler(
+        # Action with custom remediation strategy
+        action(
             name="simple_greet",
             description="Simple greeter with custom remediation",
-            handler_func=simple_greeter,
+            action_func=simple_greeter,
             param_schema={"name": str},
             llm_config=LLM_CONFIG,
             context_inputs={"greeting_count"},
@@ -172,71 +167,62 @@ def create_intent_graph():
     ]
 
     # Create classifier
-    classifier = llm_classifier(
+    from intent_kit.node.classifiers import ClassifierNode
+
+    def simple_classifier(user_input: str, children, context=None):
+        """Simple classifier that routes to the first child."""
+        return children[0]
+
+    classifier = ClassifierNode(
         name="root",
-        children=handlers,
-        llm_config=LLM_CONFIG,
-        description="Main intent classifier with remediation",
+        description="Simple classifier",
+        classifier=simple_classifier,
+        children=actions,
     )
 
-    # Build and return the graph
-    return IntentGraphBuilder().root(classifier).build()
+    return classifier
 
 
-def run_demo():
-    """Run the remediation demo."""
-    print("🔄 Phase 2: Basic Remediation System Demo")
-    print("=" * 50)
-
-    # Create intent graph
-    graph = create_intent_graph()
-
-    # Create context
+def main():
     context = IntentContext()
+    print("=== Remediation Strategies Demo ===\n")
+
+    print(
+        "This demo shows how different remediation strategies handle failures:\n"
+        "• Retry on failure: Tries again with exponential backoff\n"
+        "• Fallback to another action: Uses a different action when one fails\n"
+        "• Custom strategy: Logs error and returns default response\n"
+    )
+
+    # Create the intent graph
+    root_node = create_intent_graph()
 
     # Test cases
     test_cases = [
-        "Calculate 5 plus 3",
-        "What is 10 times 2?",
-        "Hello Alice",
-        "Add 7 and 4",
-        "Multiply 3 by 6",
+        ("Calculate 5 plus 3", "Should retry if unreliable_calc fails"),
+        ("Calculate 10 times 2", "Should use fallback if primary fails"),
+        ("Greet Alice", "Should use custom remediation if greeting fails"),
     ]
 
-    print("\n📋 Test Cases:")
-    print("-" * 30)
-
-    for i, test_input in enumerate(test_cases, 1):
-        print(f"\n{i}. Input: {test_input}")
-        print("-" * 40)
+    for user_input, description in test_cases:
+        print(f"\n--- Test: {description} ---")
+        print(f"Input: {user_input}")
 
         try:
-            result = graph.route(test_input, context=context)
-
-            if result.success:
-                print(f"✅ Success: {result.output}")
-            else:
-                print(
-                    f"❌ Failed: {result.error.message if result.error else 'Unknown error'}"
-                )
-
+            result: ExecutionResult = root_node.execute(
+                user_input=user_input, context=context)
+            print(f"Success: {result.success}")
+            print(f"Output: {result.output}")
+            if result.error:
+                print(f"Error: {result.error.message}")
         except Exception as e:
-            print(f"💥 Exception: {type(e).__name__}: {str(e)}")
+            print(f"Node crashed: {e}")
 
-    # Show context state
-    print("\n📊 Final Context State:")
-    print("-" * 30)
-    print(f"Calculation History: {context.get('calc_history', [])}")
-    print(f"Greeting Count: {context.get('greeting_count', 0)}")
-
-    print("\n🎯 Demo Summary:")
-    print("-" * 30)
-    print("✅ Retry strategy: Automatically retries failed operations")
-    print("✅ Fallback strategy: Routes to alternative handlers")
-    print("✅ Custom strategy: Logs errors and continues with warnings")
-    print("✅ Context preservation: All strategies maintain context state")
-    print("✅ Error handling: Comprehensive logging and error reporting")
+    print("\n=== What did you just see? ===")
+    print("• Retry strategy: Automatically retries failed actions")
+    print("• Fallback strategy: Uses alternative actions when primary fails")
+    print("• Custom strategy: Implements custom error handling logic")
 
 
 if __name__ == "__main__":
-    run_demo()
+    main()

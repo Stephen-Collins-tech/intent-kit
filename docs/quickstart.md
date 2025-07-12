@@ -9,16 +9,16 @@ pip install intent-kit  # Or 'intent-kit[openai]' for LLM support
 Create and run a simple graph:
 
 ```python
-from intent_kit import IntentGraphBuilder, handler
+from intent_kit import IntentGraphBuilder, action
 
-hello_handler = handler(
+hello_action = action(
     name="greet",
     description="Greet the user",
-    handler_func=lambda name: f"Hello {name}!",
+    action_func=lambda name: f"Hello {name}!",
     param_schema={"name": str},
 )
 
-graph = IntentGraphBuilder().root(hello_handler).build()
+graph = IntentGraphBuilder().root(hello_action).build()
 print(graph.route("hello alice").output)
 ```
 

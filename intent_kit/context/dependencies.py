@@ -2,7 +2,7 @@
 Context Dependency Declarations
 
 This module provides utilities for declaring and managing context dependencies
-for intents and handlers. This enables dependency graph building and validation.
+for intents and actions. This enables dependency graph building and validation.
 """
 
 from typing import Set, Dict, Any, Optional, Protocol
@@ -19,16 +19,16 @@ class ContextDependencies:
     description: str = ""  # Human-readable description of dependencies
 
 
-class ContextAwareHandler(Protocol):
-    """Protocol for handlers that can read/write context."""
+class ContextAwareAction(Protocol):
+    """Protocol for actions that can read/write context."""
 
     @property
     def context_dependencies(self) -> ContextDependencies:
-        """Return the context dependencies for this handler."""
+        """Return the context dependencies for this action."""
         ...
 
     def __call__(self, context: IntentContext, **kwargs) -> Any:
-        """Execute the handler with context access."""
+        """Execute the action with context access."""
         ...
 
 
@@ -76,7 +76,8 @@ def validate_context_dependencies(
         warnings.append(f"Missing required context inputs: {missing_inputs}")
 
     if missing_inputs and not strict:
-        warnings.append(f"Optional context inputs not available: {missing_inputs}")
+        warnings.append(
+            f"Optional context inputs not available: {missing_inputs}")
 
     return {
         "valid": len(missing_inputs) == 0 or not strict,
@@ -109,7 +110,7 @@ def merge_dependencies(*dependencies: ContextDependencies) -> ContextDependencie
         if dep.description:
             descriptions.append(dep.description)
 
-    # Remove outputs from inputs (outputs can be read by the same handler)
+    # Remove outputs from inputs (outputs can be read by the same action)
     merged_inputs -= merged_outputs
 
     return ContextDependencies(
@@ -119,37 +120,37 @@ def merge_dependencies(*dependencies: ContextDependencies) -> ContextDependencie
     )
 
 
-def analyze_handler_dependencies(handler: Any) -> Optional[ContextDependencies]:
+def analyze_action_dependencies(action: Any) -> Optional[ContextDependencies]:
     """
-    Analyze a handler function to extract context dependencies.
+    Analyze an action function to extract context dependencies.
 
     This is a best-effort analysis based on function annotations and docstrings.
     For precise dependency tracking, use explicit declarations.
 
     Args:
-        handler: The handler function to analyze
+        action: The action function to analyze
 
     Returns:
         ContextDependencies if analysis is possible, None otherwise
     """
-    if not callable(handler):
+    if not callable(action):
         return None
 
-    # Check if handler has explicit dependencies
-    if hasattr(handler, "context_dependencies"):
-        return handler.context_dependencies
+    # Check if action has explicit dependencies
+    if hasattr(action, "context_dependencies"):
+        return action.context_dependencies
 
-    # Check if handler has dependency annotations
-    if hasattr(handler, "__annotations__"):
-        annotations = handler.__annotations__
+    # Check if action has dependency annotations
+    if hasattr(action, "__annotations__"):
+        annotations = action.__annotations__
         if "context_inputs" in annotations and "context_outputs" in annotations:
-            inputs: set = getattr(handler, "context_inputs", set())
-            outputs: set = getattr(handler, "context_outputs", set())
+            inputs: set = getattr(action, "context_inputs", set())
+            outputs: set = getattr(action, "context_outputs", set())
             return declare_dependencies(inputs, outputs)
 
     # Check docstring for dependency hints
-    if hasattr(handler, "__doc__") and handler.__doc__:
-        doc = handler.__doc__.lower()
+    if hasattr(action, "__doc__") and action.__doc__:
+        doc = action.__doc__.lower()
         inputs = set()
         outputs = set()
 

@@ -6,8 +6,8 @@ import pytest
 from unittest.mock import Mock
 from typing import Dict, Any
 
-from intent_kit.builder import (
-    IntentGraphBuilder,
+from intent_kit.builders import IntentGraphBuilder
+from intent_kit.utils.node_factory import (
     handler,
     llm_classifier,
     llm_splitter_node,
@@ -15,9 +15,9 @@ from intent_kit.builder import (
     create_intent_graph,
 )
 from intent_kit.node import TreeNode
-from intent_kit.handlers import HandlerNode
-from intent_kit.classifiers import ClassifierNode
-from intent_kit.splitters import SplitterNode
+from intent_kit.node.handlers import HandlerNode
+from intent_kit.node.classifiers import ClassifierNode
+from intent_kit.node.splitters import SplitterNode
 from intent_kit.graph import IntentGraph
 
 
@@ -55,10 +55,10 @@ class TestIntentGraphBuilder:
         """Test IntentGraphBuilder initialization."""
         builder = IntentGraphBuilder()
 
-        assert builder._root_node is None
+        assert builder._root_nodes == []
         assert builder._splitter is None
-        assert builder._debug_context is False
-        assert builder._context_trace is False
+        assert builder._debug_context_enabled is False
+        assert builder._context_trace_enabled is False
 
     def test_root_method(self):
         """Test setting the root node."""
@@ -68,7 +68,7 @@ class TestIntentGraphBuilder:
         result = builder.root(root_node)
 
         assert result is builder  # Method chaining
-        assert builder._root_node == root_node
+        assert builder._root_nodes == [root_node]
 
     def test_splitter_method(self):
         """Test setting a custom splitter function."""
@@ -87,38 +87,38 @@ class TestIntentGraphBuilder:
         builder = IntentGraphBuilder()
 
         # Enable debug context
-        result = builder.debug_context(True)
+        result = builder._debug_context(True)
         assert result is builder
-        assert builder._debug_context is True
+        assert builder._debug_context_enabled is True
 
         # Disable debug context
-        result = builder.debug_context(False)
+        result = builder._debug_context(False)
         assert result is builder
-        assert builder._debug_context is False
+        assert builder._debug_context_enabled is False
 
         # Default to True
-        result = builder.debug_context()
+        result = builder._debug_context()
         assert result is builder
-        assert builder._debug_context is True
+        assert builder._debug_context_enabled is True
 
     def test_context_trace_method(self):
         """Test enabling/disabling context tracing."""
         builder = IntentGraphBuilder()
 
         # Enable context tracing
-        result = builder.context_trace(True)
+        result = builder._context_trace(True)
         assert result is builder
-        assert builder._context_trace is True
+        assert builder._context_trace_enabled is True
 
         # Disable context tracing
-        result = builder.context_trace(False)
+        result = builder._context_trace(False)
         assert result is builder
-        assert builder._context_trace is False
+        assert builder._context_trace_enabled is False
 
         # Default to True
-        result = builder.context_trace()
+        result = builder._context_trace()
         assert result is builder
-        assert builder._context_trace is True
+        assert builder._context_trace_enabled is True
 
     def test_build_with_root_node(self):
         """Test building IntentGraph with root node."""
@@ -151,7 +151,7 @@ class TestIntentGraphBuilder:
         """Test building IntentGraph without root node raises error."""
         builder = IntentGraphBuilder()
 
-        with pytest.raises(ValueError, match="No root node set"):
+        with pytest.raises(ValueError, match="No root nodes set"):
             builder.build()
 
     def test_build_with_debug_options(self):
@@ -159,7 +159,7 @@ class TestIntentGraphBuilder:
         builder = IntentGraphBuilder()
         root_node = MockTreeNode("root", "Root node")
 
-        builder.root(root_node).debug_context(True).context_trace(True)
+        builder.root(root_node)._debug_context(True)._context_trace(True)
         graph = builder.build()
 
         assert isinstance(graph, IntentGraph)
@@ -177,8 +177,8 @@ class TestIntentGraphBuilder:
         result = (
             builder.root(root_node)
             .splitter(splitter_func)
-            .debug_context(True)
-            .context_trace(True)
+            ._debug_context(True)
+            ._context_trace(True)
             .build()
         )
 
@@ -508,7 +508,8 @@ class TestLLMSplitterNode:
             MockTreeNode("classifier", "Main classifier"),
         ]
 
-        llm_config = {"provider": "openai", "model": "gpt-4", "llm_client": Mock()}
+        llm_config = {"provider": "openai",
+                      "model": "gpt-4", "llm_client": Mock()}
 
         splitter_node = llm_splitter_node(
             name="multi_intent_splitter", children=children, llm_config=llm_config
@@ -525,7 +526,8 @@ class TestLLMSplitterNode:
             MockTreeNode("classifier", "Main classifier"),
         ]
 
-        llm_config = {"provider": "openai", "model": "gpt-4", "llm_client": Mock()}
+        llm_config = {"provider": "openai",
+                      "model": "gpt-4", "llm_client": Mock()}
 
         splitter_node = llm_splitter_node(
             name="multi_intent_splitter",

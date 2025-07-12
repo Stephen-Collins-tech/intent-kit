@@ -20,9 +20,26 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
+  - Core Concepts:
+      - Intent Graphs: concepts/intent_graphs.md
+      - Nodes and Actions: concepts/nodes_and_actions.md
+      - Context System: concepts/context_system.md
+      - Remediation: concepts/remediation.md
   - API Reference:
-      - intent_kit: api_reference.md
+      - IntentGraphBuilder: api/intent_graph_builder.md
+      - Node Types: api/node_types.md
+      - Context API: api/context_api.md
+      - Remediation API: api/remediation_api.md
+  - Configuration:
+      - JSON Serialization: configuration/json_serialization.md
+      - LLM Integration: configuration/llm_integration.md
+      - Function Registry: configuration/function_registry.md
   - Examples:
-      - Calculator Bot: examples/calculator-bot.md
-      - Context-Aware Chatbot: examples/context-aware-chatbot.md
-      - Multi-Intent Routing: examples/multi-intent-routing.md
+      - Basic Examples: examples/basic_examples.md
+      - Advanced Examples: examples/advanced_examples.md
+      - Multi-Intent Routing: examples/multi_intent_routing.md
+      - Context Workflows: examples/context_workflows.md
+  - Development:
+      - Testing: development/testing.md
+      - Evaluation: development/evaluation.md
+      - Debugging: development/debugging.md

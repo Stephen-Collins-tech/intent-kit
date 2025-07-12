@@ -4,7 +4,7 @@ Tests for intent_kit.classifiers.llm_classifier module.
 
 from unittest.mock import patch
 
-from intent_kit.classifiers.llm_classifier import (
+from intent_kit.node.classifiers import (
     create_llm_classifier,
     create_llm_arg_extractor,
     get_default_classification_prompt,
@@ -419,7 +419,8 @@ class TestCreateLLMArgExtractor:
         """Test that API keys are obfuscated in debug logs."""
         mock_generate.return_value = "name: John"
 
-        llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "secret-key"}
+        llm_config = {"provider": "openai",
+                      "model": "gpt-4", "api_key": "secret-key"}
         extraction_prompt = "Extract parameters: {user_input}\n{param_descriptions}"
         param_schema = {"name": str}
 
@@ -522,7 +523,8 @@ class TestLLMClassifierIntegration:
         """Test argument extractor with complex parameter schema."""
         llm_config = {"provider": "openai", "model": "gpt-4"}
         extraction_prompt = "Extract parameters: {user_input}\n{param_descriptions}"
-        param_schema = {"name": str, "age": int, "email": str, "preferences": list}
+        param_schema = {"name": str, "age": int,
+                        "email": str, "preferences": list}
 
         extractor = create_llm_arg_extractor(
             llm_config, extraction_prompt, param_schema
