@@ -38,10 +38,12 @@ ollama = [
 run-evals = "intent_kit.evals.run_all_evals:run_all_evaluations"
 eval-node = "intent_kit.evals.run_node_eval:main"
 eval-api-demo = "examples.eval_api_demo:main"
+lint = "scripts.lint:main"
+typecheck = "scripts.typecheck:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["intent_kit*"]
+include = ["intent_kit*", "scripts*"]
 
 [dependency-groups]
 dev = [

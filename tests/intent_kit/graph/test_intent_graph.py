@@ -19,7 +19,7 @@ class MockTreeNode(TreeNode):
     """Mock TreeNode for testing."""
 
     def __init__(
-        self, name: str, description: str = "", node_type: NodeType = NodeType.HANDLER
+        self, name: str, description: str = "", node_type: NodeType = NodeType.ACTION
     ):
         super().__init__(name=name, description=description)
         self._node_type = node_type
@@ -499,7 +499,7 @@ class TestIntentGraphVisualization:
         mock_result.success = True
         mock_result.output = "test output"
         mock_result.node_name = "test_node"
-        mock_result.node_type = NodeType.HANDLER
+        mock_result.node_type = NodeType.ACTION
         mock_result.input = "test input"
         mock_result.error = None
         mock_result.params = None
@@ -519,7 +519,7 @@ class TestIntentGraphVisualization:
         mock_result.success = True
         mock_result.output = "test output"
         mock_result.node_name = "test_node"
-        mock_result.node_type = NodeType.HANDLER
+        mock_result.node_type = NodeType.ACTION
         mock_result.input = "test input"
         mock_result.error = None
         mock_result.params = None
@@ -539,7 +539,7 @@ class TestIntentGraphVisualization:
         mock_result.success = True
         mock_result.node_name = "test_node"
         mock_result.node_id = "test_id"
-        mock_result.node_type = NodeType.HANDLER
+        mock_result.node_type = NodeType.ACTION
         mock_result.input = "test input"
         mock_result.output = "test output"
         mock_result.error = None

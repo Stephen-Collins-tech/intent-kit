@@ -122,7 +122,7 @@ class IntentGraphBuilder(Builder):
                 "No JSON graph set. Call .with_json() or .with_yaml() first"
             )
 
-        validation_results = {
+        validation_results: Dict[str, Any] = {
             "valid": True,
             "errors": [],
             "warnings": [],
