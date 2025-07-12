@@ -1,12 +1,12 @@
 """
 Simple IntentGraph Demo
 
-A minimal demonstration showing how to configure an intent graph with handlers and classifiers.
+A minimal demonstration showing how to configure an intent graph with actions and classifiers.
 """
 
 import os
 from dotenv import load_dotenv
-from intent_kit import IntentGraphBuilder, handler, llm_classifier
+from intent_kit import IntentGraphBuilder, action, llm_classifier
 
 load_dotenv()
 
@@ -20,7 +20,7 @@ LLM_CONFIG = {
 # Configure your intent graph here
 
 
-def _calculate_handler(operation: str, a: float, b: float) -> str:
+def _calculate_action(operation: str, a: float, b: float) -> str:
     """Handle calculation with proper operator mapping."""
     # Map word operations to mathematical operators
     operation_map = {
@@ -49,35 +49,35 @@ def _calculate_handler(operation: str, a: float, b: float) -> str:
 def create_intent_graph():
     """Create and configure the intent graph."""
 
-    # Define handlers
-    handlers = [
-        handler(
+    # Define actions
+    actions = [
+        action(
             name="greet",
             description="Greet the user",
-            handler_func=lambda name, **kwargs: f"Hello {name}!",
+            action_func=lambda name, **kwargs: f"Hello {name}!",
             param_schema={"name": str},
             llm_config=LLM_CONFIG,  # Remove this line for rule-based extraction
         ),
-        handler(
+        action(
             name="calculate",
             description="Perform a calculation",
-            handler_func=lambda operation, a, b, **kwargs: _calculate_handler(
+            action_func=lambda operation, a, b, **kwargs: _calculate_action(
                 operation, a, b
             ),
             param_schema={"operation": str, "a": float, "b": float},
             llm_config=LLM_CONFIG,
         ),
-        handler(
+        action(
             name="weather",
             description="Get weather information",
-            handler_func=lambda location, **kwargs: f"Weather in {location}: 72°F, Sunny (simulated)",
+            action_func=lambda location, **kwargs: f"Weather in {location}: 72°F, Sunny (simulated)",
             param_schema={"location": str},
             llm_config=LLM_CONFIG,
         ),
-        handler(
+        action(
             name="help",
             description="Get help",
-            handler_func=lambda **kwargs: "I can help with greetings, calculations, and weather!",
+            action_func=lambda **kwargs: "I can help with greetings, calculations, and weather!",
             param_schema={},
             llm_config=LLM_CONFIG,
         ),
@@ -86,7 +86,7 @@ def create_intent_graph():
     # Create classifier
     classifier = llm_classifier(
         name="root",
-        children=handlers,
+        children=actions,
         llm_config=LLM_CONFIG,
         description="Main intent classifier",
     )

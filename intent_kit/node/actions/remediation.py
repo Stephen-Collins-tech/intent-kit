@@ -8,8 +8,8 @@ Strategies can be registered by string ID or as custom callable functions.
 import time
 import json
 from typing import Any, Callable, Dict, List, Optional
-from intent_kit.node.types import ExecutionResult, ExecutionError
-from intent_kit.node.enums import NodeType
+from ..types import ExecutionResult, ExecutionError
+from ..enums import NodeType
 from intent_kit.context import IntentContext
 from intent_kit.utils.logger import Logger
 from intent_kit.utils.text_utils import extract_json_from_text
@@ -71,7 +71,7 @@ class RetryOnFailStrategy(RemediationStrategy):
         """Retry the handler function with the same parameters."""
         if not handler_func or validated_params is None:
             self.logger.warning(
-                f"RetryOnFailStrategy: Missing handler_func or validated_params for {node_name}"
+                f"RetryOnFailStrategy: Missing action_func or validated_params for {node_name}"
             )
             return None
 
@@ -95,7 +95,7 @@ class RetryOnFailStrategy(RemediationStrategy):
                     success=True,
                     node_name=node_name,
                     node_path=[node_name],
-                    node_type=NodeType.HANDLER,
+                    node_type=NodeType.ACTION,
                     input=user_input,
                     output=output,
                     error=None,
@@ -127,7 +127,8 @@ class FallbackToAnotherNodeStrategy(RemediationStrategy):
     """Fallback to a specified alternative handler."""
 
     def __init__(self, fallback_handler: Callable, fallback_name: str = "fallback"):
-        super().__init__("fallback_to_another_node", f"Fallback to {fallback_name}")
+        super().__init__("fallback_to_another_node",
+                         f"Fallback to {fallback_name}")
         self.fallback_handler = fallback_handler
         self.fallback_name = fallback_name
 
@@ -149,7 +150,8 @@ class FallbackToAnotherNodeStrategy(RemediationStrategy):
             # Use the same parameters if possible, otherwise use minimal params
             if validated_params is not None:
                 if context is not None:
-                    output = self.fallback_handler(**validated_params, context=context)
+                    output = self.fallback_handler(
+                        **validated_params, context=context)
                 else:
                     output = self.fallback_handler(**validated_params)
             else:
@@ -165,7 +167,7 @@ class FallbackToAnotherNodeStrategy(RemediationStrategy):
                 success=True,
                 node_name=self.fallback_name,
                 node_path=[self.fallback_name],
-                node_type=NodeType.HANDLER,  # Default to handler type
+                node_type=NodeType.ACTION,  # Default to action type
                 input=user_input,
                 output=output,
                 error=None,
@@ -242,7 +244,8 @@ Provide your analysis in JSON format:
                 reflection_response = llm_client.generate(reflection_prompt)
 
                 try:
-                    reflection_data = extract_json_from_text(reflection_response) or {}
+                    reflection_data = extract_json_from_text(
+                        reflection_response) or {}
                     self.logger.info(
                         f"SelfReflectStrategy: LLM reflection for {node_name}: {reflection_data.get('analysis', 'No analysis')}"
                     )
@@ -253,7 +256,8 @@ Provide your analysis in JSON format:
                     )
 
                     if context is not None:
-                        output = handler_func(**modified_params, context=context)
+                        output = handler_func(
+                            **modified_params, context=context)
                     else:
                         output = handler_func(**modified_params)
 
@@ -265,7 +269,7 @@ Provide your analysis in JSON format:
                         success=True,
                         node_name=node_name,
                         node_path=[node_name],
-                        node_type=NodeType.HANDLER,
+                        node_type=NodeType.ACTION,
                         input=user_input,
                         output=output,
                         error=None,
@@ -279,7 +283,8 @@ Provide your analysis in JSON format:
                     )
                     # Try with original parameters as fallback
                     if context is not None:
-                        output = handler_func(**validated_params, context=context)
+                        output = handler_func(
+                            **validated_params, context=context)
                     else:
                         output = handler_func(**validated_params)
 
@@ -287,7 +292,7 @@ Provide your analysis in JSON format:
                         success=True,
                         node_name=node_name,
                         node_path=[node_name],
-                        node_type=NodeType.HANDLER,
+                        node_type=NodeType.ACTION,
                         input=user_input,
                         output=output,
                         error=None,
@@ -401,7 +406,8 @@ Common parameter modifications:
                                     if new_value == "abs(x)":
                                         final_params[key] = abs(original_value)
                                     elif new_value == "max(0, x)":
-                                        final_params[key] = max(0, original_value)
+                                        final_params[key] = max(
+                                            0, original_value)
                                     else:
                                         # Keep original value if conversion fails
                                         final_params[key] = original_value
@@ -484,7 +490,7 @@ Common parameter modifications:
                     success=True,
                     node_name=node_name,
                     node_path=[node_name],
-                    node_type=NodeType.HANDLER,
+                    node_type=NodeType.ACTION,
                     input=user_input,
                     output=output,
                     error=None,
@@ -593,7 +599,7 @@ class RetryWithAlternatePromptStrategy(RemediationStrategy):
                     success=True,
                     node_name=node_name,
                     node_path=[node_name],
-                    node_type=NodeType.HANDLER,
+                    node_type=NodeType.ACTION,
                     input=user_input,
                     output=output,
                     error=None,
@@ -660,7 +666,8 @@ def create_retry_strategy(
     max_attempts: int = 3, base_delay: float = 1.0
 ) -> RemediationStrategy:
     """Create a retry strategy with specified parameters."""
-    strategy = RetryOnFailStrategy(max_attempts=max_attempts, base_delay=base_delay)
+    strategy = RetryOnFailStrategy(
+        max_attempts=max_attempts, base_delay=base_delay)
     register_remediation_strategy("retry_on_fail", strategy)
     return strategy
 

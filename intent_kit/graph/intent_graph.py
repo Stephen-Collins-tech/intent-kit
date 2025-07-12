@@ -23,7 +23,7 @@ from intent_kit.node import ExecutionError
 from intent_kit.node.enums import NodeType
 from intent_kit.node import TreeNode
 import os
-from intent_kit.classifiers import classify_intent_chunk
+from intent_kit.node.classifiers import classify_intent_chunk
 from intent_kit.types import IntentAction
 
 # Add imports for visualization
@@ -106,7 +106,8 @@ class IntentGraph:
         if validate:
             try:
                 self.validate_graph()
-                self.logger.info("Graph validation passed after adding root node")
+                self.logger.info(
+                    "Graph validation passed after adding root node")
             except GraphValidationError as e:
                 self.logger.error(
                     f"Graph validation failed after adding root node: {e.message}"
@@ -126,7 +127,8 @@ class IntentGraph:
             self.root_nodes.remove(root_node)
             self.logger.info(f"Removed root node: {root_node.name}")
         else:
-            self.logger.warning(f"Root node '{root_node.name}' not found for removal")
+            self.logger.warning(
+                f"Root node '{root_node.name}' not found for removal")
 
     def list_root_nodes(self) -> List[str]:
         """
@@ -457,7 +459,8 @@ class IntentGraph:
                         ),
                     )
                     children_results.append(error_result)
-                    all_errors.append(f"No root node found for chunk: '{chunk_text}'")
+                    all_errors.append(
+                        f"No root node found for chunk: '{chunk_text}'")
                     if debug:
                         self.logger.error(
                             f"No root node found for chunk: '{chunk_text}'"
@@ -550,12 +553,15 @@ class IntentGraph:
                         f"Root node '{root_node.name}' failed: {error_message}"
                     )
                     if debug:
-                        self.logger.error(f"Root node '{root_node.name}' failed: {e}")
+                        self.logger.error(
+                            f"Root node '{root_node.name}' failed: {e}")
             elif action == IntentAction.SPLIT:
                 # Recursively split and route
                 if debug:
-                    self.logger.info(f"Recursively splitting chunk: '{chunk_text}'")
-                sub_chunks = self._call_splitter(chunk_text, debug, **splitter_kwargs)
+                    self.logger.info(
+                        f"Recursively splitting chunk: '{chunk_text}'")
+                sub_chunks = self._call_splitter(
+                    chunk_text, debug, **splitter_kwargs)
                 # Add sub_chunks to the front of the queue for processing
                 chunks_to_process = sub_chunks + chunks_to_process
             elif action == IntentAction.CLARIFY:
@@ -577,7 +583,8 @@ class IntentGraph:
                     ),
                 )
                 children_results.append(error_result)
-                all_errors.append(f"Clarification needed for chunk: '{chunk_text}'")
+                all_errors.append(
+                    f"Clarification needed for chunk: '{chunk_text}'")
                 if debug:
                     self.logger.warning(
                         f"Clarification needed for chunk: '{chunk_text}'"
@@ -625,7 +632,8 @@ class IntentGraph:
                 children_results.append(error_result)
                 all_errors.append(f"Unknown action for chunk: '{chunk_text}'")
                 if debug:
-                    self.logger.error(f"Unknown action for chunk: '{chunk_text}'")
+                    self.logger.error(
+                        f"Unknown action for chunk: '{chunk_text}'")
 
         # Check if we hit the recursion limit
         if len(processed_chunks) >= max_recursion_depth:
@@ -714,7 +722,8 @@ class IntentGraph:
         visualization_html = None
         if self.visualize:
             try:
-                html_path = self._render_execution_graph(children_results, user_input)
+                html_path = self._render_execution_graph(
+                    children_results, user_input)
                 visualization_html = html_path
             except Exception as e:
                 self.logger.error(f"Visualization failed: {e}")
@@ -766,7 +775,8 @@ class IntentGraph:
             from pyvis.network import Network
 
             # Build the graph from the execution path
-            net = Network(height="600px", width="100%", directed=True, notebook=False)
+            net = Network(height="600px", width="100%",
+                          directed=True, notebook=False)
             net.barnes_hut()
             execution_paths = []
 
@@ -826,7 +836,8 @@ class IntentGraph:
                     net.add_edge(last_node_id, node_id)
                 last_node_id = node_id
             if not execution_paths:
-                net.add_node("no_path", label="No execution path", color="#cccccc")
+                net.add_node("no_path", label="No execution path",
+                             color="#cccccc")
 
             # Save to HTML file
             html_dir = os.path.join(os.getcwd(), "intentkit_graphs")
@@ -912,7 +923,8 @@ class IntentGraph:
                         "modified_by": field.modified_by,
                         "value": field.value,
                     }
-                    state["fields"][key] = {"value": value, "metadata": metadata}
+                    state["fields"][key] = {
+                        "value": value, "metadata": metadata}
                     # Also add the key directly to the state for backward compatibility
                     state[key] = value
 
@@ -961,7 +973,8 @@ class IntentGraph:
 
         # Detailed context tracing
         if context_trace:
-            self._log_detailed_context_trace(state_before, state_after, node_name)
+            self._log_detailed_context_trace(
+                state_before, state_after, node_name)
 
     def _log_detailed_context_trace(
         self, state_before: Dict[str, Any], state_after: Dict[str, Any], node_name: str
@@ -986,7 +999,8 @@ class IntentGraph:
                 else None
             )
             value_after = (
-                fields_after.get(key, {}).get("value") if key in fields_after else None
+                fields_after.get(key, {}).get(
+                    "value") if key in fields_after else None
             )
 
             if value_before != value_after:

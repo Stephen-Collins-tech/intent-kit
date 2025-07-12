@@ -1,12 +1,19 @@
-from typing import Any, Callable, List, Optional, Dict, Union
-from intent_kit.node.base import TreeNode
-from intent_kit.node.enums import NodeType
-from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult, ExecutionError
-from intent_kit.handlers.remediation import (
-    get_remediation_strategy,
+"""
+Classifier node implementation.
+
+This module provides the ClassifierNode class which routes user input
+to child nodes based on classification logic.
+"""
+
+from typing import Any, Callable, List, Optional, Set, Union, Dict
+from ..actions.remediation import (
     RemediationStrategy,
+    get_remediation_strategy,
 )
+from ..base import TreeNode
+from ..enums import NodeType
+from ..types import ExecutionResult, ExecutionError
+from intent_kit.context import IntentContext
 
 
 class ClassifierNode(TreeNode):
@@ -21,7 +28,8 @@ class ClassifierNode(TreeNode):
         children: List["TreeNode"],
         description: str = "",
         parent: Optional["TreeNode"] = None,
-        remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
+        remediation_strategies: Optional[List[Union[str,
+                                                    RemediationStrategy]]] = None,
     ):
         super().__init__(
             name=name, description=description, children=children, parent=parent

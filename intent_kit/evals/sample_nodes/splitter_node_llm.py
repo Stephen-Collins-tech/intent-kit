@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict, Any
-from intent_kit.splitters.node import SplitterNode
+from intent_kit.node.splitters import SplitterNode
 
 
 def split_text_llm(
@@ -18,7 +18,8 @@ def split_text_llm(
         # Simple splitting based on common conjunctions
         import re
 
-        conjunctions = [" and ", " also ", " plus ", " as well as ", " furthermore "]
+        conjunctions = [" and ", " also ", " plus ",
+                        " as well as ", " furthermore "]
         for conj in conjunctions:
             if conj in user_input.lower():
                 parts = user_input.split(conj)
@@ -31,9 +32,11 @@ def split_text_llm(
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 
     if not api_key:
-        raise ValueError(f"Environment variable {provider.upper()}_API_KEY not set")
+        raise ValueError(
+            f"Environment variable {provider.upper()}_API_KEY not set")
 
-    llm_config = {"provider": provider, "model": "gpt-4.1-mini", "api_key": api_key}
+    llm_config = {"provider": provider,
+                  "model": "gpt-4.1-mini", "api_key": api_key}
 
     try:
         llm_client = LLMFactory.create_client(llm_config)
@@ -89,7 +92,8 @@ class SplitterWrapper:
         self.splitter_function = splitter_node.splitter_function
 
     def execute(self, user_input: str, context=None):
-        chunks = self.splitter_function(user_input, debug=False, context=context)
+        chunks = self.splitter_function(
+            user_input, debug=False, context=context)
         return type("Result", (), {"success": True, "output": chunks, "error": None})()
 
 

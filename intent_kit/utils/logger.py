@@ -1,7 +1,11 @@
-class Logger:
-    def __init__(self, name, level=""):
-        self.name = name
-        self.level = level
+import os
+
+
+class ColorManager:
+    """Handles all color-related logic for terminal output."""
+
+    def __init__(self):
+        pass
 
     def get_color(self, level):
         if level == "info":
@@ -188,42 +192,114 @@ class Logger:
         """Colorize section separators with dim grey."""
         return self.colorize(text, "separator")
 
+
+class Logger:
+    # Valid log levels in logical order (from most verbose to least)
+    VALID_LOG_LEVELS = [
+        "trace",      # Most verbose - detailed execution flow
+        "debug",      # Debug information for development
+        "info",       # General information
+        "warning",    # Warnings that don't stop execution
+        "error",      # Errors that affect functionality
+        "critical",   # Critical errors that may cause failure
+        "fatal",      # Fatal errors that will cause termination
+        "off"         # No logging
+    ]
+
+    def __init__(self, name, level=""):
+        self.name = name
+        self.level = level or os.getenv("LOG_LEVEL", "info")
+        self._validate_log_level()
+        self.color_manager = ColorManager()
+
+    def _validate_log_level(self):
+        """Validate the log level and throw exception if invalid."""
+        if self.level not in self.VALID_LOG_LEVELS:
+            valid_levels = ", ".join(self.VALID_LOG_LEVELS)
+            raise ValueError(
+                f"Invalid log level '{self.level}'. "
+                f"Valid levels are: {valid_levels}"
+            )
+
+    def get_valid_log_levels(self):
+        """Return valid log levels in logical order."""
+        return self.VALID_LOG_LEVELS.copy()
+
+    def should_log(self, message_level):
+        """Check if a message at the given level should be logged."""
+        if self.level == "off":
+            return False
+
+        # Get the index of current level and message level
+        try:
+            current_index = self.VALID_LOG_LEVELS.index(self.level)
+            message_index = self.VALID_LOG_LEVELS.index(message_level)
+            # Log if message level is at or above current level (lower index = more verbose)
+            return message_index >= current_index
+        except ValueError:
+            # If message_level is not in VALID_LOG_LEVELS, don't log it
+            return False
+
+    # Delegate color methods directly to color_manager
+    def __getattr__(self, name):
+        """Delegate color-related methods to color_manager."""
+        if hasattr(self.color_manager, name):
+            return getattr(self.color_manager, name)
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{name}'")
+
     def info(self, message):
+        if not self.should_log("info"):
+            return
         color = self.get_color("info")
         clear = self.clear_color()
         print(f"{color}[INFO]{clear} [{self.name}] {message}")
 
     def error(self, message):
+        if not self.should_log("error"):
+            return
         color = self.get_color("error")
         clear = self.clear_color()
         print(f"{color}[ERROR]{clear} [{self.name}] {message}")
 
     def debug(self, message):
+        if not self.should_log("debug"):
+            return
         color = self.get_color("debug")
         clear = self.clear_color()
         print(f"{color}[DEBUG]{clear} [{self.name}] {message}")
 
     def warning(self, message):
+        if not self.should_log("warning"):
+            return
         color = self.get_color("warning")
         clear = self.clear_color()
         print(f"{color}[WARNING]{clear} [{self.name}] {message}")
 
     def critical(self, message):
+        if not self.should_log("critical"):
+            return
         color = self.get_color("critical")
         clear = self.clear_color()
         print(f"{color}[CRITICAL]{clear} [{self.name}] {message}")
 
     def fatal(self, message):
+        if not self.should_log("fatal"):
+            return
         color = self.get_color("fatal")
         clear = self.clear_color()
         print(f"{color}[FATAL]{clear} [{self.name}] {message}")
 
     def trace(self, message):
+        if not self.should_log("trace"):
+            return
         color = self.get_color("trace")
         clear = self.clear_color()
         print(f"{color}[TRACE]{clear} [{self.name}] {message}")
 
     def log(self, level, message):
+        if not self.should_log(level):
+            return
         color = self.get_color(level)
         clear = self.clear_color()
         print(f"{color}[{level}]{clear} [{self.name}] {message}")

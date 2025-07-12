@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any
-from intent_kit.classifiers.node import ClassifierNode
-from intent_kit.handlers.node import HandlerNode
+from intent_kit.node.classifiers import ClassifierNode
+from intent_kit.node.handlers import HandlerNode
 from intent_kit.context import IntentContext
 from intent_kit.node.base import TreeNode
 
@@ -43,9 +43,11 @@ def extract_weather_args_llm(
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 
     if not api_key:
-        raise ValueError(f"Environment variable {provider.upper()}_API_KEY not set")
+        raise ValueError(
+            f"Environment variable {provider.upper()}_API_KEY not set")
 
-    llm_config = {"provider": provider, "model": "gpt-4.1-mini", "api_key": api_key}
+    llm_config = {"provider": provider,
+                  "model": "gpt-4.1-mini", "api_key": api_key}
 
     try:
         llm_client = LLMFactory.create_client(llm_config)
@@ -149,9 +151,11 @@ def extract_cancel_args_llm(
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 
     if not api_key:
-        raise ValueError(f"Environment variable {provider.upper()}_API_KEY not set")
+        raise ValueError(
+            f"Environment variable {provider.upper()}_API_KEY not set")
 
-    llm_config = {"provider": provider, "model": "gpt-3.5-turbo", "api_key": api_key}
+    llm_config = {"provider": provider,
+                  "model": "gpt-3.5-turbo", "api_key": api_key}
 
     try:
         llm_client = LLMFactory.create_client(llm_config)
@@ -262,9 +266,11 @@ def intent_classifier_llm(
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 
     if not api_key:
-        raise ValueError(f"Environment variable {provider.upper()}_API_KEY not set")
+        raise ValueError(
+            f"Environment variable {provider.upper()}_API_KEY not set")
 
-    llm_config = {"provider": provider, "model": "gpt-3.5-turbo", "api_key": api_key}
+    llm_config = {"provider": provider,
+                  "model": "gpt-3.5-turbo", "api_key": api_key}
 
     try:
         llm_client = LLMFactory.create_client(llm_config)

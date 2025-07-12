@@ -5,7 +5,7 @@ Demonstrates the new context debugging features in under 150 lines.
 """
 
 import os
-from intent_kit import IntentGraphBuilder, handler, llm_classifier
+from intent_kit import IntentGraphBuilder, action, llm_classifier
 from intent_kit import trace_context_execution
 from intent_kit.context import IntentContext
 from dotenv import load_dotenv
@@ -20,18 +20,18 @@ LLM_CONFIG = {
 }
 
 
-def greet_handler(name: str, context: IntentContext) -> str:
-    """Simple greet handler with context tracking."""
+def greet_action(name: str, context: IntentContext) -> str:
+    """Simple greet action with context tracking."""
     count = context.get("greeting_count", 0) + 1
     context.set("greeting_count", count, "greet")
     context.set("last_greeted", name, "greet")
     return f"Hello {name}! (Greeting #{count})"
 
 
-def calculate_handler(
+def calculate_action(
     operation: str, a: float, b: float, context: IntentContext
 ) -> str:
-    """Simple calculate handler with history."""
+    """Simple calculate action with history."""
     ops = {"add": "+", "plus": "+", "multiply": "*", "times": "*"}
     op = ops.get(operation.lower(), operation)
     result = eval(f"{a} {op} {b}")
@@ -44,20 +44,20 @@ def calculate_handler(
 
 def build_graph():
     """Build a simple intent graph with context debugging."""
-    handlers = [
-        handler(
+    actions = [
+        action(
             name="greet",
             description="Greet user",
-            handler_func=greet_handler,
+            action_func=greet_action,
             param_schema={"name": str},
             llm_config=LLM_CONFIG,
             context_inputs={"greeting_count"},
             context_outputs={"greeting_count", "last_greeted"},
         ),
-        handler(
+        action(
             name="calculate",
             description="Calculate",
-            handler_func=calculate_handler,
+            action_func=calculate_action,
             param_schema={"operation": str, "a": float, "b": float},
             llm_config=LLM_CONFIG,
             context_inputs={"calc_history"},
@@ -65,12 +65,13 @@ def build_graph():
         ),
     ]
 
-    classifier = llm_classifier(name="root", children=handlers, llm_config=LLM_CONFIG)
+    classifier = llm_classifier(
+        name="root", children=actions, llm_config=LLM_CONFIG)
     return (
         IntentGraphBuilder()
         .root(classifier)
-        .debug_context(True)
-        .context_trace(True)
+        ._debug_context(True)
+        ._context_trace(True)
         .build()
     )
 

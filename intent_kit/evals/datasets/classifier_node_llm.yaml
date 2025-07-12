@@ -1,6 +1,6 @@
 dataset:
   name: "classifier_node_llm"
-  description: "Test LLM-powered intent classification for weather and cancellation handlers"
+  description: "Test LLM-powered intent classification for weather and cancellation actions"
   node_type: "classifier"
   node_name: "classifier_node_llm"
 

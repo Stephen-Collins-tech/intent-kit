@@ -1,7 +1,7 @@
 """Keyword-based classifier module."""
 
 from typing import Optional, Dict, Any
-from ..node import TreeNode
+from ..base import TreeNode
 
 
 def keyword_classifier(

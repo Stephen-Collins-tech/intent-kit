@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional, List, cast
 from datetime import datetime
 import json
 from . import IntentContext
-from .dependencies import ContextDependencies, analyze_handler_dependencies
+from .dependencies import ContextDependencies, analyze_action_dependencies
 from intent_kit.node import TreeNode
 from intent_kit.utils.logger import Logger
 from . import ContextHistoryEntry
@@ -183,7 +183,7 @@ def _analyze_node_dependencies(node: TreeNode) -> Optional[ContextDependencies]:
     if hasattr(node, "handler"):
         handler = getattr(node, "handler")
         if callable(handler):
-            return analyze_handler_dependencies(handler)
+            return analyze_action_dependencies(handler)
 
     # Check if node has a classifier function (ClassifierNode)
     if hasattr(node, "classifier"):
@@ -371,7 +371,8 @@ def _format_console_trace(trace_data: Dict[str, Any]) -> str:
                 if isinstance(item, dict):
                     lines.append(
                         logger.colorize_key_value(
-                            f"    [{i}]", dict(item), "field_label", "field_value"
+                            f"    [{i}]", dict(
+                                item), "field_label", "field_value"
                         )
                     )
                 else:

@@ -18,8 +18,8 @@ import random
 from dotenv import load_dotenv
 from intent_kit.context import IntentContext
 from intent_kit.node.types import ExecutionResult
-from intent_kit.builder import handler
-from intent_kit.handlers.remediation import (
+from intent_kit import action
+from intent_kit.node.actions import (
     create_self_reflect_strategy,
     create_consensus_vote_strategy,
     create_alternate_prompt_strategy,
@@ -41,7 +41,7 @@ LLM_CONFIG_2 = {
     "api_key": GOOGLE_API_KEY,
 }
 
-# --- Core Handler: Simulates model confusion and ambiguity ---
+# --- Core Action: Simulates model confusion and ambiguity ---
 
 
 def analyze_sentiment(review_text: str, context: IntentContext) -> str:
@@ -67,21 +67,21 @@ def analyze_sentiment(review_text: str, context: IntentContext) -> str:
     return random.choice(["positive", "neutral", "negative"])
 
 
-# --- Remediation Handlers ---
-handlers = [
-    handler(
+# --- Remediation Actions ---
+actions = [
+    action(
         name="self_reflect_sentiment",
         description="Uses self-reflection if it fails on ambiguous reviews.",
-        handler_func=analyze_sentiment,
+        action_func=analyze_sentiment,
         param_schema={"review_text": str},
         remediation_strategies=[
             create_self_reflect_strategy(LLM_CONFIG_1, max_reflections=1)
         ],
     ),
-    handler(
+    action(
         name="consensus_vote_sentiment",
         description="Uses consensus voting between two LLMs on conflicting reviews.",
-        handler_func=analyze_sentiment,
+        action_func=analyze_sentiment,
         param_schema={"review_text": str},
         remediation_strategies=[
             create_consensus_vote_strategy(
@@ -89,12 +89,13 @@ handlers = [
             )
         ],
     ),
-    handler(
+    action(
         name="alternate_prompt_sentiment",
         description="Retries with alternate prompt if ambiguous input causes a failure.",
-        handler_func=analyze_sentiment,
+        action_func=analyze_sentiment,
         param_schema={"review_text": str},
-        remediation_strategies=[create_alternate_prompt_strategy(LLM_CONFIG_1)],
+        remediation_strategies=[
+            create_alternate_prompt_strategy(LLM_CONFIG_1)],
     ),
 ]
 
@@ -125,24 +126,25 @@ def main():
     ]
 
     for i, (review_text, case_desc) in enumerate(test_cases):
-        h = handlers[i]
-        print(f"\n--- Handler: {h.name} ---")
+        a = actions[i]
+        print(f"\n--- Action: {a.name} ---")
         print(f"Review: {review_text}")
         print(f"Case: {case_desc}")
 
         try:
-            result: ExecutionResult = h.execute(user_input=review_text, context=context)
+            result: ExecutionResult = a.execute(
+                user_input=review_text, context=context)
             print(f"Success: {result.success}")
             print(f"Output:  {result.output}")
             if result.error:
                 print(f"Error:   {result.error.message}")
         except Exception as e:
-            print(f"Handler crashed: {e}")
+            print(f"Action crashed: {e}")
 
     print("\n=== What did you just see? ===")
     print("• Self-reflection: Model reviews its own output and tries to fix mistakes.")
     print("• Consensus voting: Multiple models must agree before output is accepted.")
-    print("• Alternate prompt: Handler retries with a new prompt if it can't answer.")
+    print("• Alternate prompt: Action retries with a new prompt if it can't answer.")
 
     if "mock" in OPENAI_API_KEY or "mock" in GOOGLE_API_KEY:
         print(

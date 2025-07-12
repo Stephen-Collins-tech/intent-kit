@@ -1,8 +1,8 @@
 dataset:
-  name: "handler_node_llm"
-  description: "Test LLM-powered argument extraction for booking handler"
-  node_type: "handler"
-  node_name: "handler_node_llm"
+  name: "action_node_llm"
+description: "Test LLM-powered argument extraction for booking action"
+node_type: "action"
+node_name: "action_node_llm"
 
 test_cases:
   - input: "I need to book a flight to Paris"

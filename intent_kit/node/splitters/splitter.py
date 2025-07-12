@@ -1,8 +1,15 @@
+"""
+Splitter node implementation.
+
+This module provides the SplitterNode class which is a node that splits
+user input into multiple intent chunks.
+"""
+
 from typing import List, Optional
-from intent_kit.node.base import TreeNode
-from intent_kit.node.enums import NodeType
+from ..base import TreeNode
+from ..enums import NodeType
+from ..types import ExecutionResult, ExecutionError
 from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult, ExecutionError
 
 
 class SplitterNode(TreeNode):
@@ -34,7 +41,8 @@ class SplitterNode(TreeNode):
         try:
             intent_chunks = self.splitter_function(user_input, debug=False)
             if not intent_chunks:
-                self.logger.warning(f"Splitter '{self.name}' found no intent chunks")
+                self.logger.warning(
+                    f"Splitter '{self.name}' found no intent chunks")
                 return ExecutionResult(
                     success=False,
                     node_name=self.name,
@@ -112,7 +120,8 @@ class SplitterNode(TreeNode):
                 children_results=children_results,
             )
         except Exception as e:
-            self.logger.error(f"Splitter execution error for '{self.name}': {e}")
+            self.logger.error(
+                f"Splitter execution error for '{self.name}': {e}")
             return ExecutionResult(
                 success=False,
                 node_name=self.name,

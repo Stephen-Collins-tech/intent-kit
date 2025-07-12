@@ -32,18 +32,18 @@ Works with any classifier—LLMs, rule-based, or your own.
 No forced dependencies. You define all possible intents and parameters up front, so you always stay in control.
 
 * **Zero required dependencies**: Standard Python or plug in OpenAI, Anthropic, Google, Ollama, etc.
-* **Explicit and safe**: No emergent “agent” magic.
+* **Explicit and safe**: No emergent "agent" magic.
 * **Supports multi-intent, context tracking, validation, and visualization.**
 
 ---
 
 ## Features
 
-* **Tree-based intent graphs**: Compose hierarchical workflows using classifiers and handlers.
+* **Tree-based intent graphs**: Compose hierarchical workflows using classifiers and actions.
 * **Any classifier**: Rule-based, ML, LLM, or custom logic.
 * **Parameter extraction**: Automatic, with type validation and custom validators.
 * **Context/state management**: Dependency tracking and audit trail.
-* **Multi-intent**: Split and route complex requests like “Greet Bob and show weather.”
+* **Multi-intent**: Split and route complex requests like "Greet Bob and show weather."
 * **Visualization**: Interactive graph output (optional).
 * **Robust debugging**: JSON/console output and error tracing.
 
@@ -62,18 +62,18 @@ pip install 'intent-kit[openai,anthropic,google,ollama,viz]'
 ## Quick Start
 
 ```python
-from intent_kit import IntentGraphBuilder, handler, llm_classifier
+from intent_kit import IntentGraphBuilder, action, llm_classifier
 
-greet = handler(
+greet = action(
     name="greet",
     description="Greet the user",
-    handler_func=lambda name, **_: f"Hello {name}!",
+    action_func=lambda name, **_: f"Hello {name}!",
     param_schema={"name": str}
 )
-weather = handler(
+weather = action(
     name="weather",
     description="Get weather info",
-    handler_func=lambda city, **_: f"Weather in {city} is sunny.",
+    action_func=lambda city, **_: f"Weather in {city} is sunny.",
     param_schema={"city": str}
 )
 
@@ -92,10 +92,10 @@ print(result.output)  # → "Hello Alice!"
 
 ## How it Works
 
-* **Define handlers**: Functions for each intent, with schemas.
+* **Define actions**: Functions for each intent, with schemas.
 * **Build classifiers**: Route input with rule-based, LLM, or custom logic.
 * **Build graphs**: Combine everything into a tree.
-* **(Optional) Multi-intent**: Use splitter nodes for “do X and Y” inputs.
+* **(Optional) Multi-intent**: Use splitter nodes for "do X and Y" inputs.
 * **Context/state**: Track session or app state in workflows.
 
 See [`examples/`](examples/) for more.
@@ -106,13 +106,13 @@ See [`examples/`](examples/) for more.
 
 **Test your intent graphs like real software, not just with unit tests.**
 
-intent-kit includes a first-class **Eval API** for benchmarking your workflows against real datasets—YAML or programmatic. It’s built for LLM and intent pipeline evaluation, not just toy examples.
+intent-kit includes a first-class **Eval API** for benchmarking your workflows against real datasets—YAML or programmatic. It's built for LLM and intent pipeline evaluation, not just toy examples.
 
 * **Benchmark entire graphs or single nodes** with real data and reproducible reports.
 * **Supports YAML or code datasets** (inputs, expected outputs, optional context).
 * **Automatic reporting**: Markdown, CSV, and JSON output—easy to share or integrate into CI.
 * **Mock mode** for API-free, cheap testing.
-* **Tracks regressions over time** with date-based and “latest” result archives.
+* **Tracks regressions over time** with date-based and "latest" result archives.
 
 **Minimal eval example:**
 
@@ -128,7 +128,7 @@ result.save_markdown("my_report.md")
 ```
 
 **Why care?**
-Most “agent” and LLM frameworks are untestable black boxes. **intent-kit** is designed for serious, auditable workflow engineering.
+Most "agent" and LLM frameworks are untestable black boxes. **intent-kit** is designed for serious, auditable workflow engineering.
 
 [Learn more in the docs →](https://docs.intentkit.io/evaluation/)
 
@@ -136,7 +136,7 @@ Most “agent” and LLM frameworks are untestable black boxes. **intent-kit** i
 
 ## API Highlights
 
-* `handler(...)`: Create a leaf node (executes your function, extracts arguments)
+* `action(...)`: Create a leaf node (executes your function, extracts arguments)
 * `llm_classifier(...)`: Classifier node using LLM or fallback rule-based logic
 * `IntentGraphBuilder()`: Fluent graph assembly
 * `rule_splitter_node(...)`, `llm_splitter_node(...)`: Multi-intent input

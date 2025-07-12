@@ -4,7 +4,7 @@ Tests for intent_kit.classifiers.chunk_classifier module.
 
 from unittest.mock import patch
 
-from intent_kit.classifiers.chunk_classifier import (
+from intent_kit.node.classifiers import (
     classify_intent_chunk,
     _create_classification_prompt,
     _parse_classification_response,
@@ -136,7 +136,8 @@ class TestParseClassificationResponse:
             "reason": "Single clear intent",
         }
 
-        result = _parse_classification_response("mock response", "Book a flight")
+        result = _parse_classification_response(
+            "mock response", "Book a flight")
 
         assert result["chunk_text"] == "Book a flight"
         assert result["classification"] == IntentClassification.ATOMIC
@@ -162,7 +163,8 @@ class TestParseClassificationResponse:
             "metadata": {"confidence": 0.7, "reason": "Manually parsed"},
         }
 
-        result = _parse_classification_response("mock response", "Book a flight")
+        result = _parse_classification_response(
+            "mock response", "Book a flight")
 
         mock_manual.assert_called_once_with("mock response", "Book a flight")
         assert result["classification"] == IntentClassification.ATOMIC
@@ -185,7 +187,8 @@ class TestParseClassificationResponse:
             "metadata": {"confidence": 0.7, "reason": "Manually parsed"},
         }
 
-        result = _parse_classification_response("mock response", "Book a flight")
+        result = _parse_classification_response(
+            "mock response", "Book a flight")
 
         mock_manual.assert_called_once_with("mock response", "Book a flight")
         assert result["classification"] == IntentClassification.ATOMIC
@@ -208,7 +211,8 @@ class TestParseClassificationResponse:
             "metadata": {"confidence": 0.7, "reason": "Manually parsed"},
         }
 
-        result = _parse_classification_response("mock response", "Book a flight")
+        result = _parse_classification_response(
+            "mock response", "Book a flight")
 
         mock_manual.assert_called_once_with("mock response", "Book a flight")
         assert result["classification"] == IntentClassification.ATOMIC
@@ -226,7 +230,8 @@ class TestParseClassificationResponse:
             "metadata": {"confidence": 0.7, "reason": "Manually parsed"},
         }
 
-        result = _parse_classification_response("mock response", "Book a flight")
+        result = _parse_classification_response(
+            "mock response", "Book a flight")
 
         mock_manual.assert_called_once_with("mock response", "Book a flight")
         assert result["classification"] == IntentClassification.ATOMIC
@@ -376,7 +381,8 @@ class TestFallbackClassify:
 
     def test_fallback_classify_multiple_conjunctions(self):
         """Test fallback classification with multiple conjunctions."""
-        result = _fallback_classify("Cancel flight and update email and get weather")
+        result = _fallback_classify(
+            "Cancel flight and update email and get weather")
 
         # Current logic only checks for single conjunctions, so this defaults to atomic
         # since "update email and get weather" doesn't contain recognized action verbs

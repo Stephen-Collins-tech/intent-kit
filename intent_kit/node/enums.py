@@ -12,7 +12,7 @@ class NodeType(Enum):
     UNKNOWN = "unknown"
 
     # Specialized node types
-    HANDLER = "handler"
+    ACTION = "action"     # New preferred name
     CLASSIFIER = "classifier"
     SPLITTER = "splitter"
     CLARIFY = "clarify"

@@ -10,34 +10,37 @@ This library provides:
 """
 
 from .node import TreeNode, NodeType
-from .classifiers import ClassifierNode
-from .handlers import HandlerNode
-from .splitters import SplitterNode
-from .builder import (
-    IntentGraphBuilder,
-    handler,
+from .node.classifiers import ClassifierNode
+from .node.actions import ActionNode
+from .node.splitters import SplitterNode
+from .builders import IntentGraphBuilder
+from .utils.node_factory import (
+    action,
     llm_classifier,
     llm_splitter_node,
     rule_splitter_node,
     create_intent_graph,
 )
 from .graph import IntentGraph
+from .graph.registry import (
+    FunctionRegistry,
+)
 from .context import IntentContext
 from .context.debug import (
     get_context_dependencies,
     validate_context_flow,
     trace_context_execution,
 )
-from .classifiers import keyword_classifier
-from .classifiers.llm_classifier import create_llm_classifier, create_llm_arg_extractor
-from .splitters import rule_splitter, llm_splitter
+from .node.classifiers import keyword_classifier
+from .node.classifiers import create_llm_classifier, create_llm_arg_extractor
+from .node.splitters import rule_splitter, llm_splitter
 from .services.llm_factory import LLMFactory
 
 __version__ = "0.1.0"
 
 __all__ = [
     # Core components
-    "HandlerNode",
+    "ActionNode",
     "TreeNode",
     "NodeType",
     "ClassifierNode",
@@ -55,7 +58,7 @@ __all__ = [
     "LLMFactory",
     # New high-level API (recommended)
     "IntentGraphBuilder",
-    "handler",
+    "action",
     "llm_classifier",
     "llm_splitter_node",
     "rule_splitter_node",
@@ -64,4 +67,6 @@ __all__ = [
     "get_context_dependencies",
     "validate_context_flow",
     "trace_context_execution",
+    # Serialization utilities
+    "FunctionRegistry",
 ]

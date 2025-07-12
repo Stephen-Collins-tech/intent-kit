@@ -3,8 +3,8 @@
 Simple test script to verify the validation functionality.
 """
 
-from intent_kit.builder import handler, rule_splitter_node
-from intent_kit.classifiers import ClassifierNode
+from intent_kit import handler, rule_splitter_node
+from intent_kit.node.classifiers import ClassifierNode
 from intent_kit.graph import IntentGraph
 from intent_kit.graph.validation import GraphValidationError
 

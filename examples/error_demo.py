@@ -6,8 +6,8 @@ This example shows how the new ExecutionError dataclass provides
 rich, structured error information instead of simple strings.
 """
 
-from intent_kit import handler
-from intent_kit.classifiers.keyword import keyword_classifier
+from intent_kit import action
+from intent_kit.node.classifiers import keyword_classifier
 
 
 def extract_args(user_input: str, context=None) -> dict:
@@ -28,8 +28,8 @@ def validate_args(params: dict) -> bool:
     return bool(params.get("name") and params.get("age"))
 
 
-def greet_handler(name: str, age: int) -> str:
-    """Handler that might raise an exception."""
+def greet_action(name: str, age: int) -> str:
+    """Action that might raise an exception."""
     if age < 0:
         raise ValueError("Age cannot be negative")
     if age > 150:
@@ -42,33 +42,33 @@ def main():
     print("=== Intent Kit Structured Error Demo ===\n")
 
     # Create intent tree root node using the new API
-    greet_handler_node = handler(
+    greet_action_node = action(
         name="Greet",
         description="Greet someone with their name and age",
-        handler_func=greet_handler,
+        action_func=greet_action,
         param_schema={"name": str, "age": int},
         # No llm_config = uses rule-based extraction
     )
 
     # Create a classifier node manually since we need a custom classifier
-    from intent_kit.classifiers import ClassifierNode
+    from intent_kit.node.classifiers import ClassifierNode
 
     root_node = ClassifierNode(
         name="Root",
         classifier=keyword_classifier,
-        children=[greet_handler_node],
+        children=[greet_action_node],
         description="Demo intent tree",
     )
 
     # Set parent reference
-    greet_handler_node.parent = root_node
+    greet_action_node.parent = root_node
 
     # Test cases that will trigger different types of errors
     test_cases = [
         "Greet John 30",  # Success
         "Greet",  # Validation failure (missing age)
-        "Greet John -5",  # Handler error (negative age)
-        "Greet John 200",  # Handler error (unrealistic age)
+        "Greet John -5",  # Action error (negative age)
+        "Greet John 200",  # Action error (unrealistic age)
         "Greet John abc",  # Type validation error (age not a number)
     ]
 

@@ -4,7 +4,7 @@ Specific tests for llm_splitter function.
 
 import unittest
 from unittest.mock import Mock
-from intent_kit.splitters.llm_splitter import (
+from intent_kit.node.splitters import (
     llm_splitter,
     _create_splitting_prompt,
     _parse_llm_response,
@@ -33,21 +33,24 @@ class TestLLMSplitterFunction(unittest.TestCase):
     def test_llm_splitting_success_single_intent(self):
         """Test successful LLM-based splitting with single intent."""
         self.mock_llm_client.generate.return_value = '["I need travel help"]'
-        result = llm_splitter("I need travel help", llm_client=self.mock_llm_client)
+        result = llm_splitter("I need travel help",
+                              llm_client=self.mock_llm_client)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0], "I need travel help")
 
     def test_llm_splitting_fallback_no_client(self):
         """Test fallback to rule-based when no LLM client provided."""
         # Should fallback to rule_splitter
-        result = llm_splitter("travel help and account support", llm_client=None)
+        result = llm_splitter(
+            "travel help and account support", llm_client=None)
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], "travel help")
         self.assertEqual(result[1], "account support")
 
     def test_llm_splitting_fallback_exception(self):
         """Test fallback to rule-based when LLM raises exception."""
-        self.mock_llm_client.generate.side_effect = Exception("LLM service unavailable")
+        self.mock_llm_client.generate.side_effect = Exception(
+            "LLM service unavailable")
         result = llm_splitter(
             "travel help and account support", llm_client=self.mock_llm_client
         )
