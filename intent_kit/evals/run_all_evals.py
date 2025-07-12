@@ -5,8 +5,8 @@ run_all_evals.py
 Run evaluations on all datasets and generate comprehensive markdown reports.
 """
 
+from intent_kit.evals import load_dataset
 from intent_kit.evals.run_node_eval import (
-    load_dataset,
     get_node_from_module,
     evaluate_node,
     generate_markdown_report,
@@ -150,8 +150,8 @@ def run_all_evaluations_internal(
 
         # Load dataset
         dataset = load_dataset(dataset_file)
-        dataset_name = dataset["dataset"]["name"]
-        node_name = dataset["dataset"]["node_name"]
+        dataset_name = dataset.name
+        node_name = dataset.node_name
 
         # Determine module name based on node name
         if "llm" in node_name:
@@ -170,7 +170,10 @@ def run_all_evaluations_internal(
             continue
 
         # Run evaluation
-        test_cases = dataset["test_cases"]
+        test_cases = [
+            {"input": tc.input, "expected": tc.expected, "context": tc.context}
+            for tc in dataset.test_cases
+        ]
         result = evaluate_node(node, test_cases, dataset_name)
         results.append(result)
 
@@ -206,10 +209,10 @@ def generate_comprehensive_report(
 
     report = f"""# Comprehensive Evaluation Report{mock_indicator}
 
-**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  
-**Mode:** {'Mock (simulated responses)' if mock_mode else 'Live (real API calls)'}  
-**Total Datasets:** {total_datasets}  
-**Total Tests:** {total_tests}  
+**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+**Mode:** {'Mock (simulated responses)' if mock_mode else 'Live (real API calls)'}
+**Total Datasets:** {total_datasets}
+**Total Tests:** {total_tests}
 **Overall Accuracy:** {overall_accuracy:.1%}
 
 ## Executive Summary

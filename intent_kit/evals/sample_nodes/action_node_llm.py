@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from intent_kit.node.actions.action import ActionNode as HandlerNode
+from intent_kit.node.actions.action import ActionNode
 from intent_kit.context import IntentContext
 
 
@@ -128,7 +128,7 @@ def booking_handler(destination: str, date: str, context: IntentContext) -> str:
 
 
 # Create the handler node with LLM extraction
-handler_node_llm = HandlerNode(
+action_node_llm = ActionNode(
     name="handler_node_llm",
     param_schema={"destination": str, "date": str},
     action=booking_handler,
