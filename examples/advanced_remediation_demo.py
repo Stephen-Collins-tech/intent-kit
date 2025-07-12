@@ -94,8 +94,7 @@ actions = [
         description="Retries with alternate prompt if ambiguous input causes a failure.",
         action_func=analyze_sentiment,
         param_schema={"review_text": str},
-        remediation_strategies=[
-            create_alternate_prompt_strategy(LLM_CONFIG_1)],
+        remediation_strategies=[create_alternate_prompt_strategy(LLM_CONFIG_1)],
     ),
 ]
 
@@ -132,8 +131,7 @@ def main():
         print(f"Case: {case_desc}")
 
         try:
-            result: ExecutionResult = a.execute(
-                user_input=review_text, context=context)
+            result: ExecutionResult = a.execute(user_input=review_text, context=context)
             print(f"Success: {result.success}")
             print(f"Output:  {result.output}")
             if result.error:

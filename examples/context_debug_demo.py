@@ -28,9 +28,7 @@ def greet_action(name: str, context: IntentContext) -> str:
     return f"Hello {name}! (Greeting #{count})"
 
 
-def calculate_action(
-    operation: str, a: float, b: float, context: IntentContext
-) -> str:
+def calculate_action(operation: str, a: float, b: float, context: IntentContext) -> str:
     """Simple calculate action with history."""
     ops = {"add": "+", "plus": "+", "multiply": "*", "times": "*"}
     op = ops.get(operation.lower(), operation)
@@ -65,8 +63,7 @@ def build_graph():
         ),
     ]
 
-    classifier = llm_classifier(
-        name="root", children=actions, llm_config=LLM_CONFIG)
+    classifier = llm_classifier(name="root", children=actions, llm_config=LLM_CONFIG)
     return (
         IntentGraphBuilder()
         .root(classifier)

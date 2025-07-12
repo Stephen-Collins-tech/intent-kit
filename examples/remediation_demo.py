@@ -37,17 +37,23 @@ LLM_CONFIG = {
 # --- Core Actions ---
 
 
-def unreliable_calculator(operation: str, a: float, b: float, context: IntentContext) -> str:
+def unreliable_calculator(
+    operation: str, a: float, b: float, context: IntentContext
+) -> str:
     """Unreliable calculator that sometimes fails."""
     if random.random() < 0.3:  # 30% chance of failure
         raise ValueError("Random calculation failure")
 
     # Map word operations to mathematical operators
     operation_map = {
-        "plus": "+", "add": "+",
-        "minus": "-", "subtract": "-",
-        "times": "*", "multiply": "*",
-        "divided": "/", "divide": "/",
+        "plus": "+",
+        "add": "+",
+        "minus": "-",
+        "subtract": "-",
+        "times": "*",
+        "multiply": "*",
+        "divided": "/",
+        "divide": "/",
     }
     math_op = operation_map.get(operation.lower(), operation)
 
@@ -58,14 +64,20 @@ def unreliable_calculator(operation: str, a: float, b: float, context: IntentCon
         raise ValueError(f"Calculation error: {str(e)}")
 
 
-def reliable_calculator(operation: str, a: float, b: float, context: IntentContext) -> str:
+def reliable_calculator(
+    operation: str, a: float, b: float, context: IntentContext
+) -> str:
     """Reliable calculator as fallback."""
     # Map word operations to mathematical operators
     operation_map = {
-        "plus": "+", "add": "+",
-        "minus": "-", "subtract": "-",
-        "times": "*", "multiply": "*",
-        "divided": "/", "divide": "/",
+        "plus": "+",
+        "add": "+",
+        "minus": "-",
+        "subtract": "-",
+        "times": "*",
+        "multiply": "*",
+        "divided": "/",
+        "divide": "/",
     }
     math_op = operation_map.get(operation.lower(), operation)
 
@@ -90,7 +102,9 @@ def create_custom_remediation_strategy():
 
     class LogAndContinueStrategy(RemediationStrategy):
         def __init__(self):
-            super().__init__("log_and_continue", "Log error and return default response")
+            super().__init__(
+                "log_and_continue", "Log error and return default response"
+            )
 
         def execute(
             self,
@@ -101,7 +115,8 @@ def create_custom_remediation_strategy():
             **kwargs,
         ) -> Optional[ExecutionResult]:
             self.logger.warning(
-                f"LogAndContinue: {node_name} failed, continuing with default")
+                f"LogAndContinue: {node_name} failed, continuing with default"
+            )
 
             return ExecutionResult(
                 success=True,
@@ -208,7 +223,8 @@ def main():
 
         try:
             result: ExecutionResult = root_node.execute(
-                user_input=user_input, context=context)
+                user_input=user_input, context=context
+            )
             print(f"Success: {result.success}")
             print(f"Output: {result.output}")
             if result.error:

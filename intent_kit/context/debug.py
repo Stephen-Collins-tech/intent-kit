@@ -371,8 +371,7 @@ def _format_console_trace(trace_data: Dict[str, Any]) -> str:
                 if isinstance(item, dict):
                     lines.append(
                         logger.colorize_key_value(
-                            f"    [{i}]", dict(
-                                item), "field_label", "field_value"
+                            f"    [{i}]", dict(item), "field_label", "field_value"
                         )
                     )
                 else:

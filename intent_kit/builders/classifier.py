@@ -9,7 +9,10 @@ from typing import Callable, List, Optional, Union
 from intent_kit.node import TreeNode
 from intent_kit.node.classifiers import ClassifierNode
 from intent_kit.node.actions import RemediationStrategy
-from intent_kit.utils.node_factory import create_classifier_node, create_default_classifier
+from intent_kit.utils.node_factory import (
+    create_classifier_node,
+    create_default_classifier,
+)
 from .base import Builder
 
 
@@ -25,8 +28,9 @@ class ClassifierBuilder(Builder):
         super().__init__(name)
         self.classifier_func: Optional[Callable] = None
         self.children: List[TreeNode] = []
-        self.remediation_strategies: Optional[List[Union[str,
-                                                         RemediationStrategy]]] = None
+        self.remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = (
+            None
+        )
 
     def with_classifier(self, classifier_func: Callable) -> "ClassifierBuilder":
         """Set the classifier function.
@@ -64,7 +68,9 @@ class ClassifierBuilder(Builder):
         self.children.append(child)
         return self
 
-    def with_remediation_strategies(self, strategies: List[Union[str, RemediationStrategy]]) -> "ClassifierBuilder":
+    def with_remediation_strategies(
+        self, strategies: List[Union[str, RemediationStrategy]]
+    ) -> "ClassifierBuilder":
         """Set remediation strategies.
 
         Args:
@@ -86,8 +92,7 @@ class ClassifierBuilder(Builder):
             ValueError: If required fields are missing
         """
         # Validate required fields using base class method
-        self._validate_required_field(
-            "children", self.children, "with_children")
+        self._validate_required_field("children", self.children, "with_children")
 
         # Use default classifier if none provided
         if not self.classifier_func:

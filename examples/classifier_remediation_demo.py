@@ -44,10 +44,14 @@ def calculate_action(operation: str, a: float, b: float, context: IntentContext)
     """Simple calculation action."""
     # Map word operations to mathematical operators
     operation_map = {
-        "plus": "+", "add": "+",
-        "minus": "-", "subtract": "-",
-        "times": "*", "multiply": "*",
-        "divided": "/", "divide": "/",
+        "plus": "+",
+        "add": "+",
+        "minus": "-",
+        "subtract": "-",
+        "times": "*",
+        "multiply": "*",
+        "divided": "/",
+        "divide": "/",
     }
     math_op = operation_map.get(operation.lower(), operation)
 
@@ -89,8 +93,9 @@ def create_custom_classifier_fallback():
 
     class CustomClassifierFallbackStrategy(RemediationStrategy):
         def __init__(self):
-            super().__init__("custom_classifier_fallback",
-                             "Custom classifier fallback strategy")
+            super().__init__(
+                "custom_classifier_fallback", "Custom classifier fallback strategy"
+            )
 
         def execute(
             self,
@@ -104,7 +109,8 @@ def create_custom_classifier_fallback():
         ) -> Optional[ExecutionResult]:
             """Execute custom classifier fallback logic."""
             self.logger.info(
-                f"CustomClassifierFallback: Attempting fallback for {node_name}")
+                f"CustomClassifierFallback: Attempting fallback for {node_name}"
+            )
 
             if not available_children:
                 self.logger.warning("No children available for fallback")
@@ -115,9 +121,14 @@ def create_custom_classifier_fallback():
 
             if any(word in input_lower for word in ["hello", "hi", "greet", "name"]):
                 fallback_child = available_children[0]  # greet action
-            elif any(word in input_lower for word in ["calculate", "math", "+", "-", "*", "/", "plus", "times"]):
+            elif any(
+                word in input_lower
+                for word in ["calculate", "math", "+", "-", "*", "/", "plus", "times"]
+            ):
                 fallback_child = available_children[1]  # calculate action
-            elif any(word in input_lower for word in ["weather", "temperature", "forecast"]):
+            elif any(
+                word in input_lower for word in ["weather", "temperature", "forecast"]
+            ):
                 fallback_child = available_children[2]  # weather action
             else:
                 fallback_child = available_children[3]  # help action
@@ -126,11 +137,13 @@ def create_custom_classifier_fallback():
                 # Execute the fallback child
                 result = fallback_child.execute(user_input, context)
                 self.logger.info(
-                    f"CustomClassifierFallback: Successfully executed {fallback_child.name}")
+                    f"CustomClassifierFallback: Successfully executed {fallback_child.name}"
+                )
                 return result
             except Exception as e:
                 self.logger.error(
-                    f"CustomClassifierFallback: Failed to execute fallback: {e}")
+                    f"CustomClassifierFallback: Failed to execute fallback: {e}"
+                )
                 return None
 
     return CustomClassifierFallbackStrategy()
@@ -138,6 +151,7 @@ def create_custom_classifier_fallback():
 
 def create_failing_classifier():
     """Create a classifier that always fails to demonstrate remediation."""
+
     def failing_classifier(user_input: str, children, context=None):
         """Classifier that always raises an exception."""
         raise ValueError("Intentional classifier failure for demo purposes")
@@ -238,7 +252,8 @@ def main():
 
         try:
             result: ExecutionResult = root_node.execute(
-                user_input=user_input, context=context)
+                user_input=user_input, context=context
+            )
             print(f"Success: {result.success}")
             print(f"Output: {result.output}")
             if result.error:

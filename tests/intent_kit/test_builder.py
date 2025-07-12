@@ -508,8 +508,7 @@ class TestLLMSplitterNode:
             MockTreeNode("classifier", "Main classifier"),
         ]
 
-        llm_config = {"provider": "openai",
-                      "model": "gpt-4", "llm_client": Mock()}
+        llm_config = {"provider": "openai", "model": "gpt-4", "llm_client": Mock()}
 
         splitter_node = llm_splitter_node(
             name="multi_intent_splitter", children=children, llm_config=llm_config
@@ -526,8 +525,7 @@ class TestLLMSplitterNode:
             MockTreeNode("classifier", "Main classifier"),
         ]
 
-        llm_config = {"provider": "openai",
-                      "model": "gpt-4", "llm_client": Mock()}
+        llm_config = {"provider": "openai", "model": "gpt-4", "llm_client": Mock()}
 
         splitter_node = llm_splitter_node(
             name="multi_intent_splitter",

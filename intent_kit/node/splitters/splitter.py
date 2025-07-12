@@ -41,8 +41,7 @@ class SplitterNode(TreeNode):
         try:
             intent_chunks = self.splitter_function(user_input, debug=False)
             if not intent_chunks:
-                self.logger.warning(
-                    f"Splitter '{self.name}' found no intent chunks")
+                self.logger.warning(f"Splitter '{self.name}' found no intent chunks")
                 return ExecutionResult(
                     success=False,
                     node_name=self.name,
@@ -120,8 +119,7 @@ class SplitterNode(TreeNode):
                 children_results=children_results,
             )
         except Exception as e:
-            self.logger.error(
-                f"Splitter execution error for '{self.name}': {e}")
+            self.logger.error(f"Splitter execution error for '{self.name}': {e}")
             return ExecutionResult(
                 success=False,
                 node_name=self.name,

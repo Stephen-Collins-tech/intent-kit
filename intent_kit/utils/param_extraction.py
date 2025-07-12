@@ -42,7 +42,9 @@ def parse_param_schema(schema_data: Dict[str, str]) -> Dict[str, Type]:
     return param_schema
 
 
-def create_rule_based_extractor(param_schema: Dict[str, Type]) -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
+def create_rule_based_extractor(
+    param_schema: Dict[str, Type],
+) -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
     """Create a rule-based argument extractor function.
 
     Args:
@@ -51,7 +53,10 @@ def create_rule_based_extractor(param_schema: Dict[str, Type]) -> Callable[[str,
     Returns:
         Function that extracts parameters from text using simple rules
     """
-    def simple_extractor(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+
+    def simple_extractor(
+        user_input: str, context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Simple keyword-based argument extractor."""
         extracted_params = {}
         input_lower = user_input.lower()
@@ -66,8 +71,7 @@ def create_rule_based_extractor(param_schema: Dict[str, Type]) -> Callable[[str,
 
         # Extract calculation parameters
         if "operation" in param_schema and "a" in param_schema and "b" in param_schema:
-            extracted_params.update(
-                _extract_calculation_parameters(input_lower))
+            extracted_params.update(_extract_calculation_parameters(input_lower))
 
         return extracted_params
 
@@ -120,7 +124,7 @@ def _extract_calculation_parameters(input_lower: str) -> Dict[str, Any]:
             return {
                 "a": float(match.group(1)),
                 "operation": match.group(2),
-                "b": float(match.group(3))
+                "b": float(match.group(3)),
             }
 
     return {}
@@ -130,7 +134,7 @@ def create_arg_extractor(
     param_schema: Dict[str, Type],
     llm_config: Optional[Dict[str, Any]] = None,
     extraction_prompt: Optional[str] = None,
-    node_name: str = "unknown"
+    node_name: str = "unknown",
 ) -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
     """Create an argument extractor function.
 
@@ -148,7 +152,7 @@ def create_arg_extractor(
         logger.debug(f"Creating LLM-based extractor for node '{node_name}'")
         from intent_kit.node.classifiers import (
             create_llm_arg_extractor,
-            get_default_extraction_prompt
+            get_default_extraction_prompt,
         )
 
         if not extraction_prompt:

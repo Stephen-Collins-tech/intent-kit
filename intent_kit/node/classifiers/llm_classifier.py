@@ -80,26 +80,26 @@ def create_llm_classifier(
                 # Make patterns more specific to avoid matching context numbers like years/timestamps
 
                 logger.debug(
-                    f"Response text BEFORE SELECTED_INDEX PROBLEM: {response_text}")
+                    f"Response text BEFORE SELECTED_INDEX PROBLEM: {response_text}"
+                )
                 selected_index = None
                 match = re.search(
-                    r"^(\d{1,2})\s*$", response_text, re.IGNORECASE | re.MULTILINE)
+                    r"^(\d{1,2})\s*$", response_text, re.IGNORECASE | re.MULTILINE
+                )
                 logger.debug(f"Match: {match}")
                 if match:
                     # Parse the number and validate it's in the correct range
                     parsed_number = int(match.group(1))
                     logger.debug(
-                        f"LLM returned number: {parsed_number} (response: {response_text})")
-                    logger.debug(
-                        f"Children: {[child.name for child in children]}")
+                        f"LLM returned number: {parsed_number} (response: {response_text})"
+                    )
+                    logger.debug(f"Children: {[child.name for child in children]}")
                     logger.debug(f"Selected index: {selected_index}")
 
                     selected_index = parsed_number
-                    logger.debug(
-                        f"Selected index after assignment: {selected_index}")
+                    logger.debug(f"Selected index after assignment: {selected_index}")
                 else:
-                    logger.debug(
-                        f"No number pattern matched: {response_text}")
+                    logger.debug(f"No number pattern matched: {response_text}")
 
                 # If no pattern matched, try to parse the entire response as a number
                 if selected_index is None:
@@ -190,7 +190,8 @@ def create_llm_arg_extractor(
             # Build the extraction prompt
             logger.debug(f"LLM arg extractor param_schema: {param_schema}")
             logger.debug(
-                f"LLM arg extractor param_schema types: {[(name, type(param_type)) for name, param_type in param_schema.items()]}")
+                f"LLM arg extractor param_schema types: {[(name, type(param_type)) for name, param_type in param_schema.items()]}"
+            )
 
             param_descriptions = "\n".join(
                 [

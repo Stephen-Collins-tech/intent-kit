@@ -84,10 +84,12 @@ class SplitterBuilder(Builder):
             ValueError: If required fields are missing
         """
         # Validate required fields using base class method
-        self._validate_required_fields([
-            ("children", self.children, "with_children"),
-            ("splitter function", self.splitter_func, "with_splitter"),
-        ])
+        self._validate_required_fields(
+            [
+                ("children", self.children, "with_children"),
+                ("splitter function", self.splitter_func, "with_splitter"),
+            ]
+        )
 
         # Type assertion since validation ensures these are not None
         assert self.splitter_func is not None

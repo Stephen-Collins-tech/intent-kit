@@ -24,8 +24,7 @@ def extract_booking_args_llm(
         )
         destination = dest_match.group(1).strip() if dest_match else "Unknown"
 
-        date_match = re.search(r"(?:for|on)\s+(\w+\s+\w+)",
-                               user_input, re.IGNORECASE)
+        date_match = re.search(r"(?:for|on)\s+(\w+\s+\w+)", user_input, re.IGNORECASE)
         date = date_match.group(1) if date_match else "ASAP"
 
         return {
@@ -39,11 +38,9 @@ def extract_booking_args_llm(
     api_key = os.getenv(f"{provider.upper()}_API_KEY")
 
     if not api_key:
-        raise ValueError(
-            f"Environment variable {provider.upper()}_API_KEY not set")
+        raise ValueError(f"Environment variable {provider.upper()}_API_KEY not set")
 
-    llm_config = {"provider": provider,
-                  "model": "gpt-3.5-turbo", "api_key": api_key}
+    llm_config = {"provider": provider, "model": "gpt-3.5-turbo", "api_key": api_key}
 
     try:
         llm_client = LLMFactory.create_client(llm_config)
@@ -95,8 +92,7 @@ JSON:"""
                 "destination": result.get("destination", "Unknown"),
                 "date": date,
                 "user_id": (
-                    context.get(
-                        "user_id", "anonymous") if context else "anonymous"
+                    context.get("user_id", "anonymous") if context else "anonymous"
                 ),
             }
     except Exception as e:
@@ -110,8 +106,7 @@ JSON:"""
     )
     destination = dest_match.group(1).strip() if dest_match else "Unknown"
 
-    date_match = re.search(r"(?:for|on)\s+(\w+\s+\w+)",
-                           user_input, re.IGNORECASE)
+    date_match = re.search(r"(?:for|on)\s+(\w+\s+\w+)", user_input, re.IGNORECASE)
     date = date_match.group(1) if date_match else "ASAP"
 
     return {

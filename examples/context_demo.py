@@ -30,8 +30,7 @@ def greet_action(name: str, context: IntentContext) -> str:
     # Update context
     context.set("greeting_count", greeting_count, "greet_action")
     context.set("last_greeted", name, "greet_action")
-    context.set("last_greeting_time",
-                datetime.now().isoformat(), "greet_action")
+    context.set("last_greeting_time", datetime.now().isoformat(), "greet_action")
 
     if greeting_count == 1:
         return f"Hello {name}! Nice to meet you."
@@ -39,9 +38,7 @@ def greet_action(name: str, context: IntentContext) -> str:
         return f"Hello {name}! I've greeted you {greeting_count} times now. Last time I greeted {last_greeted}."
 
 
-def calculate_action(
-    operation: str, a: float, b: float, context: IntentContext
-) -> str:
+def calculate_action(operation: str, a: float, b: float, context: IntentContext) -> str:
     """Perform calculation and track history."""
     # Map word operations to mathematical operators
     operation_map = {
@@ -69,13 +66,15 @@ def calculate_action(
 
     # Get calculation history
     history = context.get("calculation_history", [])
-    history.append({
-        "a": a,
-        "b": b,
-        "operation": operation,
-        "result": result,
-        "timestamp": datetime.now().isoformat(),
-    })
+    history.append(
+        {
+            "a": a,
+            "b": b,
+            "operation": operation,
+            "result": result,
+            "timestamp": datetime.now().isoformat(),
+        }
+    )
 
     # Update context
     context.set("calculation_history", history, "calculate_action")
@@ -95,11 +94,15 @@ def weather_action(location: str, context: IntentContext) -> str:
     weather_data = "72°F, Sunny"
 
     # Cache the weather data
-    context.set("last_weather", {
-        "location": location,
-        "data": weather_data,
-        "timestamp": datetime.now().isoformat(),
-    }, "weather_action")
+    context.set(
+        "last_weather",
+        {
+            "location": location,
+            "data": weather_data,
+            "timestamp": datetime.now().isoformat(),
+        },
+        "weather_action",
+    )
 
     return f"Weather in {location}: {weather_data}"
 
@@ -131,8 +134,7 @@ def build_context_aware_tree():
         param_schema={"name": str},
         llm_config=LLM_CONFIG,
         context_inputs={"greeting_count", "last_greeted"},
-        context_outputs={"greeting_count",
-                         "last_greeted", "last_greeting_time"},
+        context_outputs={"greeting_count", "last_greeted", "last_greeting_time"},
     )
 
     calc_action_node = action(
@@ -240,10 +242,8 @@ def main():
 
                 # Show context state after execution
                 print("  Context state:")
-                print(
-                    f"    Greeting count: {context.get('greeting_count', 0)}")
-                print(
-                    f"    Last greeted: {context.get('last_greeted', 'None')}")
+                print(f"    Greeting count: {context.get('greeting_count', 0)}")
+                print(f"    Last greeted: {context.get('last_greeted', 'None')}")
                 print(
                     f"    Calc history: {len(context.get('calculation_history', []))} entries"
                 )

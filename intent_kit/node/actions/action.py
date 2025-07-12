@@ -32,8 +32,7 @@ class ActionNode(TreeNode):
         output_validator: Optional[Callable[[Any], bool]] = None,
         description: str = "",
         parent: Optional["TreeNode"] = None,
-        remediation_strategies: Optional[List[Union[str,
-                                                    RemediationStrategy]]] = None,
+        remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
     ):
         super().__init__(name=name, description=description, children=[], parent=parent)
         self.param_schema = param_schema
@@ -68,8 +67,7 @@ class ActionNode(TreeNode):
                     for key in self.context_inputs
                     if context.has(key)
                 }
-            extracted_params = self.arg_extractor(
-                user_input, context_dict or {})
+            extracted_params = self.arg_extractor(user_input, context_dict or {})
         except Exception as e:
             self.logger.error(
                 f"Argument extraction failed for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
@@ -311,13 +309,18 @@ class ActionNode(TreeNode):
                 elif param_type is bool:
                     if isinstance(param_value, str):
                         validated_params[param_name] = param_value.lower() in (
-                            'true', '1', 'yes', 'on')
+                            "true",
+                            "1",
+                            "yes",
+                            "on",
+                        )
                     else:
                         validated_params[param_name] = bool(param_value)
                 else:
                     validated_params[param_name] = param_value
             except (ValueError, TypeError) as e:
                 raise ValueError(
-                    f"Invalid type for parameter '{param_name}': expected {param_type.__name__}, got {type(param_value).__name__}") from e
+                    f"Invalid type for parameter '{param_name}': expected {param_type.__name__}, got {type(param_value).__name__}"
+                ) from e
 
         return validated_params
