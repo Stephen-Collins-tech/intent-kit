@@ -7,7 +7,7 @@ This guide explains how to manage and organize the intent-kit documentation usin
 The documentation is organized into logical sections:
 
 - **Core Concepts** - Fundamental concepts and architecture
-- **API Reference** - Complete API documentation  
+- **API Reference** - Complete API documentation
 - **Configuration** - Configuration and setup guides
 - **Examples** - Working examples and tutorials
 - **Development** - Development and testing guides
@@ -186,4 +186,4 @@ python scripts/manage_docs.py create --section api --filename missing.md --title
 - Documentation changes should be part of feature development
 - Update documentation when APIs change
 - Include documentation in code reviews
-- Test documentation examples in CI/CD 
+- Test documentation examples in CI/CD

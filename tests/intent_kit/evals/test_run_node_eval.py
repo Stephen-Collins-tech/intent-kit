@@ -60,10 +60,12 @@ class TestRunNodeEval:
 
     def test_get_node_from_module_attribute_error(self):
         """Test node loading with attribute error."""
-        mock_module = MagicMock()
-        mock_module.__getattr__ = MagicMock(
-            side_effect=AttributeError("No such attribute")
-        )
+
+        class MinimalModule:
+            pass
+
+        mock_module = MinimalModule()
+        # Do not define test_node attribute, so getattr will raise AttributeError
 
         with patch("importlib.import_module", return_value=mock_module):
             result = get_node_from_module("test.module", "test_node")
@@ -217,9 +219,11 @@ class TestRunNodeEval:
                 "dataset": "test_dataset",
                 "accuracy": 0.85,
                 "correct": 17,
+                "incorrect": 3,
                 "total_cases": 20,
                 "errors": [],
                 "details": [],
+                "raw_results_file": "test_results.csv",
             }
         ]
 
@@ -253,9 +257,19 @@ class TestRunNodeEval:
                 "dataset": "test_dataset",
                 "accuracy": 0.5,
                 "correct": 10,
+                "incorrect": 10,
                 "total_cases": 20,
-                "errors": ["Test error"],
+                "errors": [
+                    {
+                        "case": 1,
+                        "input": "test input",
+                        "expected": "expected output",
+                        "actual": "actual output",
+                        "error": "Test error",
+                    }
+                ],
                 "details": [{"input": "test", "error": "Test error"}],
+                "raw_results_file": "test_results.csv",
             }
         ]
 

@@ -44,7 +44,7 @@ This document covers the open-source core engine, developer APIs, intent classif
 - ✅ **Keyword Classifier** - Simple substring matching
 - ✅ **LLM Classifier** - Generic LLM-powered classification with multiple backends
 - ✅ **OpenAI Integration** - GPT models via LLM factory
-- ✅ **Google Integration** - Gemini models via LLM factory  
+- ✅ **Google Integration** - Gemini models via LLM factory
 - ✅ **Anthropic Integration** - Claude models via LLM factory
 - ✅ **Ollama Integration** - Local models via LLM factory
 

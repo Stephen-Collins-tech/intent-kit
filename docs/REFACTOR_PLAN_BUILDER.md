@@ -143,7 +143,7 @@ splitter = (SplitterBuilder("multi_intent_splitter")
 ```python
 class IntentGraphBuilder:
     """Enhanced builder for creating IntentGraph instances."""
-    
+
     def __init__(self):
         self._root_nodes: List[TreeNode] = []
         self._splitter = None
@@ -151,32 +151,32 @@ class IntentGraphBuilder:
         self._context_trace = False
         self._llm_config = None
         self._visualize = False
-    
+
     def add_root_node(self, node: TreeNode) -> "IntentGraphBuilder":
         """Add a root node to the graph."""
         self._root_nodes.append(node)
         return self
-    
+
     def with_splitter(self, splitter_func) -> "IntentGraphBuilder":
         """Set a custom splitter function."""
         self._splitter = splitter_func
         return self
-    
+
     def with_llm_config(self, llm_config: Dict[str, Any]) -> "IntentGraphBuilder":
         """Set LLM configuration for the graph."""
         self._llm_config = llm_config
         return self
-    
+
     def with_visualization(self, enabled: bool = True) -> "IntentGraphBuilder":
         """Enable graph visualization."""
         self._visualize = enabled
         return self
-    
+
     def build(self) -> IntentGraph:
         """Build and return the IntentGraph instance."""
         if not self._root_nodes:
             raise ValueError("No root nodes set. Call .add_root_node() before .build()")
-        
+
         graph = IntentGraph(
             root_nodes=self._root_nodes,
             splitter=self._splitter,
@@ -185,7 +185,7 @@ class IntentGraphBuilder:
             debug_context=self._debug_context,
             context_trace=self._context_trace,
         )
-        
+
         return graph
 ```
 
@@ -282,7 +282,7 @@ The refactor maintains backward compatibility by:
 
 ### ✅ **Phase 3: Create Node Builders (COMPLETED)**
 - **Created `HandlerBuilder`** - Fluent interface for creating handler nodes
-- **Created `ClassifierBuilder`** - Fluent interface for creating classifier nodes  
+- **Created `ClassifierBuilder`** - Fluent interface for creating classifier nodes
 - **Created `SplitterBuilder`** - Fluent interface for creating splitter nodes
 - **Added comprehensive validation** and error handling in builders
 - **Integrated with existing utilities** for consistent behavior
@@ -331,7 +331,7 @@ The refactor maintains backward compatibility by:
 ```python
 greet_handler = handler(
     name="greet",
-    description="Greet the user", 
+    description="Greet the user",
     handler_func=lambda name: f"Hello {name}!",
     param_schema={"name": str},
     llm_config=LLM_CONFIG
@@ -350,4 +350,4 @@ greet_handler = (HandlerBuilder("greet")
 
 ## Conclusion
 
-This refactor successfully addresses all the original issues in `builder.py` while maintaining backward compatibility and improving the overall code quality. The modular approach makes the codebase more maintainable and easier to extend in the future. The new fluent interface provides an alternative, more readable way to create complex node configurations. 
+This refactor successfully addresses all the original issues in `builder.py` while maintaining backward compatibility and improving the overall code quality. The modular approach makes the codebase more maintainable and easier to extend in the future. The new fluent interface provides an alternative, more readable way to create complex node configurations.

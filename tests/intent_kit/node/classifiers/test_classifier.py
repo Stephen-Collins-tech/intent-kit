@@ -7,6 +7,7 @@ from intent_kit.node.classifiers.classifier import ClassifierNode
 from intent_kit.node.enums import NodeType
 from intent_kit.node.types import ExecutionResult
 from intent_kit.context import IntentContext
+from intent_kit.node.actions.remediation import RemediationStrategy
 
 
 class TestClassifierNode:
@@ -113,7 +114,7 @@ class TestClassifierNode:
         mock_children = [MagicMock()]
 
         # Mock remediation strategy
-        mock_strategy = MagicMock()
+        mock_strategy = MagicMock(spec=RemediationStrategy)
         mock_strategy.name = "test_strategy"
         mock_strategy.execute.return_value = ExecutionResult(
             success=True,

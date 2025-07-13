@@ -59,7 +59,7 @@ def help_function() -> str:
     return """I can help you with:
 
 • Greetings: Say hello and introduce yourself
-• Calculations: Add, subtract, multiply, divide numbers  
+• Calculations: Add, subtract, multiply, divide numbers
 • Weather: Get weather information for any location
 • Help: Get this help message
 

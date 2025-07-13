@@ -79,7 +79,7 @@ def _create_classification_prompt(chunk_text: str) -> str:
     return f"""You are an intent chunk classifier. Given a chunk of user input, determine if it should be:
 
 1. HANDLED as a single intent (atomic)
-2. SPLIT into multiple intents (composite) 
+2. SPLIT into multiple intents (composite)
 3. CLARIFIED with the user (ambiguous)
 4. REJECTED as invalid
 
@@ -89,7 +89,7 @@ Return your response as a JSON object with this exact format:
 {{
   "classification": "Atomic|Composite|Ambiguous|Invalid",
   "intent_type": "string or null",
-  "action": "handle|split|clarify|reject", 
+  "action": "handle|split|clarify|reject",
   "confidence": 0.0-1.0,
   "reason": "explanation of your decision"
 }}

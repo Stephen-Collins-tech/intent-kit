@@ -76,7 +76,7 @@ json_graph = {
             "param_schema": {"name": "str"}
         },
         "weather_action": {
-            "type": "action", 
+            "type": "action",
             "function": "weather_function",
             "param_schema": {"city": "str"}
         }
@@ -161,4 +161,4 @@ graph.route("Hello Alice", debug=True)
 3. **Parameter Validation** - Define comprehensive parameter schemas
 4. **Error Handling** - Include remediation strategies
 5. **Testing** - Test with various input scenarios
-6. **Documentation** - Document complex graph structures 
+6. **Documentation** - Document complex graph structures

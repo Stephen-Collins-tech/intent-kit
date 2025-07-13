@@ -5,6 +5,7 @@ run_all_evals.py
 Run evaluations on all datasets and generate comprehensive markdown reports.
 """
 
+import argparse
 from intent_kit.evals import load_dataset
 from intent_kit.evals.run_node_eval import (
     get_node_from_module,
@@ -22,8 +23,6 @@ load_dotenv()
 
 def run_all_evaluations():
     """Run all evaluations and generate reports."""
-    import argparse
-
     parser = argparse.ArgumentParser(
         description="Run all evaluations and generate comprehensive report"
     )
@@ -267,6 +266,7 @@ def generate_comprehensive_report(
         with open(output_file, "w") as f:
             f.write(report)
         print(f"Comprehensive report written to: {output_file}")
+        return output_file
 
     return report
 

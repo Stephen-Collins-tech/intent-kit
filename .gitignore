@@ -50,7 +50,7 @@ intentkit_graphs/
 
 # Distribution
 dist/
-build/ 
+build/
 
 .env
 coverage.xml

@@ -257,4 +257,4 @@ See `examples/json_llm_demo.py` for a complete working example that demonstrates
 - Intelligent parameter parsing
 - Builder pattern usage
 
-The demo shows how to create IntentGraph instances using the Builder pattern with LLM-powered argument extraction. 
+The demo shows how to create IntentGraph instances using the Builder pattern with LLM-powered argument extraction.

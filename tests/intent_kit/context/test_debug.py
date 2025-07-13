@@ -205,6 +205,9 @@ class TestContextDebug:
         mock_node = MagicMock()
         mock_node.handler = mock_handler
         mock_node.name = "test_node"
+        # Ensure the mock doesn't have context_inputs/context_outputs attributes
+        del mock_node.context_inputs
+        del mock_node.context_outputs
 
         with patch(
             "intent_kit.context.debug.analyze_action_dependencies"
@@ -220,15 +223,25 @@ class TestContextDebug:
 
     def test_analyze_node_dependencies_with_classifier(self):
         """Test analyzing node dependencies with classifier function."""
-        mock_classifier = MagicMock()
-        mock_node = MagicMock()
-        mock_node.classifier = mock_classifier
-        mock_node.name = "test_classifier"
+        from intent_kit.node import TreeNode
+
+        class MinimalNode(TreeNode):
+            def __init__(self):
+                self.classifier = lambda x: x
+                self.name = "test_classifier"
+                self.node_id = "test_classifier"
+                self.children = []
+
+            def execute(self, *args, **kwargs):
+                pass
+
+        mock_node = MinimalNode()
 
         deps = _analyze_node_dependencies(mock_node)
 
         assert deps is not None
-        assert deps.inputs == set()
+        assert isinstance(deps.inputs, set)
+        assert len(deps.inputs) == 0
         assert deps.outputs == set()
         assert "test_classifier" in deps.description
 
@@ -236,6 +249,11 @@ class TestContextDebug:
         """Test analyzing node dependencies with no dependencies."""
         mock_node = MagicMock()
         mock_node.name = "test_node"
+        # Ensure the mock doesn't have any of the attributes that would trigger dependencies
+        del mock_node.context_inputs
+        del mock_node.context_outputs
+        del mock_node.handler
+        del mock_node.classifier
 
         deps = _analyze_node_dependencies(mock_node)
 
@@ -284,23 +302,25 @@ class TestContextDebug:
 
         state = _capture_full_context_state(mock_context)
 
-        assert "current_fields" in state
+        assert "fields" in state
         assert "session_id" in state
-        assert "error_count" in state
+        assert "error_summary" in state
         assert "history_summary" in state
 
     def test_format_context_history(self):
         """Test formatting context history."""
         # Mock history entries
         mock_entry1 = MagicMock()
-        mock_entry1.timestamp = "2024-01-01T12:00:00"
+        mock_entry1.timestamp = MagicMock()
+        mock_entry1.timestamp.isoformat.return_value = "2024-01-01T12:00:00"
         mock_entry1.action = "set"
         mock_entry1.key = "test_key"
         mock_entry1.value = "test_value"
         mock_entry1.modified_by = "test_user"
 
         mock_entry2 = MagicMock()
-        mock_entry2.timestamp = "2024-01-01T12:01:00"
+        mock_entry2.timestamp = MagicMock()
+        mock_entry2.timestamp.isoformat.return_value = "2024-01-01T12:01:00"
         mock_entry2.action = "get"
         mock_entry2.key = "test_key"
         mock_entry2.value = "test_value"
@@ -325,9 +345,9 @@ class TestContextDebug:
                 "error_count": 0,
             },
             "context_state": {
-                "current_fields": {"field1", "field2"},
+                "fields": {"field1": {"value": "value1", "metadata": {}}},
                 "session_id": "test_session",
-                "error_count": 0,
+                "error_summary": {"recent_errors": [], "total_errors": 0},
             },
             "history": [],
         }
@@ -337,4 +357,4 @@ class TestContextDebug:
         assert isinstance(result, str)
         assert "test input" in result
         assert "test_session" in result
-        assert "2 fields" in result
+        assert "Total Fields: 2" in result

@@ -271,4 +271,4 @@ weather_action = action(
 
 - Test actions with various input scenarios
 - Test error conditions and edge cases
-- Validate parameter extraction accuracy 
+- Validate parameter extraction accuracy

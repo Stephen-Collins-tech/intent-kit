@@ -16,11 +16,10 @@ class TestRunAllEvals:
     """Test cases for run_all_evals module."""
 
     @patch("intent_kit.evals.run_all_evals.argparse.ArgumentParser")
-    @patch("intent_kit.evals.run_all_evals.pathlib.Path")
     @patch("intent_kit.evals.run_all_evals.run_all_evaluations_internal")
     @patch("intent_kit.evals.run_all_evals.generate_comprehensive_report")
     def test_run_all_evaluations_success(
-        self, mock_generate_report, mock_run_internal, mock_path, mock_parser
+        self, mock_generate_report, mock_run_internal, mock_parser
     ):
         """Test successful execution of run_all_evaluations."""
         # Mock argument parser
@@ -32,22 +31,16 @@ class TestRunAllEvals:
         mock_args.mock = False
         mock_parser.return_value.parse_args.return_value = mock_args
 
-        # Mock path operations
-        mock_path_instance = MagicMock()
-        mock_path.return_value = mock_path_instance
-        mock_path_instance.parent = MagicMock()
-        mock_path_instance.parent.__truediv__ = MagicMock(
-            return_value=mock_path_instance
-        )
-        mock_path_instance.mkdir.return_value = None
-
         # Mock internal function
         mock_run_internal.return_value = [
             {
                 "dataset": "test_dataset",
                 "accuracy": 0.85,
                 "correct": 17,
+                "incorrect": 3,
                 "total_cases": 20,
+                "errors": [],
+                "raw_results_file": "test_results.csv",
             }
         ]
 
@@ -63,21 +56,22 @@ class TestRunAllEvals:
         mock_generate_report.assert_called_once()
 
     @patch("intent_kit.evals.run_all_evals.argparse.ArgumentParser")
-    def test_run_all_evaluations_system_exit(self, mock_parser):
+    @patch("intent_kit.evals.run_all_evals.generate_comprehensive_report")
+    @patch("intent_kit.evals.run_all_evals.run_all_evaluations_internal")
+    def test_run_all_evaluations_system_exit(
+        self, mock_run_internal, mock_generate_report, mock_parser
+    ):
         """Test run_all_evaluations when called as function (SystemExit)."""
+        import pytest
+
         # Mock SystemExit to simulate function call
         mock_parser.return_value.parse_args.side_effect = SystemExit()
 
-        with patch(
-            "intent_kit.evals.run_all_evals.run_all_evaluations_internal"
-        ) as mock_internal:
-            with patch("intent_kit.evals.run_all_evals.generate_comprehensive_report"):
-                with patch("intent_kit.evals.run_all_evals.pathlib.Path"):
-                    with patch("builtins.open", mock_open()):
-                        result = run_all_evaluations()
+        with patch("builtins.open", mock_open()):
+            with pytest.raises(SystemExit):
+                run_all_evaluations()
 
-        assert result is True
-        mock_internal.assert_called_once()
+        mock_run_internal.assert_not_called()
 
     @patch("intent_kit.evals.run_all_evals.pathlib.Path")
     @patch("intent_kit.evals.run_all_evals.load_dataset")
@@ -170,8 +164,20 @@ class TestRunAllEvals:
     def test_generate_comprehensive_report(self):
         """Test generate_comprehensive_report function."""
         results = [
-            {"dataset": "test1", "accuracy": 0.85, "correct": 17, "total_cases": 20},
-            {"dataset": "test2", "accuracy": 0.90, "correct": 18, "total_cases": 20},
+            {
+                "dataset": "test1",
+                "accuracy": 0.85,
+                "correct": 17,
+                "total_cases": 20,
+                "errors": [],
+            },
+            {
+                "dataset": "test2",
+                "accuracy": 0.90,
+                "correct": 18,
+                "total_cases": 20,
+                "errors": [],
+            },
         ]
 
         with tempfile.NamedTemporaryFile(
@@ -206,7 +212,13 @@ class TestRunAllEvals:
     def test_generate_comprehensive_report_mock_mode(self):
         """Test generate_comprehensive_report in mock mode."""
         results = [
-            {"dataset": "test1", "accuracy": 0.85, "correct": 17, "total_cases": 20}
+            {
+                "dataset": "test1",
+                "accuracy": 0.85,
+                "correct": 17,
+                "total_cases": 20,
+                "errors": [],
+            }
         ]
 
         with tempfile.NamedTemporaryFile(

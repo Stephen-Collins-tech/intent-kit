@@ -160,4 +160,4 @@ python3 scripts/manage_docs.py move --section old --filename old.md --new-sectio
 ### Templates
 - File templates in management script
 - Standard markdown structure
-- Consistent formatting guidelines 
+- Consistent formatting guidelines
