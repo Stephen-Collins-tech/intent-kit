@@ -20,7 +20,9 @@ class TestRunAllEvals:
     @patch("intent_kit.evals.run_all_evals.pathlib.Path")
     @patch("intent_kit.evals.run_all_evals.run_all_evaluations_internal")
     @patch("intent_kit.evals.run_all_evals.generate_comprehensive_report")
-    def test_run_all_evaluations_success(self, mock_generate_report, mock_run_internal, mock_path, mock_parser):
+    def test_run_all_evaluations_success(
+        self, mock_generate_report, mock_run_internal, mock_path, mock_parser
+    ):
         """Test successful execution of run_all_evaluations."""
         # Mock argument parser
         mock_args = MagicMock()
@@ -35,12 +37,19 @@ class TestRunAllEvals:
         mock_path_instance = MagicMock()
         mock_path.return_value = mock_path_instance
         mock_path_instance.parent = MagicMock()
-        mock_path_instance.parent.__truediv__ = MagicMock(return_value=mock_path_instance)
+        mock_path_instance.parent.__truediv__ = MagicMock(
+            return_value=mock_path_instance
+        )
         mock_path_instance.mkdir.return_value = None
 
         # Mock internal function
         mock_run_internal.return_value = [
-            {"dataset": "test_dataset", "accuracy": 0.85, "correct": 17, "total_cases": 20}
+            {
+                "dataset": "test_dataset",
+                "accuracy": 0.85,
+                "correct": 17,
+                "total_cases": 20,
+            }
         ]
 
         # Mock generate report
@@ -60,7 +69,9 @@ class TestRunAllEvals:
         # Mock SystemExit to simulate function call
         mock_parser.return_value.parse_args.side_effect = SystemExit()
 
-        with patch("intent_kit.evals.run_all_evals.run_all_evaluations_internal") as mock_internal:
+        with patch(
+            "intent_kit.evals.run_all_evals.run_all_evaluations_internal"
+        ) as mock_internal:
             with patch("intent_kit.evals.run_all_evals.generate_comprehensive_report"):
                 with patch("intent_kit.evals.run_all_evals.pathlib.Path"):
                     with patch("builtins.open", mock_open()):
@@ -73,13 +84,13 @@ class TestRunAllEvals:
     @patch("intent_kit.evals.run_all_evals.load_dataset")
     @patch("intent_kit.evals.run_all_evals.get_node_from_module")
     @patch("intent_kit.evals.run_all_evals.evaluate_node")
-    def test_run_all_evaluations_internal_success(self, mock_evaluate, mock_get_node, mock_load_dataset, mock_path):
+    def test_run_all_evaluations_internal_success(
+        self, mock_evaluate, mock_get_node, mock_load_dataset, mock_path
+    ):
         """Test successful execution of run_all_evaluations_internal."""
         # Mock dataset directory
         mock_dataset_dir = MagicMock()
-        mock_dataset_dir.glob.return_value = [
-            pathlib.Path("test_dataset.yaml")
-        ]
+        mock_dataset_dir.glob.return_value = [pathlib.Path("test_dataset.yaml")]
         mock_path.return_value.parent.__truediv__.return_value = mock_dataset_dir
 
         # Mock dataset loading
@@ -100,7 +111,7 @@ class TestRunAllEvals:
             "dataset": "test_dataset",
             "accuracy": 0.85,
             "correct": 17,
-            "total_cases": 20
+            "total_cases": 20,
         }
 
         # Mock environment
@@ -114,7 +125,9 @@ class TestRunAllEvals:
     @patch("intent_kit.evals.run_all_evals.pathlib.Path")
     @patch("intent_kit.evals.run_all_evals.load_dataset")
     @patch("intent_kit.evals.run_all_evals.get_node_from_module")
-    def test_run_all_evaluations_internal_with_llm_config(self, mock_get_node, mock_load_dataset, mock_path):
+    def test_run_all_evaluations_internal_with_llm_config(
+        self, mock_get_node, mock_load_dataset, mock_path
+    ):
         """Test run_all_evaluations_internal with LLM configuration."""
         # Mock dataset directory
         mock_dataset_dir = MagicMock()
@@ -124,10 +137,15 @@ class TestRunAllEvals:
         # Mock LLM config file
         llm_config = {
             "openai": {"api_key": "test_key"},
-            "anthropic": {"api_key": "test_key_2"}
+            "anthropic": {"api_key": "test_key_2"},
         }
 
-        with patch("builtins.open", mock_open(read_data="openai:\n  api_key: test_key\nanthropic:\n  api_key: test_key_2")):
+        with patch(
+            "builtins.open",
+            mock_open(
+                read_data="openai:\n  api_key: test_key\nanthropic:\n  api_key: test_key_2"
+            ),
+        ):
             with patch("yaml.safe_load", return_value=llm_config):
                 with patch("os.environ", {}) as mock_env:
                     results = run_all_evaluations_internal("test_config.yaml")
@@ -154,15 +172,20 @@ class TestRunAllEvals:
         """Test generate_comprehensive_report function."""
         results = [
             {"dataset": "test1", "accuracy": 0.85, "correct": 17, "total_cases": 20},
-            {"dataset": "test2", "accuracy": 0.90, "correct": 18, "total_cases": 20}
+            {"dataset": "test2", "accuracy": 0.90, "correct": 18, "total_cases": 20},
         ]
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as tmp_file:
             output_file = tmp_file.name
 
         try:
             report_path = generate_comprehensive_report(
-                results, output_file, run_timestamp="2024-01-01_12-00-00", mock_mode=False
+                results,
+                output_file,
+                run_timestamp="2024-01-01_12-00-00",
+                mock_mode=False,
             )
 
             # Check that file was created
@@ -187,12 +210,17 @@ class TestRunAllEvals:
             {"dataset": "test1", "accuracy": 0.85, "correct": 17, "total_cases": 20}
         ]
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as tmp_file:
             output_file = tmp_file.name
 
         try:
             report_path = generate_comprehensive_report(
-                results, output_file, run_timestamp="2024-01-01_12-00-00", mock_mode=True
+                results,
+                output_file,
+                run_timestamp="2024-01-01_12-00-00",
+                mock_mode=True,
             )
 
             # Check file contents for mock mode indicator
@@ -207,7 +235,9 @@ class TestRunAllEvals:
         """Test generate_comprehensive_report with no results."""
         results = []
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as tmp_file:
             output_file = tmp_file.name
 
         try:

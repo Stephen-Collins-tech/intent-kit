@@ -51,7 +51,7 @@ class TestContextDebug:
         mock_deps = ContextDependencies(
             inputs={"input1", "input2"},
             outputs={"output1"},
-            description="Test dependencies"
+            description="Test dependencies",
         )
 
         # Mock graph
@@ -62,7 +62,9 @@ class TestContextDebug:
         mock_context = MagicMock()
         mock_context.keys.return_value = {"input1", "input2", "output1"}
 
-        with patch("intent_kit.context.debug.get_context_dependencies") as mock_get_deps:
+        with patch(
+            "intent_kit.context.debug.get_context_dependencies"
+        ) as mock_get_deps:
             mock_get_deps.return_value = {"test_node": mock_deps}
 
             result = validate_context_flow(mock_graph, mock_context)
@@ -77,7 +79,7 @@ class TestContextDebug:
         mock_deps = ContextDependencies(
             inputs={"input1", "input2", "missing_input"},
             outputs={"output1"},
-            description="Test dependencies"
+            description="Test dependencies",
         )
 
         # Mock graph
@@ -88,7 +90,9 @@ class TestContextDebug:
         mock_context = MagicMock()
         mock_context.keys.return_value = {"input1", "output1"}
 
-        with patch("intent_kit.context.debug.get_context_dependencies") as mock_get_deps:
+        with patch(
+            "intent_kit.context.debug.get_context_dependencies"
+        ) as mock_get_deps:
             mock_get_deps.return_value = {"test_node": mock_deps}
 
             result = validate_context_flow(mock_graph, mock_context)
@@ -204,7 +208,9 @@ class TestContextDebug:
         mock_node.handler = mock_handler
         mock_node.name = "test_node"
 
-        with patch("intent_kit.context.debug.analyze_action_dependencies") as mock_analyze:
+        with patch(
+            "intent_kit.context.debug.analyze_action_dependencies"
+        ) as mock_analyze:
             mock_analyze.return_value = ContextDependencies(
                 inputs={"input1"}, outputs={"output1"}, description="Handler deps"
             )
@@ -242,7 +248,7 @@ class TestContextDebug:
         deps = ContextDependencies(
             inputs={"input1", "input2"},
             outputs={"output1"},
-            description="Test dependencies"
+            description="Test dependencies",
         )
 
         mock_context = MagicMock()
@@ -258,7 +264,7 @@ class TestContextDebug:
         deps = ContextDependencies(
             inputs={"input1", "input2", "missing_input"},
             outputs={"output1"},
-            description="Test dependencies"
+            description="Test dependencies",
         )
 
         mock_context = MagicMock()
@@ -318,14 +324,14 @@ class TestContextDebug:
             "execution_summary": {
                 "total_fields": 2,
                 "history_entries": 1,
-                "error_count": 0
+                "error_count": 0,
             },
             "context_state": {
                 "current_fields": {"field1", "field2"},
                 "session_id": "test_session",
-                "error_count": 0
+                "error_count": 0,
             },
-            "history": []
+            "history": [],
         }
 
         result = _format_console_trace(trace_data)

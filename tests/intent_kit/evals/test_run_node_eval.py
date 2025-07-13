@@ -27,10 +27,13 @@ class TestRunNodeEval:
             "node_name": "test_node",
             "test_cases": [
                 {"input": "test input", "expected": "test output", "context": {}}
-            ]
+            ],
         }
 
-        with patch("builtins.open", mock_open(read_data="name: test_dataset\nnode_name: test_node")):
+        with patch(
+            "builtins.open",
+            mock_open(read_data="name: test_dataset\nnode_name: test_node"),
+        ):
             with patch("yaml.safe_load", return_value=test_data):
                 result = load_dataset(pathlib.Path("test.yaml"))
 
@@ -49,7 +52,9 @@ class TestRunNodeEval:
 
     def test_get_node_from_module_import_error(self):
         """Test node loading with import error."""
-        with patch("importlib.import_module", side_effect=ImportError("Module not found")):
+        with patch(
+            "importlib.import_module", side_effect=ImportError("Module not found")
+        ):
             result = get_node_from_module("test.module", "test_node")
 
         assert result is None
@@ -57,7 +62,9 @@ class TestRunNodeEval:
     def test_get_node_from_module_attribute_error(self):
         """Test node loading with attribute error."""
         mock_module = MagicMock()
-        mock_module.__getattr__ = MagicMock(side_effect=AttributeError("No such attribute"))
+        mock_module.__getattr__ = MagicMock(
+            side_effect=AttributeError("No such attribute")
+        )
 
         with patch("importlib.import_module", return_value=mock_module):
             result = get_node_from_module("test.module", "test_node")
@@ -73,13 +80,20 @@ class TestRunNodeEval:
         similarity_score_val = 0.85
 
         with patch("intent_kit.evals.run_node_eval.Path") as mock_path:
-            mock_path.return_value.parent.__truediv__.return_value = mock_path.return_value
+            mock_path.return_value.parent.__truediv__.return_value = (
+                mock_path.return_value
+            )
             mock_path.return_value.mkdir.return_value = None
             mock_path.return_value.exists.return_value = False
 
             with patch("builtins.open", mock_open()) as mock_file:
                 csv_file, date_csv_file = save_raw_results_to_csv(
-                    "test_dataset", test_case, actual_output, success, error, similarity_score_val
+                    "test_dataset",
+                    test_case,
+                    actual_output,
+                    success,
+                    error,
+                    similarity_score_val,
                 )
 
         # Verify files were created
@@ -134,9 +148,7 @@ class TestRunNodeEval:
         mock_node = MagicMock()
         mock_node.execute.return_value = MagicMock(success=True, output="test output")
 
-        test_cases = [
-            {"input": "test input", "expected": "test output", "context": {}}
-        ]
+        test_cases = [{"input": "test input", "expected": "test output", "context": {}}]
 
         result = evaluate_node(mock_node, test_cases, "test_dataset")
 
@@ -152,9 +164,7 @@ class TestRunNodeEval:
         mock_node = MagicMock()
         mock_node.execute.side_effect = Exception("Test error")
 
-        test_cases = [
-            {"input": "test input", "expected": "test output", "context": {}}
-        ]
+        test_cases = [{"input": "test input", "expected": "test output", "context": {}}]
 
         result = evaluate_node(mock_node, test_cases, "test_dataset")
 
@@ -168,7 +178,9 @@ class TestRunNodeEval:
     def test_evaluate_node_with_list_output(self, mock_save_csv):
         """Test node evaluation with list output (splitter)."""
         mock_node = MagicMock()
-        mock_node.execute.return_value = MagicMock(success=True, output=["hello", "world"])
+        mock_node.execute.return_value = MagicMock(
+            success=True, output=["hello", "world"]
+        )
 
         test_cases = [
             {"input": "test input", "expected": ["hello", "world"], "context": {}}
@@ -187,7 +199,11 @@ class TestRunNodeEval:
         mock_node.execute.return_value = MagicMock(success=True, output="test output")
 
         test_cases = [
-            {"input": "test input", "expected": "test output", "context": {"key": "value"}}
+            {
+                "input": "test input",
+                "expected": "test output",
+                "context": {"key": "value"},
+            }
         ]
 
         result = evaluate_node(mock_node, test_cases, "test_dataset")
@@ -204,15 +220,19 @@ class TestRunNodeEval:
                 "correct": 17,
                 "total_cases": 20,
                 "errors": [],
-                "details": []
+                "details": [],
             }
         ]
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as tmp_file:
             output_path = pathlib.Path(tmp_file.name)
 
         try:
-            generate_markdown_report(results, output_path, run_timestamp="2024-01-01_12-00-00")
+            generate_markdown_report(
+                results, output_path, run_timestamp="2024-01-01_12-00-00"
+            )
 
             # Check that file was created
             assert output_path.exists()
@@ -236,11 +256,13 @@ class TestRunNodeEval:
                 "correct": 10,
                 "total_cases": 20,
                 "errors": ["Test error"],
-                "details": [{"input": "test", "error": "Test error"}]
+                "details": [{"input": "test", "error": "Test error"}],
             }
         ]
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as tmp_file:
             output_path = pathlib.Path(tmp_file.name)
 
         try:
