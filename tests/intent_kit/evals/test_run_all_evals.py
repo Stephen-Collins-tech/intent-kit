@@ -2,7 +2,6 @@
 Tests for run_all_evals module.
 """
 
-import pytest
 import tempfile
 import pathlib
 from unittest.mock import patch, MagicMock, mock_open
@@ -47,7 +46,7 @@ class TestRunAllEvals:
         mock_generate_report.return_value = "test_report.md"
 
         # Mock file operations
-        with patch("builtins.open", mock_open()) as mock_file:
+        with patch("builtins.open", mock_open()):
             result = run_all_evaluations()
 
         assert result is True

@@ -2,7 +2,6 @@
 Tests for run_node_eval module.
 """
 
-import pytest
 import tempfile
 import pathlib
 from unittest.mock import patch, MagicMock, mock_open
