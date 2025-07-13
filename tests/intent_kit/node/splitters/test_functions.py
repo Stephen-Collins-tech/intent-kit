@@ -2,8 +2,7 @@
 Tests for splitters functions module.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from intent_kit.node.splitters.functions import rule_splitter, llm_splitter
 
 
