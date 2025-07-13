@@ -2,7 +2,6 @@
 Tests for run_all_evals module.
 """
 
-import pytest
 import tempfile
 import pathlib
 from unittest.mock import patch, MagicMock, mock_open
@@ -56,7 +55,7 @@ class TestRunAllEvals:
         mock_generate_report.return_value = "test_report.md"
 
         # Mock file operations
-        with patch("builtins.open", mock_open()) as mock_file:
+        with patch("builtins.open", mock_open()):
             result = run_all_evaluations()
 
         assert result is True
@@ -216,11 +215,16 @@ class TestRunAllEvals:
             output_file = tmp_file.name
 
         try:
+<<<<<<< HEAD
             report_path = generate_comprehensive_report(
                 results,
                 output_file,
                 run_timestamp="2024-01-01_12-00-00",
                 mock_mode=True,
+=======
+            generate_comprehensive_report(
+                results, output_file, run_timestamp="2024-01-01_12-00-00", mock_mode=True
+>>>>>>> origin/feature/major-refactor-and-improvements
             )
 
             # Check file contents for mock mode indicator

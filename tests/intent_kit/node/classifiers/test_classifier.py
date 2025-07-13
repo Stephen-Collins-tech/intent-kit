@@ -2,11 +2,10 @@
 Tests for classifier node module.
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
 from intent_kit.node.classifiers.classifier import ClassifierNode
 from intent_kit.node.enums import NodeType
-from intent_kit.node.types import ExecutionResult, ExecutionError
+from intent_kit.node.types import ExecutionResult
 from intent_kit.context import IntentContext
 
 
@@ -297,8 +296,13 @@ class TestClassifierNode:
         )
 
         context = IntentContext()
+<<<<<<< HEAD
         result = node.execute("test input", context)
 
+=======
+        node.execute("test input", context)
+        
+>>>>>>> origin/feature/major-refactor-and-improvements
         # Verify classifier was called with context_dict
         mock_classifier.assert_called_once()
         call_args = mock_classifier.call_args

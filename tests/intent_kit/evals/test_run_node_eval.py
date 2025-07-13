@@ -2,7 +2,6 @@
 Tests for run_node_eval module.
 """
 
-import pytest
 import tempfile
 import pathlib
 from unittest.mock import patch, MagicMock, mock_open
@@ -86,7 +85,7 @@ class TestRunNodeEval:
             mock_path.return_value.mkdir.return_value = None
             mock_path.return_value.exists.return_value = False
 
-            with patch("builtins.open", mock_open()) as mock_file:
+            with patch("builtins.open", mock_open()):
                 csv_file, date_csv_file = save_raw_results_to_csv(
                     "test_dataset",
                     test_case,

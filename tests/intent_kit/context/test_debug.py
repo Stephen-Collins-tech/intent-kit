@@ -2,7 +2,6 @@
 Tests for context debug module.
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
 from intent_kit.context.debug import (
     get_context_dependencies,
@@ -15,7 +14,6 @@ from intent_kit.context.debug import (
     _format_context_history,
     _format_console_trace,
 )
-from intent_kit.context import IntentContext
 from intent_kit.context.dependencies import ContextDependencies
 
 
