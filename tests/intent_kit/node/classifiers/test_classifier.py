@@ -296,13 +296,7 @@ class TestClassifierNode:
         )
 
         context = IntentContext()
-<<<<<<< HEAD
-        result = node.execute("test input", context)
-
-=======
         node.execute("test input", context)
-        
->>>>>>> origin/feature/major-refactor-and-improvements
         # Verify classifier was called with context_dict
         mock_classifier.assert_called_once()
         call_args = mock_classifier.call_args

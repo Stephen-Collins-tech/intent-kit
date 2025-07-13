@@ -215,16 +215,11 @@ class TestRunAllEvals:
             output_file = tmp_file.name
 
         try:
-<<<<<<< HEAD
-            report_path = generate_comprehensive_report(
+            generate_comprehensive_report(
                 results,
                 output_file,
                 run_timestamp="2024-01-01_12-00-00",
                 mock_mode=True,
-=======
-            generate_comprehensive_report(
-                results, output_file, run_timestamp="2024-01-01_12-00-00", mock_mode=True
->>>>>>> origin/feature/major-refactor-and-improvements
             )
 
             # Check file contents for mock mode indicator
