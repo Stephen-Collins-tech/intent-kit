@@ -52,6 +52,12 @@ No forced dependencies. You define all possible intents and parameters up front,
 pip install intent-kit
 # Or with extras:
 pip install 'intent-kit[openai,anthropic,google,ollama,viz]'
+# Or install all LLM providers plus visualization:
+pip install 'intent-kit[all]'
+# For visualization features only:
+pip install 'intent-kit[viz]'
+# For development (includes all providers + dev tools):
+pip install 'intent-kit[dev]'
 ```
 
 ---
@@ -159,8 +165,10 @@ intent-kit/
 ```bash
 git clone git@github.com:Stephen-Collins-tech/intent-kit.git
 cd intent-kit
-pip install -e .
+# Using pip:
 pip install -e ".[dev]"
+# Or using uv (recommended):
+uv pip install -e ".[dev]"
 pytest tests/
 ```
 
@@ -171,8 +179,6 @@ pytest tests/
 * [Full documentation & guides](https://docs.intentkit.io)
 * [API reference](https://docs.intentkit.io/reference/)
 * [Evaluation docs](https://docs.intentkit.io/evaluation/)
-* [Demo notebooks](https://mybinder.org/v2/gh/Stephen-Collins-tech/intent-kit/HEAD?filepath=examples%2Fsimple_demo.ipynb)
-
 ---
 
 ## License

@@ -129,7 +129,7 @@ def booking_handler(destination: str, date: str, context: IntentContext) -> str:
 
 # Create the handler node with LLM extraction
 action_node_llm = ActionNode(
-    name="handler_node_llm",
+    name="action_node_llm",
     param_schema={"destination": str, "date": str},
     action=booking_handler,
     arg_extractor=extract_booking_args_llm,

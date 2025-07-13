@@ -103,6 +103,11 @@
       "title": "Development",
       "description": "Development and testing guides",
       "files": {
+        "building-and-publishing.md": {
+          "title": "Building and Publishing",
+          "description": "How to build and publish the package",
+          "status": "complete"
+        },
         "testing.md": {
           "title": "Testing",
           "description": "Unit tests and integration testing",
