@@ -16,14 +16,14 @@ class TestClassifierNode:
         """Test ClassifierNode initialization."""
         mock_classifier = MagicMock()
         mock_children = [MagicMock(), MagicMock()]
-        
+
         node = ClassifierNode(
             name="test_classifier",
             classifier=mock_classifier,
             children=mock_children,
-            description="Test classifier"
+            description="Test classifier",
         )
-        
+
         assert node.name == "test_classifier"
         assert node.classifier == mock_classifier
         assert node.children == mock_children
@@ -35,27 +35,25 @@ class TestClassifierNode:
         mock_classifier = MagicMock()
         mock_children = [MagicMock()]
         remediation_strategies = ["strategy1", "strategy2"]
-        
+
         node = ClassifierNode(
             name="test_classifier",
             classifier=mock_classifier,
             children=mock_children,
-            remediation_strategies=remediation_strategies
+            remediation_strategies=remediation_strategies,
         )
-        
+
         assert node.remediation_strategies == remediation_strategies
 
     def test_node_type(self):
         """Test node_type property."""
         mock_classifier = MagicMock()
         mock_children = [MagicMock()]
-        
+
         node = ClassifierNode(
-            name="test_classifier",
-            classifier=mock_classifier,
-            children=mock_children
+            name="test_classifier", classifier=mock_classifier, children=mock_children
         )
-        
+
         assert node.node_type == NodeType.CLASSIFIER
 
     def test_execute_success(self):
@@ -64,24 +62,22 @@ class TestClassifierNode:
         mock_child = MagicMock()
         mock_child.name = "test_child"
         mock_children = [mock_child]
-        
+
         # Mock classifier to return a child
         mock_classifier.return_value = mock_child
-        
+
         # Mock child execution result
         mock_child_result = MagicMock()
         mock_child_result.output = "child output"
         mock_child.execute.return_value = mock_child_result
-        
+
         node = ClassifierNode(
-            name="test_classifier",
-            classifier=mock_classifier,
-            children=mock_children
+            name="test_classifier", classifier=mock_classifier, children=mock_children
         )
-        
+
         context = IntentContext()
         result = node.execute("test input", context)
-        
+
         assert result.success is True
         assert result.output == "child output"
         assert result.node_name == "test_classifier"
@@ -96,16 +92,14 @@ class TestClassifierNode:
         mock_classifier = MagicMock()
         mock_classifier.return_value = None  # No routing possible
         mock_children = [MagicMock()]
-        
+
         node = ClassifierNode(
-            name="test_classifier",
-            classifier=mock_classifier,
-            children=mock_children
+            name="test_classifier", classifier=mock_classifier, children=mock_children
         )
-        
+
         context = IntentContext()
         result = node.execute("test input", context)
-        
+
         assert result.success is False
         assert result.output is None
         assert result.error is not None
@@ -117,7 +111,7 @@ class TestClassifierNode:
         mock_classifier = MagicMock()
         mock_classifier.return_value = None  # No routing possible
         mock_children = [MagicMock()]
-        
+
         # Mock remediation strategy
         mock_strategy = MagicMock()
         mock_strategy.name = "test_strategy"
@@ -130,19 +124,19 @@ class TestClassifierNode:
             output="remediated output",
             error=None,
             params={},
-            children_results=[]
+            children_results=[],
         )
-        
+
         node = ClassifierNode(
             name="test_classifier",
             classifier=mock_classifier,
             children=mock_children,
-            remediation_strategies=[mock_strategy]
+            remediation_strategies=[mock_strategy],
         )
-        
+
         context = IntentContext()
         result = node.execute("test input", context)
-        
+
         assert result.success is True
         assert result.output == "remediated output"
         mock_strategy.execute.assert_called_once()
@@ -152,22 +146,22 @@ class TestClassifierNode:
         mock_classifier = MagicMock()
         mock_classifier.return_value = None  # No routing possible
         mock_children = [MagicMock()]
-        
+
         # Mock remediation strategy that fails
         mock_strategy = MagicMock()
         mock_strategy.name = "test_strategy"
         mock_strategy.execute.return_value = None  # Strategy fails
-        
+
         node = ClassifierNode(
             name="test_classifier",
             classifier=mock_classifier,
             children=mock_children,
-            remediation_strategies=[mock_strategy]
+            remediation_strategies=[mock_strategy],
         )
-        
+
         context = IntentContext()
         result = node.execute("test input", context)
-        
+
         assert result.success is False
         assert result.error is not None
         assert result.error.error_type == "ClassifierRoutingError"
@@ -177,7 +171,7 @@ class TestClassifierNode:
         mock_classifier = MagicMock()
         mock_classifier.return_value = None
         mock_children = [MagicMock()]
-        
+
         # Mock remediation strategy from registry
         mock_strategy = MagicMock()
         mock_strategy.name = "registry_strategy"
@@ -190,22 +184,24 @@ class TestClassifierNode:
             output="registry output",
             error=None,
             params={},
-            children_results=[]
+            children_results=[],
         )
-        
-        with patch("intent_kit.node.classifiers.classifier.get_remediation_strategy") as mock_get:
+
+        with patch(
+            "intent_kit.node.classifiers.classifier.get_remediation_strategy"
+        ) as mock_get:
             mock_get.return_value = mock_strategy
-            
+
             node = ClassifierNode(
                 name="test_classifier",
                 classifier=mock_classifier,
                 children=mock_children,
-                remediation_strategies=["registry_strategy"]
+                remediation_strategies=["registry_strategy"],
             )
-            
+
             context = IntentContext()
             result = node.execute("test input", context)
-            
+
             assert result.success is True
             assert result.output == "registry output"
             mock_get.assert_called_once_with("registry_strategy")
@@ -215,20 +211,20 @@ class TestClassifierNode:
         mock_classifier = MagicMock()
         mock_classifier.return_value = None
         mock_children = [MagicMock()]
-        
+
         # Mock invalid strategy type
         invalid_strategy = 123  # Invalid type
-        
+
         node = ClassifierNode(
             name="test_classifier",
             classifier=mock_classifier,
             children=mock_children,
-            remediation_strategies=[invalid_strategy]
+            remediation_strategies=[invalid_strategy],
         )
-        
+
         context = IntentContext()
         result = node.execute("test input", context)
-        
+
         assert result.success is False
         assert result.error is not None
 
@@ -237,20 +233,22 @@ class TestClassifierNode:
         mock_classifier = MagicMock()
         mock_classifier.return_value = None
         mock_children = [MagicMock()]
-        
-        with patch("intent_kit.node.classifiers.classifier.get_remediation_strategy") as mock_get:
+
+        with patch(
+            "intent_kit.node.classifiers.classifier.get_remediation_strategy"
+        ) as mock_get:
             mock_get.return_value = None  # Strategy not found
-            
+
             node = ClassifierNode(
                 name="test_classifier",
                 classifier=mock_classifier,
                 children=mock_children,
-                remediation_strategies=["missing_strategy"]
+                remediation_strategies=["missing_strategy"],
             )
-            
+
             context = IntentContext()
             result = node.execute("test input", context)
-            
+
             assert result.success is False
             assert result.error is not None
 
@@ -259,22 +257,22 @@ class TestClassifierNode:
         mock_classifier = MagicMock()
         mock_classifier.return_value = None
         mock_children = [MagicMock()]
-        
+
         # Mock remediation strategy that raises exception
         mock_strategy = MagicMock()
         mock_strategy.name = "test_strategy"
         mock_strategy.execute.side_effect = Exception("Strategy error")
-        
+
         node = ClassifierNode(
             name="test_classifier",
             classifier=mock_classifier,
             children=mock_children,
-            remediation_strategies=[mock_strategy]
+            remediation_strategies=[mock_strategy],
         )
-        
+
         context = IntentContext()
         result = node.execute("test input", context)
-        
+
         assert result.success is False
         assert result.error is not None
 
@@ -284,24 +282,27 @@ class TestClassifierNode:
         mock_child = MagicMock()
         mock_child.name = "test_child"
         mock_children = [mock_child]
-        
+
         # Mock classifier to return a child
         mock_classifier.return_value = mock_child
-        
+
         # Mock child execution result
         mock_child_result = MagicMock()
         mock_child_result.output = "child output"
         mock_child.execute.return_value = mock_child_result
-        
+
         node = ClassifierNode(
-            name="test_classifier",
-            classifier=mock_classifier,
-            children=mock_children
+            name="test_classifier", classifier=mock_classifier, children=mock_children
         )
-        
+
         context = IntentContext()
+<<<<<<< HEAD
+        result = node.execute("test input", context)
+
+=======
         node.execute("test input", context)
         
+>>>>>>> origin/feature/major-refactor-and-improvements
         # Verify classifier was called with context_dict
         mock_classifier.assert_called_once()
         call_args = mock_classifier.call_args
@@ -315,22 +316,20 @@ class TestClassifierNode:
         mock_child = MagicMock()
         mock_child.name = "test_child"
         mock_children = [mock_child]
-        
+
         # Mock classifier to return a child
         mock_classifier.return_value = mock_child
-        
+
         # Mock child execution result
         mock_child_result = MagicMock()
         mock_child_result.output = "child output"
         mock_child.execute.return_value = mock_child_result
-        
+
         node = ClassifierNode(
-            name="test_classifier",
-            classifier=mock_classifier,
-            children=mock_children
+            name="test_classifier", classifier=mock_classifier, children=mock_children
         )
-        
+
         result = node.execute("test input")
-        
+
         assert result.success is True
         assert result.output == "child output"
