@@ -4,7 +4,7 @@ Specific tests for llm_splitter function.
 
 import unittest
 from unittest.mock import Mock
-from intent_kit.splitters.llm_splitter import (
+from intent_kit.node.splitters import (
     llm_splitter,
     _create_splitting_prompt,
     _parse_llm_response,

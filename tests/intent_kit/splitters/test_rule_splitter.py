@@ -3,7 +3,7 @@ Specific tests for rule_splitter function.
 """
 
 import unittest
-from intent_kit.splitters.rule_splitter import rule_splitter
+from intent_kit.node.splitters import rule_splitter
 
 
 class TestRuleSplitter(unittest.TestCase):

@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict, Any
-from intent_kit.splitters.node import SplitterNode
+from intent_kit.node.splitters import SplitterNode
 
 
 def split_text_llm(

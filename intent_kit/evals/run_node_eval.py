@@ -5,21 +5,21 @@ run_node_eval.py
 Run evaluations on sample nodes using datasets.
 """
 
-from intent_kit.context import IntentContext
 from typing import Dict, Any, List, Optional
 from pathlib import Path
-import yaml
 import sys
 import os
 import importlib
 import argparse
-from dotenv import load_dotenv
 import csv
 from datetime import datetime
 
 # Add text similarity imports
 from difflib import SequenceMatcher
 import re
+from dotenv import load_dotenv
+from intent_kit.context import IntentContext
+from intent_kit.services.yaml_service import yaml_service
 
 load_dotenv()
 
@@ -29,7 +29,7 @@ _first_test_case: dict = {}
 def load_dataset(dataset_path: Path) -> Dict[str, Any]:
     """Load a dataset from YAML file."""
     with open(dataset_path, "r") as f:
-        return yaml.safe_load(f)
+        return yaml_service.safe_load(f)
 
 
 def get_node_from_module(module_name: str, node_name: str):
@@ -157,14 +157,14 @@ def evaluate_node(
     # Generate a unique run timestamp for this evaluation
     run_timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    # Check if this node needs persistent context (like handler_node_llm)
-    needs_persistent_context = hasattr(node, "name") and "handler_node_llm" in node.name
+    # Check if this node needs persistent context (like action_node_llm)
+    needs_persistent_context = hasattr(node, "name") and "action_node_llm" in node.name
 
     # Create persistent context if needed
     persistent_context = None
     if needs_persistent_context:
         persistent_context = IntentContext()
-        # Initialize booking count for handler_node_llm
+        # Initialize booking count for action_node_llm
         persistent_context.set("booking_count", 0, modified_by="evaluation_init")
 
     for i, test_case in enumerate(test_cases):
@@ -201,7 +201,7 @@ def evaluate_node(
                     else:
                         correct = False
                 else:
-                    # For handlers and classifiers, compare strings
+                    # For actions and classifiers, compare strings
                     correct = (
                         str(actual_output).strip().lower()
                         == str(expected).strip().lower()
@@ -385,7 +385,7 @@ def main():
     llm_config = {}
     if args.llm_config:
         with open(args.llm_config, "r") as f:
-            llm_config = yaml.safe_load(f)
+            llm_config = yaml_service.safe_load(f)
 
         # Set environment variables for API keys
         for provider, config in llm_config.items():

@@ -1,0 +1,59 @@
+{
+  "root_nodes": [
+    {
+      "name": "main_classifier",
+      "type": "classifier",
+      "classifier_function": "keyword_classifier",
+      "description": "Main intent classifier",
+      "children": [
+        {
+          "name": "greet_action",
+          "type": "action",
+          "function_name": "greet_function",
+          "description": "Greet the user",
+          "param_schema": {
+            "name": "str"
+          },
+          "context_inputs": [],
+          "context_outputs": []
+        },
+        {
+          "name": "calculate_action",
+          "type": "action",
+          "function_name": "calculate_function",
+          "description": "Perform calculations",
+          "param_schema": {
+            "operation": "str",
+            "a": "float",
+            "b": "float"
+          },
+          "context_inputs": [],
+          "context_outputs": []
+        },
+        {
+          "name": "weather_action",
+          "type": "action",
+          "function_name": "weather_function",
+          "description": "Get weather information",
+          "param_schema": {
+            "location": "str"
+          },
+          "context_inputs": [],
+          "context_outputs": []
+        },
+        {
+          "name": "help_action",
+          "type": "action",
+          "function_name": "help_function",
+          "description": "Provide help",
+          "param_schema": {},
+          "context_inputs": [],
+          "context_outputs": []
+        }
+      ]
+    }
+  ],
+  "visualize": false,
+  "debug_context": false,
+  "context_trace": false
+}

@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Callable, Union
 from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
-import yaml
+from intent_kit.services.yaml_service import yaml_service
 
 
 @dataclass
@@ -208,7 +208,7 @@ def load_dataset(path: Union[str, Path]) -> Dataset:
     if not path.exists():
         raise FileNotFoundError(f"Dataset file not found: {path}")
     with open(path, "r") as f:
-        data = yaml.safe_load(f)
+        data = yaml_service.safe_load(f)
     if "dataset" not in data:
         raise ValueError(f"Dataset file missing 'dataset' section: {path}")
     dataset_info = data["dataset"]

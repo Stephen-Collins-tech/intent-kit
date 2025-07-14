@@ -1,16 +1,15 @@
+#!/usr/bin/env python3
 """
-Context Demo for IntentKit
+Context Demo
 
-A demonstration of the new IntentContext system showing how state can be shared
-between different steps of a workflow and across multiple user interactions.
+A demonstration showing how context can be shared between workflow steps.
 """
 
 import os
 from datetime import datetime
-from intent_kit.context import IntentContext
-from intent_kit import IntentGraphBuilder, handler, llm_classifier
-from intent_kit.services.llm_factory import LLMFactory
 from dotenv import load_dotenv
+from intent_kit import IntentGraphBuilder, action, llm_classifier
+from intent_kit.context import IntentContext
 
 load_dotenv()
 
@@ -21,87 +20,80 @@ LLM_CONFIG = {
     "model": "meta-llama/llama-4-maverick-17b-128e-instruct",
 }
 
-# Create LLM client
-LLM_CLIENT = LLMFactory.create_client(LLM_CONFIG)
 
-
-def greet_handler(name: str, context: IntentContext) -> str:
-    """Greet handler with context tracking."""
-    # Read from context
-    greeting_count = context.get("greeting_count", 0)
-    last_greeted = context.get("last_greeted", "No one")
+def greet_action(name: str, context: IntentContext) -> str:
+    """Greet the user and track greeting count."""
+    # Get current greeting count
+    greeting_count = context.get("greeting_count", 0) + 1
+    last_greeted = context.get("last_greeted", "None")
 
     # Update context
-    context.set("greeting_count", greeting_count + 1, modified_by="greet")
-    context.set("last_greeted", name, modified_by="greet")
-    context.set("last_greeting_time", datetime.now().isoformat(), modified_by="greet")
+    context.set("greeting_count", greeting_count, "greet_action")
+    context.set("last_greeted", name, "greet_action")
+    context.set("last_greeting_time", datetime.now().isoformat(), "greet_action")
 
-    return (
-        f"Hello {name}! (Greeting #{greeting_count + 1}, last greeted: {last_greeted})"
-    )
-
-
-def calculate_handler(
-    operation: str, a: float, b: float, context: IntentContext
-) -> str:
-    """Calculate handler with history tracking."""
-    result = None
-
-    # Map common operation names to actual operations
-    operation_lower = operation.lower()
-    if operation_lower in ["add", "plus", "addition", "+"]:
-        result = a + b
-        operation_display = "plus"
-    elif operation_lower in ["subtract", "minus", "subtraction", "-"]:
-        result = a - b
-        operation_display = "minus"
-    elif operation_lower in ["multiply", "times", "multiplication", "*"]:
-        result = a * b
-        operation_display = "times"
-    elif operation_lower in ["divide", "division", "/"]:
-        if b != 0:
-            result = a / b
-            operation_display = "divided by"
-        else:
-            result = "Error: Division by zero"
-            operation_display = "divided by"
+    if greeting_count == 1:
+        return f"Hello {name}! Nice to meet you."
     else:
-        # Unknown operation
-        result = f"Error: Unknown operation '{operation}'"
-        operation_display = operation
+        return f"Hello {name}! I've greeted you {greeting_count} times now. Last time I greeted {last_greeted}."
 
-    # Store calculation history in context
-    calc_history = context.get("calculation_history", [])
-    calc_history.append(
+
+def calculate_action(operation: str, a: float, b: float, context: IntentContext) -> str:
+    """Perform calculation and track history."""
+    # Map word operations to mathematical operators
+    operation_map = {
+        "plus": "+",
+        "add": "+",
+        "minus": "-",
+        "subtract": "-",
+        "times": "*",
+        "multiply": "*",
+        "multiplied": "*",
+        "divided": "/",
+        "divide": "/",
+        "over": "/",
+    }
+
+    # Get the mathematical operator
+    math_op = operation_map.get(operation.lower(), operation)
+
+    try:
+        result = eval(f"{a} {math_op} {b}")
+        calc_result = f"{a} {operation} {b} = {result}"
+    except (SyntaxError, ZeroDivisionError) as e:
+        calc_result = f"Error: Cannot calculate {a} {operation} {b} - {str(e)}"
+        result = None
+
+    # Get calculation history
+    history = context.get("calculation_history", [])
+    history.append(
         {
-            "operation": operation_display,
             "a": a,
             "b": b,
+            "operation": operation,
             "result": result,
             "timestamp": datetime.now().isoformat(),
         }
     )
-    context.set("calculation_history", calc_history, modified_by="calculate")
-    context.set(
-        "last_calculation",
-        f"{a} {operation_display} {b} = {result}",
-        modified_by="calculate",
-    )
 
-    return f"{a} {operation_display} {b} = {result}"
+    # Update context
+    context.set("calculation_history", history, "calculate_action")
+    context.set("last_calculation", calc_result, "calculate_action")
+
+    return calc_result
 
 
-def weather_handler(location: str, context: IntentContext) -> str:
-    """Weather handler with caching."""
-    # Check if we've already fetched weather for this location recently
+def weather_action(location: str, context: IntentContext) -> str:
+    """Get weather and cache the result."""
+    # Check if we have cached weather for this location
     last_weather = context.get("last_weather", {})
     if last_weather.get("location") == location:
-        return f"Weather in {location}: {last_weather.get('data')} (cached)"
+        return f"Weather in {location}: {last_weather.get('data', 'Unknown')} (cached)"
 
     # Simulate weather data
-    weather_data = f"72°F, Sunny (simulated for {location})"
+    weather_data = "72°F, Sunny"
 
-    # Store in context
+    # Cache the weather data
     context.set(
         "last_weather",
         {
@@ -109,13 +101,13 @@ def weather_handler(location: str, context: IntentContext) -> str:
             "data": weather_data,
             "timestamp": datetime.now().isoformat(),
         },
-        modified_by="weather",
+        "weather_action",
     )
 
     return f"Weather in {location}: {weather_data}"
 
 
-def show_calculation_history_handler(context: IntentContext) -> str:
+def show_calculation_history_action(context: IntentContext) -> str:
     """Show calculation history from context."""
     calc_history = context.get("calculation_history", [])
 
@@ -132,52 +124,52 @@ def show_calculation_history_handler(context: IntentContext) -> str:
 
 
 def build_context_aware_tree():
-    """Build an intent tree with context-aware handlers using the new API."""
+    """Build an intent tree with context-aware actions using the new API."""
 
-    # Create handlers using the new handler() function with context support
-    greet_handler_node = handler(
+    # Create actions using the new action() function with context support
+    greet_action_node = action(
         name="greet",
         description="Greet the user with context tracking",
-        handler_func=greet_handler,
+        action_func=greet_action,
         param_schema={"name": str},
         llm_config=LLM_CONFIG,
         context_inputs={"greeting_count", "last_greeted"},
         context_outputs={"greeting_count", "last_greeted", "last_greeting_time"},
     )
 
-    calc_handler_node = handler(
+    calc_action_node = action(
         name="calculate",
         description="Perform calculations with history tracking",
-        handler_func=calculate_handler,
+        action_func=calculate_action,
         param_schema={"operation": str, "a": float, "b": float},
         llm_config=LLM_CONFIG,
         context_inputs={"calculation_history"},
         context_outputs={"calculation_history", "last_calculation"},
     )
 
-    weather_handler_node = handler(
+    weather_action_node = action(
         name="weather",
         description="Get weather with caching",
-        handler_func=weather_handler,
+        action_func=weather_action,
         param_schema={"location": str},
         llm_config=LLM_CONFIG,
         context_inputs={"last_weather"},
         context_outputs={"last_weather"},
     )
 
-    history_handler_node = handler(
+    history_action_node = action(
         name="show_calculation_history",
         description="Show calculation history from context",
-        handler_func=show_calculation_history_handler,
+        action_func=show_calculation_history_action,
         param_schema={},
         llm_config=LLM_CONFIG,
         context_inputs={"calculation_history"},
     )
 
-    help_handler_node = handler(
+    help_action_node = action(
         name="help",
         description="Get help",
-        handler_func=lambda: "I can help you with greetings, calculations, weather, and showing history!",
+        action_func=lambda: "I can help you with greetings, calculations, weather, and showing history!",
         param_schema={},
         llm_config=LLM_CONFIG,
     )
@@ -186,11 +178,11 @@ def build_context_aware_tree():
     return llm_classifier(
         name="llm_classifier",
         children=[
-            greet_handler_node,
-            calc_handler_node,
-            weather_handler_node,
-            history_handler_node,
-            help_handler_node,
+            greet_action_node,
+            calc_action_node,
+            weather_action_node,
+            history_action_node,
+            help_action_node,
         ],
         llm_config=LLM_CONFIG,
         description="LLM-powered intent classifier with context support",

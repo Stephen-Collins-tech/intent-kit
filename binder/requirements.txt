@@ -1,4 +1,0 @@
--e .
-jupyterlab
-ipykernel
-intentkit-py[openai]

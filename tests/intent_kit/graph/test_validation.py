@@ -3,8 +3,8 @@
 Simple test script to verify the validation functionality.
 """
 
-from intent_kit.builder import handler, rule_splitter_node
-from intent_kit.classifiers import ClassifierNode
+from intent_kit import action, rule_splitter_node
+from intent_kit.node.classifiers import ClassifierNode
 from intent_kit.graph import IntentGraph
 from intent_kit.graph.validation import GraphValidationError
 
@@ -14,10 +14,10 @@ def test_valid_graph():
     print("Testing valid graph...")
 
     # Create intent nodes
-    greet_node = handler(
+    greet_node = action(
         name="greet",
         description="Greet the user",
-        handler_func=lambda name: f"Hello {name}!",
+        action_func=lambda name: f"Hello {name}!",
         param_schema={"name": str},
     )
 
@@ -51,10 +51,10 @@ def test_invalid_graph():
     print("Testing invalid graph...")
 
     # Create intent nodes
-    greet_node = handler(
+    greet_node = action(
         name="greet",
         description="Greet the user",
-        handler_func=lambda name: f"Hello {name}!",
+        action_func=lambda name: f"Hello {name}!",
         param_schema={"name": str},
     )
 

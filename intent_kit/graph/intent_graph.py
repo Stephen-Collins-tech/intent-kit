@@ -23,7 +23,7 @@ from intent_kit.node import ExecutionError
 from intent_kit.node.enums import NodeType
 from intent_kit.node import TreeNode
 import os
-from intent_kit.classifiers import classify_intent_chunk
+from intent_kit.node.classifiers import classify_intent_chunk
 from intent_kit.types import IntentAction
 
 # Add imports for visualization

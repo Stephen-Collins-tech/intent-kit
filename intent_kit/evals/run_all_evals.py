@@ -5,13 +5,14 @@ run_all_evals.py
 Run evaluations on all datasets and generate comprehensive markdown reports.
 """
 
+import argparse
+from intent_kit.evals import load_dataset
 from intent_kit.evals.run_node_eval import (
-    load_dataset,
     get_node_from_module,
     evaluate_node,
     generate_markdown_report,
 )
-import yaml
+from intent_kit.services.yaml_service import yaml_service
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 import pathlib
@@ -22,8 +23,6 @@ load_dotenv()
 
 def run_all_evaluations():
     """Run all evaluations and generate reports."""
-    import argparse
-
     parser = argparse.ArgumentParser(
         description="Run all evaluations and generate comprehensive report"
     )
@@ -129,7 +128,7 @@ def run_all_evaluations_internal(
         import os
 
         with open(llm_config_path, "r") as f:
-            llm_config = yaml.safe_load(f)
+            llm_config = yaml_service.safe_load(f)
 
         # Set environment variables for API keys
         for provider, config in llm_config.items():
@@ -150,8 +149,8 @@ def run_all_evaluations_internal(
 
         # Load dataset
         dataset = load_dataset(dataset_file)
-        dataset_name = dataset["dataset"]["name"]
-        node_name = dataset["dataset"]["node_name"]
+        dataset_name = dataset.name
+        node_name = dataset.node_name
 
         # Determine module name based on node name
         if "llm" in node_name:
@@ -170,7 +169,10 @@ def run_all_evaluations_internal(
             continue
 
         # Run evaluation
-        test_cases = dataset["test_cases"]
+        test_cases = [
+            {"input": tc.input, "expected": tc.expected, "context": tc.context}
+            for tc in dataset.test_cases
+        ]
         result = evaluate_node(node, test_cases, dataset_name)
         results.append(result)
 
@@ -206,10 +208,10 @@ def generate_comprehensive_report(
 
     report = f"""# Comprehensive Evaluation Report{mock_indicator}
 
-**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  
-**Mode:** {'Mock (simulated responses)' if mock_mode else 'Live (real API calls)'}  
-**Total Datasets:** {total_datasets}  
-**Total Tests:** {total_tests}  
+**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+**Mode:** {'Mock (simulated responses)' if mock_mode else 'Live (real API calls)'}
+**Total Datasets:** {total_datasets}
+**Total Tests:** {total_tests}
 **Overall Accuracy:** {overall_accuracy:.1%}
 
 ## Executive Summary
@@ -264,6 +266,7 @@ def generate_comprehensive_report(
         with open(output_file, "w") as f:
             f.write(report)
         print(f"Comprehensive report written to: {output_file}")
+        return output_file
 
     return report
 

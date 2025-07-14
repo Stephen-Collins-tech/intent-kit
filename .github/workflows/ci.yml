@@ -21,13 +21,15 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install dependencies
-        run: uv sync --dev
-      - name: Ruff
-        run: uv run ruff check .
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+      - name: Lint (Ruff)
+        run: uv run lint
       - name: Black
         run: uv run black --check .
-      - name: mypy
-        run: uv run mypy intent_kit tests
+      - name: Typecheck (mypy)
+        run: uv run typecheck
 
   test:
     runs-on: ubuntu-latest
@@ -42,7 +44,9 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install dependencies
-        run: uv sync --dev
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
       - name: Tests with coverage
         run: |
           uv run pytest --cov=intent_kit --cov-branch --cov-report=xml
@@ -64,7 +68,9 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install dependencies
-        run: uv sync --dev
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
       - name: Evaluations (Mock Mode)
         run: uv run python -m intent_kit.evals.run_all_evals --quiet --mock
 
@@ -76,11 +82,16 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install build dependencies
         run: |
-          pip install build
+          uv venv
+          uv pip install build
       - name: Build package
-        run: python -m build --sdist --wheel --outdir dist
+        run: uv run python -m build --sdist --wheel --outdir dist
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:

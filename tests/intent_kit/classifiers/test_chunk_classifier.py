@@ -1,10 +1,10 @@
 """
-Tests for intent_kit.classifiers.chunk_classifier module.
+Tests for intent_kit.node.classifiers.chunk_classifier module.
 """
 
 from unittest.mock import patch
 
-from intent_kit.classifiers.chunk_classifier import (
+from intent_kit.node.classifiers.chunk_classifier import (
     classify_intent_chunk,
     _create_classification_prompt,
     _parse_classification_response,
@@ -52,8 +52,12 @@ class TestClassifyIntentChunk:
         assert result["classification"] == IntentClassification.ATOMIC
         assert result["action"] == IntentAction.HANDLE
 
-    @patch("intent_kit.classifiers.chunk_classifier.LLMFactory.generate_with_config")
-    @patch("intent_kit.classifiers.chunk_classifier._parse_classification_response")
+    @patch(
+        "intent_kit.node.classifiers.chunk_classifier.LLMFactory.generate_with_config"
+    )
+    @patch(
+        "intent_kit.node.classifiers.chunk_classifier._parse_classification_response"
+    )
     def test_classify_with_llm_config_success(self, mock_parse, mock_generate):
         """Test successful classification with LLM config."""
         mock_generate.return_value = "mock response"
@@ -72,8 +76,12 @@ class TestClassifyIntentChunk:
         mock_parse.assert_called_once_with("mock response", "Book a flight")
         assert result["classification"] == IntentClassification.ATOMIC
 
-    @patch("intent_kit.classifiers.chunk_classifier.LLMFactory.generate_with_config")
-    @patch("intent_kit.classifiers.chunk_classifier._parse_classification_response")
+    @patch(
+        "intent_kit.node.classifiers.chunk_classifier.LLMFactory.generate_with_config"
+    )
+    @patch(
+        "intent_kit.node.classifiers.chunk_classifier._parse_classification_response"
+    )
     def test_classify_with_llm_config_parse_failure(self, mock_parse, mock_generate):
         """Test classification when LLM parsing fails."""
         mock_generate.return_value = "mock response"
@@ -86,7 +94,9 @@ class TestClassifyIntentChunk:
         assert result["classification"] == IntentClassification.ATOMIC
         assert result["action"] == IntentAction.HANDLE
 
-    @patch("intent_kit.classifiers.chunk_classifier.LLMFactory.generate_with_config")
+    @patch(
+        "intent_kit.node.classifiers.chunk_classifier.LLMFactory.generate_with_config"
+    )
     def test_classify_with_llm_config_exception(self, mock_generate):
         """Test classification when LLM raises exception."""
         mock_generate.side_effect = Exception("LLM error")
@@ -125,7 +135,7 @@ class TestCreateClassificationPrompt:
 class TestParseClassificationResponse:
     """Test the _parse_classification_response function."""
 
-    @patch("intent_kit.classifiers.chunk_classifier.extract_json_from_text")
+    @patch("intent_kit.node.classifiers.chunk_classifier.extract_json_from_text")
     def test_parse_valid_json_response(self, mock_extract):
         """Test parsing valid JSON response."""
         mock_extract.return_value = {
@@ -145,8 +155,8 @@ class TestParseClassificationResponse:
         assert result["metadata"]["confidence"] == 0.95
         assert result["metadata"]["reason"] == "Single clear intent"
 
-    @patch("intent_kit.classifiers.chunk_classifier.extract_json_from_text")
-    @patch("intent_kit.classifiers.chunk_classifier._manual_parse_classification")
+    @patch("intent_kit.node.classifiers.chunk_classifier.extract_json_from_text")
+    @patch("intent_kit.node.classifiers.chunk_classifier._manual_parse_classification")
     def test_parse_missing_fields(self, mock_manual, mock_extract):
         """Test parsing response with missing fields."""
         mock_extract.return_value = {
@@ -167,8 +177,8 @@ class TestParseClassificationResponse:
         mock_manual.assert_called_once_with("mock response", "Book a flight")
         assert result["classification"] == IntentClassification.ATOMIC
 
-    @patch("intent_kit.classifiers.chunk_classifier.extract_json_from_text")
-    @patch("intent_kit.classifiers.chunk_classifier._manual_parse_classification")
+    @patch("intent_kit.node.classifiers.chunk_classifier.extract_json_from_text")
+    @patch("intent_kit.node.classifiers.chunk_classifier._manual_parse_classification")
     def test_parse_invalid_enum_values(self, mock_manual, mock_extract):
         """Test parsing response with invalid enum values."""
         mock_extract.return_value = {
@@ -190,8 +200,8 @@ class TestParseClassificationResponse:
         mock_manual.assert_called_once_with("mock response", "Book a flight")
         assert result["classification"] == IntentClassification.ATOMIC
 
-    @patch("intent_kit.classifiers.chunk_classifier.extract_json_from_text")
-    @patch("intent_kit.classifiers.chunk_classifier._manual_parse_classification")
+    @patch("intent_kit.node.classifiers.chunk_classifier.extract_json_from_text")
+    @patch("intent_kit.node.classifiers.chunk_classifier._manual_parse_classification")
     def test_parse_invalid_confidence(self, mock_manual, mock_extract):
         """Test parsing response with invalid confidence value."""
         mock_extract.return_value = {
@@ -213,8 +223,8 @@ class TestParseClassificationResponse:
         mock_manual.assert_called_once_with("mock response", "Book a flight")
         assert result["classification"] == IntentClassification.ATOMIC
 
-    @patch("intent_kit.classifiers.chunk_classifier.extract_json_from_text")
-    @patch("intent_kit.classifiers.chunk_classifier._manual_parse_classification")
+    @patch("intent_kit.node.classifiers.chunk_classifier.extract_json_from_text")
+    @patch("intent_kit.node.classifiers.chunk_classifier._manual_parse_classification")
     def test_parse_no_json_found(self, mock_manual, mock_extract):
         """Test parsing when no JSON is found."""
         mock_extract.return_value = None
@@ -235,7 +245,7 @@ class TestParseClassificationResponse:
 class TestManualParseClassification:
     """Test the _manual_parse_classification function."""
 
-    @patch("intent_kit.classifiers.chunk_classifier.extract_key_value_pairs")
+    @patch("intent_kit.node.classifiers.chunk_classifier.extract_key_value_pairs")
     def test_manual_parse_with_key_value_pairs(self, mock_extract):
         """Test manual parsing with key-value pairs."""
         mock_extract.return_value = {
@@ -255,7 +265,7 @@ class TestManualParseClassification:
         assert result["metadata"]["confidence"] == 0.95
         assert result["metadata"]["reason"] == "Single clear intent"
 
-    @patch("intent_kit.classifiers.chunk_classifier.extract_key_value_pairs")
+    @patch("intent_kit.node.classifiers.chunk_classifier.extract_key_value_pairs")
     def test_manual_parse_missing_fields(self, mock_extract):
         """Test manual parsing with missing fields."""
         mock_extract.return_value = {

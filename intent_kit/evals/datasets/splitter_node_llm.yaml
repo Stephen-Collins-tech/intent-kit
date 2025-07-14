@@ -9,48 +9,48 @@ test_cases:
     expected: ["Book a flight to Paris", "Check the weather in London"]
     context:
       user_id: "user123"
-    
+
   - input: "Cancel my reservation and book a new one"
     expected: ["Cancel my reservation", "Book a new reservation"]
     context:
       user_id: "user123"
-    
+
   - input: "What's the weather like in Tokyo and can you book me a hotel there?"
     expected: ["What's the weather like in Tokyo", "Book me a hotel there"]
     context:
       user_id: "user123"
-    
+
   - input: "I need to cancel my flight and get a refund"
     expected: ["Cancel my flight", "Get a refund"]
     context:
       user_id: "user123"
-    
+
   - input: "Check the weather in Berlin and book a restaurant for dinner"
     expected: ["Check the weather in Berlin", "Book a restaurant for dinner"]
     context:
       user_id: "user123"
-    
+
   - input: "What's the weather like?"
     expected: ["What's the weather like?"]
     context:
       user_id: "user123"
-    
+
   - input: "Book a flight to Rome, check the weather there, and reserve a hotel"
     expected: ["Book a flight to Rome", "Check the weather there", "Reserve a hotel"]
     context:
       user_id: "user123"
-    
+
   - input: "Cancel my subscription and order a replacement"
     expected: ["Cancel my subscription", "Order a replacement"]
     context:
       user_id: "user123"
-    
+
   - input: "I want to book a flight to Amsterdam and check the weather forecast"
     expected: ["Book a flight to Amsterdam", "Check the weather forecast"]
     context:
       user_id: "user123"
-    
+
   - input: "Cancel my appointment and reschedule for next week"
     expected: ["Cancel my appointment", "Reschedule for next week"]
     context:
-      user_id: "user123" 
+      user_id: "user123"

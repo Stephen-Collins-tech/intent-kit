@@ -16,16 +16,55 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Stephen-Collins-tech/intent-kit"
+Documentation = "https://docs.intentkit.io"
+Repository = "https://github.com/Stephen-Collins-tech/intent-kit"
+"Bug Tracker" = "https://github.com/Stephen-Collins-tech/intent-kit/issues"
+
 [project.optional-dependencies]
-openai = [
+all = [
+    "anthropic>=0.54.0",
+    "google-genai>=0.1.0",
+    "networkx>=3.5",
+    "ollama>=0.1.0",
     "openai>=1.0.0",
+    "pyvis>=0.3.2",
+    "pyyaml>=6.0.2",
 ]
 anthropic = [
     "anthropic>=0.54.0",
+]
+dev = [
+    "black[jupyter]>=24.4.2",
+    "black>=24.4.2",
+    "build>=1.2.1",
+    "coverage>=7.0",
+    "intentkit-py[all]",
+    "ipykernel>=6.0.0",
+    "mkdocs-literate-nav>=0.6.0",
+    "mkdocs-material>=9.5.17",
+    "mkdocs>=1.5.0",
+    "mkdocstrings[python]>=0.24.0",
+    "mypy>=1.10.0",
+    "pre-commit>=3.6.0",
+    "pytest-cov>=5.0",
+    "pytest>=8.4.1",
+    "python-dotenv>=1.1.1",
+    "pyyaml",
+    "ruff>=0.4.7",
+    "tqdm",
+    "twine>=5.1.0",
+    "types-networkx>=3.5.0.20250701",
+    "types-pyyaml>=6.0.12.20250516",
 ]
 google = [
     "google-genai>=0.1.0",
@@ -33,45 +72,27 @@ google = [
 ollama = [
     "ollama>=0.1.0",
 ]
-
-[project.scripts]
-run-evals = "intent_kit.evals.run_all_evals:run_all_evaluations"
-eval-node = "intent_kit.evals.run_node_eval:main"
-eval-api-demo = "examples.eval_api_demo:main"
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["intent_kit*"]
-
-[dependency-groups]
-dev = [
-    "pytest>=8.4.1",
-    "coverage>=7.0",
-    "pytest-cov>=5.0",
-    "google-genai>=0.1.0",
-    "anthropic>=0.54.0",
+openai = [
     "openai>=1.0.0",
-    "ollama>=0.1.0",
-    "python-dotenv>=1.0.0",
-    "tqdm",
-    "pyyaml",
-    "black>=24.4.2",
-    "black[jupyter]>=24.4.2",
-    "ruff>=0.4.7",
-    "mypy>=1.10.0",
-    "pre-commit>=3.6.0",
-    "build>=1.2.1",
-    "twine>=5.1.0",
-    "mkdocs>=1.5.0",
-    "mkdocs-material>=9.5.17",
-    "mkdocstrings[python]>=0.24.0",
-    "mkdocs-literate-nav>=0.6.0",
-    "ipykernel>=6.0.0",
-    "types-pyyaml>=6.0.12.20250516",
-    "types-networkx>=3.5.0.20250701",
-    "python-dotenv>=1.1.1",
 ]
 viz = [
     "networkx>=3.5",
     "pyvis>=0.3.2",
 ]
+evals = [
+    "pyyaml>=6.0.2",
+]
+
+[project.scripts]
+eval-api-demo = "examples.eval_api_demo:main"
+eval-node = "intent_kit.evals.run_node_eval:main"
+lint = "scripts.lint:main"
+run-evals = "intent_kit.evals.run_all_evals:run_all_evaluations"
+typecheck = "scripts.typecheck:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["intent_kit*", "scripts*"]
+
+[tool.uv.sources]
+intentkit-py = { workspace = true }

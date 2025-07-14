@@ -38,6 +38,16 @@ class OpenRouterClient:
                     "OpenAI package not installed. Install with: pip install openai"
                 )
 
+    def _clean_response(self, content: str) -> str:
+        """Clean the response content by removing newline characters and extra whitespace."""
+        if not content:
+            return ""
+
+        # Remove newline characters and normalize whitespace
+        cleaned = content.strip()
+
+        return cleaned
+
     def generate(self, prompt: str, model: str = "openai/gpt-4") -> str:
         """Generate text using OpenRouter model."""
         self._ensure_imported()
@@ -45,8 +55,9 @@ class OpenRouterClient:
             model=model, messages=[{"role": "user", "content": prompt}], max_tokens=1000
         )
         content = response.choices[0].message.content
-        logger.debug(f"OpenRouter generate response: {content}")
-        return str(content) if content else ""
+        cleaned_content = self._clean_response(str(content) if content else "")
+        logger.debug(f"OpenRouter generate response: {cleaned_content}")
+        return cleaned_content
 
     # Keep generate_text as an alias for backward compatibility
     def generate_text(self, prompt: str, model: str = "openai/gpt-4") -> str:

@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any
-from intent_kit.classifiers.node import ClassifierNode
-from intent_kit.handlers.node import HandlerNode
+from intent_kit.node.classifiers import ClassifierNode
+from intent_kit.node.actions.action import ActionNode as HandlerNode
 from intent_kit.context import IntentContext
 from intent_kit.node.base import TreeNode
 
@@ -221,7 +221,7 @@ def cancel_handler(item: str, context: IntentContext) -> str:
 weather_handler_node = HandlerNode(
     name="weather_handler",
     param_schema={"location": str},
-    handler=weather_handler,
+    action=weather_handler,
     arg_extractor=extract_weather_args_llm,
     description="Get weather information for a location",
 )
@@ -229,7 +229,7 @@ weather_handler_node = HandlerNode(
 cancel_handler_node = HandlerNode(
     name="cancel_handler",
     param_schema={"item": str},
-    handler=cancel_handler,
+    action=cancel_handler,
     arg_extractor=extract_cancel_args_llm,
     description="Cancel reservations or bookings",
 )
