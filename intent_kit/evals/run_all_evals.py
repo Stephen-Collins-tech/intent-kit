@@ -12,7 +12,7 @@ from intent_kit.evals.run_node_eval import (
     evaluate_node,
     generate_markdown_report,
 )
-import yaml
+from intent_kit.services.yaml_service import yaml_service
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 import pathlib
@@ -128,7 +128,7 @@ def run_all_evaluations_internal(
         import os
 
         with open(llm_config_path, "r") as f:
-            llm_config = yaml.safe_load(f)
+            llm_config = yaml_service.safe_load(f)
 
         # Set environment variables for API keys
         for provider, config in llm_config.items():

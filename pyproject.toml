@@ -38,6 +38,7 @@ all = [
     "ollama>=0.1.0",
     "openai>=1.0.0",
     "pyvis>=0.3.2",
+    "pyyaml>=6.0.2",
 ]
 anthropic = [
     "anthropic>=0.54.0",
@@ -78,6 +79,9 @@ viz = [
     "networkx>=3.5",
     "pyvis>=0.3.2",
 ]
+evals = [
+    "pyyaml>=6.0.2",
+]
 
 [project.scripts]
 eval-api-demo = "examples.eval_api_demo:main"
@@ -89,3 +93,6 @@ typecheck = "scripts.typecheck:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["intent_kit*", "scripts*"]
+
+[tool.uv.sources]
+intentkit-py = { workspace = true }

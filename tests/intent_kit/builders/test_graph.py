@@ -84,21 +84,17 @@ class TestIntentGraphBuilder:
         assert result is builder
         assert builder._json_graph == yaml_dict
 
-    # Fix patch target for yaml
-    @patch("builtins.__import__")
-    def test_with_yaml_import_error(self, mock_import):
+    def test_with_yaml_import_error(self):
         """Test with_yaml when PyYAML is not available."""
-
-        def side_effect(name, *args, **kwargs):
-            if name == "yaml":
-                raise ImportError("No module named 'yaml'")
-            return MagicMock()
-
-        mock_import.side_effect = side_effect
         builder = IntentGraphBuilder()
 
-        with pytest.raises(ImportError, match="PyYAML is required"):
-            builder.with_yaml("test.yaml")
+        with patch("builtins.open", mock_open(read_data="test: data")):
+            with patch(
+                "intent_kit.services.yaml_service.yaml_service.safe_load",
+                side_effect=ImportError("PyYAML is required"),
+            ):
+                with pytest.raises(ValueError, match="PyYAML is required"):
+                    builder.with_yaml("test.yaml")
 
     def test_with_yaml_file_error(self):
         """Test with_yaml when file loading fails."""

@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional, Callable, Union
 from intent_kit.node import TreeNode
 from intent_kit.graph import IntentGraph
 from .base import Builder
+from intent_kit.services.yaml_service import yaml_service
 
 
 class IntentGraphBuilder(Builder):
@@ -87,18 +88,11 @@ class IntentGraphBuilder(Builder):
             ImportError: If PyYAML is not installed
             ValueError: If YAML parsing fails
         """
-        try:
-            import yaml
-        except ImportError:
-            raise ImportError(
-                "PyYAML is required for YAML support. Install with: pip install PyYAML"
-            )
-
         if isinstance(yaml_input, str):
             # Treat as file path
             try:
                 with open(yaml_input, "r") as f:
-                    json_graph = yaml.safe_load(f)
+                    json_graph = yaml_service.safe_load(f)
             except Exception as e:
                 raise ValueError(f"Failed to load YAML file '{yaml_input}': {e}")
         else:

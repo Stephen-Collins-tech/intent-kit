@@ -16,6 +16,7 @@ from intent_kit.evals import (
     EvalTestResult,
     EvalResult,
 )
+from intent_kit.services.yaml_service import yaml_service
 
 
 def test_load_dataset():
@@ -44,10 +45,9 @@ def test_load_dataset_malformed():
     """Test loading a malformed dataset."""
     # Create a temporary malformed YAML file
     import tempfile
-    import yaml
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        yaml.dump({"invalid": "data"}, f)
+        yaml_service.dump({"invalid": "data"}, f)
         temp_path = f.name
 
     try:
@@ -234,7 +234,6 @@ def test_run_eval_from_path():
 
     # Create a temporary dataset file
     import tempfile
-    import yaml
 
     test_data = {
         "dataset": {
@@ -253,7 +252,7 @@ def test_run_eval_from_path():
     }
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        yaml.dump(test_data, f)
+        yaml_service.dump(test_data, f)
         temp_path = f.name
 
     try:

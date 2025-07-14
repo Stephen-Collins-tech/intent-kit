@@ -5,21 +5,21 @@ run_node_eval.py
 Run evaluations on sample nodes using datasets.
 """
 
-from intent_kit.context import IntentContext
 from typing import Dict, Any, List, Optional
 from pathlib import Path
-import yaml
 import sys
 import os
 import importlib
 import argparse
-from dotenv import load_dotenv
 import csv
 from datetime import datetime
 
 # Add text similarity imports
 from difflib import SequenceMatcher
 import re
+from dotenv import load_dotenv
+from intent_kit.context import IntentContext
+from intent_kit.services.yaml_service import yaml_service
 
 load_dotenv()
 
@@ -29,7 +29,7 @@ _first_test_case: dict = {}
 def load_dataset(dataset_path: Path) -> Dict[str, Any]:
     """Load a dataset from YAML file."""
     with open(dataset_path, "r") as f:
-        return yaml.safe_load(f)
+        return yaml_service.safe_load(f)
 
 
 def get_node_from_module(module_name: str, node_name: str):
@@ -385,7 +385,7 @@ def main():
     llm_config = {}
     if args.llm_config:
         with open(args.llm_config, "r") as f:
-            llm_config = yaml.safe_load(f)
+            llm_config = yaml_service.safe_load(f)
 
         # Set environment variables for API keys
         for provider, config in llm_config.items():
