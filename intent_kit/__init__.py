@@ -36,7 +36,7 @@ from .node.classifiers import create_llm_classifier, create_llm_arg_extractor
 from .node.splitters import rule_splitter, llm_splitter
 from .services.llm_factory import LLMFactory
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     # Core components
