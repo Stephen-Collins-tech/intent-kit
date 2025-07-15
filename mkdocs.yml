@@ -1,4 +1,4 @@
-site_name: intent-kit
+site_name: Intent Kit
 site_description: Open-source Python framework for intent classification and execution
 site_url: https://docs.intentkit.io
 repo_url: https://github.com/Stephen-Collins-tech/intent-kit
@@ -21,24 +21,14 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Core Concepts:
-      - Intent Graphs: concepts/intent_graphs.md
-      - Nodes and Actions: concepts/nodes_and_actions.md
-      - Context System: concepts/context_system.md
-      - Remediation: concepts/remediation.md
+      - Intent Graphs: concepts/intent-graphs.md
+      - Nodes and Actions: concepts/nodes-and-actions.md
   - API Reference:
-      - IntentGraphBuilder: api/intent_graph_builder.md
-      - Node Types: api/node_types.md
-      - Context API: api/context_api.md
-      - Remediation API: api/remediation_api.md
-  - Configuration:
-      - JSON Serialization: configuration/json_serialization.md
-      - LLM Integration: configuration/llm_integration.md
-      - Function Registry: configuration/function_registry.md
+      - api-reference.md
   - Examples:
-      - Basic Examples: examples/basic_examples.md
-      - Advanced Examples: examples/advanced_examples.md
-      - Multi-Intent Routing: examples/multi_intent_routing.md
-      - Context Workflows: examples/context_workflows.md
+      - Calculator Bot: examples/calculator-bot.md
+      - Context-Aware Chatbot: examples/context-aware-chatbot.md
+      - Multi-Intent Routing: examples/multi-intent-routing.md
   - Development:
       - Testing: development/testing.md
       - Evaluation: development/evaluation.md

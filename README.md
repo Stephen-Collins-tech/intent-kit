@@ -2,7 +2,7 @@
   <img src="assets/logo.png" alt="Intent Kit Logo" height="100" style="border-radius: 16px;"/>
 </p>
 
-<h1 align="center">intent-kit</h1>
+<h1 align="center">Intent Kit</h1>
 <p align="center">A Python library for building intent-driven workflows with LLMs.</p>
 
 <p align="center">
@@ -22,9 +22,9 @@
 
 ---
 
-## What is intent-kit?
+## What is Intent Kit?
 
-**intent-kit** is a Python framework for building explicit, composable intent workflows.
+**Intent Kit** is a Python framework for building explicit, composable intent workflows.
 Works with any classifier—LLMs, rule-based, or your own.
 No forced dependencies. You define all possible intents and parameters up front, so you always stay in control.
 
@@ -43,21 +43,23 @@ No forced dependencies. You define all possible intents and parameters up front,
 * **Multi-intent**: Split and route complex requests like "Greet Bob and show weather."
 * **Visualization**: Interactive graph output (optional).
 * **Robust debugging**: JSON/console output and error tracing.
+* **JSON configuration**: Define graphs declaratively.
+* **Evaluation framework**: Test and benchmark your workflows.
 
 ---
 
 ## Install
 
 ```bash
-pip install intent-kit
+pip install intentkit-py
 # Or with extras:
-pip install 'intent-kit[openai,anthropic,google,ollama,viz]'
+pip install 'intentkit-py[openai,anthropic,google,ollama,viz]'
 # Or install all LLM providers plus visualization:
-pip install 'intent-kit[all]'
+pip install 'intentkit-py[all]'
 # For visualization features only:
-pip install 'intent-kit[viz]'
+pip install 'intentkit-py[viz]'
 # For development (includes all providers + dev tools):
-pip install 'intent-kit[dev]'
+pip install 'intentkit-py[dev]'
 ```
 
 ---
@@ -109,7 +111,7 @@ See [`examples/`](examples/) for more.
 
 **Test your intent graphs like real software, not just with unit tests.**
 
-intent-kit includes a first-class **Eval API** for benchmarking your workflows against real datasets—YAML or programmatic. It's built for LLM and intent pipeline evaluation, not just toy examples.
+Intent Kit includes a first-class **Eval API** for benchmarking your workflows against real datasets—YAML or programmatic. It's built for LLM and intent pipeline evaluation, not just toy examples.
 
 * **Benchmark entire graphs or single nodes** with real data and reproducible reports.
 * **Supports YAML or code datasets** (inputs, expected outputs, optional context).
@@ -131,7 +133,7 @@ result.save_markdown("my_report.md")
 ```
 
 **Why care?**
-Most "agent" and LLM frameworks are untestable black boxes. **intent-kit** is designed for serious, auditable workflow engineering.
+Most "agent" and LLM frameworks are untestable black boxes. **Intent Kit** is designed for serious, auditable workflow engineering.
 
 [Learn more in the docs →](https://docs.intentkit.io/evaluation/)
 
@@ -154,8 +156,9 @@ Most "agent" and LLM frameworks are untestable black boxes. **intent-kit** is de
 intent-kit/
 ├── intent_kit/        # Library code
 ├── examples/          # Example scripts
-├── tests/             # Unit tests
-└── pyproject.toml     # Build config
+├── docs/             # Documentation
+├── tests/            # Unit tests
+└── pyproject.toml    # Build config
 ```
 
 ---
@@ -179,6 +182,8 @@ pytest tests/
 * [Full documentation & guides](https://docs.intentkit.io)
 * [API reference](https://docs.intentkit.io/reference/)
 * [Evaluation docs](https://docs.intentkit.io/evaluation/)
+* [Examples](https://docs.intentkit.io/examples/)
+
 ---
 
 ## License
