@@ -32,7 +32,7 @@ Intent Kit helps you build AI-powered applications that understand what users wa
 - **Handle complex requests** that involve multiple steps
 - **Keep track of conversations** so your app remembers context
 
-The best part? You stay in complete control. No mysterious "AI agents" making unexpected decisions. You define exactly what your app can do and how it should respond.
+The best part? You stay in complete control. You define exactly what your app can do and how it should respond.
 
 ---
 
