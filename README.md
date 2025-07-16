@@ -2,8 +2,8 @@
   <img src="assets/logo.png" alt="Intent Kit Logo" height="100" style="border-radius: 16px;"/>
 </p>
 
-<h1 align="center">intent-kit</h1>
-<p align="center">A Python library for building intent-driven workflows with LLMs.</p>
+<h1 align="center">Intent Kit</h1>
+<p align="center">Build intelligent workflows that understand what users want</p>
 
 <p align="center">
   <a href="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml">
@@ -22,129 +22,217 @@
 
 ---
 
-## What is intent-kit?
+## What is Intent Kit?
 
-**intent-kit** is a Python framework for building explicit, composable intent workflows.
-Works with any classifier—LLMs, rule-based, or your own.
-No forced dependencies. You define all possible intents and parameters up front, so you always stay in control.
+Intent Kit helps you build AI-powered applications that understand what users want and take the right actions. Think of it as a smart router that can:
 
-* **Zero required dependencies**: Standard Python or plug in OpenAI, Anthropic, Google, Ollama, etc.
-* **Explicit and safe**: No emergent "agent" magic.
-* **Supports multi-intent, context tracking, validation, and visualization.**
+- **Understand user requests** using any AI model (OpenAI, Anthropic, Google, or your own)
+- **Extract important details** like names, dates, and preferences automatically
+- **Take actions** like sending messages, making calculations, or calling APIs
+- **Handle complex requests** that involve multiple steps
+- **Keep track of conversations** so your app remembers context
 
----
-
-## Features
-
-* **Tree-based intent graphs**: Compose hierarchical workflows using classifiers and actions.
-* **Any classifier**: Rule-based, ML, LLM, or custom logic.
-* **Parameter extraction**: Automatic, with type validation and custom validators.
-* **Context/state management**: Dependency tracking and audit trail.
-* **Multi-intent**: Split and route complex requests like "Greet Bob and show weather."
-* **Visualization**: Interactive graph output (optional).
-* **Robust debugging**: JSON/console output and error tracing.
+The best part? You stay in complete control. No mysterious "AI agents" making unexpected decisions. You define exactly what your app can do and how it should respond.
 
 ---
 
-## Install
+## Why Intent Kit?
 
-```bash
-pip install intent-kit
-# Or with extras:
-pip install 'intent-kit[openai,anthropic,google,ollama,viz]'
-# Or install all LLM providers plus visualization:
-pip install 'intent-kit[all]'
-# For visualization features only:
-pip install 'intent-kit[viz]'
-# For development (includes all providers + dev tools):
-pip install 'intent-kit[dev]'
-```
+### 🎯 **You're in Control**
+Define every possible action upfront. No surprises, no unexpected behavior.
+
+### 🚀 **Works with Any AI**
+Use OpenAI, Anthropic, Google, Ollama, or even simple rules. Mix and match as needed.
+
+### 🔧 **Easy to Build**
+Simple, clear API that feels natural to use. No complex abstractions to learn.
+
+### 🧪 **Testable & Reliable**
+Built-in testing tools let you verify your workflows work correctly before deploying.
+
+### 📊 **See What's Happening**
+Visualize your workflows and track exactly how decisions are made.
 
 ---
 
 ## Quick Start
 
+### 1. Install Intent Kit
+
+```bash
+pip install intentkit-py
+```
+
+For AI features, add your preferred provider:
+```bash
+pip install 'intentkit-py[openai]'    # OpenAI
+pip install 'intentkit-py[anthropic]'  # Anthropic
+pip install 'intentkit-py[all]'        # All providers
+```
+
+### 2. Build Your First Workflow
+
 ```python
 from intent_kit import IntentGraphBuilder, action, llm_classifier
 
+# Define what your app can do
 greet = action(
     name="greet",
-    description="Greet the user",
-    action_func=lambda name, **_: f"Hello {name}!",
+    description="Greet the user by name",
+    action_func=lambda name: f"Hello {name}!",
     param_schema={"name": str}
 )
+
 weather = action(
     name="weather",
-    description="Get weather info",
-    action_func=lambda city, **_: f"Weather in {city} is sunny.",
+    description="Get weather for a location",
+    action_func=lambda city: f"Weather in {city}: 72°F, Sunny",
     param_schema={"city": str}
 )
 
+# Create a classifier to understand user requests
 classifier = llm_classifier(
-    name="root",
+    name="main",
     children=[greet, weather],
-    llm_config={}
+    llm_config={"provider": "openai", "model": "gpt-3.5-turbo"}
 )
 
+# Build your workflow
 graph = IntentGraphBuilder().root(classifier).build()
+
+# Test it!
 result = graph.route("Hello Alice")
 print(result.output)  # → "Hello Alice!"
 ```
 
+### 3. Try More Examples
+
+```python
+# Get weather
+result = graph.route("What's the weather in San Francisco?")
+print(result.output)  # → "Weather in San Francisco: 72°F, Sunny"
+
+# Handle multiple requests
+result = graph.route("Greet Bob and check weather in NYC")
+print(result.output)  # → Handles both requests!
+```
+
 ---
 
-## How it Works
+## How It Works
 
-* **Define actions**: Functions for each intent, with schemas.
-* **Build classifiers**: Route input with rule-based, LLM, or custom logic.
-* **Build graphs**: Combine everything into a tree.
-* **(Optional) Multi-intent**: Use splitter nodes for "do X and Y" inputs.
-* **Context/state**: Track session or app state in workflows.
+Intent Kit uses a simple but powerful pattern:
 
-See [`examples/`](examples/) for more.
+1. **Actions** - Define what your app can do (send messages, make API calls, etc.)
+2. **Classifiers** - Understand what the user wants using AI or rules
+3. **Graphs** - Connect everything together into a workflow
+4. **Context** - Remember conversations and user preferences
+
+The magic happens when a user sends a message:
+- The classifier figures out what they want
+- Intent Kit extracts the important details (names, locations, etc.)
+- The right action runs with those details
+- You get back a response
 
 ---
 
-## Eval API: Real-World, Dataset-Driven Testing
+## Real-World Testing
 
-**Test your intent graphs like real software, not just with unit tests.**
+Most AI frameworks are black boxes that are hard to test. Intent Kit is different.
 
-intent-kit includes a first-class **Eval API** for benchmarking your workflows against real datasets—YAML or programmatic. It's built for LLM and intent pipeline evaluation, not just toy examples.
-
-* **Benchmark entire graphs or single nodes** with real data and reproducible reports.
-* **Supports YAML or code datasets** (inputs, expected outputs, optional context).
-* **Automatic reporting**: Markdown, CSV, and JSON output—easy to share or integrate into CI.
-* **Mock mode** for API-free, cheap testing.
-* **Tracks regressions over time** with date-based and "latest" result archives.
-
-**Minimal eval example:**
+### Test Your Workflows Like Real Software
 
 ```python
 from intent_kit.evals import run_eval, load_dataset
-from my_graph import my_node
 
-dataset = load_dataset("intent_kit/evals/datasets/classifier_node_llm.yaml")
-result = run_eval(dataset, my_node)
+# Load test cases
+dataset = load_dataset("tests/greeting_tests.yaml")
+
+# Test your workflow
+result = run_eval(dataset, graph)
 
 print(f"Accuracy: {result.accuracy():.1%}")
-result.save_markdown("my_report.md")
+result.save_report("test_results.md")
 ```
 
-**Why care?**
-Most "agent" and LLM frameworks are untestable black boxes. **intent-kit** is designed for serious, auditable workflow engineering.
+### What You Can Test
 
-[Learn more in the docs →](https://docs.intentkit.io/evaluation/)
+- **Accuracy** - Does your workflow understand requests correctly?
+- **Performance** - How fast does it respond?
+- **Edge Cases** - What happens with unusual inputs?
+- **Regressions** - Catch when changes break existing functionality
+
+This means you can deploy with confidence, knowing your AI workflows work reliably.
 
 ---
 
-## API Highlights
+## Key Features
 
-* `action(...)`: Create a leaf node (executes your function, extracts arguments)
-* `llm_classifier(...)`: Classifier node using LLM or fallback rule-based logic
-* `IntentGraphBuilder()`: Fluent graph assembly
-* `rule_splitter_node(...)`, `llm_splitter_node(...)`: Multi-intent input
-* `IntentContext`: Track and manage session/context state
-* `evals`: Run real dataset-driven benchmarks on your graph
+### 🧠 **Smart Understanding**
+- Works with any AI model (OpenAI, Anthropic, Google, Ollama)
+- Extracts parameters automatically (names, dates, preferences)
+- Handles complex, multi-step requests
+
+### 🔄 **Multi-Step Workflows**
+- Chain actions together
+- Handle "do X and Y" requests
+- Remember context across conversations
+
+### 🎨 **Visualization**
+- See your workflows as interactive diagrams
+- Track how decisions are made
+- Debug complex flows easily
+
+### 🛠️ **Developer Friendly**
+- Simple, clear API
+- Comprehensive error handling
+- Built-in debugging tools
+- JSON configuration support
+
+### 🧪 **Testing & Evaluation**
+- Test against real datasets
+- Measure accuracy and performance
+- Catch regressions automatically
+
+---
+
+## Common Use Cases
+
+### 🤖 **Chatbots & Virtual Assistants**
+Build intelligent bots that understand natural language and take appropriate actions.
+
+### 🔧 **Task Automation**
+Automate complex workflows that require understanding user intent.
+
+### 📊 **Data Processing**
+Route and process information based on what users are asking for.
+
+### 🎯 **Decision Systems**
+Create systems that make smart decisions based on user requests.
+
+---
+
+## Installation Options
+
+```bash
+# Basic installation (Python only)
+pip install intentkit-py
+
+# With specific AI providers
+pip install 'intentkit-py[openai]'      # OpenAI
+pip install 'intentkit-py[anthropic]'    # Anthropic  
+pip install 'intentkit-py[google]'       # Google AI
+pip install 'intentkit-py[ollama]'       # Ollama
+
+# With visualization tools
+pip install 'intentkit-py[viz]'
+
+# Everything (all providers + tools)
+pip install 'intentkit-py[all]'
+
+# Development (includes testing tools)
+pip install 'intentkit-py[dev]'
+```
 
 ---
 
@@ -152,35 +240,39 @@ Most "agent" and LLM frameworks are untestable black boxes. **intent-kit** is de
 
 ```
 intent-kit/
-├── intent_kit/        # Library code
-├── examples/          # Example scripts
-├── tests/             # Unit tests
-└── pyproject.toml     # Build config
+├── intent_kit/        # Main library code
+├── examples/          # Working examples
+├── docs/             # Documentation
+├── tests/            # Test suite
+└── pyproject.toml    # Project configuration
 ```
 
 ---
 
-## Development
+## Getting Help
+
+- 📚 **[Full Documentation](https://docs.intentkit.io)** - Guides, API reference, and examples
+- 🚀 **[Quickstart Guide](https://docs.intentkit.io/quickstart/)** - Get up and running fast
+- 💡 **[Examples](https://docs.intentkit.io/examples/)** - See how others use Intent Kit
+- 🐛 **[GitHub Issues](https://github.com/Stephen-Collins-tech/intent-kit/issues)** - Report bugs or ask questions
+
+---
+
+## Contributing
+
+We welcome contributions! Here's how to get started:
 
 ```bash
 git clone git@github.com:Stephen-Collins-tech/intent-kit.git
 cd intent-kit
-# Using pip:
 pip install -e ".[dev]"
-# Or using uv (recommended):
-uv pip install -e ".[dev]"
 pytest tests/
 ```
 
----
+See our [Contributing Guide](https://github.com/Stephen-Collins-tech/intent-kit/blob/main/CONTRIBUTING.md) for more details.
 
-## Documentation
-
-* [Full documentation & guides](https://docs.intentkit.io)
-* [API reference](https://docs.intentkit.io/reference/)
-* [Evaluation docs](https://docs.intentkit.io/evaluation/)
 ---
 
 ## License
 
-MIT License
+MIT License - feel free to use Intent Kit in your projects!

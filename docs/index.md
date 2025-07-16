@@ -1,6 +1,6 @@
-# Welcome to intent-kit
+# Welcome to Intent Kit
 
-intent-kit is a universal Python framework for building hierarchical intent graphs with deterministic, fully-auditable execution models.
+Intent Kit is a Python framework that helps you build intelligent applications that understand what users want and take the right actions.
 
 ## 🚀 Quick Start
 
@@ -9,27 +9,13 @@ Get up and running in minutes with our [Quickstart Guide](quickstart.md).
 ## 📚 Documentation
 
 ### Core Concepts
-- [Intent Graphs](concepts/intent-graphs.md) - Understanding the core architecture
-- [Nodes and Actions](concepts/nodes-and-actions.md) - Building blocks of intent graphs
-- [Context System](concepts/context_system.md) - State management and dependency tracking
-- [Remediation](concepts/remediation.md) - Error handling and recovery strategies
-
-### API Reference
-- [IntentGraphBuilder](api/intent_graph_builder.md) - Fluent interface for building graphs
-- [Node Types](api/node_types.md) - Action, Classifier, and Splitter nodes
-- [Context API](api/context_api.md) - Context management and debugging
-- [Remediation API](api/remediation_api.md) - Error handling strategies
-
-### Configuration
-- [JSON Serialization](configuration/json-serialization.md) - Define graphs in JSON
-- [LLM Integration](configuration/llm_integration.md) - OpenAI, Anthropic, Google, Ollama
-- [Function Registry](configuration/function_registry.md) - Managing function mappings
+- [Intent Graphs](concepts/intent-graphs.md) - How to structure your workflows
+- [Nodes and Actions](concepts/nodes-and-actions.md) - Building blocks for your applications
 
 ### Examples
-- [Basic Examples](examples/basic_examples.md) - Simple intent graphs
-- [Advanced Examples](examples/advanced_examples.md) - Complex workflows
-- [Multi-Intent Routing](examples/multi_intent_routing.md) - Handling multiple intents
-- [Context-Aware Workflows](examples/context_workflows.md) - Stateful conversations
+- [Calculator Bot](examples/calculator-bot.md) - Simple math operations
+- [Context-Aware Chatbot](examples/context-aware-chatbot.md) - Remembering conversations
+- [Multi-Intent Routing](examples/multi-intent-routing.md) - Handling complex requests
 
 ### Development
 - [Building and Publishing](development/building-and-publishing.md) - How to build and publish the package
@@ -40,25 +26,44 @@ Get up and running in minutes with our [Quickstart Guide](quickstart.md).
 ## 🛠️ Installation
 
 ```bash
-pip install intent-kit  # Basic installation
-pip install intent-kit[openai]  # With OpenAI support
-pip install intent-kit[all]  # All LLM providers
+pip install intentkit-py  # Basic installation
+pip install intentkit-py[openai]  # With OpenAI support
+pip install intentkit-py[all]  # All AI providers
 ```
 
-## 💡 Key Features
+## 💡 What Makes Intent Kit Special
 
-- **Hierarchical Intent Graphs** - Build complex decision trees
-- **Multi-Intent Routing** - Handle multiple intents in single input
-- **Context Management** - Stateful conversations with dependency tracking
-- **LLM Integration** - Support for OpenAI, Anthropic, Google, and Ollama
-- **JSON Configuration** - Define graphs declaratively
-- **Error Remediation** - Robust error handling and recovery
-- **Evaluation Framework** - Test and benchmark your graphs
+- **🎯 You're in Control** - Define exactly what your app can do, no surprises
+- **🧠 Works with Any AI** - OpenAI, Anthropic, Google, Ollama, or your own models
+- **🔧 Easy to Build** - Simple, clear API that feels natural to use
+- **🧪 Testable & Reliable** - Built-in testing tools for confidence
+- **📊 See What's Happening** - Visualize workflows and track decisions
 
-## 🎯 Use Cases
+## 🎯 Common Use Cases
 
-- **Chatbots** - Natural language conversation flows
-- **Task Automation** - Complex workflow automation
-- **API Orchestration** - Multi-step API integrations
-- **Content Processing** - Intelligent content routing and processing
-- **Decision Systems** - Rule-based and ML-powered decision making
+### 🤖 **Chatbots & Virtual Assistants**
+Build intelligent bots that understand natural language and take appropriate actions.
+
+### 🔧 **Task Automation**
+Automate complex workflows that require understanding user intent.
+
+### 📊 **Data Processing**
+Route and process information based on what users are asking for.
+
+### 🎯 **Decision Systems**
+Create systems that make smart decisions based on user requests.
+
+## 🚀 Key Features
+
+- **Smart Understanding** - Works with any AI model, extracts parameters automatically
+- **Multi-Step Workflows** - Chain actions together, handle complex requests
+- **Visualization** - See your workflows as interactive diagrams
+- **Developer Friendly** - Simple API, comprehensive error handling, built-in debugging
+- **Testing & Evaluation** - Test against real datasets, measure performance
+
+## 📖 Learn More
+
+- **[Quickstart Guide](quickstart.md)** - Get up and running fast
+- **[Examples](examples/)** - See working examples
+- **[Core Concepts](concepts/)** - Understand the fundamentals
+- **[Development](development/)** - Testing, debugging, and deployment
