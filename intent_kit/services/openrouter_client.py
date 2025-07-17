@@ -2,13 +2,19 @@
 # Requires: pip install openai
 
 from intent_kit.utils.logger import Logger
+from intent_kit.services.base_client import BaseLLMClient
+from typing import Optional
 
 logger = Logger("openrouter_service")
 
 
-class OpenRouterClient:
+class OpenRouterClient(BaseLLMClient):
     def __init__(self, api_key: str):
         self.api_key = api_key
+        super().__init__(api_key=api_key)
+
+    def _initialize_client(self, **kwargs) -> None:
+        """Initialize the OpenRouter client."""
         self._client = self.get_client()
 
     def get_client(self):
@@ -27,16 +33,7 @@ class OpenRouterClient:
     def _ensure_imported(self):
         """Ensure the OpenAI package is imported."""
         if self._client is None:
-            try:
-                import openai
-
-                self._client = openai.OpenAI(
-                    api_key=self.api_key, base_url="https://openrouter.ai/api/v1"
-                )
-            except ImportError:
-                raise ImportError(
-                    "OpenAI package not installed. Install with: pip install openai"
-                )
+            self._client = self.get_client()
 
     def _clean_response(self, content: str) -> str:
         """Clean the response content by removing newline characters and extra whitespace."""
@@ -48,18 +45,20 @@ class OpenRouterClient:
 
         return cleaned
 
-    def generate(self, prompt: str, model: str = "openai/gpt-4") -> str:
-        """Generate text using OpenRouter model."""
+    def generate(self, prompt: str, model: Optional[str] = None) -> str:
+        """Generate text using OpenRouter's LLM model."""
         self._ensure_imported()
+        assert self._client is not None  # Type assertion for linter
+        model = model or "openrouter-default"
         response = self._client.chat.completions.create(
-            model=model, messages=[{"role": "user", "content": prompt}], max_tokens=1000
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=1000,
         )
+        if not response.choices:
+            return ""
         content = response.choices[0].message.content
-        cleaned_content = self._clean_response(str(content) if content else "")
-        logger.debug(f"OpenRouter generate response: {cleaned_content}")
-        return cleaned_content
+        return str(content) if content else ""
 
-    # Keep generate_text as an alias for backward compatibility
-    def generate_text(self, prompt: str, model: str = "openai/gpt-4") -> str:
-        """Alias for generate method (backward compatibility)."""
+    def generate_text(self, prompt: str, model: Optional[str] = None) -> str:
         return self.generate(prompt, model)

@@ -5,6 +5,9 @@ YAML Service: Provides safe YAML loading and dumping with clear error if PyYAML 
 import logging
 from typing import Any, IO, Optional
 
+# Dummy assignment for testing
+yaml = None
+
 logger = logging.getLogger(__name__)
 
 

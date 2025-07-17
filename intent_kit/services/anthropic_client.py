@@ -2,13 +2,24 @@
 # Requires: pip install anthropic
 
 from intent_kit.utils.logger import Logger
+from intent_kit.services.base_client import BaseLLMClient
+from typing import Optional
+
+# Dummy assignment for testing
+anthropic = None
 
 logger = Logger("anthropic_service")
 
 
-class AnthropicClient:
+class AnthropicClient(BaseLLMClient):
     def __init__(self, api_key: str):
+        if not api_key:
+            raise TypeError("API key is required")
         self.api_key = api_key
+        super().__init__(api_key=api_key)
+
+    def _initialize_client(self, **kwargs) -> None:
+        """Initialize the Anthropic client."""
         self._client = self.get_client()
 
     def get_client(self):
@@ -25,28 +36,22 @@ class AnthropicClient:
     def _ensure_imported(self):
         """Ensure the Anthropic package is imported."""
         if self._client is None:
-            try:
-                import anthropic
+            self._client = self.get_client()
 
-                self._client = anthropic.Anthropic(api_key=self.api_key)
-            except ImportError:
-                raise ImportError(
-                    "Anthropic package not installed. Install with: pip install anthropic"
-                )
-
-    def generate(self, prompt: str, model: str = "claude-sonnet-4-20250514") -> str:
+    def generate(self, prompt: str, model: Optional[str] = None) -> str:
         """Generate text using Anthropic's Claude model."""
         self._ensure_imported()
+        assert self._client is not None  # Type assertion for linter
+        model = model or "claude-sonnet-4-20250514"
         response = self._client.messages.create(
-            model=model, max_tokens=1000, messages=[{"role": "user", "content": prompt}]
+            model=model,
+            max_tokens=1000,
+            messages=[{"role": "user", "content": prompt}],
         )
-        content = response.content
-        logger.debug(f"Anthropic generate response: {content}")
-        return str(content) if content else ""
+        if not response.content:
+            return ""
+        return str(response.content[0].text) if response.content else ""
 
     # Keep generate_text as an alias for backward compatibility
-    def generate_text(
-        self, prompt: str, model: str = "claude-sonnet-4-20250514"
-    ) -> str:
-        """Alias for generate method (backward compatibility)."""
+    def generate_text(self, prompt: str, model: Optional[str] = None) -> str:
         return self.generate(prompt, model)

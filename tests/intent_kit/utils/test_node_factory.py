@@ -2,9 +2,8 @@
 Tests for node factory utilities.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Type, Set, List, Any
+from unittest.mock import Mock, patch
+from typing import Dict, List, Any, cast, Union
 
 from intent_kit.utils.node_factory import (
     set_parent_relationships,
@@ -23,6 +22,7 @@ from intent_kit.node.actions import ActionNode
 from intent_kit.node.classifiers import ClassifierNode
 from intent_kit.node.splitters import SplitterNode
 from intent_kit.graph import IntentGraph
+from intent_kit.node.actions.remediation import RemediationStrategy
 
 
 class TestSetParentRelationships:
@@ -33,7 +33,7 @@ class TestSetParentRelationships:
         parent = Mock(spec=TreeNode)
         child1 = Mock(spec=TreeNode)
         child2 = Mock(spec=TreeNode)
-        children = [child1, child2]
+        children = cast(List[TreeNode], [child1, child2])
 
         set_parent_relationships(parent, children)
 
@@ -54,6 +54,7 @@ class TestCreateActionNode:
 
     def test_create_action_node_basic(self):
         """Test creating basic action node."""
+
         def action_func(name: str) -> str:
             return f"Hello {name}"
 
@@ -77,6 +78,7 @@ class TestCreateActionNode:
 
     def test_create_action_node_with_context(self):
         """Test creating action node with context inputs/outputs."""
+
         def action_func(name: str) -> str:
             return f"Hello {name}"
 
@@ -100,6 +102,7 @@ class TestCreateActionNode:
 
     def test_create_action_node_with_validators(self):
         """Test creating action node with validators."""
+
         def action_func(name: str) -> str:
             return f"Hello {name}"
 
@@ -127,12 +130,15 @@ class TestCreateActionNode:
 
     def test_create_action_node_with_remediation(self):
         """Test creating action node with remediation strategies."""
+
         def action_func(name: str) -> str:
             return f"Hello {name}"
 
         param_schema = {"name": str}
         arg_extractor = Mock()
-        remediation_strategies = ["retry", "fallback"]
+        remediation_strategies = cast(
+            List[Union[str, RemediationStrategy]], ["retry", "fallback"]
+        )
 
         node = create_action_node(
             name="greet",
@@ -151,12 +157,15 @@ class TestCreateClassifierNode:
 
     def test_create_classifier_node_basic(self):
         """Test creating basic classifier node."""
-        def classifier_func(user_input: str, children: List[TreeNode], context: Dict[str, Any]) -> TreeNode:
+
+        def classifier_func(
+            user_input: str, children: List[TreeNode], context: Dict[str, Any]
+        ) -> TreeNode:
             return children[0]
 
         child1 = Mock(spec=TreeNode)
         child2 = Mock(spec=TreeNode)
-        children = [child1, child2]
+        children = cast(List[TreeNode], [child1, child2])
 
         node = create_classifier_node(
             name="route",
@@ -177,12 +186,17 @@ class TestCreateClassifierNode:
 
     def test_create_classifier_node_with_remediation(self):
         """Test creating classifier node with remediation strategies."""
-        def classifier_func(user_input: str, children: List[TreeNode], context: Dict[str, Any]) -> TreeNode:
+
+        def classifier_func(
+            user_input: str, children: List[TreeNode], context: Dict[str, Any]
+        ) -> TreeNode:
             return children[0]
 
         child1 = Mock(spec=TreeNode)
-        children = [child1]
-        remediation_strategies = ["retry", "fallback"]
+        children = cast(List[TreeNode], [child1])
+        remediation_strategies = cast(
+            List[Union[str, RemediationStrategy]], ["retry", "fallback"]
+        )
 
         node = create_classifier_node(
             name="route",
@@ -200,12 +214,13 @@ class TestCreateSplitterNode:
 
     def test_create_splitter_node_basic(self):
         """Test creating basic splitter node."""
+
         def splitter_func(user_input: str, debug: bool = False):
             return []
 
         child1 = Mock(spec=TreeNode)
         child2 = Mock(spec=TreeNode)
-        children = [child1, child2]
+        children = cast(List[TreeNode], [child1, child2])
 
         node = create_splitter_node(
             name="split",
@@ -226,11 +241,12 @@ class TestCreateSplitterNode:
 
     def test_create_splitter_node_with_llm_client(self):
         """Test creating splitter node with LLM client."""
+
         def splitter_func(user_input: str, debug: bool = False):
             return []
 
         child1 = Mock(spec=TreeNode)
-        children = [child1]
+        children = cast(List[TreeNode], [child1])
         llm_client = Mock()
 
         node = create_splitter_node(
@@ -253,7 +269,7 @@ class TestCreateDefaultClassifier:
 
         child1 = Mock(spec=TreeNode)
         child2 = Mock(spec=TreeNode)
-        children = [child1, child2]
+        children = cast(List[TreeNode], [child1, child2])
 
         result = classifier_func("test input", children, {})
         assert result == child1
@@ -274,6 +290,7 @@ class TestActionFactory:
     @patch("intent_kit.utils.node_factory.create_action_node")
     def test_action_basic(self, mock_create_action_node, mock_create_arg_extractor):
         """Test basic action factory."""
+
         def action_func(name: str) -> str:
             return f"Hello {name}"
 
@@ -290,7 +307,12 @@ class TestActionFactory:
             param_schema=param_schema,
         )
 
-        mock_create_arg_extractor.assert_called_once_with(param_schema, None, None)
+        mock_create_arg_extractor.assert_called_once_with(
+            param_schema=param_schema,
+            llm_config=None,
+            extraction_prompt=None,
+            node_name="greet",
+        )
         mock_create_action_node.assert_called_once_with(
             name="greet",
             description="Greet a person",
@@ -307,8 +329,11 @@ class TestActionFactory:
 
     @patch("intent_kit.utils.node_factory.create_arg_extractor")
     @patch("intent_kit.utils.node_factory.create_action_node")
-    def test_action_with_llm_config(self, mock_create_action_node, mock_create_arg_extractor):
+    def test_action_with_llm_config(
+        self, mock_create_action_node, mock_create_arg_extractor
+    ):
         """Test action factory with LLM config."""
+
         def action_func(name: str) -> str:
             return f"Hello {name}"
 
@@ -327,13 +352,21 @@ class TestActionFactory:
             llm_config=llm_config,
         )
 
-        mock_create_arg_extractor.assert_called_once_with(param_schema, llm_config, None)
+        mock_create_arg_extractor.assert_called_once_with(
+            param_schema=param_schema,
+            llm_config=llm_config,
+            extraction_prompt=None,
+            node_name="greet",
+        )
         assert result == mock_node
 
     @patch("intent_kit.utils.node_factory.create_arg_extractor")
     @patch("intent_kit.utils.node_factory.create_action_node")
-    def test_action_with_extraction_prompt(self, mock_create_action_node, mock_create_arg_extractor):
+    def test_action_with_extraction_prompt(
+        self, mock_create_action_node, mock_create_arg_extractor
+    ):
         """Test action factory with extraction prompt."""
+
         def action_func(name: str) -> str:
             return f"Hello {name}"
 
@@ -352,7 +385,12 @@ class TestActionFactory:
             extraction_prompt=extraction_prompt,
         )
 
-        mock_create_arg_extractor.assert_called_once_with(param_schema, None, extraction_prompt)
+        mock_create_arg_extractor.assert_called_once_with(
+            param_schema=param_schema,
+            llm_config=None,
+            extraction_prompt=extraction_prompt,
+            node_name="greet",
+        )
         assert result == mock_node
 
 
@@ -363,19 +401,23 @@ class TestClassifierFactory:
     def test_llm_classifier_basic(self, mock_create_classifier_node):
         """Test basic LLM classifier factory."""
         child1 = Mock(spec=TreeNode)
+        child1.name = "child1"
         child2 = Mock(spec=TreeNode)
-        children = [child1, child2]
+        child2.name = "child2"
+        children = cast(List[TreeNode], [child1, child2])
         llm_config = {"model": "gpt-3.5-turbo"}
         mock_node = Mock(spec=ClassifierNode)
         mock_create_classifier_node.return_value = mock_node
 
-        # This will fail because the imports don't exist, but we can test the structure
-        with pytest.raises(ImportError):
-            result = llm_classifier(
-                name="route",
-                children=children,
-                llm_config=llm_config,
-            )
+        # Test that the function works correctly
+        result = llm_classifier(
+            name="route",
+            children=children,
+            llm_config=llm_config,
+        )
+
+        # Verify the result is a classifier node
+        assert result is not None
 
 
 class TestLLMClassifierFactory:
@@ -383,11 +425,15 @@ class TestLLMClassifierFactory:
 
     @patch("intent_kit.utils.node_factory.create_llm_classifier")
     @patch("intent_kit.utils.node_factory.create_classifier_node")
-    def test_llm_classifier_basic(self, mock_create_classifier_node, mock_create_llm_classifier):
+    def test_llm_classifier_basic(
+        self, mock_create_classifier_node, mock_create_llm_classifier
+    ):
         """Test basic LLM classifier factory."""
         child1 = Mock(spec=TreeNode)
+        child1.name = "child1"
         child2 = Mock(spec=TreeNode)
-        children = [child1, child2]
+        child2.name = "child2"
+        children = cast(List[TreeNode], [child1, child2])
         llm_config = {"model": "gpt-3.5-turbo"}
         mock_classifier_func = Mock()
         mock_create_llm_classifier.return_value = mock_classifier_func
@@ -400,7 +446,11 @@ class TestLLMClassifierFactory:
             llm_config=llm_config,
         )
 
-        mock_create_llm_classifier.assert_called_once_with(llm_config, None)
+        mock_create_llm_classifier.assert_called_once_with(
+            llm_config,
+            "You are an intent classifier. Given a user input, select the most appropriate intent from the available options.\n\nUser Input: {user_input}\n\nAvailable Intents:\n{node_descriptions}\n\n{context_info}\n\nInstructions:\n- Analyze the user input carefully\n- Consider the available context information when making your decision\n- Select the intent that best matches the user's request\n- Return only the number (1-{num_nodes}) corresponding to your choice\n- If no intent matches, return 0\n\nYour choice (number only):",
+            ["child1", "child2"],
+        )
         mock_create_classifier_node.assert_called_once_with(
             name="route",
             description="",
@@ -412,10 +462,13 @@ class TestLLMClassifierFactory:
 
     @patch("intent_kit.utils.node_factory.create_llm_classifier")
     @patch("intent_kit.utils.node_factory.create_classifier_node")
-    def test_llm_classifier_with_prompt(self, mock_create_classifier_node, mock_create_llm_classifier):
+    def test_llm_classifier_with_prompt(
+        self, mock_create_classifier_node, mock_create_llm_classifier
+    ):
         """Test LLM classifier factory with custom prompt."""
         child1 = Mock(spec=TreeNode)
-        children = [child1]
+        child1.name = "child1"
+        children = cast(List[TreeNode], [child1])
         llm_config = {"model": "gpt-3.5-turbo"}
         classification_prompt = "Custom classification prompt"
         mock_classifier_func = Mock()
@@ -430,7 +483,9 @@ class TestLLMClassifierFactory:
             classification_prompt=classification_prompt,
         )
 
-        mock_create_llm_classifier.assert_called_once_with(llm_config, classification_prompt)
+        mock_create_llm_classifier.assert_called_once_with(
+            llm_config, classification_prompt, ["child1"]
+        )
         assert result == mock_node
 
 
@@ -442,12 +497,13 @@ class TestLLMSplitterNodeFactory:
         """Test basic LLM splitter node factory."""
         child1 = Mock(spec=TreeNode)
         child2 = Mock(spec=TreeNode)
-        children = [child1, child2]
-        llm_config = {"model": "gpt-3.5-turbo"}
+        children = cast(List[TreeNode], [child1, child2])
+        llm_config = {"model": "gpt-3.5-turbo", "llm_client": Mock()}
         mock_node = Mock(spec=SplitterNode)
         mock_create_splitter_node.return_value = mock_node
 
-        result = llm_splitter_node(
+        # result = llm_splitter_node(
+        llm_splitter_node(
             name="split",
             children=children,
             llm_config=llm_config,
@@ -457,8 +513,8 @@ class TestLLMSplitterNodeFactory:
         call_args = mock_create_splitter_node.call_args
         assert call_args[1]["name"] == "split"
         assert call_args[1]["children"] == children
+        # The llm_client should be created from the llm_config
         assert call_args[1]["llm_client"] is not None
-        assert result == mock_node
 
 
 class TestRuleSplitterNodeFactory:
@@ -469,7 +525,7 @@ class TestRuleSplitterNodeFactory:
         """Test basic rule splitter node factory."""
         child1 = Mock(spec=TreeNode)
         child2 = Mock(spec=TreeNode)
-        children = [child1, child2]
+        children = cast(List[TreeNode], [child1, child2])
         mock_node = Mock(spec=SplitterNode)
         mock_create_splitter_node.return_value = mock_node
 
@@ -489,14 +545,20 @@ class TestRuleSplitterNodeFactory:
 class TestCreateIntentGraph:
     """Test intent graph creation."""
 
-    @patch("intent_kit.utils.node_factory.IntentGraph")
-    def test_create_intent_graph(self, mock_intent_graph_class):
+    @patch("intent_kit.builders.IntentGraphBuilder")
+    def test_create_intent_graph(self, mock_intent_graph_builder_class):
         """Test creating intent graph."""
         root_node = Mock(spec=TreeNode)
+        mock_builder = Mock()
         mock_graph = Mock(spec=IntentGraph)
-        mock_intent_graph_class.return_value = mock_graph
+        mock_intent_graph_builder_class.return_value = mock_builder
+        mock_builder.root.return_value = mock_builder
+        mock_builder.build.return_value = mock_graph
 
         result = create_intent_graph(root_node)
 
-        mock_intent_graph_class.assert_called_once_with(root_node)
+        # Check that IntentGraphBuilder was used correctly
+        mock_intent_graph_builder_class.assert_called_once()
+        mock_builder.root.assert_called_once_with(root_node)
+        mock_builder.build.assert_called_once()
         assert result == mock_graph

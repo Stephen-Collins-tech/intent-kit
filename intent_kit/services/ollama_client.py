@@ -2,13 +2,19 @@
 # Requires: pip install ollama
 
 from intent_kit.utils.logger import Logger
+from intent_kit.services.base_client import BaseLLMClient
+from typing import Optional
 
 logger = Logger("ollama_service")
 
 
-class OllamaClient:
+class OllamaClient(BaseLLMClient):
     def __init__(self, base_url: str = "http://localhost:11434"):
         self.base_url = base_url
+        super().__init__(base_url=base_url)
+
+    def _initialize_client(self, **kwargs) -> None:
+        """Initialize the Ollama client."""
         self._client = self.get_client()
 
     def get_client(self):
@@ -25,30 +31,27 @@ class OllamaClient:
     def _ensure_imported(self):
         """Ensure the Ollama package is imported."""
         if self._client is None:
-            try:
-                from ollama import Client
+            self._client = self.get_client()
 
-                self._client = Client(host=self.base_url)
-            except ImportError:
-                raise ImportError(
-                    "Ollama package not installed. Install with: pip install ollama"
-                )
-
-    def generate(self, prompt: str, model: str = "llama2") -> str:
-        """Generate text using Ollama model."""
+    def generate(self, prompt: str, model: Optional[str] = None) -> str:
+        """Generate text using Ollama's LLM model."""
         self._ensure_imported()
-        try:
-            response = self._client.generate(model=model, prompt=prompt)
-            content = response["response"]
-            logger.debug(f"Ollama generate response: {content}")
-            return str(content) if content else ""
-        except Exception as e:
-            logger.error(f"Error generating with Ollama: {e}")
-            raise
+        assert self._client is not None  # Type assertion for linter
+        model = model or "llama2"
+        response = self._client.generate(
+            model=model,
+            prompt=prompt,
+        )
+        result = response.get("response", "")
+        return result if result is not None else ""
+
+    def generate_text(self, prompt: str, model: Optional[str] = None) -> str:
+        return self.generate(prompt, model)
 
     def generate_stream(self, prompt: str, model: str = "llama2"):
         """Generate text using Ollama model with streaming."""
         self._ensure_imported()
+        assert self._client is not None  # Type assertion for linter
         try:
             for chunk in self._client.generate(model=model, prompt=prompt, stream=True):
                 yield chunk["response"]
@@ -59,6 +62,7 @@ class OllamaClient:
     def chat(self, messages: list, model: str = "llama2") -> str:
         """Chat with Ollama model using messages format."""
         self._ensure_imported()
+        assert self._client is not None  # Type assertion for linter
         try:
             response = self._client.chat(model=model, messages=messages)
             content = response["message"]["content"]
@@ -71,6 +75,7 @@ class OllamaClient:
     def chat_stream(self, messages: list, model: str = "llama2"):
         """Chat with Ollama model using messages format with streaming."""
         self._ensure_imported()
+        assert self._client is not None  # Type assertion for linter
         try:
             for chunk in self._client.chat(model=model, messages=messages, stream=True):
                 yield chunk["message"]["content"]
@@ -81,6 +86,7 @@ class OllamaClient:
     def list_models(self):
         """List available models on the Ollama server."""
         self._ensure_imported()
+        assert self._client is not None  # Type assertion for linter
         try:
             models_response = self._client.list()
             logger.debug(f"Ollama list response: {models_response}")
@@ -115,6 +121,7 @@ class OllamaClient:
     def show_model(self, model: str):
         """Show model information."""
         self._ensure_imported()
+        assert self._client is not None  # Type assertion for linter
         try:
             return self._client.show(model)
         except Exception as e:
@@ -124,16 +131,12 @@ class OllamaClient:
     def pull_model(self, model: str):
         """Pull a model from the Ollama library."""
         self._ensure_imported()
+        assert self._client is not None  # Type assertion for linter
         try:
             return self._client.pull(model)
         except Exception as e:
             logger.error(f"Error pulling model {model}: {e}")
             raise
-
-    # Keep generate_text as an alias for backward compatibility
-    def generate_text(self, prompt: str, model: str = "llama2") -> str:
-        """Alias for generate method (backward compatibility)."""
-        return self.generate(prompt, model)
 
     @classmethod
     def is_available(cls) -> bool:

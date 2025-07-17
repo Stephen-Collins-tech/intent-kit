@@ -27,9 +27,11 @@ class FunctionRegistry:
         self.functions[name] = func
         self.logger.debug(f"Registered function '{name}'")
 
-    def get(self, name: str) -> Optional[Callable]:
+    def get(self, name: str) -> Callable:
         """Get a function by name."""
-        return self.functions.get(name)
+        if name not in self.functions:
+            raise ValueError(f"Function '{name}' not found in registry")
+        return self.functions[name]
 
     def has(self, name: str) -> bool:
         """Check if a function is registered."""

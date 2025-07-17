@@ -3,10 +3,7 @@ Tests for logger utilities.
 """
 
 import pytest
-import os
-import sys
-from unittest.mock import patch, Mock
-from io import StringIO
+from unittest.mock import patch
 
 from intent_kit.utils.logger import ColorManager, Logger
 
@@ -76,7 +73,6 @@ class TestColorManager:
         """Test colorize_key_value method with color support."""
         mock_supports_color.return_value = True
         result = self.color_manager.colorize_key_value("key", "value")
-        expected = "\033[37mkey\033[0m: \033[93mvalue\033[0m"
         # The actual implementation uses white for both key and value
         assert "key" in result
         assert "value" in result
@@ -194,7 +190,16 @@ class TestLogger:
     def test_get_valid_log_levels(self):
         """Test getting valid log levels."""
         levels = self.logger.get_valid_log_levels()
-        expected = ["trace", "debug", "info", "warning", "error", "critical", "fatal", "off"]
+        expected = [
+            "trace",
+            "debug",
+            "info",
+            "warning",
+            "error",
+            "critical",
+            "fatal",
+            "off",
+        ]
         assert levels == expected
 
     def test_should_log(self):
@@ -221,9 +226,16 @@ class TestLogger:
     def test_validate_log_level(self):
         """Test log level validation."""
         # Valid levels should not raise
-        for level in ["trace", "debug", "info", "warning", "error", "critical", "fatal"]:
-            logger = Logger("test", level)
-            # Should not raise exception
+        for level in [
+            "trace",
+            "debug",
+            "info",
+            "warning",
+            "error",
+            "critical",
+            "fatal",
+        ]:
+            Logger("test", level)  # Should not raise exception
 
         # Invalid level should raise
         with pytest.raises(ValueError, match="Invalid log level"):
@@ -246,7 +258,7 @@ class TestLogger:
         # Test that color_manager methods are accessible through logger
         assert hasattr(self.logger, "colorize")
         assert hasattr(self.logger, "get_color")
-        
+
         # Test that unknown methods raise AttributeError
         with pytest.raises(AttributeError):
             self.logger.unknown_method
@@ -264,7 +276,7 @@ class TestLogger:
     def test_log_level_filtering(self):
         """Test that log messages are filtered by level."""
         logger = Logger("test", "warning")
-        
+
         with patch("intent_kit.utils.logger.print") as mock_print:
             # Should not log debug message
             logger.log("debug", "debug message")

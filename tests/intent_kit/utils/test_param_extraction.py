@@ -3,8 +3,7 @@ Tests for parameter extraction utilities.
 """
 
 import pytest
-from unittest.mock import Mock, patch
-from typing import Dict, Type
+from unittest.mock import patch
 
 from intent_kit.utils.param_extraction import (
     parse_param_schema,
@@ -32,12 +31,12 @@ class TestParseParamSchema:
 
         result = parse_param_schema(schema_data)
 
-        assert result["name"] == str
-        assert result["age"] == int
-        assert result["height"] == float
-        assert result["is_active"] == bool
-        assert result["tags"] == list
-        assert result["metadata"] == dict
+        assert result["name"] is str
+        assert result["age"] is int
+        assert result["height"] is float
+        assert result["is_active"] is bool
+        assert result["tags"] is list
+        assert result["metadata"] is dict
 
     def test_parse_unknown_type(self):
         """Test that unknown types raise ValueError."""

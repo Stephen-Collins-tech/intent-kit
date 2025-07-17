@@ -2,7 +2,6 @@
 Tests for node enums.
 """
 
-import pytest
 from intent_kit.node.enums import NodeType
 
 
@@ -18,9 +17,9 @@ class TestNodeType:
             "SPLITTER": "splitter",
             "CLARIFY": "clarify",
             "GRAPH": "graph",
-            "UNHANDLED_CHUNK": "unhandled_chunk"
+            "UNHANDLED_CHUNK": "unhandled_chunk",
         }
-        
+
         for name, value in expected_values.items():
             assert hasattr(NodeType, name)
             assert getattr(NodeType, name).value == value
@@ -120,6 +119,7 @@ class TestNodeType:
         """Test that enum values have proper comment documentation."""
         # Check that the enum file has proper comments
         import inspect
+
         source = inspect.getsource(NodeType)
         assert "# Base node types" in source
         assert "# Specialized node types" in source

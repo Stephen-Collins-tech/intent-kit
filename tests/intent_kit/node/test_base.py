@@ -3,7 +3,6 @@ Tests for node base classes.
 """
 
 import pytest
-from unittest.mock import Mock, patch
 from typing import Optional
 
 from intent_kit.node.base import Node, TreeNode
@@ -38,7 +37,7 @@ class TestNode:
         """Test the has_name property."""
         node_with_name = Node(name="test")
         node_without_name = Node()
-        
+
         assert node_with_name.has_name is True
         assert node_without_name.has_name is True  # Uses node_id as name
 
@@ -96,6 +95,7 @@ class TestNode:
     def test_node_id_format(self):
         """Test that node ID is a valid UUID string."""
         import uuid
+
         node = Node()
         # This should not raise an exception
         uuid.UUID(node.node_id)
@@ -123,7 +123,7 @@ class TestTreeNode:
         child1 = ConcreteTreeNode(description="Child 1")
         child2 = ConcreteTreeNode(description="Child 2")
         parent = ConcreteTreeNode(description="Parent", children=[child1, child2])
-        
+
         assert len(parent.children) == 2
         assert child1.parent == parent
         assert child2.parent == parent
@@ -132,7 +132,7 @@ class TestTreeNode:
         """Test initialization with parent."""
         parent = ConcreteTreeNode(description="Parent")
         child = ConcreteTreeNode(description="Child", parent=parent)
-        
+
         assert child.parent == parent
         # Note: parent.children is not automatically updated when parent is passed
         # This is the actual behavior of the TreeNode class
@@ -171,7 +171,7 @@ class TestTreeNode:
         parent = ConcreteTreeNode(description="Parent")
         child1 = ConcreteTreeNode(description="Child 1", parent=parent)
         child2 = ConcreteTreeNode(description="Child 2", parent=parent)
-        
+
         assert child1.parent == parent
         assert child2.parent == parent
         # Note: parent.children is not automatically updated when parent is passed
@@ -180,44 +180,58 @@ class TestTreeNode:
     def test_complex_tree_structure(self):
         """Test complex tree structure with multiple levels."""
         # Create children first with explicit names
-        level2_child1 = ConcreteTreeNode(name="Level 2 Child 1", description="Level 2 Child 1")
-        level1_child1 = ConcreteTreeNode(name="Level 1 Child 1", description="Level 1 Child 1", children=[level2_child1])
-        level1_child2 = ConcreteTreeNode(name="Level 1 Child 2", description="Level 1 Child 2")
-        root = ConcreteTreeNode(name="Root", description="Root", children=[level1_child1, level1_child2])
-        
+        level2_child1 = ConcreteTreeNode(
+            name="Level 2 Child 1", description="Level 2 Child 1"
+        )
+        level1_child1 = ConcreteTreeNode(
+            name="Level 1 Child 1",
+            description="Level 1 Child 1",
+            children=[level2_child1],
+        )
+        level1_child2 = ConcreteTreeNode(
+            name="Level 1 Child 2", description="Level 1 Child 2"
+        )
+        root = ConcreteTreeNode(
+            name="Root", description="Root", children=[level1_child1, level1_child2]
+        )
+
         assert len(root.children) == 2
         assert len(level1_child1.children) == 1
         assert len(level1_child2.children) == 0
-        
-        assert level2_child1.get_path() == ["Root", "Level 1 Child 1", "Level 2 Child 1"]
+
+        assert level2_child1.get_path() == [
+            "Root",
+            "Level 1 Child 1",
+            "Level 2 Child 1",
+        ]
 
     def test_logger_initialization(self):
         """Test that logger is properly initialized."""
         node = ConcreteTreeNode(name="test_node", description="Test")
         assert node.logger is not None
         # The logger should have the node name
-        assert hasattr(node.logger, 'name')
+        assert hasattr(node.logger, "name")
 
     def test_logger_without_name(self):
         """Test logger initialization without name."""
         node = ConcreteTreeNode(description="Test")
         assert node.logger is not None
         # Should use a default name
-        assert hasattr(node.logger, 'name')
+        assert hasattr(node.logger, "name")
 
     def test_inheritance_from_node(self):
         """Test that TreeNode inherits properly from Node."""
         node = ConcreteTreeNode(name="test", description="Test")
-        
+
         # Should have all Node properties
-        assert hasattr(node, 'node_id')
-        assert hasattr(node, 'name')
-        assert hasattr(node, 'parent')
-        assert hasattr(node, 'has_name')
-        assert hasattr(node, 'get_path')
-        assert hasattr(node, 'get_path_string')
-        assert hasattr(node, 'get_uuid_path')
-        assert hasattr(node, 'get_uuid_path_string')
+        assert hasattr(node, "node_id")
+        assert hasattr(node, "name")
+        assert hasattr(node, "parent")
+        assert hasattr(node, "has_name")
+        assert hasattr(node, "get_path")
+        assert hasattr(node, "get_path_string")
+        assert hasattr(node, "get_uuid_path")
+        assert hasattr(node, "get_uuid_path_string")
 
     def test_node_type_enum(self):
         """Test that node_type returns a valid NodeType enum."""
@@ -228,8 +242,10 @@ class TestTreeNode:
 
 class ConcreteTreeNode(TreeNode):
     """Concrete implementation for testing abstract methods."""
-    
-    def execute(self, user_input: str, context: Optional[IntentContext] = None) -> ExecutionResult:
+
+    def execute(
+        self, user_input: str, context: Optional[IntentContext] = None
+    ) -> ExecutionResult:
         """Concrete implementation of execute method."""
         return ExecutionResult(
             success=True,
@@ -240,7 +256,7 @@ class ConcreteTreeNode(TreeNode):
             output=f"Processed: {user_input}",
             error=None,
             params={},
-            children_results=[]
+            children_results=[],
         )
 
 
@@ -251,7 +267,7 @@ class TestConcreteTreeNode:
         """Test that concrete execute method works."""
         node = ConcreteTreeNode(description="Test")
         result = node.execute("test input")
-        
+
         assert result.success is True
         assert result.output == "Processed: test input"
         assert result.node_name == node.name
@@ -263,19 +279,19 @@ class TestConcreteTreeNode:
         node = ConcreteTreeNode(description="Test")
         context = IntentContext()
         result = node.execute("test input", context)
-        
+
         assert result.success is True
         assert result.output == "Processed: test input"
 
     def test_concrete_node_inheritance(self):
         """Test that concrete node inherits all properties."""
         node = ConcreteTreeNode(name="test", description="Test")
-        
+
         # Should have all TreeNode properties
         assert node.description == "Test"
         assert node.children == []
         assert node.logger is not None
-        
+
         # Should have all Node properties
         assert node.name == "test"
         assert node.node_id is not None

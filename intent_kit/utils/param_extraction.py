@@ -6,10 +6,14 @@ using both rule-based and LLM-based approaches.
 """
 
 import re
-from typing import Any, Callable, Dict, Type, Optional
+from typing import Any, Callable, Dict, Optional, Type, Union
+from intent_kit.services.base_client import BaseLLMClient
 from intent_kit.utils.logger import Logger
 
-logger = Logger("param_extraction")
+logger = Logger(__name__)
+
+# Type alias for llm_config to support both dict and BaseLLMClient
+LLMConfig = Union[Dict[str, Any], BaseLLMClient]
 
 
 def parse_param_schema(schema_data: Dict[str, str]) -> Dict[str, Type]:
@@ -132,7 +136,7 @@ def _extract_calculation_parameters(input_lower: str) -> Dict[str, Any]:
 
 def create_arg_extractor(
     param_schema: Dict[str, Type],
-    llm_config: Optional[Dict[str, Any]] = None,
+    llm_config: Optional[LLMConfig] = None,
     extraction_prompt: Optional[str] = None,
     node_name: str = "unknown",
 ) -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
@@ -140,7 +144,7 @@ def create_arg_extractor(
 
     Args:
         param_schema: Dictionary mapping parameter names to their types
-        llm_config: Optional LLM configuration for LLM-based extraction
+        llm_config: Optional LLM configuration or client instance for LLM-based extraction
         extraction_prompt: Optional custom prompt for LLM extraction
         node_name: Name of the node for logging purposes
 

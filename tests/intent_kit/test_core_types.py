@@ -2,7 +2,6 @@
 Tests for core types module.
 """
 
-import pytest
 from typing import Dict, Any, Union
 
 from intent_kit.types import (
@@ -12,7 +11,7 @@ from intent_kit.types import (
     IntentChunk,
     ClassifierOutput,
     SplitterFunction,
-    ClassifierFunction
+    ClassifierFunction,
 )
 
 
@@ -25,9 +24,9 @@ class TestIntentClassification:
             "ATOMIC": "Atomic",
             "COMPOSITE": "Composite",
             "AMBIGUOUS": "Ambiguous",
-            "INVALID": "Invalid"
+            "INVALID": "Invalid",
         }
-        
+
         for name, value in expected_values.items():
             assert hasattr(IntentClassification, name)
             assert getattr(IntentClassification, name).value == value
@@ -72,7 +71,10 @@ class TestIntentClassification:
     def test_enum_string_conversion(self):
         """Test string conversion of enum values."""
         assert str(IntentClassification.ATOMIC) == "IntentClassification.ATOMIC"
-        assert repr(IntentClassification.ATOMIC) == "<IntentClassification.ATOMIC: 'Atomic'>"
+        assert (
+            repr(IntentClassification.ATOMIC)
+            == "<IntentClassification.ATOMIC: 'Atomic'>"
+        )
 
     def test_enum_value_access(self):
         """Test accessing enum values."""
@@ -106,7 +108,9 @@ class TestIntentClassification:
 
     def test_enum_from_value(self):
         """Test creating enum from value."""
-        atomic_classification = next((c for c in IntentClassification if c.value == "Atomic"), None)
+        atomic_classification = next(
+            (c for c in IntentClassification if c.value == "Atomic"), None
+        )
         assert atomic_classification == IntentClassification.ATOMIC
 
     def test_enum_documentation(self):
@@ -125,9 +129,9 @@ class TestIntentAction:
             "HANDLE": "handle",
             "SPLIT": "split",
             "CLARIFY": "clarify",
-            "REJECT": "reject"
+            "REJECT": "reject",
         }
-        
+
         for name, value in expected_values.items():
             assert hasattr(IntentAction, name)
             assert getattr(IntentAction, name).value == value
@@ -226,9 +230,9 @@ class TestIntentChunkClassification:
             classification=IntentClassification.ATOMIC,
             intent_type="test_intent",
             action=IntentAction.HANDLE,
-            metadata={"key": "value"}
+            metadata={"key": "value"},
         )
-        
+
         assert classification["chunk_text"] == "test chunk"
         assert classification["classification"] == IntentClassification.ATOMIC
         assert classification["intent_type"] == "test_intent"
@@ -240,9 +244,9 @@ class TestIntentChunkClassification:
         classification = IntentChunkClassification(
             chunk_text="test chunk",
             classification=IntentClassification.COMPOSITE,
-            action=IntentAction.SPLIT
+            action=IntentAction.SPLIT,
         )
-        
+
         assert classification["chunk_text"] == "test chunk"
         assert classification["classification"] == IntentClassification.COMPOSITE
         assert classification["action"] == IntentAction.SPLIT
@@ -257,9 +261,9 @@ class TestIntentChunkClassification:
             classification=IntentClassification.AMBIGUOUS,
             intent_type=None,
             action=IntentAction.CLARIFY,
-            metadata={}
+            metadata={},
         )
-        
+
         assert classification["chunk_text"] == "test chunk"
         assert classification["classification"] == IntentClassification.AMBIGUOUS
         assert classification["intent_type"] is None
@@ -272,17 +276,17 @@ class TestIntentChunkClassification:
             "confidence": 0.95,
             "processing_time": 0.1,
             "model_used": "gpt-4",
-            "nested": {"key": "value"}
+            "nested": {"key": "value"},
         }
-        
+
         classification = IntentChunkClassification(
             chunk_text="test chunk",
             classification=IntentClassification.ATOMIC,
             intent_type="complex_intent",
             action=IntentAction.HANDLE,
-            metadata=metadata
+            metadata=metadata,
         )
-        
+
         assert classification["metadata"] == metadata
         assert classification["metadata"]["confidence"] == 0.95
         assert classification["metadata"]["nested"]["key"] == "value"
@@ -293,16 +297,16 @@ class TestIntentChunkClassification:
             IntentClassification.ATOMIC,
             IntentClassification.COMPOSITE,
             IntentClassification.AMBIGUOUS,
-            IntentClassification.INVALID
+            IntentClassification.INVALID,
         ]
-        
+
         for classification_type in classifications:
             chunk_classification = IntentChunkClassification(
                 chunk_text="test chunk",
                 classification=classification_type,
-                action=IntentAction.HANDLE
+                action=IntentAction.HANDLE,
             )
-            
+
             assert chunk_classification["classification"] == classification_type
 
     def test_all_action_types(self):
@@ -311,16 +315,16 @@ class TestIntentChunkClassification:
             IntentAction.HANDLE,
             IntentAction.SPLIT,
             IntentAction.CLARIFY,
-            IntentAction.REJECT
+            IntentAction.REJECT,
         ]
-        
+
         for action_type in actions:
             chunk_classification = IntentChunkClassification(
                 chunk_text="test chunk",
                 classification=IntentClassification.ATOMIC,
-                action=action_type
+                action=action_type,
             )
-            
+
             assert chunk_classification["action"] == action_type
 
     def test_dict_like_behavior(self):
@@ -328,26 +332,26 @@ class TestIntentChunkClassification:
         classification = IntentChunkClassification(
             chunk_text="test chunk",
             classification=IntentClassification.ATOMIC,
-            action=IntentAction.HANDLE
+            action=IntentAction.HANDLE,
         )
-        
+
         # Test key access
         assert classification["chunk_text"] == "test chunk"
         assert classification["classification"] == IntentClassification.ATOMIC
         assert classification["action"] == IntentAction.HANDLE
-        
+
         # Test key iteration
         keys = list(classification.keys())
         assert "chunk_text" in keys
         assert "classification" in keys
         assert "action" in keys
-        
+
         # Test value iteration
         values = list(classification.values())
         assert "test chunk" in values
         assert IntentClassification.ATOMIC in values
         assert IntentAction.HANDLE in values
-        
+
         # Test item iteration
         items = list(classification.items())
         assert ("chunk_text", "test chunk") in items
@@ -360,9 +364,9 @@ class TestIntentChunkClassification:
         classification = IntentChunkClassification(
             chunk_text="test chunk",
             classification=IntentClassification.ATOMIC,
-            action=IntentAction.HANDLE
+            action=IntentAction.HANDLE,
         )
-        
+
         # Optional fields should not be present
         assert "intent_type" not in classification
         assert "metadata" not in classification
@@ -385,6 +389,7 @@ class TestTypeAliases:
         """Test that SplitterFunction is properly defined."""
         # SplitterFunction should be Callable[..., Sequence[IntentChunk]]
         from typing import Callable, Sequence
+
         expected_type = Callable[..., Sequence[IntentChunk]]
         assert str(SplitterFunction) == str(expected_type)
 
@@ -392,5 +397,6 @@ class TestTypeAliases:
         """Test that ClassifierFunction is properly defined."""
         # ClassifierFunction should be Callable[[IntentChunk], ClassifierOutput]
         from typing import Callable
+
         expected_type = Callable[[IntentChunk], ClassifierOutput]
         assert str(ClassifierFunction) == str(expected_type)

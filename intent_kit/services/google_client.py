@@ -2,14 +2,34 @@
 # Requires: pip install google-genai
 
 from intent_kit.utils.logger import Logger
+from intent_kit.services.base_client import BaseLLMClient
+from typing import Optional
+
+# Dummy assignment for testing
+google = None
 
 logger = Logger("google_service")
 
 
-class GoogleClient:
+class GoogleClient(BaseLLMClient):
     def __init__(self, api_key: str):
         self.api_key = api_key
+        super().__init__(api_key=api_key)
+
+    def _initialize_client(self, **kwargs) -> None:
+        """Initialize the Google GenAI client."""
         self._client = self.get_client()
+
+    @classmethod
+    def is_available(cls) -> bool:
+        """Check if Google GenAI package is available."""
+        try:
+            # Only check for import, do not actually use it
+            import importlib.util
+
+            return importlib.util.find_spec("google.genai") is not None
+        except ImportError:
+            return False
 
     def get_client(self):
         """Get the Google GenAI client."""
@@ -25,19 +45,13 @@ class GoogleClient:
     def _ensure_imported(self):
         """Ensure the Google GenAI package is imported."""
         if self._client is None:
-            try:
-                from google import genai
+            self._client = self.get_client()
 
-                self._client = genai.Client(api_key=self.api_key)
-            except ImportError:
-                raise ImportError(
-                    "Google GenAI package not installed. Install with: pip install google-genai"
-                )
-
-    def generate(self, prompt: str, model: str = "gemini-2.0-flash-lite") -> str:
+    def generate(self, prompt: str, model: Optional[str] = None) -> str:
         """Generate text using Google's Gemini model."""
         self._ensure_imported()
-
+        assert self._client is not None  # Type assertion for linter
+        model = model or "gemini-2.0-flash-lite"
         try:
             from google.genai import types
 
