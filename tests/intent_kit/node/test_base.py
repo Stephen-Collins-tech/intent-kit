@@ -4,7 +4,7 @@ Tests for node base classes.
 
 import pytest
 from unittest.mock import Mock, patch
-from typing import List, Optional
+from typing import Optional
 
 from intent_kit.node.base import Node, TreeNode
 from intent_kit.node.enums import NodeType

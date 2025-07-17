@@ -4,7 +4,7 @@ Tests for node types and data structures.
 
 import pytest
 from unittest.mock import Mock
-from typing import Dict, Any, List, Optional
+from typing import Optional
 
 from intent_kit.node.types import ExecutionError, ExecutionResult
 from intent_kit.node.enums import NodeType

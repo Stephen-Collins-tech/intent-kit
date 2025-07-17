@@ -4,7 +4,7 @@ Tests for graph registry functionality.
 
 import pytest
 from unittest.mock import Mock, patch
-from typing import Callable
+
 
 from intent_kit.graph.registry import FunctionRegistry
 
