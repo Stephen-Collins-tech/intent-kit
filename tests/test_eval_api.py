@@ -7,21 +7,33 @@ Tests for the new evaluation API.
 
 import pytest
 from pathlib import Path
-from intent_kit.evals import (
-    load_dataset,
-    run_eval,
-    run_eval_from_path,
-    EvalTestCase,
-    Dataset,
-    EvalTestResult,
-    EvalResult,
-)
-from intent_kit.services.yaml_service import yaml_service
+import intent_kit.evals
+from unittest.mock import patch
 
 
-def test_load_dataset():
+@patch("intent_kit.evals.yaml_service")
+def test_load_dataset(mock_yaml_service):
     """Test loading a dataset from YAML."""
-    dataset = load_dataset("intent_kit/evals/datasets/classifier_node_llm.yaml")
+    # Mock the yaml_service to return proper data
+    mock_yaml_service.safe_load.return_value = {
+        "dataset": {
+            "name": "classifier_node_llm",
+            "description": "Test dataset",
+            "node_type": "classifier",
+            "node_name": "classifier_node_llm",
+        },
+        "test_cases": [
+            {
+                "input": "What's the weather like in New York?",
+                "expected": "Weather in New York: Sunny with a chance of rain",
+                "context": {"user_id": "user123"},
+            }
+        ],
+    }
+
+    dataset = intent_kit.evals.load_dataset(
+        "intent_kit/evals/datasets/classifier_node_llm.yaml"
+    )
 
     assert dataset.name == "classifier_node_llm"
     assert dataset.node_type == "classifier"
@@ -38,28 +50,34 @@ def test_load_dataset():
 def test_load_dataset_missing_file():
     """Test loading a non-existent dataset."""
     with pytest.raises(FileNotFoundError):
-        load_dataset("non_existent_file.yaml")
+        intent_kit.evals.load_dataset("non_existent_file.yaml")
 
 
-def test_load_dataset_malformed():
+@patch("intent_kit.evals.yaml_service")
+def test_load_dataset_malformed(mock_yaml_service):
     """Test loading a malformed dataset."""
+    # Mock the yaml_service to return malformed data
+    mock_yaml_service.safe_load.return_value = {"invalid": "data"}
+
     # Create a temporary malformed YAML file
     import tempfile
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        yaml_service.dump({"invalid": "data"}, f)
+        f.write("invalid: yaml: content")
         temp_path = f.name
 
     try:
         with pytest.raises(ValueError):
-            load_dataset(temp_path)
+            intent_kit.evals.load_dataset(temp_path)
     finally:
         Path(temp_path).unlink()
 
 
 def test_test_case_defaults():
     """Test EvalTestCase with default context."""
-    test_case = EvalTestCase(input="test input", expected="test expected", context={})
+    test_case = intent_kit.evals.EvalTestCase(
+        input="test input", expected="test expected", context={}
+    )
 
     assert test_case.input == "test input"
     assert test_case.expected == "test expected"
@@ -68,8 +86,8 @@ def test_test_case_defaults():
 
 def test_dataset_defaults():
     """Test Dataset with default description."""
-    test_cases = [EvalTestCase("input", "expected", {})]
-    dataset = Dataset(
+    test_cases = [intent_kit.evals.EvalTestCase("input", "expected", {})]
+    dataset = intent_kit.evals.Dataset(
         name="test",
         description="",
         node_type="test",
@@ -83,12 +101,12 @@ def test_dataset_defaults():
 def test_eval_result_methods():
     """Test EvalResult methods."""
     results = [
-        EvalTestResult("input1", "expected1", "actual1", True, {}),
-        EvalTestResult("input2", "expected2", "actual2", False, {}),
-        EvalTestResult("input3", "expected3", "actual3", True, {}),
+        intent_kit.evals.EvalTestResult("input1", "expected1", "actual1", True, {}),
+        intent_kit.evals.EvalTestResult("input2", "expected2", "actual2", False, {}),
+        intent_kit.evals.EvalTestResult("input3", "expected3", "actual3", True, {}),
     ]
 
-    eval_result = EvalResult(results, "test_dataset")
+    eval_result = intent_kit.evals.EvalResult(results, "test_dataset")
 
     assert eval_result.accuracy() == 2 / 3
     assert eval_result.passed_count() == 2
@@ -100,7 +118,7 @@ def test_eval_result_methods():
 
 def test_eval_result_empty():
     """Test EvalResult with empty results."""
-    eval_result = EvalResult([], "test_dataset")
+    eval_result = intent_kit.evals.EvalResult([], "test_dataset")
 
     assert eval_result.accuracy() == 0.0
     assert eval_result.passed_count() == 0
@@ -117,11 +135,11 @@ def test_run_eval_with_callable():
         return f"Processed: {input_text}"
 
     test_cases = [
-        EvalTestCase("hello", "Processed: hello", {}),
-        EvalTestCase("world", "Processed: world", {}),
+        intent_kit.evals.EvalTestCase("hello", "Processed: hello", {}),
+        intent_kit.evals.EvalTestCase("world", "Processed: world", {}),
     ]
 
-    dataset = Dataset(
+    dataset = intent_kit.evals.Dataset(
         name="test",
         description="Test dataset",
         node_type="test",
@@ -129,7 +147,7 @@ def test_run_eval_with_callable():
         test_cases=test_cases,
     )
 
-    result = run_eval(dataset, simple_node)
+    result = intent_kit.evals.run_eval(dataset, simple_node)
 
     assert result.accuracy() == 1.0
     assert result.all_passed()
@@ -145,13 +163,13 @@ def test_run_eval_with_error():
         return "success"
 
     test_cases = [
-        EvalTestCase("hello", "success", {}),
+        intent_kit.evals.EvalTestCase("hello", "success", {}),
         # This will fail due to exception
-        EvalTestCase("error", "success", {}),
-        EvalTestCase("world", "success", {}),
+        intent_kit.evals.EvalTestCase("error", "success", {}),
+        intent_kit.evals.EvalTestCase("world", "success", {}),
     ]
 
-    dataset = Dataset(
+    dataset = intent_kit.evals.Dataset(
         name="test",
         description="Test dataset",
         node_type="test",
@@ -159,7 +177,7 @@ def test_run_eval_with_error():
         test_cases=test_cases,
     )
 
-    result = run_eval(dataset, error_node)
+    result = intent_kit.evals.run_eval(dataset, error_node)
 
     assert result.accuracy() == 2 / 3
     assert not result.all_passed()
@@ -176,14 +194,14 @@ def test_run_eval_fail_fast():
         return "success"
 
     test_cases = [
-        EvalTestCase("hello", "success", {}),
+        intent_kit.evals.EvalTestCase("hello", "success", {}),
         # This will fail and stop execution
-        EvalTestCase("error", "success", {}),
+        intent_kit.evals.EvalTestCase("error", "success", {}),
         # This won't run due to fail_fast
-        EvalTestCase("world", "success", {}),
+        intent_kit.evals.EvalTestCase("world", "success", {}),
     ]
 
-    dataset = Dataset(
+    dataset = intent_kit.evals.Dataset(
         name="test",
         description="Test dataset",
         node_type="test",
@@ -191,7 +209,7 @@ def test_run_eval_fail_fast():
         test_cases=test_cases,
     )
 
-    result = run_eval(dataset, error_node, fail_fast=True)
+    result = intent_kit.evals.run_eval(dataset, error_node, fail_fast=True)
 
     assert result.total_count() == 2  # Only first two tests ran
     assert result.failed_count() == 1
@@ -208,11 +226,11 @@ def test_run_eval_custom_comparator():
         return str(expected).lower() == str(actual).lower()
 
     test_cases = [
-        EvalTestCase("hello", "HELLO", {}),
-        EvalTestCase("world", "WORLD", {}),
+        intent_kit.evals.EvalTestCase("hello", "HELLO", {}),
+        intent_kit.evals.EvalTestCase("world", "WORLD", {}),
     ]
 
-    dataset = Dataset(
+    dataset = intent_kit.evals.Dataset(
         name="test",
         description="Test dataset",
         node_type="test",
@@ -220,22 +238,23 @@ def test_run_eval_custom_comparator():
         test_cases=test_cases,
     )
 
-    result = run_eval(dataset, simple_node, comparator=case_insensitive_comparator)
+    result = intent_kit.evals.run_eval(
+        dataset, simple_node, comparator=case_insensitive_comparator
+    )
 
     assert result.accuracy() == 1.0
     assert result.all_passed()
 
 
-def test_run_eval_from_path():
+@patch("intent_kit.evals.yaml_service")
+def test_run_eval_from_path(mock_yaml_service):
     """Test run_eval_from_path convenience function."""
 
     def simple_node(input_text, context=None):
         return f"Processed: {input_text}"
 
-    # Create a temporary dataset file
-    import tempfile
-
-    test_data = {
+    # Mock the yaml_service to return proper data
+    mock_yaml_service.safe_load.return_value = {
         "dataset": {
             "name": "test_dataset",
             "description": "Test dataset",
@@ -251,12 +270,15 @@ def test_run_eval_from_path():
         ],
     }
 
+    # Create a temporary dataset file
+    import tempfile
+
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        yaml_service.dump(test_data, f)
+        f.write("test: data")
         temp_path = f.name
 
     try:
-        result = run_eval_from_path(temp_path, simple_node)
+        result = intent_kit.evals.run_eval_from_path(temp_path, simple_node)
         assert result.accuracy() == 1.0
         assert result.all_passed()
     finally:
@@ -266,11 +288,13 @@ def test_run_eval_from_path():
 def test_save_results():
     """Test saving results to different formats."""
     results = [
-        EvalTestResult("input1", "expected1", "actual1", True, {}),
-        EvalTestResult("input2", "expected2", "actual2", False, {}, "test error"),
+        intent_kit.evals.EvalTestResult("input1", "expected1", "actual1", True, {}),
+        intent_kit.evals.EvalTestResult(
+            "input2", "expected2", "actual2", False, {}, "test error"
+        ),
     ]
 
-    eval_result = EvalResult(results, "test_dataset")
+    eval_result = intent_kit.evals.EvalResult(results, "test_dataset")
 
     # Test CSV save
     import tempfile

@@ -13,6 +13,7 @@ from intent_kit.node.splitters import SplitterNode, rule_splitter, llm_splitter
 from intent_kit.utils.logger import Logger
 from intent_kit.types import IntentChunk
 from intent_kit.graph import IntentGraph
+from intent_kit.services.base_client import BaseLLMClient
 
 # LLM classifier imports
 from intent_kit.node.classifiers import (
@@ -24,6 +25,9 @@ from intent_kit.node.classifiers import (
 from intent_kit.utils.param_extraction import create_arg_extractor
 
 logger = Logger("node_factory")
+
+# Type alias for llm_config to support both dict and BaseLLMClient
+LLMConfig = Union[Dict[str, Any], BaseLLMClient]
 
 
 def set_parent_relationships(parent: TreeNode, children: List[TreeNode]) -> None:
@@ -173,7 +177,7 @@ def action(
     description: str,
     action_func: Callable[..., Any],
     param_schema: Dict[str, Type],
-    llm_config: Optional[Dict[str, Any]] = None,
+    llm_config: Optional[LLMConfig] = None,
     extraction_prompt: Optional[str] = None,
     context_inputs: Optional[Set[str]] = None,
     context_outputs: Optional[Set[str]] = None,
@@ -188,7 +192,7 @@ def action(
         description: Description of what this action does
         action_func: Function to execute when this action is triggered
         param_schema: Dictionary mapping parameter names to their types
-        llm_config: Optional LLM configuration for LLM-based argument extraction.
+        llm_config: Optional LLM configuration or client instance for LLM-based argument extraction.
                    If not provided, uses a simple rule-based extractor.
         extraction_prompt: Optional custom prompt for LLM argument extraction
         context_inputs: Optional set of context keys this action reads from
@@ -235,7 +239,7 @@ def llm_classifier(
     *,
     name: str,
     children: List[TreeNode],
-    llm_config: Dict[str, Any],
+    llm_config: LLMConfig,
     classification_prompt: Optional[str] = None,
     description: str = "",
     remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
@@ -245,7 +249,7 @@ def llm_classifier(
     Args:
         name: Name of the classifier node
         children: List of child nodes to classify between
-        llm_config: LLM configuration for classification
+        llm_config: LLM configuration or client instance for classification
         classification_prompt: Optional custom classification prompt
         description: Optional description of the classifier
 
