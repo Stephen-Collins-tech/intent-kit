@@ -121,7 +121,7 @@ class TestOpenAIClient:
 
             assert result == "Generated response"
             mock_client.chat.completions.create.assert_called_once_with(
-                model="gpt-3.5-turbo-0125",
+                model="google/gemma-3-27b-it",
                 messages=[{"role": "user", "content": "Test prompt"}],
                 max_tokens=1000,
             )
@@ -218,7 +218,7 @@ class TestOpenAIClient:
     def test_is_available_method(self):
         """Test is_available method."""
         # Test when openai is available
-        with patch("intent_kit.services.openai_client.openai"):
+        with patch("importlib.util.find_spec", return_value=Mock()):
             assert OpenAIClient.is_available() is True
 
     def test_is_available_method_import_error(self):
