@@ -672,6 +672,8 @@ viz = [
 dev = [
     { name = "black" },
     { name = "mypy" },
+    { name = "pytest" },
+    { name = "python-dotenv" },
     { name = "ruff" },
     { name = "types-networkx" },
     { name = "types-pyyaml" },
@@ -721,6 +723,8 @@ provides-extras = ["all", "anthropic", "dev", "google", "ollama", "openai", "viz
 dev = [
     { name = "black", specifier = ">=25.1.0" },
     { name = "mypy", specifier = ">=1.16.1" },
+    { name = "pytest", specifier = ">=8.4.1" },
+    { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "ruff", specifier = ">=0.12.3" },
     { name = "types-networkx", specifier = ">=3.5.0.20250712" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250516" },

@@ -101,6 +101,8 @@ intentkit-py = { workspace = true }
 dev = [
     "black>=25.1.0",
     "mypy>=1.16.1",
+    "pytest>=8.4.1",
+    "python-dotenv>=1.1.1",
     "ruff>=0.12.3",
     "types-networkx>=3.5.0.20250712",
     "types-pyyaml>=6.0.12.20250516",
