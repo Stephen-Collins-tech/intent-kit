@@ -221,7 +221,7 @@ class TestCreateArgExtractor:
     def test_create_llm_extractor(self, mock_logger):
         """Test creating LLM-based extractor."""
         param_schema = {"name": str}
-        llm_config = {"model": "google/gemma-2-27b"}
+        llm_config = {"model": "google/gemma-3-27b-it"}
 
         # This should fall back to rule-based extractor since the imports don't exist
         extractor = create_arg_extractor(param_schema, llm_config)
@@ -234,7 +234,7 @@ class TestCreateArgExtractor:
     def test_create_llm_extractor_with_custom_prompt(self, mock_logger):
         """Test creating LLM-based extractor with custom prompt."""
         param_schema = {"name": str}
-        llm_config = {"model": "google/gemma-2-27b"}
+        llm_config = {"model": "google/gemma-3-27b-it"}
         custom_prompt = "Custom extraction prompt"
 
         # This should fall back to rule-based extractor since the imports don't exist

@@ -40,7 +40,7 @@ def extract_booking_args_llm(
     if not api_key:
         raise ValueError(f"Environment variable {provider.upper()}_API_KEY not set")
 
-    llm_config = {"provider": provider, "model": "google/gemma-2-27b", "api_key": api_key}
+    llm_config = {"provider": provider, "model": "google/gemma-3-27b-it", "api_key": api_key}
 
     try:
         llm_client = LLMFactory.create_client(llm_config)

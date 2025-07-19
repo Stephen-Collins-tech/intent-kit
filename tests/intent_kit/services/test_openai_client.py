@@ -117,7 +117,7 @@ class TestOpenAIClient:
             mock_get_client.return_value = mock_client
 
             client = OpenAIClient("test_api_key")
-            result = client.generate("Test prompt", model="google/gemma-2-27b")
+            result = client.generate("Test prompt", model="google/gemma-3-27b-it")
 
             assert result == "Generated response"
             mock_client.chat.completions.create.assert_called_once_with(
@@ -185,11 +185,11 @@ class TestOpenAIClient:
             mock_get_client.return_value = mock_client
 
             client = OpenAIClient("test_api_key")
-            result = client.generate_text("Test prompt", model="google/gemma-2-27b")
+            result = client.generate_text("Test prompt", model="google/gemma-3-27b-it")
 
             assert result == "Generated response"
             mock_client.chat.completions.create.assert_called_once_with(
-                model="google/gemma-2-27b",
+                model="google/gemma-3-27b-it",
                 messages=[{"role": "user", "content": "Test prompt"}],
                 max_tokens=1000,
             )
@@ -270,7 +270,7 @@ class TestOpenAIClient:
             client = OpenAIClient("test_api_key")
 
             # Test different models
-            models = ["google/gemma-2-27b", "gpt-4", "gpt-4-turbo"]
+            models = ["google/gemma-3-27b-it", "gpt-4", "gpt-4-turbo"]
             for model in models:
                 result = client.generate("Test prompt", model=model)
                 assert result == "Response"
