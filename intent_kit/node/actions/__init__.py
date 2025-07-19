@@ -3,6 +3,12 @@ Action node implementations.
 """
 
 from .action import ActionNode
+from .clarifier import ClarifierNode
+from .llm_clarifier import (
+    create_llm_clarifier,
+    get_default_clarification_prompt,
+    create_llm_clarifier_node,
+)
 from .remediation import (
     RemediationStrategy,
     RetryOnFailStrategy,
@@ -27,6 +33,10 @@ from .remediation import (
 
 __all__ = [
     "ActionNode",
+    "ClarifierNode",
+    "create_llm_clarifier",
+    "get_default_clarification_prompt",
+    "create_llm_clarifier_node",
     "RemediationStrategy",
     "RetryOnFailStrategy",
     "FallbackToAnotherNodeStrategy",

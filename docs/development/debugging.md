@@ -280,13 +280,13 @@ factory = LLMFactory()
 client = factory.create_client({
     "provider": "openai",
     "api_key": "your-key",
-    "model": "gpt-3.5-turbo"
+    "model": "google/gemma-3-27b-it"
 })
 
 # Test basic LLM call
 try:
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="google/gemma-3-27b-it",
         messages=[{"role": "user", "content": "Hello"}]
     )
     print("LLM connection successful")

@@ -117,11 +117,11 @@ class TestOpenAIClient:
             mock_get_client.return_value = mock_client
 
             client = OpenAIClient("test_api_key")
-            result = client.generate("Test prompt", model="gpt-3.5-turbo")
+            result = client.generate("Test prompt", model="google/gemma-3-27b-it")
 
             assert result == "Generated response"
             mock_client.chat.completions.create.assert_called_once_with(
-                model="gpt-3.5-turbo",
+                model="google/gemma-3-27b-it",
                 messages=[{"role": "user", "content": "Test prompt"}],
                 max_tokens=1000,
             )
@@ -185,11 +185,11 @@ class TestOpenAIClient:
             mock_get_client.return_value = mock_client
 
             client = OpenAIClient("test_api_key")
-            result = client.generate_text("Test prompt", model="gpt-3.5-turbo")
+            result = client.generate_text("Test prompt", model="google/gemma-3-27b-it")
 
             assert result == "Generated response"
             mock_client.chat.completions.create.assert_called_once_with(
-                model="gpt-3.5-turbo",
+                model="google/gemma-3-27b-it",
                 messages=[{"role": "user", "content": "Test prompt"}],
                 max_tokens=1000,
             )
@@ -218,7 +218,7 @@ class TestOpenAIClient:
     def test_is_available_method(self):
         """Test is_available method."""
         # Test when openai is available
-        with patch("intent_kit.services.openai_client.openai"):
+        with patch("importlib.util.find_spec", return_value=Mock()):
             assert OpenAIClient.is_available() is True
 
     def test_is_available_method_import_error(self):
@@ -270,7 +270,7 @@ class TestOpenAIClient:
             client = OpenAIClient("test_api_key")
 
             # Test different models
-            models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"]
+            models = ["google/gemma-3-27b-it", "gpt-4", "gpt-4-turbo"]
             for model in models:
                 result = client.generate("Test prompt", model=model)
                 assert result == "Response"

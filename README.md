@@ -94,7 +94,7 @@ weather = action(
 classifier = llm_classifier(
     name="main",
     children=[greet, weather],
-    llm_config={"provider": "openai", "model": "gpt-3.5-turbo"}
+    llm_config={"provider": "openrouter", "model": "google/gemma-3-27b-it"}
 )
 
 # Build your workflow
@@ -133,6 +133,81 @@ The magic happens when a user sends a message:
 - Intent Kit extracts the important details (names, locations, etc.)
 - The right action runs with those details
 - You get back a response
+
+---
+
+## Handling Ambiguous Requests
+
+Sometimes users provide unclear or incomplete information. Intent Kit's **Clarifier nodes** help you handle these situations gracefully.
+
+### When Clarification is Needed
+
+```python
+from intent_kit import clarifier
+
+# Create a clarifier for booking requests
+booking_clarifier = clarifier(
+    name="booking_clarifier",
+    clarification_prompt="Your booking request '{input}' is unclear. Please provide more details.",
+    expected_response_format="Please specify: [type] [destination] [date] [time]",
+    max_clarification_attempts=3
+)
+
+# Add it to your graph
+graph = IntentGraphBuilder().root(booking_clarifier).build()
+
+# Handle ambiguous input
+result = graph.route("book something")
+# → Returns clarification request with helpful message
+```
+
+### How Clarification Works
+
+1. **User provides unclear input** - "book something"
+2. **Clarifier node triggers** - Asks for more details
+3. **User provides clarification** - "book a flight to Paris tomorrow"
+4. **System processes clarified input** - Extracts details and takes action
+
+### Advanced Clarification Features
+
+```python
+# Regular clarifier with context tracking
+clarifier_node = clarifier(
+    name="smart_clarifier",
+    clarification_prompt="I need more details about your request: {input}",
+    expected_response_format="Please provide: [specific details]",
+    max_clarification_attempts=2
+)
+
+# LLM-powered clarifier for contextual clarification
+llm_clarifier_node = llm_clarifier(
+    name="smart_llm_clarifier",
+    llm_config={"provider": "openrouter", "model": "google/gemma-3-27b-it"},
+    clarification_prompt_template="""You are a helpful assistant. The user's request is unclear.
+
+User Input: {user_input}
+{context_info}
+
+Generate a helpful clarification prompt that identifies what information is missing.
+
+Expected Response Format: {expected_format}
+Maximum Clarification Attempts: {max_attempts}
+
+Clarification Prompt:""",
+    expected_response_format="Please specify: [details]",
+    max_clarification_attempts=3
+)
+
+# Handle clarification responses
+context = IntentContext()
+context.set("user_preferences", "window seat")
+result = llm_clarifier_node.execute("book something", context=context)
+
+# User provides clarification
+response = llm_clarifier_node.handle_clarification_response(
+    "book a flight to Paris tomorrow", context=context
+)
+```
 
 ---
 
