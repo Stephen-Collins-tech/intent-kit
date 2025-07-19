@@ -198,7 +198,7 @@ def main():
         return
 
     print("✅ OpenAI client configured successfully!")
-    print("Using model: gpt-3.5-turbo")
+    print("Using model: gpt-3.5-turbo-0125")
     print()
 
     # Build intent graph using ExampleLLMClient for both extraction and classification

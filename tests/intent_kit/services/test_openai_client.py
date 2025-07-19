@@ -117,11 +117,11 @@ class TestOpenAIClient:
             mock_get_client.return_value = mock_client
 
             client = OpenAIClient("test_api_key")
-            result = client.generate("Test prompt", model="gpt-3.5-turbo")
+            result = client.generate("Test prompt", model="gpt-3.5-turbo-0125")
 
             assert result == "Generated response"
             mock_client.chat.completions.create.assert_called_once_with(
-                model="gpt-3.5-turbo",
+                model="gpt-3.5-turbo-0125",
                 messages=[{"role": "user", "content": "Test prompt"}],
                 max_tokens=1000,
             )
@@ -185,11 +185,11 @@ class TestOpenAIClient:
             mock_get_client.return_value = mock_client
 
             client = OpenAIClient("test_api_key")
-            result = client.generate_text("Test prompt", model="gpt-3.5-turbo")
+            result = client.generate_text("Test prompt", model="gpt-3.5-turbo-0125")
 
             assert result == "Generated response"
             mock_client.chat.completions.create.assert_called_once_with(
-                model="gpt-3.5-turbo",
+                model="gpt-3.5-turbo-0125",
                 messages=[{"role": "user", "content": "Test prompt"}],
                 max_tokens=1000,
             )
@@ -270,7 +270,7 @@ class TestOpenAIClient:
             client = OpenAIClient("test_api_key")
 
             # Test different models
-            models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"]
+            models = ["gpt-3.5-turbo-0125", "gpt-4", "gpt-4-turbo"]
             for model in models:
                 result = client.generate("Test prompt", model=model)
                 assert result == "Response"

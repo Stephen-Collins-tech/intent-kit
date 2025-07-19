@@ -34,7 +34,7 @@ greet_action = action(
 classifier = llm_classifier(
     name="main",
     children=[greet_action],
-    llm_config={"provider": "openai", "model": "gpt-3.5-turbo"}
+    llm_config={"provider": "openai", "model": "gpt-3.5-turbo-0125"}
 )
 
 # Build your workflow
