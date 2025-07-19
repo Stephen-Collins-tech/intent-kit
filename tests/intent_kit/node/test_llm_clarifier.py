@@ -27,7 +27,7 @@ class TestLLMClarifier:
     def test_create_llm_clarifier_basic(self):
         """Test creating a basic LLM clarifier function."""
         # Mock LLM config
-        mock_llm_config = {"provider": "openai", "model": "gpt-3.5-turbo"}
+        mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         
         # Mock LLM response
         mock_response = "I need more details about your booking request. Please specify the destination and date."
@@ -49,7 +49,7 @@ class TestLLMClarifier:
 
     def test_create_llm_clarifier_with_context(self):
         """Test LLM clarifier with context information."""
-        mock_llm_config = {"provider": "openai", "model": "gpt-3.5-turbo"}
+        mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "Based on your previous bookings, I need more details about your flight request."
         
         with patch('intent_kit.services.llm_factory.LLMFactory.generate_with_config') as mock_generate:
@@ -69,7 +69,7 @@ class TestLLMClarifier:
 
     def test_create_llm_clarifier_fallback_on_error(self):
         """Test that LLM clarifier falls back to simple message on error."""
-        mock_llm_config = {"provider": "openai", "model": "gpt-3.5-turbo"}
+        mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         
         with patch('intent_kit.services.llm_factory.LLMFactory.generate_with_config') as mock_generate:
             mock_generate.side_effect = Exception("API error")
@@ -87,7 +87,7 @@ class TestLLMClarifier:
 
     def test_create_llm_clarifier_node(self):
         """Test creating an LLM clarifier node."""
-        mock_llm_config = {"provider": "openai", "model": "gpt-3.5-turbo"}
+        mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "I need more details about your request."
         
         with patch('intent_kit.services.llm_factory.LLMFactory.generate_with_config') as mock_generate:
@@ -109,7 +109,7 @@ class TestLLMClarifier:
 
     def test_llm_clarifier_node_execution(self):
         """Test that LLM clarifier node executes correctly."""
-        mock_llm_config = {"provider": "openai", "model": "gpt-3.5-turbo"}
+        mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "I need more details about your booking request."
         
         with patch('intent_kit.services.llm_factory.LLMFactory.generate_with_config') as mock_generate:
@@ -132,7 +132,7 @@ class TestLLMClarifier:
 
     def test_llm_clarifier_node_with_custom_prompt(self):
         """Test LLM clarifier node with custom prompt template."""
-        mock_llm_config = {"provider": "openai", "model": "gpt-3.5-turbo"}
+        mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "Custom clarification message."
         
         custom_prompt = "Generate a custom clarification for: {user_input}"
@@ -154,7 +154,7 @@ class TestLLMClarifier:
 
     def test_llm_clarifier_node_with_context(self):
         """Test LLM clarifier node with context."""
-        mock_llm_config = {"provider": "openai", "model": "gpt-3.5-turbo"}
+        mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "Based on your preferences, I need more details."
         
         with patch('intent_kit.services.llm_factory.LLMFactory.generate_with_config') as mock_generate:
@@ -181,7 +181,7 @@ class TestLLMClarifier:
 
     def test_llm_clarifier_node_handle_clarification_response(self):
         """Test LLM clarifier node handling clarification responses."""
-        mock_llm_config = {"provider": "openai", "model": "gpt-3.5-turbo"}
+        mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         
         node = create_llm_clarifier_node(
             name="test_llm_clarifier",
@@ -205,7 +205,7 @@ class TestLLMClarifier:
 
     def test_llm_clarifier_node_max_attempts(self):
         """Test LLM clarifier node max attempts handling."""
-        mock_llm_config = {"provider": "openai", "model": "gpt-3.5-turbo"}
+        mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         
         node = create_llm_clarifier_node(
             name="test_llm_clarifier",
@@ -228,7 +228,7 @@ class TestLLMClarifier:
 
     def test_llm_clarifier_node_without_expected_format(self):
         """Test LLM clarifier node without expected response format."""
-        mock_llm_config = {"provider": "openai", "model": "gpt-3.5-turbo"}
+        mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "I need more details about your request."
         
         with patch('intent_kit.services.llm_factory.LLMFactory.generate_with_config') as mock_generate:
@@ -248,7 +248,7 @@ class TestLLMClarifier:
 
     def test_llm_clarifier_node_error_structure(self):
         """Test that LLM clarifier node error has proper structure."""
-        mock_llm_config = {"provider": "openai", "model": "gpt-3.5-turbo"}
+        mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "I need more details."
         
         with patch('intent_kit.services.llm_factory.LLMFactory.generate_with_config') as mock_generate:

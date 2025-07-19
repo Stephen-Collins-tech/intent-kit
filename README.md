@@ -182,7 +182,7 @@ clarifier_node = clarifier(
 # LLM-powered clarifier for contextual clarification
 llm_clarifier_node = llm_clarifier(
     name="smart_llm_clarifier",
-    llm_config={"provider": "openai", "model": "gpt-3.5-turbo"},
+    llm_config={"provider": "openrouter", "model": "switchpoint/router"},
     clarification_prompt_template="""You are a helpful assistant. The user's request is unclear.
 
 User Input: {user_input}
