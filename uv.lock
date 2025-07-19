@@ -610,6 +610,9 @@ wheels = [
 name = "intentkit-py"
 version = "0.3.0"
 source = { editable = "." }
+dependencies = [
+    { name = "pytest-cov" },
+]
 
 [package.optional-dependencies]
 all = [
@@ -709,6 +712,7 @@ requires-dist = [
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.6.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.1" },
+    { name = "pytest-cov", specifier = ">=6.2.1" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
     { name = "python-dotenv", marker = "extra == 'dev'", specifier = ">=1.1.1" },
     { name = "pyvis", marker = "extra == 'all'", specifier = ">=0.3.2" },
