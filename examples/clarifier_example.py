@@ -94,7 +94,7 @@ def create_booking_graph():
     # Create LLM-powered Clarifier nodes for smart clarification
     smart_booking_clarifier = llm_clarifier(
         name="smart_booking_clarifier",
-        llm_config={"provider": "openrouter", "model": "switchpoint/router"},
+        llm_config={"provider": "ollama", "model": "gemma3:27b"},
         expected_response_format="Please specify: [type] [details] [date] [time]",
         max_clarification_attempts=3,
         description="Smart LLM-powered clarifier for booking requests"
@@ -102,7 +102,7 @@ def create_booking_graph():
     
     smart_flight_clarifier = llm_clarifier(
         name="smart_flight_clarifier",
-        llm_config={"provider": "openrouter", "model": "switchpoint/router"},
+        llm_config={"provider": "ollama", "model": "gemma3:27b"},
         clarification_prompt_template="""You are a travel booking assistant. The user wants to book a flight but their request is unclear.
 
 User Input: {user_input}
@@ -263,7 +263,7 @@ def demonstrate_llm_clarifier():
     # Create an LLM clarifier with custom prompt
     smart_clarifier = llm_clarifier(
         name="smart_booking_clarifier",
-        llm_config={"provider": "openrouter", "model": "switchpoint/router"},
+        llm_config={"provider": "ollama", "model": "gemma3:27b"},
         clarification_prompt_template="""You are a helpful travel booking assistant. The user's request is unclear and needs clarification.
 
 User Input: {user_input}
@@ -363,7 +363,7 @@ def demonstrate_json_based_llm_clarifier():
                 "type": "llm_clarifier",
                 "name": "smart_booking_clarifier",
                 "description": "Smart LLM-powered clarifier for booking requests",
-                "llm_config": {"provider": "openrouter", "model": "switchpoint/router"},
+                "llm_config": {"provider": "ollama", "model": "gemma3:27b"},
                 "clarification_prompt_template": "Generate a helpful clarification for: {user_input}",
                 "expected_response_format": "Please specify: [type] [details] [date] [time]",
                 "max_clarification_attempts": 3

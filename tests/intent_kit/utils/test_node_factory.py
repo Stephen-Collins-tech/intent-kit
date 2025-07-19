@@ -338,7 +338,7 @@ class TestActionFactory:
             return f"Hello {name}"
 
         param_schema = {"name": str}
-        llm_config = {"model": "gpt-3.5-turbo-0125"}
+        llm_config = {"model": "gemma3:27b"}
         mock_extractor = Mock()
         mock_create_arg_extractor.return_value = mock_extractor
         mock_node = Mock(spec=ActionNode)
@@ -405,7 +405,7 @@ class TestClassifierFactory:
         child2 = Mock(spec=TreeNode)
         child2.name = "child2"
         children = cast(List[TreeNode], [child1, child2])
-        llm_config = {"model": "gpt-3.5-turbo-0125"}
+        llm_config = {"model": "gemma3:27b"}
         mock_node = Mock(spec=ClassifierNode)
         mock_create_classifier_node.return_value = mock_node
 
@@ -434,7 +434,7 @@ class TestLLMClassifierFactory:
         child2 = Mock(spec=TreeNode)
         child2.name = "child2"
         children = cast(List[TreeNode], [child1, child2])
-        llm_config = {"model": "gpt-3.5-turbo-0125"}
+        llm_config = {"model": "gemma3:27b"}
         mock_classifier_func = Mock()
         mock_create_llm_classifier.return_value = mock_classifier_func
         mock_node = Mock(spec=ClassifierNode)
@@ -469,7 +469,7 @@ class TestLLMClassifierFactory:
         child1 = Mock(spec=TreeNode)
         child1.name = "child1"
         children = cast(List[TreeNode], [child1])
-        llm_config = {"model": "gpt-3.5-turbo-0125"}
+        llm_config = {"model": "gemma3:27b"}
         classification_prompt = "Custom classification prompt"
         mock_classifier_func = Mock()
         mock_create_llm_classifier.return_value = mock_classifier_func
@@ -498,7 +498,7 @@ class TestLLMSplitterNodeFactory:
         child1 = Mock(spec=TreeNode)
         child2 = Mock(spec=TreeNode)
         children = cast(List[TreeNode], [child1, child2])
-        llm_config = {"model": "gpt-3.5-turbo-0125", "llm_client": Mock()}
+        llm_config = {"model": "gemma3:27b", "llm_client": Mock()}
         mock_node = Mock(spec=SplitterNode)
         mock_create_splitter_node.return_value = mock_node
 

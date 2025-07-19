@@ -94,7 +94,7 @@ weather = action(
 classifier = llm_classifier(
     name="main",
     children=[greet, weather],
-    llm_config={"provider": "openai", "model": "gpt-3.5-turbo-0125"}
+    llm_config={"provider": "ollama", "model": "gemma3:27b"}
 )
 
 # Build your workflow
@@ -182,7 +182,7 @@ clarifier_node = clarifier(
 # LLM-powered clarifier for contextual clarification
 llm_clarifier_node = llm_clarifier(
     name="smart_llm_clarifier",
-    llm_config={"provider": "openrouter", "model": "switchpoint/router"},
+    llm_config={"provider": "ollama", "model": "gemma3:27b"},
     clarification_prompt_template="""You are a helpful assistant. The user's request is unclear.
 
 User Input: {user_input}
