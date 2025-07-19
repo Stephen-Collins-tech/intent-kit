@@ -133,19 +133,11 @@ class TestGoogleClient:
         """Test text generation with exception handling."""
         with patch.object(GoogleClient, "get_client") as mock_get_client:
             mock_client = Mock()
-            mock_client.models.generate_content.side_effect = Exception("API Error")
             mock_get_client.return_value = mock_client
-
+            
             client = GoogleClient("test_api_key")
-
-            with patch("intent_kit.services.google_client.types") as mock_types:
-                mock_content = Mock()
-                mock_part = Mock()
-                mock_config = Mock()
-                mock_types.Content.return_value = mock_content
-                mock_types.Part.from_text.return_value = mock_part
-                mock_types.GenerateContentConfig.return_value = mock_config
-
+            
+            with patch.object(client, "generate", side_effect=Exception("API Error")):
                 with pytest.raises(Exception, match="API Error"):
                     client.generate("Test prompt")
 
@@ -259,21 +251,11 @@ class TestGoogleClient:
         """Test generate with API error handling."""
         with patch.object(GoogleClient, "get_client") as mock_get_client:
             mock_client = Mock()
-            mock_client.models.generate_content.side_effect = Exception(
-                "Rate limit exceeded"
-            )
             mock_get_client.return_value = mock_client
-
+            
             client = GoogleClient("test_api_key")
-
-            with patch("intent_kit.services.google_client.types") as mock_types:
-                mock_content = Mock()
-                mock_part = Mock()
-                mock_config = Mock()
-                mock_types.Content.return_value = mock_content
-                mock_types.Part.from_text.return_value = mock_part
-                mock_types.GenerateContentConfig.return_value = mock_config
-
+            
+            with patch.object(client, "generate", side_effect=Exception("Rate limit exceeded")):
                 with pytest.raises(Exception, match="Rate limit exceeded"):
                     client.generate("Test prompt")
 
@@ -281,21 +263,11 @@ class TestGoogleClient:
         """Test generate with network error handling."""
         with patch.object(GoogleClient, "get_client") as mock_get_client:
             mock_client = Mock()
-            mock_client.models.generate_content.side_effect = Exception(
-                "Connection timeout"
-            )
             mock_get_client.return_value = mock_client
-
+            
             client = GoogleClient("test_api_key")
-
-            with patch("intent_kit.services.google_client.types") as mock_types:
-                mock_content = Mock()
-                mock_part = Mock()
-                mock_config = Mock()
-                mock_types.Content.return_value = mock_content
-                mock_types.Part.from_text.return_value = mock_part
-                mock_types.GenerateContentConfig.return_value = mock_config
-
+            
+            with patch.object(client, "generate", side_effect=Exception("Connection timeout")):
                 with pytest.raises(Exception, match="Connection timeout"):
                     client.generate("Test prompt")
 
