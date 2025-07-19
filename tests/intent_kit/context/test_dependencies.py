@@ -299,9 +299,10 @@ class TestAnalyzeActionDependencies:
         
         result = analyze_action_dependencies(mock_action)
         
-        # The function doesn't actually implement annotation-based analysis yet
-        # So it should return None
-        assert result is None
+        # The function should return a ContextDependencies object
+        assert result is not None
+        assert result.inputs == {"user_id"}
+        assert result.outputs == {"result"}
 
     def test_analyze_action_dependencies_no_analysis(self):
         """Test analysis when no analysis is possible."""

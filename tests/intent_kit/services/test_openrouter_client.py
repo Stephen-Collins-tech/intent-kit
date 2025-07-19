@@ -14,10 +14,14 @@ class TestOpenRouterClient:
 
     def test_init_with_api_key(self):
         """Test OpenRouterClient initialization with API key."""
-        client = OpenRouterClient("test_api_key")
-        
-        assert client.api_key == "test_api_key"
-        assert client._client is None
+        with patch('intent_kit.services.openrouter_client.openai') as mock_openai:
+            mock_openai_client = Mock()
+            mock_openai.OpenAI.return_value = mock_openai_client
+            
+            client = OpenRouterClient("test_api_key")
+            
+            assert client.api_key == "test_api_key"
+            assert client._client == mock_openai_client
 
     def test_get_client_success(self):
         """Test successful client creation."""
