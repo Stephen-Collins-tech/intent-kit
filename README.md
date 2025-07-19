@@ -136,6 +136,61 @@ The magic happens when a user sends a message:
 
 ---
 
+## Handling Ambiguous Requests
+
+Sometimes users provide unclear or incomplete information. Intent Kit's **Clarifier nodes** help you handle these situations gracefully.
+
+### When Clarification is Needed
+
+```python
+from intent_kit import clarifier
+
+# Create a clarifier for booking requests
+booking_clarifier = clarifier(
+    name="booking_clarifier",
+    clarification_prompt="Your booking request '{input}' is unclear. Please provide more details.",
+    expected_response_format="Please specify: [type] [destination] [date] [time]",
+    max_clarification_attempts=3
+)
+
+# Add it to your graph
+graph = IntentGraphBuilder().root(booking_clarifier).build()
+
+# Handle ambiguous input
+result = graph.route("book something")
+# → Returns clarification request with helpful message
+```
+
+### How Clarification Works
+
+1. **User provides unclear input** - "book something"
+2. **Clarifier node triggers** - Asks for more details
+3. **User provides clarification** - "book a flight to Paris tomorrow"
+4. **System processes clarified input** - Extracts details and takes action
+
+### Advanced Clarification Features
+
+```python
+# Clarifier with context tracking
+clarifier_node = clarifier(
+    name="smart_clarifier",
+    clarification_prompt="I need more details about your request: {input}",
+    expected_response_format="Please provide: [specific details]",
+    max_clarification_attempts=2
+)
+
+# Handle clarification responses
+context = IntentContext()
+result = clarifier_node.execute("unclear request", context=context)
+
+# User provides clarification
+response = clarifier_node.handle_clarification_response(
+    "clarified details", context=context
+)
+```
+
+---
+
 ## Real-World Testing
 
 Most AI frameworks are black boxes that are hard to test. Intent Kit is different.

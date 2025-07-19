@@ -192,6 +192,13 @@ class IntentGraphBuilder(Builder):
                         )
                         validation_results["valid"] = False
 
+                elif node_type == "clarifier":
+                    if "clarification_prompt" not in node_spec:
+                        validation_results["errors"].append(
+                            f"Clarifier node '{node_id}' missing 'clarification_prompt' field"
+                        )
+                        validation_results["valid"] = False
+
                 else:
                     validation_results["errors"].append(
                         f"Unknown node type '{node_type}' for node '{node_id}'"
@@ -419,6 +426,10 @@ class IntentGraphBuilder(Builder):
             return self._create_splitter_node(
                 node_id, name, description, node_spec, function_registry
             )
+        elif node_type == "clarifier":
+            return self._create_clarifier_node(
+                node_id, name, description, node_spec, function_registry
+            )
         else:
             raise ValueError(f"Unknown node type '{node_type}' for node '{node_id}'")
 
@@ -578,6 +589,34 @@ class IntentGraphBuilder(Builder):
             splitter_function=splitter_func,
             children=[],  # Will be set later
             llm_client=llm_client,
+        )
+
+    def _create_clarifier_node(
+        self,
+        node_id: str,
+        name: str,
+        description: str,
+        node_spec: Dict[str, Any],
+        function_registry: Dict[str, Callable],
+    ) -> TreeNode:
+        """Create a ClarifierNode from specification."""
+        from intent_kit.node.actions import ClarifierNode
+
+        if "clarification_prompt" not in node_spec:
+            raise ValueError(
+                f"Clarifier node '{node_id}' must have a 'clarification_prompt' field"
+            )
+
+        clarification_prompt = node_spec["clarification_prompt"]
+        expected_response_format = node_spec.get("expected_response_format")
+        max_clarification_attempts = node_spec.get("max_clarification_attempts", 3)
+
+        return ClarifierNode(
+            name=name,
+            description=description,
+            clarification_prompt=clarification_prompt,
+            expected_response_format=expected_response_format,
+            max_clarification_attempts=max_clarification_attempts,
         )
 
     # Internal debug methods (for development use only)

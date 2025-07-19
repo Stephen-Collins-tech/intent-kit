@@ -8,7 +8,7 @@ with consistent patterns and common functionality.
 from typing import Any, Callable, List, Optional, Dict, Type, Set, Union, Sequence
 from intent_kit.node import TreeNode
 from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.node.actions import ActionNode, RemediationStrategy
+from intent_kit.node.actions import ActionNode, ClarifierNode, RemediationStrategy
 from intent_kit.node.splitters import SplitterNode, rule_splitter, llm_splitter
 from intent_kit.utils.logger import Logger
 from intent_kit.types import IntentChunk
@@ -151,6 +151,35 @@ def create_splitter_node(
     set_parent_relationships(splitter_node, children)
 
     return splitter_node
+
+
+def clarifier(
+    *,
+    name: str,
+    clarification_prompt: str,
+    expected_response_format: Optional[str] = None,
+    max_clarification_attempts: int = 3,
+    description: str = "",
+) -> TreeNode:
+    """Create a clarifier node with the given configuration.
+
+    Args:
+        name: Name of the clarifier node
+        clarification_prompt: The prompt to show when clarification is needed
+        expected_response_format: Optional format specification for the expected response
+        max_clarification_attempts: Maximum number of clarification attempts allowed
+        description: Description of what this clarifier does
+
+    Returns:
+        Configured ClarifierNode
+    """
+    return ClarifierNode(
+        name=name,
+        clarification_prompt=clarification_prompt,
+        expected_response_format=expected_response_format,
+        max_clarification_attempts=max_clarification_attempts,
+        description=description,
+    )
 
 
 def create_default_classifier() -> Callable:

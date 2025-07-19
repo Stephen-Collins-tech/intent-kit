@@ -3,6 +3,7 @@ Action node implementations.
 """
 
 from .action import ActionNode
+from .clarifier import ClarifierNode
 from .remediation import (
     RemediationStrategy,
     RetryOnFailStrategy,
@@ -27,6 +28,7 @@ from .remediation import (
 
 __all__ = [
     "ActionNode",
+    "ClarifierNode",
     "RemediationStrategy",
     "RetryOnFailStrategy",
     "FallbackToAnotherNodeStrategy",

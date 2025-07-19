@@ -235,6 +235,20 @@ class IntentGraph:
             result = self.splitter(user_input, debug, **splitter_kwargs)
         return list(result)  # Convert Sequence to list
 
+    def _find_clarifier_node(self) -> Optional["TreeNode"]:
+        """
+        Find a Clarifier node among the root nodes.
+
+        Returns:
+            The first Clarifier node found, or None if none exist
+        """
+        from intent_kit.node.enums import NodeType
+        
+        for node in self.root_nodes:
+            if node.node_type == NodeType.CLARIFY:
+                return node
+        return None
+
     def _route_chunk_to_root_node(
         self, chunk: str, debug: bool = False
     ) -> Optional[TreeNode]:
@@ -559,29 +573,94 @@ class IntentGraph:
                 # Add sub_chunks to the front of the queue for processing
                 chunks_to_process = sub_chunks + chunks_to_process
             elif action == IntentAction.CLARIFY:
-                # Stub: Add a result indicating clarification is needed
-                error_result = ExecutionResult(
-                    success=False,
-                    params=None,
-                    children_results=[],
-                    node_name="clarify",
-                    node_path=[],
-                    node_type=NodeType.CLARIFY,
-                    input=chunk_text,
-                    output=None,
-                    error=ExecutionError(
-                        error_type="ClarificationNeeded",
-                        message=f"Clarification needed for chunk: '{chunk_text}'",
+                # Find a Clarifier node to handle the clarification
+                clarifier_node = self._find_clarifier_node()
+                if clarifier_node:
+                    try:
+                        # Context debugging: capture state before execution
+                        context_state_before = None
+                        if debug_context_enabled and context:
+                            context_state_before = self._capture_context_state(
+                                context, f"before_{clarifier_node.name}"
+                            )
+
+                        result = clarifier_node.execute(chunk_text, context=context)
+
+                        # Context debugging: capture state after execution
+                        if debug_context_enabled and context:
+                            context_state_after = self._capture_context_state(
+                                context, f"after_{clarifier_node.name}"
+                            )
+                            self._log_context_changes(
+                                context_state_before,
+                                context_state_after,
+                                clarifier_node.name,
+                                debug,
+                                context_trace_enabled,
+                            )
+
+                        if debug:
+                            self.logger.info(
+                                f"Clarifier node '{clarifier_node.name}' result: {result}"
+                            )
+                        children_results.append(result)
+                        if result.success and result.output is not None:
+                            all_outputs.append(result.output)
+                        if result.params is not None:
+                            all_params.append(result.params)
+                        if result.error:
+                            all_errors.append(
+                                f"Clarifier node '{clarifier_node.name}': {result.error.message}"
+                            )
+                    except Exception as e:
+                        error_message = str(e)
+                        error_type = type(e).__name__
+                        error_result = ExecutionResult(
+                            success=False,
+                            params=None,
+                            children_results=[],
+                            node_name=clarifier_node.name,
+                            node_path=[],
+                            node_type=NodeType.CLARIFY,
+                            input=chunk_text,
+                            output=None,
+                            error=ExecutionError(
+                                error_type=error_type,
+                                message=error_message,
+                                node_name=clarifier_node.name,
+                                node_path=[],
+                            ),
+                        )
+                        children_results.append(error_result)
+                        all_errors.append(
+                            f"Clarifier node '{clarifier_node.name}' failed: {error_message}"
+                        )
+                        if debug:
+                            self.logger.error(f"Clarifier node '{clarifier_node.name}' failed: {e}")
+                else:
+                    # Fallback: Create a generic clarification result
+                    error_result = ExecutionResult(
+                        success=False,
+                        params=None,
+                        children_results=[],
                         node_name="clarify",
                         node_path=[],
-                    ),
-                )
-                children_results.append(error_result)
-                all_errors.append(f"Clarification needed for chunk: '{chunk_text}'")
-                if debug:
-                    self.logger.warning(
-                        f"Clarification needed for chunk: '{chunk_text}'"
+                        node_type=NodeType.CLARIFY,
+                        input=chunk_text,
+                        output=None,
+                        error=ExecutionError(
+                            error_type="ClarificationNeeded",
+                            message=f"Clarification needed for chunk: '{chunk_text}'",
+                            node_name="clarify",
+                            node_path=[],
+                        ),
                     )
+                    children_results.append(error_result)
+                    all_errors.append(f"Clarification needed for chunk: '{chunk_text}'")
+                    if debug:
+                        self.logger.warning(
+                            f"Clarification needed for chunk: '{chunk_text}'"
+                        )
             elif action == IntentAction.REJECT:
                 # Stub: Add a result indicating rejection
                 error_result = ExecutionResult(
