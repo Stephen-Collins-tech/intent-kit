@@ -12,7 +12,7 @@ import pytest
 class TestOpenRouterClientSimple:
     """Simplified test cases for OpenRouterClient class."""
 
-    def test_def test_init_with_api_key(self): -> None:
+    def test_def test_def test_init_with_api_key(self): -> None: -> None:
         """Test OpenRouterClient initialization with API key."""
         with patch.object(OpenRouterClient, 'get_client') as mock_get_client:
             mock_client = Mock()
@@ -23,7 +23,7 @@ class TestOpenRouterClientSimple:
             assert client.api_key == "test_api_key"
             assert client._client == mock_client
 
-    def test_def test_get_client_success(self): -> None:
+    def test_def test_def test_get_client_success(self): -> None: -> None:
         """Test successful client creation."""
         with patch('builtins.__import__') as mock_import:
             mock_openai = Mock()
@@ -41,7 +41,7 @@ class TestOpenRouterClientSimple:
             assert expected_call[1]["api_key"] == "test_api_key"
             assert expected_call[1]["base_url"] == "https://openrouter.ai/api/v1"
 
-    def test_def test_get_client_import_error(self): -> None:
+    def test_def test_def test_get_client_import_error(self): -> None: -> None:
         """Test client creation when openai is not installed."""
         with patch('builtins.__import__') as mock_import:
             mock_import.side_effect = ImportError("No module named 'openai'")
@@ -51,7 +51,7 @@ class TestOpenRouterClientSimple:
 
             assert "OpenAI package not installed" in str(exc_info.value)
 
-    def test_def test_ensure_imported_success(self): -> None:
+    def test_def test_def test_ensure_imported_success(self): -> None: -> None:
         """Test _ensure_imported when client is None."""
         with patch.object(OpenRouterClient, 'get_client') as mock_get_client:
             mock_client = Mock()
@@ -63,7 +63,7 @@ class TestOpenRouterClientSimple:
 
             assert client._client == mock_client
 
-    def test_def test_ensure_imported_already_imported(self): -> None:
+    def test_def test_def test_ensure_imported_already_imported(self): -> None: -> None:
         """Test _ensure_imported when client already exists."""
         mock_client = Mock()
         client = OpenRouterClient("test_api_key")
@@ -74,7 +74,7 @@ class TestOpenRouterClientSimple:
         # Should not change the existing client
         assert client._client == mock_client
 
-    def test_def test_clean_response_empty(self): -> None:
+    def test_def test_def test_clean_response_empty(self): -> None: -> None:
         """Test cleaning empty response."""
         client = OpenRouterClient("test_api_key")
 
@@ -84,7 +84,7 @@ class TestOpenRouterClientSimple:
         result = client._clean_response(None)
         assert result == ""
 
-    def test_def test_clean_response_with_content(self): -> None:
+    def test_def test_def test_clean_response_with_content(self): -> None: -> None:
         """Test cleaning response with content."""
         client = OpenRouterClient("test_api_key")
 
@@ -94,7 +94,7 @@ class TestOpenRouterClientSimple:
         result = client._clean_response("  multiple\n  lines  ")
         assert result == "multiple\n  lines"
 
-    def test_def test_generate_success(self): -> None:
+    def test_def test_def test_generate_success(self): -> None: -> None:
         """Test successful text generation."""
         mock_response = Mock()
         mock_choice = Mock()
@@ -113,13 +113,13 @@ class TestOpenRouterClientSimple:
             result = client.generate("test prompt")
 
             assert result == "Generated response"
-            mock_client.chat.completions.create.assert_called_once_with(
+            mock_client.chat.completions.create.assert_called_once_with()
                 model="openrouter-default",
                 messages=[{"role": "user", "content": "test prompt"}],
                 max_tokens=1000
-            )
+(            )
 
-    def test_def test_generate_with_custom_model(self): -> None:
+    def test_def test_def test_generate_with_custom_model(self): -> None: -> None:
         """Test text generation with custom model."""
         mock_response = Mock()
         mock_choice = Mock()
@@ -138,13 +138,13 @@ class TestOpenRouterClientSimple:
             result = client.generate("test prompt", model="custom-model")
 
             assert result == "Custom model response"
-            mock_client.chat.completions.create.assert_called_once_with(
+            mock_client.chat.completions.create.assert_called_once_with()
                 model="custom-model",
                 messages=[{"role": "user", "content": "test prompt"}],
                 max_tokens=1000
-            )
+(            )
 
-    def test_def test_generate_empty_response(self): -> None:
+    def test_def test_def test_generate_empty_response(self): -> None: -> None:
         """Test text generation with empty response."""
         mock_response = Mock()
         mock_response.choices = []
@@ -160,7 +160,7 @@ class TestOpenRouterClientSimple:
 
             assert result == ""
 
-    def test_def test_generate_none_content(self): -> None:
+    def test_def test_def test_generate_none_content(self): -> None: -> None:
         """Test text generation with None content."""
         mock_response = Mock()
         mock_choice = Mock()
@@ -180,7 +180,7 @@ class TestOpenRouterClientSimple:
 
             assert result == ""
 
-    def test_def test_generate_exception_handling(self): -> None:
+    def test_def test_def test_generate_exception_handling(self): -> None: -> None:
         """Test text generation with exception."""
         mock_client = Mock()
         mock_client.chat.completions.create.side_effect = Exception("API Error")
@@ -195,7 +195,7 @@ class TestOpenRouterClientSimple:
 
             assert "API Error" in str(exc_info.value)
 
-    def test_def test_generate_text_alias(self): -> None:
+    def test_def test_def test_generate_text_alias(self): -> None: -> None:
         """Test generate_text alias method."""
         mock_response = Mock()
         mock_choice = Mock()
@@ -215,7 +215,7 @@ class TestOpenRouterClientSimple:
 
             assert result == "Alias response"
 
-    def test_def test_initialize_client(self): -> None:
+    def test_def test_def test_initialize_client(self): -> None: -> None:
         """Test _initialize_client method."""
         with patch.object(OpenRouterClient, 'get_client') as mock_get_client:
             mock_client = Mock()
@@ -226,7 +226,7 @@ class TestOpenRouterClientSimple:
 
             assert client._client == mock_client
 
-    def test_def test_generate_with_client_recreation(self): -> None:
+    def test_def test_def test_generate_with_client_recreation(self): -> None: -> None:
         """Test generation when client needs to be recreated."""
         mock_response = Mock()
         mock_choice = Mock()
@@ -248,7 +248,7 @@ class TestOpenRouterClientSimple:
             assert result == "Recreated response"
             assert client._client == mock_client
 
-    def test_def test_generate_with_different_prompts(self): -> None:
+    def test_def test_def test_generate_with_different_prompts(self): -> None: -> None:
         """Test generation with different prompts."""
         mock_response = Mock()
         mock_choice = Mock()
@@ -274,7 +274,7 @@ class TestOpenRouterClientSimple:
             assert calls[0][1]["messages"][0]["content"] == "prompt 1"
             assert calls[1][1]["messages"][0]["content"] == "prompt 2"
 
-    def test_def test_generate_with_different_models(self): -> None:
+    def test_def test_def test_generate_with_different_models(self): -> None: -> None:
         """Test generation with different models."""
         mock_response = Mock()
         mock_choice = Mock()
@@ -300,7 +300,7 @@ class TestOpenRouterClientSimple:
             assert calls[0][1]["model"] == "model1"
             assert calls[1][1]["model"] == "model2"
 
-    def test_def test_generate_with_empty_string_response(self): -> None:
+    def test_def test_def test_generate_with_empty_string_response(self): -> None: -> None:
         """Test generation with empty string response."""
         mock_response = Mock()
         mock_choice = Mock()
@@ -320,7 +320,7 @@ class TestOpenRouterClientSimple:
 
             assert result == ""
 
-    def test_def test_client_initialization_with_empty_api_key(self): -> None:
+    def test_def test_def test_client_initialization_with_empty_api_key(self): -> None: -> None:
         """Test client initialization with empty API key."""
         with patch.object(OpenRouterClient, 'get_client') as mock_get_client:
             mock_client = Mock()
@@ -331,11 +331,11 @@ class TestOpenRouterClientSimple:
             # Should not raise an error, but client creation might fail
             assert client.api_key == ""
 
-    def test_def test_generate_with_api_error(self): -> None:
+    def test_def test_def test_generate_with_api_error(self): -> None: -> None:
         """Test generation with API error."""
         mock_client = Mock()
-        mock_client.chat.completions.create.side_effect = Exception(
-            "Rate limit exceeded")
+        mock_client.chat.completions.create.side_effect = Exception()
+(            "Rate limit exceeded")
         with patch.object(OpenRouterClient, 'get_client') as mock_get_client:
             mock_get_client.return_value = mock_client
 
@@ -346,7 +346,7 @@ class TestOpenRouterClientSimple:
 
             assert "Rate limit exceeded" in str(exc_info.value)
 
-    def test_def test_generate_with_network_error(self): -> None:
+    def test_def test_def test_generate_with_network_error(self): -> None: -> None:
         """Test generation with network error."""
         mock_client = Mock()
         mock_client.chat.completions.create.side_effect = Exception("Connection failed")
@@ -365,7 +365,7 @@ class TestOpenRouterClientSimple:
 class TestOpenRouterClientIntegration:
     """Integration tests for OpenRouterClient."""
 
-    def test_def test_full_workflow(self): -> None:
+    def test_def test_def test_full_workflow(self): -> None: -> None:
         """Test complete workflow from initialization to generation."""
         mock_response = Mock()
         mock_choice = Mock()
@@ -391,7 +391,7 @@ class TestOpenRouterClientIntegration:
             assert client._client == mock_client
             assert client.api_key == "test_api_key"
 
-    def test_def test_multiple_generations(self): -> None:
+    def test_def test_def test_multiple_generations(self): -> None: -> None:
         """Test multiple generations with the same client."""
         mock_responses = []
         for i in range(3):

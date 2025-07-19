@@ -3,7 +3,7 @@
 Script to identify and fix common Python lint errors.
 
 This script analyzes the codebase and provides specific fixes for:
-- Unused imports
+    - Unused imports
 - Missing type annotations
 - Line length issues
 - Unused variables
@@ -19,8 +19,7 @@ import ast
 
 
 class LintError:
-    def __init__(
-        self, file_path: str, line: int, error_type: str, message: str, fix: str = ""):
+    def __init__(self, file_path: str, line: int, error_type: str, message: str, fix: str = ""):
         self.file_path = file_path
         self.line = line
         self.error_type = error_type

@@ -45,7 +45,7 @@ def weather_info(location: str, context=None) -> str:
 
 def help_user(context=None) -> str:
     """Provide help information."""
-    return "I can help you with greetings, calculations, and weather information. Just ask!"
+return "I can help you with greetings, calculations, and weather information. Just ask!"
 
 
 def main() -> None:
@@ -135,20 +135,20 @@ def main() -> None:
 
     # Create the graph using JSON specification
     print("1. Creating IntentGraph from JSON specification...")
-    graph = (
+    graph = ()
         IntentGraphBuilder()
         .with_json(json_graph)
         .with_functions(function_registry)
         .build()
-    )
+(    )
     print("✅ Graph created successfully!")
 
     # Validate the graph
     print("\n2. Validating graph structure...")
     try:
-        validation_results = (
+        validation_results = ()
             IntentGraphBuilder().with_json(json_graph).validate_json_graph()
-        )
+(        )
         print("✅ Graph validation passed!")
         print(f"   - Nodes: {validation_results['node_count']}")
         print(f"   - Edges: {validation_results['edge_count']}")
@@ -163,7 +163,7 @@ def main() -> None:
     test_inputs = [
         "Hello, my name is Alice",
         "What is 5 plus 3?",
-        "What's the weather like in New York?",
+        "What's the weather like in New York?",'
         "Can you help me?",
         "This is an unknown request",
         "I want to multiply 7 and 8",
@@ -180,9 +180,9 @@ def main() -> None:
             if result.success:
                 print(f"✅ Success: {result.output}")
             else:
-                print(
-                    f"❌ Failed: {result.error.message if result.error else 'Unknown error'}"
-                )
+                print()
+f"❌ Failed: {result.error.message if result.error else 'Unknown error'}"
+(                )
         except Exception as e:
             print(f"❌ Exception: {e}")
 

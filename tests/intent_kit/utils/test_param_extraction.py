@@ -12,13 +12,13 @@ import pytest
     _extract_name_parameter,
     _extract_location_parameter,
     _extract_calculation_parameters,
-)
+()
 
 
 class TestParseParamSchema:
     """Test parameter schema parsing."""
 
-    def test_def test_parse_basic_types(self): -> None:
+    def test_def test_def test_parse_basic_types(self): -> None: -> None:
         """Test parsing of basic parameter types."""
         schema_data = {
             "name": "str",
@@ -38,14 +38,14 @@ class TestParseParamSchema:
         assert result["tags"] is list
         assert result["metadata"] is dict
 
-    def test_def test_parse_unknown_type(self): -> None:
+    def test_def test_def test_parse_unknown_type(self): -> None: -> None:
         """Test that unknown types raise ValueError."""
         schema_data = {"invalid": "unknown_type"}
 
         with pytest.raises(ValueError, match="Unknown parameter type: unknown_type"):
             parse_param_schema(schema_data)
 
-    def test_def test_parse_empty_schema(self): -> None:
+    def test_def test_def test_parse_empty_schema(self): -> None: -> None:
         """Test parsing empty schema."""
         result = parse_param_schema({})
         assert result == {}
@@ -54,31 +54,31 @@ class TestParseParamSchema:
 class TestExtractNameParameter:
     """Test name parameter extraction."""
 
-    def test_def test_extract_single_name(self): -> None:
+    def test_def test_def test_extract_single_name(self): -> None: -> None:
         """Test extracting single name."""
         input_text = "hello john"
         result = _extract_name_parameter(input_text)
         assert result == {"name": "John"}
 
-    def test_def test_extract_full_name(self): -> None:
+    def test_def test_def test_extract_full_name(self): -> None: -> None:
         """Test extracting full name."""
         input_text = "hi john doe"
         result = _extract_name_parameter(input_text)
         assert result == {"name": "John"}
 
-    def test_def test_extract_greet_command(self): -> None:
+    def test_def test_def test_extract_greet_command(self): -> None: -> None:
         """Test extracting name from greet command."""
         input_text = "greet alice"
         result = _extract_name_parameter(input_text)
         assert result == {"name": "Alice"}
 
-    def test_def test_no_name_found(self): -> None:
+    def test_def test_def test_no_name_found(self): -> None: -> None:
         """Test when no name is found."""
         input_text = "hello there"
         result = _extract_name_parameter(input_text)
         assert result == {"name": "There"}
 
-    def test_def test_case_insensitive(self): -> None:
+    def test_def test_def test_case_insensitive(self): -> None: -> None:
         """Test case insensitive matching."""
         input_text = "HELLO BOB"
         result = _extract_name_parameter(input_text)
@@ -88,25 +88,25 @@ class TestExtractNameParameter:
 class TestExtractLocationParameter:
     """Test location parameter extraction."""
 
-    def test_def test_extract_weather_location(self): -> None:
+    def test_def test_def test_extract_weather_location(self): -> None: -> None:
         """Test extracting location from weather query."""
         input_text = "weather in new york"
         result = _extract_location_parameter(input_text)
         assert result == {"location": "New York"}
 
-    def test_def test_extract_location_with_in(self): -> None:
+    def test_def test_def test_extract_location_with_in(self): -> None: -> None:
         """Test extracting location with 'in' keyword."""
-        input_text = "what's the weather in london"
+        input_text = "what's the weather in london"'
         result = _extract_location_parameter(input_text)
         assert result == {"location": "London"}
 
-    def test_def test_no_location_found(self): -> None:
+    def test_def test_def test_no_location_found(self): -> None: -> None:
         """Test when no location is found."""
-        input_text = "what's the weather like"
+        input_text = "what's the weather like"'
         result = _extract_location_parameter(input_text)
         assert result == {"location": "Unknown"}
 
-    def test_def test_case_insensitive(self): -> None:
+    def test_def test_def test_case_insensitive(self): -> None: -> None:
         """Test case insensitive matching."""
         input_text = "WEATHER IN PARIS"
         result = _extract_location_parameter(input_text)
@@ -116,37 +116,37 @@ class TestExtractLocationParameter:
 class TestExtractCalculationParameters:
     """Test calculation parameter extraction."""
 
-    def test_def test_extract_addition(self): -> None:
+    def test_def test_def test_extract_addition(self): -> None: -> None:
         """Test extracting addition parameters."""
-        input_text = "what's 5 plus 3"
+        input_text = "what's 5 plus 3"'
         result = _extract_calculation_parameters(input_text)
         assert result == {"a": 5.0, "operation": "plus", "b": 3.0}
 
-    def test_def test_extract_subtraction(self): -> None:
+    def test_def test_def test_extract_subtraction(self): -> None: -> None:
         """Test extracting subtraction parameters."""
         input_text = "10 minus 4"
         result = _extract_calculation_parameters(input_text)
         assert result == {"a": 10.0, "operation": "minus", "b": 4.0}
 
-    def test_def test_extract_multiplication(self): -> None:
+    def test_def test_def test_extract_multiplication(self): -> None: -> None:
         """Test extracting multiplication parameters."""
         input_text = "6 times 7"
         result = _extract_calculation_parameters(input_text)
         assert result == {"a": 6.0, "operation": "times", "b": 7.0}
 
-    def test_def test_extract_division(self): -> None:
+    def test_def test_def test_extract_division(self): -> None: -> None:
         """Test extracting division parameters."""
         input_text = "15 divided by 3"
         result = _extract_calculation_parameters(input_text)
         assert result == {}
 
-    def test_def test_extract_decimal_numbers(self): -> None:
+    def test_def test_def test_extract_decimal_numbers(self): -> None: -> None:
         """Test extracting decimal numbers."""
         input_text = "3.5 plus 2.1"
         result = _extract_calculation_parameters(input_text)
         assert result == {"a": 3.5, "operation": "plus", "b": 2.1}
 
-    def test_def test_no_calculation_found(self): -> None:
+    def test_def test_def test_no_calculation_found(self): -> None: -> None:
         """Test when no calculation is found."""
         input_text = "hello world"
         result = _extract_calculation_parameters(input_text)
@@ -156,7 +156,7 @@ class TestExtractCalculationParameters:
 class TestCreateRuleBasedExtractor:
     """Test rule-based extractor creation."""
 
-    def test_def test_create_extractor_with_name_param(self): -> None:
+    def test_def test_def test_create_extractor_with_name_param(self): -> None: -> None:
         """Test creating extractor with name parameter."""
         param_schema = {"name": str}
         extractor = create_rule_based_extractor(param_schema)
@@ -164,7 +164,7 @@ class TestCreateRuleBasedExtractor:
         result = extractor("hello john", {})
         assert result == {"name": "John"}
 
-    def test_def test_create_extractor_with_location_param(self): -> None:
+    def test_def test_def test_create_extractor_with_location_param(self): -> None: -> None:
         """Test creating extractor with location parameter."""
         param_schema = {"location": str}
         extractor = create_rule_based_extractor(param_schema)
@@ -172,7 +172,7 @@ class TestCreateRuleBasedExtractor:
         result = extractor("weather in tokyo", {})
         assert result == {"location": "Tokyo"}
 
-    def test_def test_create_extractor_with_calculation_params(self): -> None:
+    def test_def test_def test_create_extractor_with_calculation_params(self): -> None: -> None:
         """Test creating extractor with calculation parameters."""
         param_schema = {"a": float, "operation": str, "b": float}
         extractor = create_rule_based_extractor(param_schema)
@@ -180,7 +180,7 @@ class TestCreateRuleBasedExtractor:
         result = extractor("10 plus 5", {})
         assert result == {"a": 10.0, "operation": "plus", "b": 5.0}
 
-    def test_def test_create_extractor_with_multiple_params(self): -> None:
+    def test_def test_def test_create_extractor_with_multiple_params(self): -> None: -> None:
         """Test creating extractor with multiple parameters."""
         param_schema = {"name": str, "location": str}
         extractor = create_rule_based_extractor(param_schema)
@@ -188,7 +188,7 @@ class TestCreateRuleBasedExtractor:
         result = extractor("hello john, weather in paris", {})
         assert result == {"name": "John", "location": "Paris"}
 
-    def test_def test_create_extractor_with_context(self): -> None:
+    def test_def test_def test_create_extractor_with_context(self): -> None: -> None:
         """Test creating extractor with context parameter."""
         param_schema = {"name": str}
         extractor = create_rule_based_extractor(param_schema)
@@ -197,7 +197,7 @@ class TestCreateRuleBasedExtractor:
         result = extractor("hello alice", context)
         assert result == {"name": "Alice"}
 
-    def test_def test_create_extractor_no_matching_params(self): -> None:
+    def test_def test_def test_create_extractor_no_matching_params(self): -> None: -> None:
         """Test creating extractor with no matching parameters."""
         param_schema = {"unknown": str}
         extractor = create_rule_based_extractor(param_schema)
@@ -209,7 +209,7 @@ class TestCreateRuleBasedExtractor:
 class TestCreateArgExtractor:
     """Test argument extractor creation."""
 
-    def test_def test_create_rule_based_extractor(self): -> None:
+    def test_def test_def test_create_rule_based_extractor(self): -> None: -> None:
         """Test creating rule-based extractor when no LLM config provided."""
         param_schema = {"name": str}
         extractor = create_arg_extractor(param_schema)
@@ -218,7 +218,7 @@ class TestCreateArgExtractor:
         assert result == {"name": "John"}
 
     @patch("intent_kit.utils.param_extraction.logger")
-    def test_create_llm_extractor(self, mock_logger):
+    def test_create_llm_extractor(self, mock_logger) -> None:
         """Test creating LLM-based extractor."""
         param_schema = {"name": str}
         llm_config = {"model": "google/gemma-3-27b-it"}
@@ -231,22 +231,22 @@ class TestCreateArgExtractor:
         mock_logger.debug.assert_called()
 
     @patch("intent_kit.utils.param_extraction.logger")
-    def test_create_llm_extractor_with_custom_prompt(self, mock_logger):
+    def test_create_llm_extractor_with_custom_prompt(self, mock_logger) -> None:
         """Test creating LLM-based extractor with custom prompt."""
         param_schema = {"name": str}
         llm_config = {"model": "google/gemma-3-27b-it"}
         custom_prompt = "Custom extraction prompt"
 
         # This should fall back to rule-based extractor since the imports don't exist
-        extractor = create_arg_extractor(
+        extractor = create_arg_extractor()
             param_schema, llm_config, extraction_prompt=custom_prompt
-        )
+(        )
 
         # Should create a rule-based extractor
         assert callable(extractor)
         mock_logger.debug.assert_called()
 
-    def test_def test_create_extractor_with_node_name(self): -> None:
+    def test_def test_def test_create_extractor_with_node_name(self): -> None: -> None:
         """Test creating extractor with node name for logging."""
         param_schema = {"name": str}
         extractor = create_arg_extractor(param_schema, node_name="test_node")
@@ -254,7 +254,7 @@ class TestCreateArgExtractor:
         result = extractor("hello john", {})
         assert result == {"name": "John"}
 
-    def test_def test_create_extractor_empty_schema(self): -> None:
+    def test_def test_def test_create_extractor_empty_schema(self): -> None: -> None:
         """Test creating extractor with empty schema."""
         param_schema = {}
         extractor = create_arg_extractor(param_schema)

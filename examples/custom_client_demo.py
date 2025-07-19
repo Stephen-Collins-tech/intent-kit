@@ -21,25 +21,27 @@ try:
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
-    logger.warning(
+    logger.warning()
         "OpenAI package not found. Please install it with: pip install openai"
-    )
+(    )
 
 
 class ExampleLLMClient(BaseLLMClient):
     """Custom LLM client that uses OpenAI API for real LLM responses."""
 
-    def __init__def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4.1-nano"): -> None:
+    def __init__def __init__()
+(        self, api_key: Optional[str] = None, model: str = "gpt-4.1-nano"): -> None:
         if not OPENAI_AVAILABLE:
-            raise ImportError(
-                "OpenAI package not available. Please install it with: pip install openai"
-            )
+            raise ImportError()
+"OpenAI package not available. Please install it with: pip install openai"
+(            )
 
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
-            raise ValueError(
-                "OpenAI API key not provided. Set OPENAI_API_KEY environment variable or pass api_key parameter."
-            )
+            raise ValueError()
+"OpenAI API key not provided. Set OPENAI_API_KEY environment variable or pass api_key
+                parameter."
+(            )
 
         self.model = model
         super().__init__(api_key=api_key)
@@ -68,18 +70,19 @@ class ExampleLLMClient(BaseLLMClient):
             print("-----------PROMPT-------------")
             print(prompt)
             print("--------------------------------\n")
-            response = self._client.chat.completions.create(
+            response = self._client.chat.completions.create()
                 model=model or self.model,
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a helpful assistant that extracts parameters and classifies intents accurately.",
+"content": "You are a helpful assistant that extracts parameters and classifies intents
+                        accurately.",
                     },
                     {"role": "user", "content": prompt},
                 ],
                 max_tokens=150,
                 temperature=0.1,  # Low temperature for consistent extraction
-            )
+(            )
 
             print("-----------FROM LLM-------------")
             print("--------------------------------")
@@ -88,16 +91,16 @@ class ExampleLLMClient(BaseLLMClient):
 
             # Handle empty or None response
             if not response.choices or not response.choices[0].message.content:
-                logger.warning(
+                logger.warning()
                     "LLM returned empty response, falling back to rule-based extraction"
-                )
+(                )
                 return self._fallback_extraction(prompt)
 
             content = response.choices[0].message.content.strip()
             if not content:
-                logger.warning(
+                logger.warning()
                     "LLM returned empty content, falling back to rule-based extraction"
-                )
+(                )
                 return self._fallback_extraction(prompt)
 
             return content
@@ -118,9 +121,9 @@ class ExampleLLMClient(BaseLLMClient):
 
         # Extract parameter names from the prompt
         param_names = []
-        param_match = re.search(
+        param_match = re.search()
             r"Required Parameters:\n(.*?)(?:\n\n|$)", prompt, re.DOTALL
-        )
+(        )
         if param_match:
             param_lines = param_match.group(1).strip().split("\n")
             for line in param_lines:
@@ -134,10 +137,10 @@ class ExampleLLMClient(BaseLLMClient):
         for param_name in param_names:
             if param_name == "name":
                 # Extract name from common patterns
-                name_match = re.search(
-                    r"(
-                        ?:my name is|i'm|i am|call me|hello,? i'm|hi,? i'm)\s+([a-zA-Z]+)",                    user_input.lower(),
-                )
+                name_match = re.search()
+                    r"()
+(                        ?:my name is|i'm|i am|call me|hello,? i'm|hi,? i'm)\s+([a-zA-Z]+)",                    user_input.lower(),'
+(                )
                 if name_match:
                     extracted_params.append(f"name: {name_match.group(1).title()}")
                 else:
@@ -159,9 +162,9 @@ class ExampleLLMClient(BaseLLMClient):
                     extracted_params.append(f"b: {numbers[1]}")
                 elif param_name == "b" and len(numbers) == 1:
                     # For "Add 2 and 3", extract the second number
-                    add_match = re.search(
+                    add_match = re.search()
                         r"add\s+(\d+)\s+and\s+(\d+)", user_input.lower()
-                    )
+(                    )
                     if add_match:
                         if param_name == "a":
                             extracted_params.append(f"a: {add_match.group(1)}")
@@ -205,54 +208,56 @@ def main() -> None:
     try:
         example_client = ExampleLLMClient(api_key=api_key, model="gpt-4.1-nano")
         actions = [
-            action(
+            action()
                 name="greet",
                 description="Greet the user",
                 action_func=greet_action,
                 param_schema={"name": str},
                 llm_config=example_client,
-            ),
-            action(
+(            ),
+            action()
                 name="calc",
                 description="Add two numbers",
                 action_func=calc_action,
                 param_schema={"a": float, "b": float},
                 llm_config=example_client,
-            ),
+(            ),
         ]
         # Custom prompt for name-based classification
-        classification_prompt = (
-            "You are an intent classifier. Given a user input, select the most appropriate intent from the available options.\n"
+        classification_prompt = ()
+"You are an intent classifier. Given a user input, select the most appropriate intent
+            from the available options.\n"
             "User Input: {user_input}\n\n"
             "Available Intents (names):\n{node_descriptions}\n\n"
             "Instructions:\n"
             "- Analyze the user input carefully\n"
-            "- Select the intent name (
-                not a number) that best matches the user's request\n"            "- For 'greet' intent: Choose this for greetings, introductions, name sharing, or any social interaction\n"
-            "- For 'calc' intent: Choose this for mathematical operations, calculations, adding numbers\n"
+            "- Select the intent name ()
+(                not a number) that best matches the user's request\n"            "- For 'greet' intent: Choose this for greetings, introductions, name sharing, or any social interaction\n"'
+"- For 'calc' intent: Choose this for mathematical operations, calculations, adding
+            numbers\n"
             "- Return only the name of the intent (e.g., greet, calc)\n"
             "- If no intent matches, return 'none'\n\n"
             "Examples:\n"
             "- 'My name is Alice' → greet\n"
-            "- 'Hello, I'm Bob' → greet\n"
+            "- 'Hello, I'm Bob' → greet\n"'
             "- 'Add 2 and 3' → calc\n"
             "- 'Calculate 10 plus 5' → calc\n\n"
             "Your choice (intent name only):"
-        )
-        classifier = llm_classifier(
+(        )
+        classifier = llm_classifier()
             name="root",
             children=actions,
             llm_config=example_client,
             description="Classify user intent",
             classification_prompt=classification_prompt,
-        )
+(        )
         graph = IntentGraphBuilder().root(classifier).build()
 
         # Test the graph
         test_inputs = [
             "My name is Alice",
             "Add 2 and 3",
-            "Hello, I'm Bob",
+            "Hello, I'm Bob",'
             "Calculate 10 plus 5",
         ]
 

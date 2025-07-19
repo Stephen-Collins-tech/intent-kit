@@ -42,7 +42,7 @@ def get_node_from_module(module_name: str, node_name: str):
         return None
 
 
-def save_raw_results_to_csv(
+def save_raw_results_to_csv()
     dataset_name: str,
     test_case: Dict[str, Any],
     actual_output: Any,
@@ -50,7 +50,7 @@ def save_raw_results_to_csv(
     error: Optional[str] = None,
     similarity_score: Optional[float] = None,
     run_timestamp: Optional[str] = None,
-):
+():
     """Save raw evaluation results to CSV files."""
     # Create organized results directory structure
     today = datetime.now().strftime("%Y-%m-%d")
@@ -124,9 +124,9 @@ def similarity_score(text1: str, text2: str) -> float:
     return SequenceMatcher(None, norm1, norm2).ratio()
 
 
-def chunks_similarity_score(
+def chunks_similarity_score()
     expected_chunks: List[str], actual_chunks: List[str], threshold: float = 0.8
-) -> tuple[bool, float]:
+() -> tuple[bool, float]:
     """Calculate similarity score between expected and actual chunks."""
     if len(expected_chunks) != len(actual_chunks):
         return False, 0.0
@@ -140,9 +140,9 @@ def chunks_similarity_score(
     return avg_score >= threshold, avg_score
 
 
-def evaluate_node(
+def evaluate_node()
     node, test_cases: List[Dict[str, Any]], dataset_name: str
-) -> Dict[str, Any]:
+() -> Dict[str, Any]:
     """Evaluate a node against test cases."""
     results: Dict[str, Any] = {
         "dataset": dataset_name,
@@ -151,7 +151,7 @@ def evaluate_node(
         "incorrect": 0,
         "errors": [],
         "details": [],
-        "raw_results_file": f"intent_kit/evals/results/latest/{dataset_name}_results.csv",
+"raw_results_file": f"intent_kit/evals/results/latest/{dataset_name}_results.csv",
     }
 
     # Generate a unique run timestamp for this evaluation
@@ -195,23 +195,23 @@ def evaluate_node(
                 if isinstance(actual_output, list):
                     # For splitters, compare lists using similarity
                     if isinstance(expected, list):
-                        correct, similarity_score_val = chunks_similarity_score(
+                        correct, similarity_score_val = chunks_similarity_score()
                             expected, actual_output
-                        )
+(                        )
                     else:
                         correct = False
                 else:
                     # For actions and classifiers, compare strings
-                    correct = (
+                    correct = ()
                         str(actual_output).strip().lower()
                         == str(expected).strip().lower()
-                    )
+(                    )
 
                 if correct:
                     results["correct"] += 1
                 else:
                     results["incorrect"] += 1
-                    results["errors"].append(
+                    results["errors"].append()
                         {
                             "case": i + 1,
                             "input": user_input,
@@ -220,21 +220,21 @@ def evaluate_node(
                             "similarity_score": similarity_score_val,
                             "type": "incorrect_output",
                         }
-                    )
+(                    )
 
                 # Save raw result to CSV
-                save_raw_results_to_csv(
+                save_raw_results_to_csv()
                     dataset_name,
                     test_case,
                     actual_output,
                     correct,
                     similarity_score=similarity_score_val,
                     run_timestamp=run_timestamp,
-                )
+(                )
             else:
                 results["incorrect"] += 1
                 error_msg = result.error.message if result.error else "Unknown error"
-                results["errors"].append(
+                results["errors"].append()
                     {
                         "case": i + 1,
                         "input": user_input,
@@ -243,22 +243,22 @@ def evaluate_node(
                         "type": "execution_failed",
                         "error": error_msg,
                     }
-                )
+(                )
 
                 # Save raw result to CSV
-                save_raw_results_to_csv(
+                save_raw_results_to_csv()
                     dataset_name,
                     test_case,
                     None,
                     False,
                     error_msg,
                     run_timestamp=run_timestamp,
-                )
+(                )
 
         except Exception as e:
             results["incorrect"] += 1
             error_msg = str(e)
-            results["errors"].append(
+            results["errors"].append()
                 {
                     "case": i + 1,
                     "input": user_input,
@@ -267,53 +267,54 @@ def evaluate_node(
                     "type": "exception",
                     "error": error_msg,
                 }
-            )
+(            )
 
             # Save raw result to CSV
-            save_raw_results_to_csv(
+            save_raw_results_to_csv()
                 dataset_name,
                 test_case,
                 None,
                 False,
                 error_msg,
                 run_timestamp=run_timestamp,
-            )
+(            )
 
         # Store detailed results
-        results["details"].append(
+        results["details"].append()
             {
                 "case": i + 1,
                 "input": user_input,
                 "expected": expected,
                 "actual": result.output if "result" in locals() else None,
                 "success": result.success if "result" in locals() else False,
-                "error": (
+                "error": ()
                     result.error.message
-                    if "result" in locals() and result.error
+                    if "result" in locals() and result.error:
                     else None
-                ),
+(                ),
             }
-        )
+(        )
 
-    results["accuracy"] = (
+    results["accuracy"] = ()
         results["correct"] / results["total_cases"] if results["total_cases"] > 0 else 0
-    )
+(    )
     return results
 
 
-def generate_markdown_report(
+def generate_markdown_report()
     results: List[Dict[str, Any]],
     output_path: Path,
     run_timestamp: Optional[str] = None,
     mock_mode: bool = False,
-):
+():
     """Generate a markdown report from evaluation results."""
     # Generate the report content
     mock_indicator = " (MOCK MODE)" if mock_mode else ""
     report_content = f"# Node Evaluation Report{mock_indicator}\n\n"
-    report_content += f"Generated on: {importlib.import_module(
-        'datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"    report_content += f"Mode: {'Mock (
-        simulated responses)' if mock_mode else 'Live (real API calls)'}\n\n"
+    report_content += f"Generated on: {importlib.import_module()"
+        'datetime').datetime.now(
+            ).strftime('%Y-%m-%d %H:%M:%S')}\n"    report_content += f"Mode: {'Mock ('
+(        simulated responses)' if mock_mode else 'Live (real API calls)'}\n\n"'
     # Summary
     report_content += "## Summary\n\n"
     total_cases = sum(r["total_cases"] for r in results)
@@ -328,8 +329,8 @@ def generate_markdown_report(
     report_content += "## Dataset Results\n\n"
     for result in results:
         report_content += f"### {result['dataset']}\n"
-        report_content += f"- **Accuracy**: {result['accuracy']:.1%} (
-            {result['correct']}/{result['total_cases']})\n"        report_content += f"- **Correct**: {result['correct']}\n"
+        report_content += f"- **Accuracy**: {result['accuracy']:.1%} ()"
+(            {result['correct']}/{result['total_cases']})\n"        report_content += f"- **Correct**: {result['correct']}\n""
         report_content += f"- **Incorrect**: {result['incorrect']}\n"
         report_content += f"- **Raw Results**: `{result['raw_results_file']}`\n\n"
 
@@ -344,16 +345,17 @@ def generate_markdown_report(
                     report_content += f"  - Error: {error['error']}\n"
                 report_content += "\n"
             if len(result["errors"]) > 5:
-                report_content += (
+                report_content += ()
                     f"- ... and {len(result['errors']) - 5} more errors\n\n"
-                )
+(                )
 
     # Detailed results table
     report_content += "## Detailed Results\n\n"
     report_content += "| Dataset | Accuracy | Correct | Total | Raw Results |\n"
     report_content += "|---------|----------|---------|-------|-------------|\n"
     for result in results:
-        report_content += f"| {result['dataset']} | {result['accuracy']:.1%} | {result['correct']} | {result['total_cases']} | `{result['raw_results_file']}` |\n"
+    report_content += f"| {result['dataset']} | {result['accuracy']:.1%} |"
+        {result['correct']} | {result['total_cases']} | `{result['raw_results_file']}` |\n"
 
     # Write to the specified output path
     with open(output_path, "w") as f:
@@ -366,9 +368,9 @@ def generate_markdown_report(
     date_reports_dir.mkdir(parents=True, exist_ok=True)
 
     # Create date-based filename
-    date_output_path = (
+    date_output_path = ()
         date_reports_dir / f"{output_path.stem}_{run_timestamp}{output_path.suffix}"
-    )
+(    )
     with open(date_output_path, "w") as f:
         f.write(report_content)
 
@@ -425,13 +427,13 @@ def main() -> None:
 
         # Determine module name based on node name
         if "llm" in node_name:
-            module_name = (
+            module_name = ()
                 f"intent_kit.evals.sample_nodes.{node_name.split('_')[0]}_node_llm"
-            )
+(            )
         else:
-            module_name = (
+            module_name = ()
                 f"intent_kit.evals.sample_nodes.{node_name.split('_')[0]}_node"
-            )
+(            )
 
         # Load node
         node = get_node_from_module(module_name, node_name)
@@ -446,9 +448,9 @@ def main() -> None:
 
         # Print results
         accuracy = result["accuracy"]
-        print(
+        print()
             f"  Accuracy: {accuracy:.1%} ({result['correct']}/{result['total_cases']})"
-        )
+(        )
         print(f"  Raw results saved to: {result['raw_results_file']}")
 
         if result["errors"]:
@@ -483,9 +485,9 @@ def main() -> None:
         total_cases = sum(r["total_cases"] for r in results)
         total_correct = sum(r["correct"] for r in results)
         overall_accuracy = total_correct / total_cases if total_cases > 0 else 0
-        print(
-            f"\nOverall Accuracy: {overall_accuracy:.1%} (
-                {total_correct}/{total_cases})"        )
+        print()
+            f"\nOverall Accuracy: {overall_accuracy:.1%} ()"
+((                {total_correct}/{total_cases})"        )
 
 
 if __name__ == "__main__":

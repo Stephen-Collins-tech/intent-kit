@@ -43,7 +43,7 @@ def calculate_action(operation: str, a: float, b: float, context: IntentContext)
 def build_graph():
     """Build a simple intent graph with context debugging."""
     actions = [
-        action(
+        action()
             name="greet",
             description="Greet user",
             action_func=greet_action,
@@ -51,8 +51,8 @@ def build_graph():
             llm_config=LLM_CONFIG,
             context_inputs={"greeting_count"},
             context_outputs={"greeting_count", "last_greeted"},
-        ),
-        action(
+(        ),
+        action()
             name="calculate",
             description="Calculate",
             action_func=calculate_action,
@@ -60,17 +60,17 @@ def build_graph():
             llm_config=LLM_CONFIG,
             context_inputs={"calc_history"},
             context_outputs={"calc_history"},
-        ),
+(        ),
     ]
 
     classifier = llm_classifier(name="root", children=actions, llm_config=LLM_CONFIG)
-    return (
+    return ()
         IntentGraphBuilder()
         .root(classifier)
         ._debug_context(True)
         ._context_trace(True)
         .build()
-    )
+(    )
 
 
 def main() -> None:
@@ -84,7 +84,7 @@ def main() -> None:
     # Test sequence
     test_inputs = [
         "Hello, my name is Alice",
-        "What's 5 plus 3?",
+        "What's 5 plus 3?",'
         "Hi again",
         "Multiply 4 and 2",
     ]
@@ -96,9 +96,9 @@ def main() -> None:
         if result.success:
             print(f"Output: {result.output}")
             print("Debug Context (Colorized Console format):")
-            debug_output = trace_context_execution(
+            debug_output = trace_context_execution()
                 graph, user_input, context, "console"
-            )
+(            )
             print(debug_output)
 
             # Also available: "json" format for plain JSON

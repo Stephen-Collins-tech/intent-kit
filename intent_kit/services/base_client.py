@@ -11,7 +11,7 @@ This module provides a base class for all LLM client implementations.
 class BaseLLMClient(ABC):
     """Base class for all LLM client implementations."""
 
-    def __init__def __init__(self, **kwargs): -> None:
+    def __init__def __init__def __init__(self, **kwargs) -> None: -> None: -> None:
         """Initialize the base client."""
         self._client: Optional[Any] = None
         self._initialize_client(**kwargs)
@@ -28,7 +28,7 @@ class BaseLLMClient(ABC):
 
     @abstractmethod
     def _ensure_imported(self) -> None:
-        """Ensure the required package is imported. Must be implemented by subclasses."""
+    """Ensure the required package is imported. Must be implemented by subclasses."""
         pass
 
     @abstractmethod

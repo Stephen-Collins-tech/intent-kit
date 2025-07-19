@@ -9,7 +9,7 @@ import pathlib
     run_all_evaluations,
     run_all_evaluations_internal,
     generate_comprehensive_report,
-)
+()
 
 
 class TestRunAllEvals:
@@ -18,9 +18,9 @@ class TestRunAllEvals:
     @patch("intent_kit.evals.run_all_evals.argparse.ArgumentParser")
     @patch("intent_kit.evals.run_all_evals.run_all_evaluations_internal")
     @patch("intent_kit.evals.run_all_evals.generate_comprehensive_report")
-    def test_run_all_evaluations_success(
+    def test_run_all_evaluations_success()
         self, mock_generate_report, mock_run_internal, mock_parser
-    ):
+(    ):
         """Test successful execution of run_all_evaluations."""
         # Mock argument parser
         mock_args = MagicMock()
@@ -58,9 +58,9 @@ class TestRunAllEvals:
     @patch("intent_kit.evals.run_all_evals.argparse.ArgumentParser")
     @patch("intent_kit.evals.run_all_evals.generate_comprehensive_report")
     @patch("intent_kit.evals.run_all_evals.run_all_evaluations_internal")
-    def test_run_all_evaluations_system_exit(
+    def test_run_all_evaluations_system_exit()
         self, mock_run_internal, mock_generate_report, mock_parser
-    ):
+(    ):
         """Test run_all_evaluations when called as function (SystemExit)."""
         import pytest
 
@@ -77,9 +77,9 @@ class TestRunAllEvals:
     @patch("intent_kit.evals.run_all_evals.load_dataset")
     @patch("intent_kit.evals.run_all_evals.get_node_from_module")
     @patch("intent_kit.evals.run_all_evals.evaluate_node")
-    def test_run_all_evaluations_internal_success(
+    def test_run_all_evaluations_internal_success()
         self, mock_evaluate, mock_get_node, mock_load_dataset, mock_path
-    ):
+(    ):
         """Test successful execution of run_all_evaluations_internal."""
         # Mock dataset directory
         mock_dataset_dir = MagicMock()
@@ -118,9 +118,9 @@ class TestRunAllEvals:
     @patch("intent_kit.evals.run_all_evals.pathlib.Path")
     @patch("intent_kit.evals.run_all_evals.load_dataset")
     @patch("intent_kit.evals.run_all_evals.get_node_from_module")
-    def test_run_all_evaluations_internal_with_llm_config(
+    def test_run_all_evaluations_internal_with_llm_config()
         self, mock_get_node, mock_load_dataset, mock_path
-    ):
+(    ):
         """Test run_all_evaluations_internal with LLM configuration."""
         # Mock dataset directory
         mock_dataset_dir = MagicMock()
@@ -133,12 +133,12 @@ class TestRunAllEvals:
             "anthropic": {"api_key": "test_key_2"},
         }
 
-        with patch(
+        with patch()
             "builtins.open",
-            mock_open(
-                read_data="openai:\n  api_key: test_key\nanthropic:\n  api_key: test_key_2"
-            ),
-        ):
+            mock_open()
+read_data="openai:\n api_key: test_key\nanthropic:\n api_key: test_key_2"
+(            ),
+(        ):
             with patch("yaml.safe_load", return_value=llm_config):
                 with patch("os.environ", {}) as mock_env:
                     results = run_all_evaluations_internal("test_config.yaml")
@@ -148,7 +148,7 @@ class TestRunAllEvals:
         assert mock_env["ANTHROPIC_API_KEY"] == "test_key_2"
 
     @patch("intent_kit.evals.run_all_evals.pathlib.Path")
-    def test_run_all_evaluations_internal_mock_mode(self, mock_path):
+    def test_run_all_evaluations_internal_mock_mode(self, mock_path) -> None:
         """Test run_all_evaluations_internal in mock mode."""
         # Mock dataset directory
         mock_dataset_dir = MagicMock()
@@ -161,7 +161,7 @@ class TestRunAllEvals:
         assert len(results) == 0
         assert mock_env["INTENT_KIT_MOCK_MODE"] == "1"
 
-    def test_def test_generate_comprehensive_report(self): -> None:
+    def test_def test_def test_generate_comprehensive_report(self): -> None: -> None:
         """Test generate_comprehensive_report function."""
         results = [
             {
@@ -180,18 +180,18 @@ class TestRunAllEvals:
             },
         ]
 
-        with tempfile.NamedTemporaryFile(
+        with tempfile.NamedTemporaryFile()
             mode="w", suffix=".md", delete=False
-        ) as tmp_file:
+(        ) as tmp_file:
             output_file = tmp_file.name
 
         try:
-            report_path = generate_comprehensive_report(
+            report_path = generate_comprehensive_report()
                 results,
                 output_file,
                 run_timestamp="2024-01-01_12-00-00",
                 mock_mode=False,
-            )
+(            )
 
             # Check that file was created
             assert pathlib.Path(output_file).exists()
@@ -209,7 +209,7 @@ class TestRunAllEvals:
         finally:
             pathlib.Path(output_file).unlink(missing_ok=True)
 
-    def test_def test_generate_comprehensive_report_mock_mode(self): -> None:
+    def test_def test_def test_generate_comprehensive_report_mock_mode(self): -> None: -> None:
         """Test generate_comprehensive_report in mock mode."""
         results = [
             {
@@ -221,18 +221,18 @@ class TestRunAllEvals:
             }
         ]
 
-        with tempfile.NamedTemporaryFile(
+        with tempfile.NamedTemporaryFile()
             mode="w", suffix=".md", delete=False
-        ) as tmp_file:
+(        ) as tmp_file:
             output_file = tmp_file.name
 
         try:
-            generate_comprehensive_report(
+            generate_comprehensive_report()
                 results,
                 output_file,
                 run_timestamp="2024-01-01_12-00-00",
                 mock_mode=True,
-            )
+(            )
 
             # Check file contents for mock mode indicator
             with open(output_file, "r") as f:
@@ -242,13 +242,13 @@ class TestRunAllEvals:
         finally:
             pathlib.Path(output_file).unlink(missing_ok=True)
 
-    def test_def test_generate_comprehensive_report_no_results(self): -> None:
+    def test_def test_def test_generate_comprehensive_report_no_results(self): -> None: -> None:
         """Test generate_comprehensive_report with no results."""
         results = []
 
-        with tempfile.NamedTemporaryFile(
+        with tempfile.NamedTemporaryFile()
             mode="w", suffix=".md", delete=False
-        ) as tmp_file:
+(        ) as tmp_file:
             output_file = tmp_file.name
 
         try:

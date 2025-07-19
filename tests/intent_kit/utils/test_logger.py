@@ -15,7 +15,7 @@ class TestColorManager:
         """Set up test fixtures."""
         self.color_manager = ColorManager()
 
-    def test_def test_get_color_basic_levels(self): -> None:
+    def test_def test_def test_get_color_basic_levels(self): -> None: -> None:
         """Test getting colors for basic log levels."""
         assert self.color_manager.get_color("info") == "\033[32m"
         assert self.color_manager.get_color("error") == "\033[31m"
@@ -26,7 +26,7 @@ class TestColorManager:
         assert self.color_manager.get_color("trace") == "\033[37m"
         assert self.color_manager.get_color("log") == "\033[90m"
 
-    def test_def test_get_color_extended_levels(self): -> None:
+    def test_def test_def test_get_color_extended_levels(self): -> None: -> None:
         """Test getting colors for extended log levels."""
         assert self.color_manager.get_color("section_title") == "\033[38;5;75m"
         assert self.color_manager.get_color("field_label") == "\033[38;5;146m"
@@ -36,7 +36,7 @@ class TestColorManager:
         assert self.color_manager.get_color("error_soft") == "\033[38;5;210m"
         assert self.color_manager.get_color("separator") == "\033[38;5;241m"
 
-    def test_def test_get_color_bright_levels(self): -> None:
+    def test_def test_def test_get_color_bright_levels(self): -> None: -> None:
         """Test getting colors for bright levels."""
         assert self.color_manager.get_color("bright_blue") == "\033[94m"
         assert self.color_manager.get_color("bright_green") == "\033[92m"
@@ -46,30 +46,30 @@ class TestColorManager:
         assert self.color_manager.get_color("bright_cyan") == "\033[96m"
         assert self.color_manager.get_color("bright_white") == "\033[97m"
 
-    def test_def test_get_color_unknown_level(self): -> None:
+    def test_def test_def test_get_color_unknown_level(self): -> None: -> None:
         """Test getting color for unknown level returns default."""
         assert self.color_manager.get_color("unknown") == "\033[37m"
 
-    def test_def test_clear_color(self): -> None:
+    def test_def test_def test_clear_color(self): -> None: -> None:
         """Test clear color method."""
         assert self.color_manager.clear_color() == "\033[0m"
 
     @patch("intent_kit.utils.logger.ColorManager.supports_color")
-    def test_colorize_with_color_support(self, mock_supports_color):
+    def test_colorize_with_color_support(self, mock_supports_color) -> None:
         """Test colorize method when color is supported."""
         mock_supports_color.return_value = True
         result = self.color_manager.colorize("test", "info")
         assert result == "\033[32mtest\033[0m"
 
     @patch("intent_kit.utils.logger.ColorManager.supports_color")
-    def test_colorize_without_color_support(self, mock_supports_color):
+    def test_colorize_without_color_support(self, mock_supports_color) -> None:
         """Test colorize method when color is not supported."""
         mock_supports_color.return_value = False
         result = self.color_manager.colorize("test", "info")
         assert result == "test"
 
     @patch("intent_kit.utils.logger.ColorManager.supports_color")
-    def test_colorize_key_value_with_color(self, mock_supports_color):
+    def test_colorize_key_value_with_color(self, mock_supports_color) -> None:
         """Test colorize_key_value method with color support."""
         mock_supports_color.return_value = True
         result = self.color_manager.colorize_key_value("key", "value")
@@ -80,13 +80,13 @@ class TestColorManager:
         assert "\033[0m" in result  # color reset
 
     @patch("intent_kit.utils.logger.ColorManager.supports_color")
-    def test_colorize_key_value_without_color(self, mock_supports_color):
+    def test_colorize_key_value_without_color(self, mock_supports_color) -> None:
         """Test colorize_key_value method without color support."""
         mock_supports_color.return_value = False
         result = self.color_manager.colorize_key_value("key", "value")
         assert result == "key: value"
 
-    def test_def test_colorize_methods(self): -> None:
+    def test_def test_def test_colorize_methods(self): -> None: -> None:
         """Test various colorize convenience methods."""
         with patch.object(self.color_manager, "colorize") as mock_colorize:
             self.color_manager.colorize_header("header")
@@ -104,7 +104,7 @@ class TestColorManager:
             self.color_manager.colorize_metadata("metadata")
             mock_colorize.assert_called_with("metadata", "fatal")
 
-    def test_def test_colorize_bright_methods(self): -> None:
+    def test_def test_def test_colorize_bright_methods(self): -> None: -> None:
         """Test bright colorize methods."""
         with patch.object(self.color_manager, "colorize") as mock_colorize:
             self.color_manager.colorize_bright("text", "blue")
@@ -113,7 +113,7 @@ class TestColorManager:
             self.color_manager.colorize_bright("text", "unknown")
             mock_colorize.assert_called_with("text", "unknown")
 
-    def test_def test_colorize_type_methods(self): -> None:
+    def test_def test_def test_colorize_type_methods(self): -> None: -> None:
         """Test type-specific colorize methods."""
         with patch.object(self.color_manager, "colorize") as mock_colorize:
             self.color_manager.colorize_key("key")
@@ -137,7 +137,7 @@ class TestColorManager:
             self.color_manager.colorize_bracket("[]")
             mock_colorize.assert_called_with("[]", "bright_cyan")
 
-    def test_def test_colorize_special_methods(self): -> None:
+    def test_def test_def test_colorize_special_methods(self): -> None: -> None:
         """Test special colorize methods."""
         with patch.object(self.color_manager, "colorize") as mock_colorize:
             self.color_manager.colorize_section_title("title")
@@ -161,7 +161,7 @@ class TestColorManager:
             self.color_manager.colorize_separator("---")
             mock_colorize.assert_called_with("---", "separator")
 
-    def test_def test_supports_color_basic(self): -> None:
+    def test_def test_def test_supports_color_basic(self): -> None: -> None:
         """Test supports_color basic functionality."""
         # This is a basic test that doesn't require complex mocking
         result = self.color_manager.supports_color()
@@ -175,19 +175,19 @@ class TestLogger:
         """Set up test fixtures."""
         self.logger = Logger("test_logger")
 
-    def test_def test_init_with_name(self): -> None:
+    def test_def test_def test_init_with_name(self): -> None: -> None:
         """Test logger initialization with name."""
         logger = Logger("test_name")
         assert logger.name == "test_name"
         assert logger.level == "info"  # default level
 
-    def test_def test_init_with_level(self): -> None:
+    def test_def test_def test_init_with_level(self): -> None: -> None:
         """Test logger initialization with custom level."""
         logger = Logger("test_name", "debug")
         assert logger.name == "test_name"
         assert logger.level == "debug"
 
-    def test_def test_get_valid_log_levels(self): -> None:
+    def test_def test_def test_get_valid_log_levels(self): -> None: -> None:
         """Test getting valid log levels."""
         levels = self.logger.get_valid_log_levels()
         expected = [
@@ -202,7 +202,7 @@ class TestLogger:
         ]
         assert levels == expected
 
-    def test_def test_should_log(self): -> None:
+    def test_def test_def test_should_log(self): -> None: -> None:
         """Test should_log method with different levels."""
         # Test with info level logger
         logger = Logger("test", "info")
@@ -223,7 +223,7 @@ class TestLogger:
         assert logger.should_log("trace")
         assert logger.should_log("debug")
 
-    def test_def test_validate_log_level(self): -> None:
+    def test_def test_def test_validate_log_level(self): -> None: -> None:
         """Test log level validation."""
         # Valid levels should not raise
         for level in [
@@ -241,7 +241,7 @@ class TestLogger:
         with pytest.raises(ValueError, match="Invalid log level"):
             Logger("test", "invalid_level")
 
-    def test_def test_log_methods(self): -> None:
+    def test_def test_def test_log_methods(self): -> None: -> None:
         """Test all log methods."""
         # Test that the methods exist and are callable
         assert callable(self.logger.info)
@@ -253,7 +253,7 @@ class TestLogger:
         assert callable(self.logger.trace)
         assert callable(self.logger.log)
 
-    def test_def test_getattr_fallback(self): -> None:
+    def test_def test_def test_getattr_fallback(self): -> None: -> None:
         """Test __getattr__ fallback for unknown methods."""
         # Test that color_manager methods are accessible through logger
         assert hasattr(self.logger, "colorize")
@@ -263,7 +263,7 @@ class TestLogger:
         with pytest.raises(AttributeError):
             self.logger.unknown_method
 
-    def test_def test_log_output_format(self): -> None:
+    def test_def test_def test_log_output_format(self): -> None: -> None:
         """Test log output format."""
         with patch("intent_kit.utils.logger.print") as mock_print:
             self.logger.log("info", "test message")
@@ -273,7 +273,7 @@ class TestLogger:
             assert "test_logger" in call_args
             assert "test message" in call_args
 
-    def test_def test_log_level_filtering(self): -> None:
+    def test_def test_def test_log_level_filtering(self): -> None: -> None:
         """Test that log messages are filtered by level."""
         logger = Logger("test", "warning")
 
@@ -290,7 +290,7 @@ class TestLogger:
             logger.log("error", "error message")
             assert mock_print.call_count == 2
 
-    def test_def test_logger_with_different_names(self): -> None:
+    def test_def test_def test_logger_with_different_names(self): -> None: -> None:
         """Test logger with different names."""
         logger1 = Logger("logger1")
         logger2 = Logger("logger2")

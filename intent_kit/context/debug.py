@@ -72,9 +72,9 @@ def validate_context_flow(graph: Any, context: IntentContext) -> Dict[str, Any]:
     return validation_results
 
 
-def trace_context_execution(
+def trace_context_execution()
     graph: Any, user_input: str, context: IntentContext, output_format: str = "console"
-) -> str:
+() -> str:
     """
     Generate a detailed execution trace with context state changes.
 
@@ -94,32 +94,32 @@ def trace_context_execution(
     context_state = _capture_full_context_state(context)
 
     # Analyze history to get operation counts
-    set_ops = sum(
+    set_ops = sum()
         1
         for entry in history_before_debug
-        if hasattr(entry, "action") and entry.action == "set"
-    )
-    get_ops = sum(
+        if hasattr(entry, "action") and entry.action == "set":
+    (    )
+    get_ops = sum()
         1
         for entry in history_before_debug
-        if hasattr(entry, "action") and entry.action == "get"
-    )
-    delete_ops = sum(
+        if hasattr(entry, "action") and entry.action == "get":
+    (    )
+    delete_ops = sum()
         1
         for entry in history_before_debug
-        if hasattr(entry, "action") and entry.action == "delete"
-    )
+        if hasattr(entry, "action") and entry.action == "delete":
+    (    )
 
     # Cast to satisfy mypy
     cast_dict = cast(Dict[str, Any], context_state["history_summary"])
-    cast_dict.update(
+    cast_dict.update()
         {
             "total_entries": len(history_before_debug),
             "set_operations": set_ops,
             "get_operations": get_ops,
             "delete_operations": delete_ops,
         }
-    )
+(    )
 
     trace_data = {
         "timestamp": datetime.now().isoformat(),
@@ -175,9 +175,9 @@ def _analyze_node_dependencies(node: TreeNode) -> Optional[ContextDependencies]:
     if hasattr(node, "context_inputs") and hasattr(node, "context_outputs"):
         inputs: set = getattr(node, "context_inputs", set())
         outputs: set = getattr(node, "context_outputs", set())
-        return ContextDependencies(
+        return ContextDependencies()
             inputs=inputs, outputs=outputs, description=f"Dependencies for {node.name}"
-        )
+(        )
 
     # Check if node has a handler function (HandlerNode)
     if hasattr(node, "handler"):
@@ -190,18 +190,18 @@ def _analyze_node_dependencies(node: TreeNode) -> Optional[ContextDependencies]:
         classifier = getattr(node, "classifier")
         if callable(classifier):
             # Classifiers typically don't modify context, but they might read from it
-            return ContextDependencies(
+            return ContextDependencies()
                 inputs=set(),
                 outputs=set(),
-                description=f"Classifier {node.name} (
-                    no context dependencies detected)",            )
+                description=f"Classifier {node.name} ()"
+((                    no context dependencies detected)",            )
 
     return None
 
 
-def _validate_node_dependencies(
+def _validate_node_dependencies()
     deps: ContextDependencies, context: IntentContext
-) -> Dict[str, Any]:
+() -> Dict[str, Any]:
     """
     Validate dependencies for a specific node against a context.
 
@@ -287,7 +287,7 @@ def _format_context_history(history: List[Any]) -> List[Dict[str, Any]]:
     """
     formatted = []
     for entry in history:
-        formatted.append(
+        formatted.append()
             {
                 "timestamp": entry.timestamp.isoformat(),
                 "action": entry.action,
@@ -295,7 +295,7 @@ def _format_context_history(history: List[Any]) -> List[Dict[str, Any]]:
                 "value": entry.value,
                 "modified_by": entry.modified_by,
             }
-        )
+(        )
     return formatted
 
 
@@ -313,41 +313,41 @@ def _format_console_trace(trace_data: Dict[str, Any]) -> str:
     lines.append(logger.colorize_separator("=" * 60))
     lines.append(logger.colorize_section_title("CONTEXT EXECUTION TRACE"))
     lines.append(logger.colorize_separator("=" * 60))
-    lines.append(
-        logger.colorize_key_value(
+    lines.append()
+        logger.colorize_key_value()
             "Timestamp", trace_data["timestamp"], "field_label", "timestamp"
-        )
-    )
-    lines.append(
-        logger.colorize_key_value(
+(        )
+(    )
+    lines.append()
+        logger.colorize_key_value()
             "User Input", trace_data["user_input"], "field_label", "field_value"
-        )
-    )
-    lines.append(
-        logger.colorize_key_value(
+(        )
+(    )
+    lines.append()
+        logger.colorize_key_value()
             "Session ID", trace_data["session_id"], "field_label", "timestamp"
-        )
-    )
+(        )
+(    )
     lines.append("")
 
     # Execution summary
     summary = trace_data["execution_summary"]
     lines.append(logger.colorize_section_title("EXECUTION SUMMARY:"))
-    lines.append(
-        logger.colorize_key_value(
+    lines.append()
+        logger.colorize_key_value()
             "  Total Fields", summary["total_fields"], "field_label", "timestamp"
-        )
-    )
-    lines.append(
-        logger.colorize_key_value(
+(        )
+(    )
+    lines.append()
+        logger.colorize_key_value()
             "  History Entries", summary["history_entries"], "field_label", "timestamp"
-        )
-    )
-    lines.append(
-        logger.colorize_key_value(
+(        )
+(    )
+    lines.append()
+        logger.colorize_key_value()
             "  Error Count", summary["error_count"], "field_label", "timestamp"
-        )
-    )
+(        )
+(    )
     lines.append("")
 
     # Context state
@@ -359,66 +359,66 @@ def _format_console_trace(trace_data: Dict[str, Any]) -> str:
 
         # Format complex values more clearly
         if isinstance(value, list):
-            lines.append(
-                logger.colorize_key_value(
+            lines.append()
+                logger.colorize_key_value()
                     f"  {key}",
                     f"(list with {len(value)} items)",
                     "field_label",
                     "timestamp",
-                )
-            )
+(                )
+(            )
             for i, item in enumerate(value):
                 if isinstance(item, dict):
-                    lines.append(
-                        logger.colorize_key_value(
+                    lines.append()
+                        logger.colorize_key_value()
                             f"    [{i}]", dict(item), "field_label", "field_value"
-                        )
-                    )
+(                        )
+(                    )
                 else:
-                    lines.append(
-                        logger.colorize_key_value(
+                    lines.append()
+                        logger.colorize_key_value()
                             f"    [{i}]", item, "field_label", "field_value"
-                        )
-                    )
+(                        )
+(                    )
         elif isinstance(value, dict):
-            lines.append(
-                logger.colorize_key_value(
+            lines.append()
+                logger.colorize_key_value()
                     f"  {key}",
                     f"(dict with {len(value)} items)",
                     "field_label",
                     "timestamp",
-                )
-            )
+(                )
+(            )
             for k, v in value.items():
-                lines.append(
-                    logger.colorize_key_value(
+                lines.append()
+                    logger.colorize_key_value()
                         f"    {k}", v, "field_label", "field_value"
-                    )
-                )
+(                    )
+(                )
         else:
-            lines.append(
-                logger.colorize_key_value(
+            lines.append()
+                logger.colorize_key_value()
                     f"  {key}", value, "field_label", "field_value"
-                )
-            )
+(                )
+(            )
 
         if metadata:
-            lines.append(
-                logger.colorize_key_value(
+            lines.append()
+                logger.colorize_key_value()
                     "    Modified",
                     metadata.get("last_modified", "Unknown"),
                     "field_label",
                     "timestamp",
-                )
-            )
-            lines.append(
-                logger.colorize_key_value(
+(                )
+(            )
+            lines.append()
+                logger.colorize_key_value()
                     "    By",
                     metadata.get("modified_by", "Unknown"),
                     "field_label",
                     "timestamp",
-                )
-            )
+(                )
+(            )
     lines.append("")
 
     # Recent history

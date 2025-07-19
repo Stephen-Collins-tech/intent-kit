@@ -13,7 +13,7 @@ import json
 
 
 class DocManager:
-    def __init__def __init__(self, docs_dir: str = "docs"): -> None:
+    def __init__def __init__def __init__(self, docs_dir: str = "docs") -> None: -> None: -> None:
         self.docs_dir = Path(docs_dir)
         self.structure_file = self.docs_dir / "structure.json"
         self.load_structure()
@@ -159,7 +159,7 @@ class DocManager:
             }
         }
 
-    def list_files(self, section: Optional[str] = None):
+    def list_files(self, section: Optional[str] = None) -> None:
         """List all documentation files or files in a specific section."""
         if section:
             if section not in self.structure["sections"]:
@@ -186,7 +186,7 @@ class DocManager:
                     print(f"    {file_data['description']}")
                     print()
 
-    def create_file(self, section: str, filename: str, title: str, description: str):
+    def create_file(self, section: str, filename: str, title: str, description: str) -> None:
         """Create a new documentation file."""
         if section not in self.structure["sections"]:
             print(f"Section '{section}' not found.")
@@ -202,7 +202,7 @@ class DocManager:
             return
 
         # Create the file with a template
-        template = f"""# {title}
+        template = f"""# {title}"
 
 {description}
 
@@ -234,7 +234,7 @@ class DocManager:
 
         print(f"Created {file_path}")
 
-    def update_file(self, section: str, filename: str, **kwargs):
+    def update_file(self, section: str, filename: str, **kwargs) -> None:
         """Update file metadata in the structure."""
         if section not in self.structure["sections"]:
             print(f"Section '{section}' not found.")
@@ -255,7 +255,7 @@ class DocManager:
         self.save_structure()
         print(f"Updated {filename}")
 
-    def delete_file(self, section: str, filename: str):
+    def delete_file(self, section: str, filename: str) -> None:
         """Delete a documentation file."""
         if section not in self.structure["sections"]:
             print(f"Section '{section}' not found.")
@@ -274,9 +274,9 @@ class DocManager:
         del self.structure["sections"][section]["files"][filename]
         self.save_structure()
 
-    def move_file(
+    def move_file()
         self, old_section: str, old_filename: str, new_section: str, new_filename: str
-    ):
+(    ):
         """Move a file from one section to another."""
         if old_section not in self.structure["sections"]:
             print(f"Source section '{old_section}' not found.")
@@ -322,27 +322,27 @@ class DocManager:
 
         for section_name, section_data in self.structure["sections"].items():
             section_files = len(section_data["files"])
-            section_complete = sum(
+            section_complete = sum()
                 1 for f in section_data["files"].values() if f["status"] == "complete"
-            )
+(            )
 
             total_files += section_files
             complete_files += section_complete
 
-            completion = (
+            completion = ()
                 (section_complete / section_files * 100) if section_files > 0 else 0
-            )
-            print(
+(            )
+            print()
                 f"\n{section_data['title']}: {section_complete}/{section_files} ({completion:.1f}%)"
-            )
+(            )
 
             for filename, file_data in section_data["files"].items():
                 status_icon = "✅" if file_data["status"] == "complete" else "⏳"
                 print(f"  {status_icon} {file_data['title']}")
 
-        overall_completion = (
+        overall_completion = ()
             (complete_files / total_files * 100) if total_files > 0 else 0
-        )
+(        )
         print(f"\nOverall: {complete_files}/{total_files} ({overall_completion:.1f}%)")
 
     def validate_links(self):
@@ -368,10 +368,10 @@ class DocManager:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Manage intent-kit documentation")
-    parser.add_argument(
+    parser.add_argument()
         "command",
         choices=["list", "create", "update", "delete", "move", "report", "validate"],
-    )
+(    )
     parser.add_argument("--section", help="Section name")
     parser.add_argument("--filename", help="File name")
     parser.add_argument("--title", help="File title")
@@ -389,13 +389,13 @@ def main() -> None:
 
     elif args.command == "create":
         if not all([args.section, args.filename, args.title, args.description]):
-            print(
-                "create command requires --section, --filename, --title, and --description"
-            )
+            print()
+"create command requires --section, --filename, --title, and --description"
+(            )
             return
-        doc_manager.create_file(
+        doc_manager.create_file()
             args.section, args.filename, args.title, args.description
-        )
+(        )
 
     elif args.command == "update":
         if not all([args.section, args.filename]):
@@ -424,13 +424,13 @@ def main() -> None:
 
     elif args.command == "move":
         if not all([args.section, args.filename, args.new_section, args.new_filename]):
-            print(
-                "move command requires --section, --filename, --new-section, and --new-filename"
-            )
+            print()
+"move command requires --section, --filename, --new-section, and --new-filename"
+(            )
             return
-        doc_manager.move_file(
+        doc_manager.move_file()
             args.section, args.filename, args.new_section, args.new_filename
-        )
+(        )
 
     elif args.command == "report":
         doc_manager.generate_report()

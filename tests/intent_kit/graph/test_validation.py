@@ -14,30 +14,30 @@ def test_valid_graph():
     print("Testing valid graph...")
 
     # Create intent nodes
-    greet_node = action(
+    greet_node = action()
         name="greet",
         description="Greet the user",
         action_func=lambda name: f"Hello {name}!",
         param_schema={"name": str},
-    )
+(    )
 
     # Create classifier node manually since we need a custom classifier
-    classifier_node = ClassifierNode(
+    classifier_node = ClassifierNode()
         name="main_classifier",
         classifier=lambda text, children, context: children[0],
         children=[greet_node],
         description="Main classifier",
-    )
+(    )
 
     # Set parent reference
     greet_node.parent = classifier_node
 
     # Create splitter node that routes to classifier (VALID)
-    splitter_node = rule_splitter_node(
+    splitter_node = rule_splitter_node()
         name="main_splitter",
         children=[classifier_node],  # Routes to classifier - VALID
         description="Split multi-intent inputs",
-    )
+(    )
 
     # Create graph and validate
     graph = IntentGraph()
@@ -51,19 +51,19 @@ def test_invalid_graph():
     print("Testing invalid graph...")
 
     # Create intent nodes
-    greet_node = action(
+    greet_node = action()
         name="greet",
         description="Greet the user",
         action_func=lambda name: f"Hello {name}!",
         param_schema={"name": str},
-    )
+(    )
 
     # Create splitter node that routes directly to intent nodes (INVALID)
-    splitter_node = rule_splitter_node(
+    splitter_node = rule_splitter_node()
         name="invalid_splitter",
         children=[greet_node],  # Routes directly to intent - INVALID
         description="Invalid splitter",
-    )
+(    )
 
     # Create graph and try to validate
     graph = IntentGraph()

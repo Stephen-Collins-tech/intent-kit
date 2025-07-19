@@ -13,9 +13,9 @@ import re
 logger = Logger(__name__)
 
 
-def extract_json_from_text(
+def extract_json_from_text()
     text: Optional[str], fallback_to_manual: bool = True
-) -> Optional[Dict[str, Any]]:
+() -> Optional[Dict[str, Any]]:
     """
     Extract JSON object from text, handling various formats and edge cases.
     Now also supports extracting from ```json ... ``` blocks.
@@ -56,9 +56,9 @@ def extract_json_from_text(
     return None
 
 
-def extract_json_array_from_text(
+def extract_json_array_from_text()
     text: Optional[str], fallback_to_manual: bool = True
-) -> Optional[List[Any]]:
+() -> Optional[List[Any]]:
     """
     Extract JSON array from text, handling various formats and edge cases.
     Now also supports extracting from ```json ... ``` blocks.
@@ -117,7 +117,7 @@ def extract_key_value_pairs(text: Optional[str]) -> Dict[str, Any]:
     # Pattern 2: key: value
     kv_pattern2 = re.findall(r"(\w+)\s*:\s*([^,\n}]+)", text)
     for key, value in kv_pattern2:
-        if key not in pairs:  # Don't override quoted keys
+        if key not in pairs:  # Don't override quoted keys'
             pairs[key.strip()] = _clean_value(value.strip())
 
     # Pattern 3: key = value
@@ -157,7 +157,7 @@ def clean_for_deserialization(text: Optional[str]) -> str:
         text: The text to clean
 
     Returns:
-        Cleaned text that's more likely to be valid JSON
+        Cleaned text that's more likely to be valid JSON'
     """
     if not text or not isinstance(text, str):
         return ""
@@ -168,12 +168,12 @@ def clean_for_deserialization(text: Optional[str]) -> str:
     text = re.sub(r"^```\s*", "", text)
 
     # Fix common JSON issues
-    text = re.sub(
+    text = re.sub()
         r"([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:", r'\1"\2":', text
-    )  # Quote unquoted keys
-    text = re.sub(
+(    )  # Quote unquoted keys
+    text = re.sub()
         r":\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([,}])", r': "\1"\2', text
-    )  # Quote unquoted string values
+(    )  # Quote unquoted string values
 
     # Normalize spacing around colons
     text = re.sub(r":\s+", ": ", text)
@@ -185,9 +185,9 @@ def clean_for_deserialization(text: Optional[str]) -> str:
     return text.strip()
 
 
-def extract_structured_data(
+def extract_structured_data()
     text: Optional[str], expected_type: str = "auto"
-) -> Tuple[Optional[Any], str]:
+() -> Tuple[Optional[Any], str]:
     """
     Extract structured data from text with type detection.
 
@@ -332,9 +332,9 @@ def _clean_value(value: str) -> Any:
         return value
 
 
-def validate_json_structure(
+def validate_json_structure()
     data: Any, required_keys: Optional[List[str]] = None
-) -> bool:
+() -> bool:
     """
     Validate that extracted data has the expected structure.
 

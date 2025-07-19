@@ -14,26 +14,26 @@ import pytest
 class TestNode:
     """Test the base Node class."""
 
-    def test_def test_init_with_name(self): -> None:
+    def test_def test_def test_init_with_name(self): -> None: -> None:
         """Test initialization with a name."""
         node = Node(name="test_node")
         assert node.name == "test_node"
         assert node.node_id is not None
         assert node.parent is None
 
-    def test_def test_init_without_name(self): -> None:
+    def test_def test_def test_init_without_name(self): -> None: -> None:
         """Test initialization without a name."""
         node = Node()
         assert node.name == node.node_id
         assert node.node_id is not None
 
-    def test_def test_init_with_parent(self): -> None:
+    def test_def test_def test_init_with_parent(self): -> None: -> None:
         """Test initialization with a parent."""
         parent = Node(name="parent")
         child = Node(name="child", parent=parent)
         assert child.parent == parent
 
-    def test_def test_has_name_property(self): -> None:
+    def test_def test_def test_has_name_property(self): -> None: -> None:
         """Test the has_name property."""
         node_with_name = Node(name="test")
         node_without_name = Node()
@@ -41,20 +41,20 @@ class TestNode:
         assert node_with_name.has_name is True
         assert node_without_name.has_name is True  # Uses node_id as name
 
-    def test_def test_get_path_single_node(self): -> None:
+    def test_def test_def test_get_path_single_node(self): -> None: -> None:
         """Test getting path for a single node."""
         node = Node(name="test")
         path = node.get_path()
         assert path == ["test"]
 
-    def test_def test_get_path_with_parent(self): -> None:
+    def test_def test_def test_get_path_with_parent(self): -> None: -> None:
         """Test getting path for a node with parent."""
         parent = Node(name="parent")
         child = Node(name="child", parent=parent)
         path = child.get_path()
         assert path == ["parent", "child"]
 
-    def test_def test_get_path_with_grandparent(self): -> None:
+    def test_def test_def test_get_path_with_grandparent(self): -> None: -> None:
         """Test getting path for a node with grandparent."""
         grandparent = Node(name="grandparent")
         parent = Node(name="parent", parent=grandparent)
@@ -62,14 +62,14 @@ class TestNode:
         path = child.get_path()
         assert path == ["grandparent", "parent", "child"]
 
-    def test_def test_get_path_string(self): -> None:
+    def test_def test_def test_get_path_string(self): -> None: -> None:
         """Test getting path as string."""
         parent = Node(name="parent")
         child = Node(name="child", parent=parent)
         path_string = child.get_path_string()
         assert path_string == "parent.child"
 
-    def test_def test_get_uuid_path(self): -> None:
+    def test_def test_def test_get_uuid_path(self): -> None: -> None:
         """Test getting UUID path."""
         parent = Node(name="parent")
         child = Node(name="child", parent=parent)
@@ -78,7 +78,7 @@ class TestNode:
         assert uuid_path[0] == parent.node_id
         assert uuid_path[1] == child.node_id
 
-    def test_def test_get_uuid_path_string(self): -> None:
+    def test_def test_def test_get_uuid_path_string(self): -> None: -> None:
         """Test getting UUID path as string."""
         parent = Node(name="parent")
         child = Node(name="child", parent=parent)
@@ -86,13 +86,13 @@ class TestNode:
         expected = f"{parent.node_id}.{child.node_id}"
         assert uuid_path_string == expected
 
-    def test_def test_node_id_uniqueness(self): -> None:
+    def test_def test_def test_node_id_uniqueness(self): -> None: -> None:
         """Test that node IDs are unique."""
         node1 = Node()
         node2 = Node()
         assert node1.node_id != node2.node_id
 
-    def test_def test_node_id_format(self): -> None:
+    def test_def test_def test_node_id_format(self): -> None: -> None:
         """Test that node ID is a valid UUID string."""
         import uuid
 
@@ -104,7 +104,7 @@ class TestNode:
 class TestTreeNode:
     """Test the TreeNode class."""
 
-    def test_def test_init_basic(self): -> None:
+    def test_def test_def test_init_basic(self): -> None: -> None:
         """Test basic initialization."""
         node = ConcreteTreeNode(description="Test node")
         assert node.description == "Test node"
@@ -112,13 +112,13 @@ class TestTreeNode:
         assert node.parent is None
         assert node.logger is not None
 
-    def test_def test_init_with_name(self): -> None:
+    def test_def test_def test_init_with_name(self): -> None: -> None:
         """Test initialization with name."""
         node = ConcreteTreeNode(name="test", description="Test node")
         assert node.name == "test"
         assert node.description == "Test node"
 
-    def test_def test_init_with_children(self): -> None:
+    def test_def test_def test_init_with_children(self): -> None: -> None:
         """Test initialization with children."""
         child1 = ConcreteTreeNode(description="Child 1")
         child2 = ConcreteTreeNode(description="Child 2")
@@ -128,7 +128,7 @@ class TestTreeNode:
         assert child1.parent == parent
         assert child2.parent == parent
 
-    def test_def test_init_with_parent(self): -> None:
+    def test_def test_def test_init_with_parent(self): -> None: -> None:
         """Test initialization with parent."""
         parent = ConcreteTreeNode(description="Parent")
         child = ConcreteTreeNode(description="Child", parent=parent)
@@ -137,18 +137,18 @@ class TestTreeNode:
         # Note: parent.children is not automatically updated when parent is passed
         # This is the actual behavior of the TreeNode class
 
-    def test_def test_node_type_property(self): -> None:
+    def test_def test_def test_node_type_property(self): -> None: -> None:
         """Test the node_type property returns UNKNOWN by default."""
         node = ConcreteTreeNode(description="Test")
         assert node.node_type == NodeType.UNKNOWN
 
-    def test_def test_execute_abstract_method(self): -> None:
+    def test_def test_def test_execute_abstract_method(self): -> None: -> None:
         """Test that execute is abstract and must be implemented."""
         # Test that abstract class cannot be instantiated
         with pytest.raises(TypeError):
             TreeNode(description="Test")
 
-    def test_def test_children_immutability(self): -> None:
+    def test_def test_def test_children_immutability(self): -> None: -> None:
         """Test that children list is properly initialized."""
         node = ConcreteTreeNode(description="Test")
         # Should not be able to modify children directly
@@ -156,17 +156,17 @@ class TestTreeNode:
         node.children.append(ConcreteTreeNode(description="Child"))
         assert len(node.children) == 1
 
-    def test_def test_children_with_none(self): -> None:
+    def test_def test_def test_children_with_none(self): -> None: -> None:
         """Test initialization with None children."""
         node = ConcreteTreeNode(description="Test", children=None)
         assert node.children == []
 
-    def test_def test_children_with_empty_list(self): -> None:
+    def test_def test_def test_children_with_empty_list(self): -> None: -> None:
         """Test initialization with empty children list."""
         node = ConcreteTreeNode(description="Test", children=[])
         assert node.children == []
 
-    def test_def test_parent_child_relationship(self): -> None:
+    def test_def test_def test_parent_child_relationship(self): -> None: -> None:
         """Test that parent-child relationships are properly set."""
         parent = ConcreteTreeNode(description="Parent")
         child1 = ConcreteTreeNode(description="Child 1", parent=parent)
@@ -177,23 +177,23 @@ class TestTreeNode:
         # Note: parent.children is not automatically updated when parent is passed
         # This is the actual behavior of the TreeNode class
 
-    def test_def test_complex_tree_structure(self): -> None:
+    def test_def test_def test_complex_tree_structure(self): -> None: -> None:
         """Test complex tree structure with multiple levels."""
         # Create children first with explicit names
-        level2_child1 = ConcreteTreeNode(
+        level2_child1 = ConcreteTreeNode()
             name="Level 2 Child 1", description="Level 2 Child 1"
-        )
-        level1_child1 = ConcreteTreeNode(
+(        )
+        level1_child1 = ConcreteTreeNode()
             name="Level 1 Child 1",
             description="Level 1 Child 1",
             children=[level2_child1],
-        )
-        level1_child2 = ConcreteTreeNode(
+(        )
+        level1_child2 = ConcreteTreeNode()
             name="Level 1 Child 2", description="Level 1 Child 2"
-        )
-        root = ConcreteTreeNode(
+(        )
+        root = ConcreteTreeNode()
             name="Root", description="Root", children=[level1_child1, level1_child2]
-        )
+(        )
 
         assert len(root.children) == 2
         assert len(level1_child1.children) == 1
@@ -205,21 +205,21 @@ class TestTreeNode:
             "Level 2 Child 1",
         ]
 
-    def test_def test_logger_initialization(self): -> None:
+    def test_def test_def test_logger_initialization(self): -> None: -> None:
         """Test that logger is properly initialized."""
         node = ConcreteTreeNode(name="test_node", description="Test")
         assert node.logger is not None
         # The logger should have the node name
         assert hasattr(node.logger, "name")
 
-    def test_def test_logger_without_name(self): -> None:
+    def test_def test_def test_logger_without_name(self): -> None: -> None:
         """Test logger initialization without name."""
         node = ConcreteTreeNode(description="Test")
         assert node.logger is not None
         # Should use a default name
         assert hasattr(node.logger, "name")
 
-    def test_def test_inheritance_from_node(self): -> None:
+    def test_def test_def test_inheritance_from_node(self): -> None: -> None:
         """Test that TreeNode inherits properly from Node."""
         node = ConcreteTreeNode(name="test", description="Test")
 
@@ -233,7 +233,7 @@ class TestTreeNode:
         assert hasattr(node, "get_uuid_path")
         assert hasattr(node, "get_uuid_path_string")
 
-    def test_def test_node_type_enum(self): -> None:
+    def test_def test_def test_node_type_enum(self): -> None: -> None:
         """Test that node_type returns a valid NodeType enum."""
         node = ConcreteTreeNode(description="Test")
         assert isinstance(node.node_type, NodeType)
@@ -243,11 +243,11 @@ class TestTreeNode:
 class ConcreteTreeNode(TreeNode):
     """Concrete implementation for testing abstract methods."""
 
-    def execute(
+    def execute()
         self, user_input: str, context: Optional[IntentContext] = None
-    ) -> ExecutionResult:
+(    ) -> ExecutionResult:
         """Concrete implementation of execute method."""
-        return ExecutionResult(
+        return ExecutionResult()
             success=True,
             node_name=self.name,
             node_path=self.get_path(),
@@ -257,13 +257,13 @@ class ConcreteTreeNode(TreeNode):
             error=None,
             params={},
             children_results=[],
-        )
+(        )
 
 
 class TestConcreteTreeNode:
     """Test concrete TreeNode implementation."""
 
-    def test_def test_concrete_execute_method(self): -> None:
+    def test_def test_def test_concrete_execute_method(self): -> None: -> None:
         """Test that concrete execute method works."""
         node = ConcreteTreeNode(description="Test")
         result = node.execute("test input")
@@ -274,7 +274,7 @@ class TestConcreteTreeNode:
         assert result.node_path == node.get_path()
         assert result.node_type == node.node_type
 
-    def test_def test_concrete_execute_with_context(self): -> None:
+    def test_def test_def test_concrete_execute_with_context(self): -> None: -> None:
         """Test execute method with context."""
         node = ConcreteTreeNode(description="Test")
         context = IntentContext()
@@ -283,7 +283,7 @@ class TestConcreteTreeNode:
         assert result.success is True
         assert result.output == "Processed: test input"
 
-    def test_def test_concrete_node_inheritance(self): -> None:
+    def test_def test_def test_concrete_node_inheritance(self): -> None: -> None:
         """Test that concrete node inherits all properties."""
         node = ConcreteTreeNode(name="test", description="Test")
 

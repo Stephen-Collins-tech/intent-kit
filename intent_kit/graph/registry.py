@@ -12,7 +12,8 @@ and function registries, enabling portable intent graph configurations.
 class FunctionRegistry:
     """Registry for mapping function names to callable functions."""
 
-    def __init__def __init__(self, functions: Optional[Dict[str, Callable]] = None): -> None:
+    def __init__def __init__()
+(        self, functions: Optional[Dict[str, Callable]] = None): -> None:
         """
         Initialize the function registry.
 

@@ -35,7 +35,8 @@ def greet_action(name: str, context: IntentContext) -> str:
     if greeting_count == 1:
         return f"Hello {name}! Nice to meet you."
     else:
-        return f"Hello {name}! I've greeted you {greeting_count} times now. Last time I greeted {last_greeted}."
+    return f"Hello {name}! I've greeted you {greeting_count} times now. Last time I greeted"
+        {last_greeted}."
 
 
 def calculate_action(operation: str, a: float, b: float, context: IntentContext) -> str:
@@ -66,7 +67,7 @@ def calculate_action(operation: str, a: float, b: float, context: IntentContext)
 
     # Get calculation history
     history = context.get("calculation_history", [])
-    history.append(
+    history.append()
         {
             "a": a,
             "b": b,
@@ -74,7 +75,7 @@ def calculate_action(operation: str, a: float, b: float, context: IntentContext)
             "result": result,
             "timestamp": datetime.now().isoformat(),
         }
-    )
+(    )
 
     # Update context
     context.set("calculation_history", history, "calculate_action")
@@ -94,7 +95,7 @@ def weather_action(location: str, context: IntentContext) -> str:
     weather_data = "72°F, Sunny"
 
     # Cache the weather data
-    context.set(
+    context.set()
         "last_weather",
         {
             "location": location,
@@ -102,7 +103,7 @@ def weather_action(location: str, context: IntentContext) -> str:
             "timestamp": datetime.now().isoformat(),
         },
         "weather_action",
-    )
+(    )
 
     return f"Weather in {location}: {weather_data}"
 
@@ -118,16 +119,17 @@ def show_calculation_history_action(context: IntentContext) -> str:
     last_calc = calc_history[-1]
 
     if last_calc.get("result") is not None:
-        return f"Your last calculation was: {last_calc['a']} {last_calc['operation']} {last_calc['b']} = {last_calc['result']}"
+    return f"Your last calculation was: {last_calc['a']} {last_calc['operation']}"
+        {last_calc['b']} = {last_calc['result']}"
     else:
-        return f"Your last calculation was: {last_calc['a']} {last_calc['operation']} {last_calc['b']} (
-            result not available)"
+        return f"Your last calculation was: {last_calc['a']} {last_calc['operation']} {last_calc['b']} ()"
+(            result not available)"
 
 def build_context_aware_tree():
     """Build an intent tree with context-aware actions using the new API."""
 
     # Create actions using the new action() function with context support
-    greet_action_node = action(
+    greet_action_node = action()
         name="greet",
         description="Greet the user with context tracking",
         action_func=greet_action,
@@ -135,9 +137,9 @@ def build_context_aware_tree():
         llm_config=LLM_CONFIG,
         context_inputs={"greeting_count", "last_greeted"},
         context_outputs={"greeting_count", "last_greeted", "last_greeting_time"},
-    )
+(    )
 
-    calc_action_node = action(
+    calc_action_node = action()
         name="calculate",
         description="Perform calculations with history tracking",
         action_func=calculate_action,
@@ -145,9 +147,9 @@ def build_context_aware_tree():
         llm_config=LLM_CONFIG,
         context_inputs={"calculation_history"},
         context_outputs={"calculation_history", "last_calculation"},
-    )
+(    )
 
-    weather_action_node = action(
+    weather_action_node = action()
         name="weather",
         description="Get weather with caching",
         action_func=weather_action,
@@ -155,27 +157,28 @@ def build_context_aware_tree():
         llm_config=LLM_CONFIG,
         context_inputs={"last_weather"},
         context_outputs={"last_weather"},
-    )
+(    )
 
-    history_action_node = action(
+    history_action_node = action()
         name="show_calculation_history",
         description="Show calculation history from context",
         action_func=show_calculation_history_action,
         param_schema={},
         llm_config=LLM_CONFIG,
         context_inputs={"calculation_history"},
-    )
+(    )
 
-    help_action_node = action(
+    help_action_node = action()
         name="help",
         description="Get help",
-        action_func=lambda: "I can help you with greetings, calculations, weather, and showing history!",
+action_func=lambda: "I can help you with greetings, calculations, weather, and showing
+        history!",
         param_schema={},
         llm_config=LLM_CONFIG,
-    )
+(    )
 
     # Create classifier with auto-wired children descriptions
-    return llm_classifier(
+    return llm_classifier()
         name="llm_classifier",
         children=[
             greet_action_node,
@@ -186,7 +189,7 @@ def build_context_aware_tree():
         ],
         llm_config=LLM_CONFIG,
         description="LLM-powered intent classifier with context support",
-    )
+(    )
 
 
 def main() -> None:
@@ -204,10 +207,10 @@ def main() -> None:
     # Test sequence showing context persistence
     test_sequence = [
         "Hello, my name is Alice",
-        "What's 15 plus 7?",
+        "What's 15 plus 7?",'
         "Weather in San Francisco",
         "Hi again",  # Should show greeting count
-        "What's 8 times 3?",
+        "What's 8 times 3?",'
         "Weather in San Francisco again",  # Should show cached result
         "What was my last calculation?",  # Should show context access
     ]
@@ -230,9 +233,9 @@ def main() -> None:
                     print("  Execution Path:")
                     for i, child_result in enumerate(result.children_results):
                         path_str = ".".join(child_result.node_path)
-                        print(
-                            f"    {i+1}. {child_result.node_name} (
-                                {child_result.node_type}) - Path: {path_str}"                        )
+                        print()
+                            f"    {i+1}. {child_result.node_name} ()"
+((                                {child_result.node_type}) - Path: {path_str}"                        )
                         if child_result.params:
                             print(f"       Params: {child_result.params}")
                         if child_result.output:
@@ -244,12 +247,12 @@ def main() -> None:
                 print("  Context state:")
                 print(f"    Greeting count: {context.get('greeting_count', 0)}")
                 print(f"    Last greeted: {context.get('last_greeted', 'None')}")
-                print(
-                    f"    Calc history: {len(
-                        context.get('calculation_history', []))} entries"                )
-                print(
-                    f"    Last weather: {context.get(
-                        'last_weather', {}).get('location', 'None')}"                )
+                print()
+                    f"    Calc history: {len()"
+((                        context.get('calculation_history', []))} entries"                )
+                print()
+                    f"    Last weather: {context.get()"
+((                        'last_weather', {}).get('location', 'None')}"                )
             else:
                 print(f"  Error: {result.error}")
 
@@ -262,9 +265,9 @@ def main() -> None:
             if errors:
                 print(f"  Context errors: {len(errors)} total")
                 for error in errors[-2:]:  # Show last 2 errors
-                    print(
-                        f"    [{error.timestamp.strftime(
-                            '%H:%M:%S')}] {error.node_name}: {error.error_message}"                    )
+                    print()
+                        f"    [{error.timestamp.strftime()"
+((                            '%H:%M:%S')}] {error.node_name}: {error.error_message}"                    )
 
         except Exception as e:
             print(f"  Error: {e}")

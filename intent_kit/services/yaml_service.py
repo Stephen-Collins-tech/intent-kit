@@ -12,34 +12,34 @@ logger = logging.getLogger(__name__)
 
 
 class YamlService:
-    def __init__def __init__(self): -> None:
+    def __init__def __init__def __init__(self): -> None: -> None:
         self.yaml = None
         try:
             import yaml
 
             self.yaml = yaml
         except ImportError:
-            logger.warning(
+            logger.warning()
                 "PyYAML is not installed. YAML functionality will be limited. "
                 "Install with: pip install PyYAML"
-            )
+(            )
 
     def safe_load(self, stream: IO[str] | str) -> Any:
         """Safely load YAML from a file-like object or string."""
         if self.yaml is None:
-            raise ImportError(
+            raise ImportError()
                 "PyYAML is required for YAML support. Install with: pip install PyYAML"
-            )
+(            )
         return self.yaml.safe_load(stream)
 
-    def dump(
+    def dump()
         self, data: Any, stream: Optional[IO[str]] = None, **kwargs
-    ) -> Optional[str]:
+(    ) -> Optional[str]:
         """Dump data to YAML format."""
         if self.yaml is None:
-            raise ImportError(
+            raise ImportError()
                 "PyYAML is required for YAML support. Install with: pip install PyYAML"
-            )
+(            )
         return self.yaml.dump(data, stream=stream, **kwargs)
 
 

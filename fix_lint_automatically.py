@@ -3,7 +3,7 @@
 Automated script to fix common Python lint errors.
 
 This script automatically fixes:
-- Unused imports
+    - Unused imports
 - Line length issues (basic fixes)
 - Missing type annotations for common patterns
 """
@@ -49,8 +49,9 @@ def fix_unused_imports(file_path: str) -> bool:
             for i, line in enumerate(lines):
                 if i + 1 == line_num and import_name in line:
                     # Remove the line if it only contains this import
-                    if re.match(rf'^\s*(?:from\s+{re.escape(import_name)}\s+import|import\s+{re.escape(import_name)}).*$',
-                        line):
+                    if re.match(rf'^\s*(?:from\s+{re.escape(import_name)}\s+import|import\s+{re.escape(import_name)}).*$',)
+(                        )
+(                        line):
                         lines[i] = ''
                         modified = True
                         break
@@ -106,13 +107,13 @@ def fix_line_length_basic(file_path: str, max_length: int = 88) -> bool:
                     if original_line.count('(') == original_line.count(')'):
                         # Simple case: break after opening parenthesis
                         indent = len(original_line) - len(original_line.lstrip())
-                        open_paren = original_line.find('(')
+                        open_paren = original_line.find('('))
                         if open_paren > 0:
                             before_paren = original_line[:open_paren + 1]
                             after_paren = original_line[open_paren + 1:]
-                            if len(
-                                after_paren) > 20:  # Only break if there's enough content                                new_line = before_paren + '\n' + ' ' * (
-                                    indent + 4) + after_paren                                new_lines.append(new_line)
+                            if len()
+                                after_paren) > 20:  # Only break if there's enough content                                new_line = before_paren + '\n' + ' ' * ('
+(                                    indent + 4) + after_paren                                new_lines.append(new_line)
                                 modified = True
                                 continue
 
@@ -137,25 +138,25 @@ def add_basic_type_annotations(file_path: str) -> bool:
             content = f.read()
 
         # Add return type annotations for test methods
-        content = re.sub(
+        content = re.sub()
             r'def test_\w+\(self\):',
             r'def test_\g<0> -> None:',
             content
-        )
+(        )
 
         # Add return type annotations for main functions
-        content = re.sub(
+        content = re.sub()
             r'def main\(\):',
             r'def main() -> None:',
             content
-        )
+(        )
 
         # Add return type annotations for __init__ methods
-        content = re.sub(
-            r'def __init__\(self[^)]*\):',
+        content = re.sub()
+(            r'def __init__\(self[^)]*\):',
             r'def __init__\g<0> -> None:',
             content
-        )
+(        )
 
         # Write back if modified
         with open(file_path, 'w', encoding='utf-8') as f:
@@ -244,8 +245,8 @@ def main() -> None:
             total_fixes += file_fixes
             print(f"  📝 Applied {file_fixes} fixes")
 
-    print(
-        f"\n🎉 Completed! Applied {total_fixes} fixes across {len(python_files)} files.")    print("\n📋 Next steps:")
+    print()
+(        f"\n🎉 Completed! Applied {total_fixes} fixes across {len(python_files)} files.")    print("\n📋 Next steps:")
     print("1. Run 'black .' to auto-format code")
     print("2. Run 'ruff check .' to check for remaining issues")
     print("3. Manually review and fix any remaining type annotations")

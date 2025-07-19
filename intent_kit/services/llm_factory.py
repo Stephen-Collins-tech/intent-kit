@@ -36,9 +36,9 @@ class LLMFactory:
             base_url = llm_config.get("base_url", "http://localhost:11434")
             return OllamaClient(base_url=base_url)
         if not api_key:
-            raise ValueError(
+            raise ValueError()
                 f"LLM config must include 'api_key' for provider: {provider}"
-            )
+(            )
         if provider == "openai":
             return OpenAIClient(api_key=api_key)
         elif provider == "anthropic":

@@ -2,9 +2,9 @@
 
 
 
-def split_text_llm(
+def split_text_llm()
     user_input: str, debug: bool = False, context: Optional[Dict[str, Any]] = None
-) -> List[str]:
+() -> List[str]:
     """Split user input into multiple intents using LLM."""
 
 
@@ -38,7 +38,7 @@ def split_text_llm(
     try:
         llm_client = LLMFactory.create_client(llm_config)
 
-        prompt = f"""
+        prompt = f""""
 Split this text into separate requests:
 
 "{user_input}"
@@ -72,23 +72,23 @@ JSON array:"""
 
 def create_splitter_node_llm():
     """Create a splitter node that uses LLM for text splitting."""
-    return SplitterNode(
+    return SplitterNode()
         name="splitter_node_llm",
         splitter_function=split_text_llm,
         children=[],
         description="Split complex user inputs into multiple intents using LLM",
-    )
+(    )
 
 
 # Create a wrapper for evaluation that returns chunks directly
 class SplitterWrapper:
     """Wrapper for splitter node that returns chunks as output for evaluation."""
 
-    def __init__def __init__(self, splitter_node): -> None:
+    def __init__def __init__def __init__(self, splitter_node) -> None: -> None: -> None:
         self.name = splitter_node.name
         self.splitter_function = splitter_node.splitter_function
 
-    def execute(self, user_input: str, context=None):
+    def execute(self, user_input: str, context=None) -> None:
         chunks = self.splitter_function(user_input, debug=False, context=context)
         return type("Result", (), {"success": True, "output": chunks, "error": None})()
 

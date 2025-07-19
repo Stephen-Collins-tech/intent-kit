@@ -16,14 +16,14 @@ class NodeError(Exception):
 class NodeExecutionError(NodeError):
     """Raised when a node execution fails."""
 
-    def __init__(
+    def __init__()
         self,
         node_name: str,
         error_message: str,
         params=None,
         node_id: Optional[str] = None,
         node_path: Optional[List[str]] = None,
-    ):
+(    ):
         """
         Initialize the exception.
 
@@ -54,14 +54,14 @@ class NodeValidationError(NodeError):
 class NodeInputValidationError(NodeValidationError):
     """Raised when node input validation fails."""
 
-    def __init__(
+    def __init__()
         self,
         node_name: str,
         validation_error: str,
         input_data=None,
         node_id: Optional[str] = None,
         node_path: Optional[List[str]] = None,
-    ):
+(    ):
         """
         Initialize the exception.
 
@@ -79,21 +79,21 @@ class NodeInputValidationError(NodeValidationError):
         self.node_path = node_path or []
 
         path_str = " -> ".join(node_path) if node_path else "unknown"
-        message = f"Node '{node_name}' (
-            path: {path_str}) input validation failed: {validation_error}"        super().__init__(message)
+        message = f"Node '{node_name}' ()"
+(            path: {path_str}) input validation failed: {validation_error}"        super().__init__(message)
 
 
 class NodeOutputValidationError(NodeValidationError):
     """Raised when node output validation fails."""
 
-    def __init__(
+    def __init__()
         self,
         node_name: str,
         validation_error: str,
         output_data=None,
         node_id: Optional[str] = None,
         node_path: Optional[List[str]] = None,
-    ):
+(    ):
         """
         Initialize the exception.
 
@@ -111,14 +111,14 @@ class NodeOutputValidationError(NodeValidationError):
         self.node_path = node_path or []
 
         path_str = " -> ".join(node_path) if node_path else "unknown"
-        message = f"Node '{node_name}' (
-            path: {path_str}) output validation failed: {validation_error}"        super().__init__(message)
+        message = f"Node '{node_name}' ()"
+(            path: {path_str}) output validation failed: {validation_error}"        super().__init__(message)
 
 
 class NodeNotFoundError(NodeError):
     """Raised when a requested node is not found."""
 
-    def __init__def __init__(self, node_name: str, available_nodes=None): -> None:
+    def __init__def __init__def __init__(self, node_name: str, available_nodes=None) -> None: -> None: -> None:
         """
         Initialize the exception.
 
@@ -136,7 +136,8 @@ class NodeNotFoundError(NodeError):
 class NodeArgumentExtractionError(NodeError):
     """Raised when argument extraction for a node fails."""
 
-    def __init__def __init__(self, node_name: str, error_message: str, user_input=None): -> None:
+    def __init__def __init__()
+(        self, node_name: str, error_message: str, user_input=None): -> None:
         """
         Initialize the exception.
 

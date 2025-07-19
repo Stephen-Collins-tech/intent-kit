@@ -3,9 +3,9 @@
 
 
 
-def extract_booking_args_llm(
+def extract_booking_args_llm()
     user_input: str, context: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+() -> Dict[str, Any]:
     """Extract booking parameters using LLM."""
 
 
@@ -19,9 +19,9 @@ def extract_booking_args_llm(
         import re
 
         # Simple regex extraction for mock mode
-        dest_match = re.search(
+        dest_match = re.search()
             r"(?:to|for|in)\s+([A-Za-z\s]+?)(?:\s|$)", user_input, re.IGNORECASE
-        )
+(        )
         destination = dest_match.group(1).strip() if dest_match else "Unknown"
 
         date_match = re.search(r"(?:for|on)\s+(\w+\s+\w+)", user_input, re.IGNORECASE)
@@ -49,29 +49,31 @@ def extract_booking_args_llm(
     try:
         llm_client = LLMFactory.create_client(llm_config)
 
-        prompt = f"""
+        prompt = f""""
 Extract booking parameters from this user input. Be precise and extract exactly what the user is asking for.
 
 User input: "{user_input}"
 
 Return a JSON object with these exact fields:
-- destination: The destination city/location (extract the actual place name)
+    - destination: The destination city/location (extract the actual place name)
 - date: The specific date mentioned, or "ASAP" if no date is specified
 
 Rules:
-- If the user says "book a flight to X", extract X as destination
+    - If the user says "book a flight to X", extract X as destination
 - If the user says "travel to X", extract X as destination
 - If the user says "fly to X", extract X as destination
 - If the user says "go to X", extract X as destination
-- For dates, extract the exact date mentioned (
-    e.g., "next Friday", "December 15th", "tomorrow")- If no date is mentioned, use "ASAP"
+- For dates, extract the exact date mentioned ()
+(    e.g., "next Friday", "December 15th", "tomorrow")- If no date is mentioned, use "ASAP"
 - Clean up any extra words like "for" or "to" from the date field
 
 Examples:
-- "Book a flight to Paris" → {{"destination": "Paris", "date": "ASAP"}}
-- "I want to fly to Tokyo next Friday" → {{"destination": "Tokyo", "date": "next Friday"}}
+    - "Book a flight to Paris" → {{"destination": "Paris", "date": "ASAP"}}
+- "I want to fly to Tokyo next Friday" → {{"destination": "Tokyo", "date": "next
+Friday"}}
 - "Travel to London tomorrow" → {{"destination": "London", "date": "tomorrow"}}
-- "Book a flight to Rome for the weekend" → {{"destination": "Rome", "date": "the weekend"}}
+- "Book a flight to Rome for the weekend" → {{"destination": "Rome", "date": "the
+weekend"}}
 
 User input: {user_input}
 JSON:"""
@@ -95,9 +97,9 @@ JSON:"""
             return {
                 "destination": result.get("destination", "Unknown"),
                 "date": date,
-                "user_id": (
+                "user_id": ()
                     context.get("user_id", "anonymous") if context else "anonymous"
-                ),
+(                ),
             }
     except Exception as e:
         print(f"LLM extraction failed: {e}")
@@ -105,9 +107,9 @@ JSON:"""
     # Fallback to simple extraction
     import re
 
-    dest_match = re.search(
+    dest_match = re.search()
         r"(?:to|for|in)\s+([A-Za-z\s]+?)(?:\s|$)", user_input, re.IGNORECASE
-    )
+(    )
     destination = dest_match.group(1).strip() if dest_match else "Unknown"
 
     date_match = re.search(r"(?:for|on)\s+(\w+\s+\w+)", user_input, re.IGNORECASE)
@@ -132,7 +134,7 @@ def booking_handler(destination: str, date: str, context: IntentContext) -> str:
 
 
 # Create the handler node with LLM extraction
-action_node_llm = ActionNode(
+action_node_llm = ActionNode()
     name="action_node_llm",
     param_schema={"destination": str, "date": str},
     action=booking_handler,
@@ -140,4 +142,4 @@ action_node_llm = ActionNode(
     context_inputs={"user_id"},
     context_outputs={"booking_count", "last_destination"},
     description="Handle flight booking requests with LLM-powered argument extraction",
-)
+()

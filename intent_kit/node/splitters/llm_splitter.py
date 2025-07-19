@@ -8,14 +8,14 @@ LLM-based intent splitter for IntentGraph.
 
 
 
-def llm_splitter(
+def llm_splitter()
     user_input: str, debug: bool = False, llm_client=None
-) -> Sequence[IntentChunk]:
+() -> Sequence[IntentChunk]:
     """
     LLM-based intent splitter using AI models.
 
     Args:
-        user_input: The user's input string
+        user_input: The user's input string'
         debug: Whether to enable debug logging
         llm_client: LLM client instance (optional)
 
@@ -29,9 +29,9 @@ def llm_splitter(
 
     if not llm_client:
         if debug:
-            logger.warning(
+            logger.warning()
                 "No LLM client available, falling back to rule-based splitting"
-            )
+(            )
         # Fallback to rule-based splitting
         from .rule_splitter import rule_splitter
 
@@ -62,9 +62,9 @@ def llm_splitter(
         else:
             # If no valid results, fallback to rule-based
             if debug:
-                logger.warning(
+                logger.warning()
                     "LLM parsing returned no results, falling back to rule-based"
-                )
+(                )
             from .rule_splitter import rule_splitter
 
             return rule_splitter(user_input, debug)
@@ -81,14 +81,14 @@ def llm_splitter(
 
 def _create_splitting_prompt(user_input: str) -> str:
     """Create a prompt for the LLM to split intents."""
-    return f"""Given the user input: "{user_input}"
+    return f"""Given the user input: "{user_input}""
 
-Please split this into separate intents if it contains multiple distinct requests. If the input contains multiple intents, separate them. If it's a single intent, return it as is.
+Please split this into separate intents if it contains multiple distinct requests. If the input contains multiple intents, separate them. If it's a single intent, return it as is.'
 
 Return your response as a JSON array of strings, where each string represents a separate intent chunk.
 
 For example:
-- Input: "Cancel my flight and update my email"
+    - Input: "Cancel my flight and update my email"
 - Response: ["cancel my flight", "update my email"]
 
 - Input: "Book a flight to NYC"

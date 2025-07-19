@@ -13,9 +13,10 @@ from ..types import ExecutionResult, ExecutionError
 
 
 class ClarifierNode(TreeNode):
-    """Leaf node that requests clarification when user input is ambiguous or underspecified."""
+    """Leaf node that requests clarification when user input is ambiguous or
+    underspecified."""
 
-    def __init__(
+    def __init__()
         self,
         name: Optional[str],
         clarification_prompt: str,
@@ -23,7 +24,7 @@ class ClarifierNode(TreeNode):
         max_clarification_attempts: int = 3,
         description: str = "",
         parent: Optional["TreeNode"] = None,
-    ):
+(    ):
         super().__init__(name=name, description=description, children=[], parent=parent)
         self.clarification_prompt = clarification_prompt
         self.expected_response_format = expected_response_format
@@ -34,9 +35,9 @@ class ClarifierNode(TreeNode):
         """Get the type of this node."""
         return NodeType.CLARIFY
 
-    def execute(
+    def execute()
         self, user_input: str, context: Optional[IntentContext] = None
-    ) -> ExecutionResult:
+(    ) -> ExecutionResult:
         """Execute the clarifier node to request more information from the user.
 
         This node always returns a clarification request, indicating that
@@ -57,7 +58,7 @@ class ClarifierNode(TreeNode):
         if context:
             context.set("clarification_context", clarification_context)
 
-        return ExecutionResult(
+        return ExecutionResult()
             success=False,  # Clarification requests are not "successful" executions
             node_name=self.name,
             node_path=self.get_path(),
@@ -68,7 +69,7 @@ class ClarifierNode(TreeNode):
                 "clarification_context": clarification_context,
                 "requires_clarification": True,
             },
-            error=ExecutionError(
+            error=ExecutionError()
                 error_type="ClarificationNeeded",
                 message=f"Clarification needed for input: '{user_input}'",
                 node_name=self.name,
@@ -79,14 +80,14 @@ class ClarifierNode(TreeNode):
                     "expected_format": self.expected_response_format,
                     "max_attempts": self.max_clarification_attempts,
                 },
-            ),
+(            ),
             params={
                 "clarification_prompt": self.clarification_prompt,
                 "expected_format": self.expected_response_format,
                 "max_attempts": self.max_clarification_attempts,
             },
             children_results=[],
-        )
+(        )
 
     def _build_clarification_message(self, user_input: str) -> str:
         """Build the clarification message to send to the user."""
@@ -98,14 +99,15 @@ class ClarifierNode(TreeNode):
 
         # Add expected format information if provided
         if self.expected_response_format:
-            message += f"\n\nPlease provide your response in the following format: {self.expected_response_format}"
+    message += f"\n\nPlease provide your response in the following format:"
+            {self.expected_response_format}"
 
         return message
 
-    def handle_clarification_response(
+    def handle_clarification_response()
         self, clarification_response: str, context: Optional[IntentContext] = None
-    ) -> Dict[str, Any]:
-        """Handle the user's clarification response.
+(    ) -> Dict[str, Any]:
+        """Handle the user's clarification response.'
 
         This method should be called when the user provides additional information
         after a clarification request. It validates the response and prepares
@@ -120,10 +122,10 @@ class ClarifierNode(TreeNode):
             clarification_context["last_response"] = clarification_response
 
             # Check if we've exceeded max attempts
-            if (
+            if ()
                 clarification_context["attempts"]
                 >= clarification_context["max_attempts"]
-            ):
+(            ):
                 return {
                     "success": False,
                     "error": "Maximum clarification attempts exceeded",
@@ -135,12 +137,12 @@ class ClarifierNode(TreeNode):
         return {
             "success": True,
             "clarified_input": clarification_response,
-            "original_input": (
+            "original_input": ()
                 clarification_context["original_input"]
                 if clarification_context
                 else "unknown"
-            ),
-            "attempts": (
+(            ),
+            "attempts": ()
                 clarification_context["attempts"] if clarification_context else 1
-            ),
+(            ),
         }

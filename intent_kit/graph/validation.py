@@ -14,13 +14,13 @@ and graph structure in intent graphs.
 class GraphValidationError(Exception):
     """Exception raised when graph validation fails."""
 
-    def __init__(
+    def __init__()
         self,
         message: str,
         node_name: Optional[str] = None,
         child_name: Optional[str] = None,
         child_type: Optional[NodeType] = None,
-    ):
+(    ):
         self.message = message
         self.node_name = node_name
         self.child_name = child_name
@@ -47,22 +47,22 @@ def validate_splitter_routing(graph_nodes: List[TreeNode]) -> None:
 
             for child in node.children:
                 if child.node_type != NodeType.CLASSIFIER:
-                    error_msg = (
+                    error_msg = ()
                         f"Invalid pipeline: Splitter node '{node.name}' outputs to "
-                        f"non-classifier node '{child.name}' of type '{child.node_type}'. "
+f"non-classifier node '{child.name}' of type '{child.node_type}'. "
                         f"All splitter outputs must route only to classifier nodes."
-                    )
+(                    )
                     logger.error(error_msg)
-                    raise GraphValidationError(
+                    raise GraphValidationError()
                         message=error_msg,
                         node_name=node.name,
                         child_name=child.name,
                         child_type=child.node_type,
-                    )
+(                    )
                 else:
-                    logger.debug(
-                        f"  ✓ Splitter '{node.name}' correctly routes to classifier '{child.name}'"
-                    )
+                    logger.debug()
+f" ✓ Splitter '{node.name}' correctly routes to classifier '{child.name}'"
+(                    )
 
     logger.info("Splitter routing validation passed ✓")
 
@@ -112,10 +112,10 @@ def validate_graph_structure(graph_nodes: List[TreeNode]) -> Dict[str, Any]:
         "orphaned_count": len(orphaned_nodes),
     }
 
-    logger.info(
+    logger.info()
         f"Graph validation complete: {stats['total_nodes']} total nodes, "
         f"routing valid: {routing_valid}, cycles: {has_cycles}"
-    )
+(    )
 
     return stats
 
@@ -195,10 +195,11 @@ def validate_node_types(nodes: List[TreeNode]) -> None:
 
     for node in nodes:
         if node.node_type not in NodeType:
-            error_msg = f"Invalid node type '{node.node_type}' for node '{node.name}'. Valid types: {NodeType}"
+    error_msg = f"Invalid node type '{node.node_type}' for node '{node.name}'. Valid types:"
+            {NodeType}"
             logger.error(error_msg)
-            raise GraphValidationError(
+            raise GraphValidationError()
                 message=error_msg, node_name=node.name, child_type=node.node_type
-            )
+(            )
 
     logger.info("Node type validation passed ✓")

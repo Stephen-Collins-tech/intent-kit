@@ -4,10 +4,10 @@ import os
 class ColorManager:
     """Handles all color-related logic for terminal output."""
 
-    def __init__def __init__(self): -> None:
+    def __init__def __init__def __init__(self): -> None: -> None:
         pass
 
-    def get_color(self, level):
+    def get_color(self, level) -> None:
         if level == "info":
             return "\033[32m"  # green
         elif level == "error":
@@ -87,13 +87,13 @@ class ColorManager:
 
         return True
 
-    def colorize(self, text, color_name):
+    def colorize(self, text, color_name) -> None:
         """Colorize text with a specific color if supported."""
         if not self.supports_color():
             return text
         return f"{self.get_color(color_name)}{text}{self.clear_color()}"
 
-    def colorize_key_value(self, key, value, key_color="white", value_color="yellow"):
+    def colorize_key_value(self, key, value, key_color="white", value_color="yellow") -> None:
         """Colorize a key-value pair."""
         if not self.supports_color():
             return f"{key}: {value}"
@@ -102,27 +102,27 @@ class ColorManager:
         value_colored = self.colorize(str(value), value_color)
         return f"{key_colored}: {value_colored}"
 
-    def colorize_header(self, text):
+    def colorize_header(self, text) -> None:
         """Colorize a header/section title."""
         return self.colorize(text, "debug")  # blue
 
-    def colorize_success(self, text):
+    def colorize_success(self, text) -> None:
         """Colorize success/info text."""
         return self.colorize(text, "info")  # green
 
-    def colorize_warning(self, text):
+    def colorize_warning(self, text) -> None:
         """Colorize warning text."""
         return self.colorize(text, "warning")  # yellow
 
-    def colorize_error(self, text):
+    def colorize_error(self, text) -> None:
         """Colorize error text."""
         return self.colorize(text, "error")  # red
 
-    def colorize_metadata(self, text):
+    def colorize_metadata(self, text) -> None:
         """Colorize metadata/secondary information."""
         return self.colorize(text, "fatal")  # cyan
 
-    def colorize_bright(self, text, color_name):
+    def colorize_bright(self, text, color_name) -> None:
         """Colorize text with bright colors."""
         bright_colors = {
             "blue": "bright_blue",
@@ -136,59 +136,59 @@ class ColorManager:
         color = bright_colors.get(color_name, color_name)
         return self.colorize(text, color)
 
-    def colorize_key(self, text):
+    def colorize_key(self, text) -> None:
         """Colorize keys/labels."""
         return self.colorize(text, "bright_blue")
 
-    def colorize_value(self, text):
+    def colorize_value(self, text) -> None:
         """Colorize values/data."""
         return self.colorize(text, "bright_yellow")
 
-    def colorize_string(self, text):
+    def colorize_string(self, text) -> None:
         """Colorize string values."""
         return self.colorize(text, "bright_green")
 
-    def colorize_number(self, text):
+    def colorize_number(self, text) -> None:
         """Colorize numeric values."""
         return self.colorize(text, "bright_yellow")
 
-    def colorize_boolean(self, text):
+    def colorize_boolean(self, text) -> None:
         """Colorize boolean values."""
         return self.colorize(text, "bright_magenta")
 
-    def colorize_null(self, text):
+    def colorize_null(self, text) -> None:
         """Colorize null/empty values."""
         return self.colorize(text, "bright_red")
 
-    def colorize_bracket(self, text):
+    def colorize_bracket(self, text) -> None:
         """Colorize brackets/punctuation."""
         return self.colorize(text, "bright_cyan")
 
-    def colorize_section_title(self, text):
+    def colorize_section_title(self, text) -> None:
         """Colorize main section titles with soft blue/cyan."""
         return self.colorize(text, "section_title")
 
-    def colorize_field_label(self, text):
+    def colorize_field_label(self, text) -> None:
         """Colorize field names/labels with muted light purple."""
         return self.colorize(text, "field_label")
 
-    def colorize_field_value(self, text):
+    def colorize_field_value(self, text) -> None:
         """Colorize field values with soft white/grey."""
         return self.colorize(text, "field_value")
 
-    def colorize_timestamp(self, text):
+    def colorize_timestamp(self, text) -> None:
         """Colorize timestamps/numbers with muted green."""
         return self.colorize(text, "timestamp")
 
-    def colorize_action(self, text):
+    def colorize_action(self, text) -> None:
         """Colorize actions (SET/GET) with muted yellow/gold."""
         return self.colorize(text, "action")
 
-    def colorize_error_soft(self, text):
+    def colorize_error_soft(self, text) -> None:
         """Colorize errors with soft red (not aggressive)."""
         return self.colorize(text, "error_soft")
 
-    def colorize_separator(self, text):
+    def colorize_separator(self, text) -> None:
         """Colorize section separators with dim grey."""
         return self.colorize(text, "separator")
 
@@ -199,14 +199,14 @@ class Logger:
         "trace",  # Most verbose - detailed execution flow
         "debug",  # Debug information for development
         "info",  # General information
-        "warning",  # Warnings that don't stop execution
+        "warning",  # Warnings that don't stop execution'
         "error",  # Errors that affect functionality
         "critical",  # Critical errors that may cause failure
         "fatal",  # Fatal errors that will cause termination
         "off",  # No logging
     ]
 
-    def __init__def __init__(self, name, level=""): -> None:
+    def __init__def __init__def __init__(self, name, level="") -> None: -> None: -> None:
         self.name = name
         self.level = level or os.getenv("LOG_LEVEL", "info")
         self._validate_log_level()
@@ -216,16 +216,16 @@ class Logger:
         """Validate the log level and throw exception if invalid."""
         if self.level not in self.VALID_LOG_LEVELS:
             valid_levels = ", ".join(self.VALID_LOG_LEVELS)
-            raise ValueError(
+            raise ValueError()
                 f"Invalid log level '{self.level}'. "
                 f"Valid levels are: {valid_levels}"
-            )
+(            )
 
     def get_valid_log_levels(self):
         """Return valid log levels in logical order."""
         return self.VALID_LOG_LEVELS.copy()
 
-    def should_log(self, message_level):
+    def should_log(self, message_level) -> None:
         """Check if a message at the given level should be logged."""
         if self.level == "off":
             return False
@@ -234,71 +234,71 @@ class Logger:
         try:
             current_index = self.VALID_LOG_LEVELS.index(self.level)
             message_index = self.VALID_LOG_LEVELS.index(message_level)
-            # Log if message level is at or above current level (
-                lower index = more verbose)            return message_index >= current_index
+            # Log if message level is at or above current level ()
+(                lower index = more verbose)            return message_index >= current_index
         except ValueError:
             # If message_level is not in VALID_LOG_LEVELS, don't log it
             return False
 
     # Delegate color methods directly to color_manager
-    def __getattr__(self, name):
+    def __getattr__(self, name) -> None:
         """Delegate color-related methods to color_manager."""
         if hasattr(self.color_manager, name):
             return getattr(self.color_manager, name)
-        raise AttributeError(
+        raise AttributeError()
             f"'{self.__class__.__name__}' object has no attribute '{name}'"
-        )
+(        )
 
-    def info(self, message):
+    def info(self, message) -> None:
         if not self.should_log("info"):
             return
         color = self.get_color("info")
         clear = self.clear_color()
         print(f"{color}[INFO]{clear} [{self.name}] {message}")
 
-    def error(self, message):
+    def error(self, message) -> None:
         if not self.should_log("error"):
             return
         color = self.get_color("error")
         clear = self.clear_color()
         print(f"{color}[ERROR]{clear} [{self.name}] {message}")
 
-    def debug(self, message):
+    def debug(self, message) -> None:
         if not self.should_log("debug"):
             return
         color = self.get_color("debug")
         clear = self.clear_color()
         print(f"{color}[DEBUG]{clear} [{self.name}] {message}")
 
-    def warning(self, message):
+    def warning(self, message) -> None:
         if not self.should_log("warning"):
             return
         color = self.get_color("warning")
         clear = self.clear_color()
         print(f"{color}[WARNING]{clear} [{self.name}] {message}")
 
-    def critical(self, message):
+    def critical(self, message) -> None:
         if not self.should_log("critical"):
             return
         color = self.get_color("critical")
         clear = self.clear_color()
         print(f"{color}[CRITICAL]{clear} [{self.name}] {message}")
 
-    def fatal(self, message):
+    def fatal(self, message) -> None:
         if not self.should_log("fatal"):
             return
         color = self.get_color("fatal")
         clear = self.clear_color()
         print(f"{color}[FATAL]{clear} [{self.name}] {message}")
 
-    def trace(self, message):
+    def trace(self, message) -> None:
         if not self.should_log("trace"):
             return
         color = self.get_color("trace")
         clear = self.clear_color()
         print(f"{color}[TRACE]{clear} [{self.name}] {message}")
 
-    def log(self, level, message):
+    def log(self, level, message) -> None:
         if not self.should_log(level):
             return
         color = self.get_color(level)

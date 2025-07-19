@@ -42,23 +42,23 @@ def main() -> None:
     print("=== Intent Kit Structured Error Demo ===\n")
 
     # Create intent tree root node using the new API
-    greet_action_node = action(
+    greet_action_node = action()
         name="Greet",
         description="Greet someone with their name and age",
         action_func=greet_action,
         param_schema={"name": str, "age": int},
         # No llm_config = uses rule-based extraction
-    )
+(    )
 
     # Create a classifier node manually since we need a custom classifier
 
 
-    root_node = ClassifierNode(
+    root_node = ClassifierNode()
         name="Root",
         classifier=keyword_classifier,
         children=[greet_action_node],
         description="Demo intent tree",
-    )
+(    )
 
     # Set parent reference
     greet_action_node.parent = root_node

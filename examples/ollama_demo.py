@@ -64,50 +64,51 @@ def create_intent_graph():
 
     # Define actions with context support
     actions = [
-        action(
+        action()
             name="greet",
             description="Greet the user",
             action_func=_greet_action,
             param_schema={"name": str},
             llm_config=OLLAMA_CONFIG,
-        ),
-        action(
+(        ),
+        action()
             name="calculate",
             description="Perform a calculation",
             action_func=_calculate_action,
             param_schema={"operation": str, "a": float, "b": float},
             llm_config=OLLAMA_CONFIG,
-        ),
-        action(
+(        ),
+        action()
             name="weather",
             description="Get weather information",
             action_func=_weather_action,
             param_schema={"location": str},
             llm_config=OLLAMA_CONFIG,
-        ),
-        action(
+(        ),
+        action()
             name="history",
             description="Show calculation history",
             action_func=_history_action,
             param_schema={},
             llm_config=OLLAMA_CONFIG,
-        ),
-        action(
+(        ),
+        action()
             name="help",
             description="Get help",
-            action_func=lambda **kwargs: "I can help with greetings, calculations, weather, and history!",
+action_func=lambda **kwargs: "I can help with greetings, calculations, weather, and
+            history!",
             param_schema={},
             llm_config=OLLAMA_CONFIG,
-        ),
+(        ),
     ]
 
     # Create classifier
-    classifier = llm_classifier(
+    classifier = llm_classifier()
         name="root",
         children=actions,
         llm_config=OLLAMA_CONFIG,
         description="Main intent classifier",
-    )
+(    )
 
     # Build and return the graph
     return IntentGraphBuilder().root(classifier).build()
@@ -120,7 +121,7 @@ if __name__ == "__main__":
 
     test_inputs = [
         "Hello, my name is Alice",
-        "What's 15 plus 7?",
+        "What's 15 plus 7?",'
         "Weather in San Francisco",
         "Help me",
         "Multiply 8 and 3",

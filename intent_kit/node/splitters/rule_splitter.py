@@ -13,7 +13,7 @@ def rule_splitter(user_input: str, debug: bool = False) -> List[IntentChunk]:
     Rule-based intent splitter using keyword matching and conjunctions.
 
     Args:
-        user_input: The user's input string
+        user_input: The user's input string'
         debug: Whether to enable debug logging
 
     Returns:

@@ -13,14 +13,14 @@ Tests for context debug module.
     _capture_full_context_state,
     _format_context_history,
     _format_console_trace,
-)
+()
 
 
 
 class TestContextDebug:
     """Test cases for context debug module."""
 
-    def test_def test_get_context_dependencies(self): -> None:
+    def test_def test_def test_get_context_dependencies(self): -> None: -> None:
         """Test getting context dependencies for a graph."""
         # Mock graph with nodes
         mock_node1 = MagicMock()
@@ -43,14 +43,14 @@ class TestContextDebug:
         assert dependencies["node1"].inputs == {"input1", "input2"}
         assert dependencies["node1"].outputs == {"output1"}
 
-    def test_def test_validate_context_flow_success(self): -> None:
+    def test_def test_def test_validate_context_flow_success(self): -> None: -> None:
         """Test successful context flow validation."""
         # Mock dependencies
-        mock_deps = ContextDependencies(
+        mock_deps = ContextDependencies()
             inputs={"input1", "input2"},
             outputs={"output1"},
             description="Test dependencies",
-        )
+(        )
 
         # Mock graph
         mock_graph = MagicMock()
@@ -60,9 +60,9 @@ class TestContextDebug:
         mock_context = MagicMock()
         mock_context.keys.return_value = {"input1", "input2", "output1"}
 
-        with patch(
+        with patch()
             "intent_kit.context.debug.get_context_dependencies"
-        ) as mock_get_deps:
+(        ) as mock_get_deps:
             mock_get_deps.return_value = {"test_node": mock_deps}
 
             result = validate_context_flow(mock_graph, mock_context)
@@ -71,14 +71,14 @@ class TestContextDebug:
         assert result["total_nodes"] == 1
         assert result["nodes_with_dependencies"] == 1
 
-    def test_def test_validate_context_flow_missing_dependencies(self): -> None:
+    def test_def test_def test_validate_context_flow_missing_dependencies(self): -> None: -> None:
         """Test context flow validation with missing dependencies."""
         # Mock dependencies
-        mock_deps = ContextDependencies(
+        mock_deps = ContextDependencies()
             inputs={"input1", "input2", "missing_input"},
             outputs={"output1"},
             description="Test dependencies",
-        )
+(        )
 
         # Mock graph
         mock_graph = MagicMock()
@@ -88,9 +88,9 @@ class TestContextDebug:
         mock_context = MagicMock()
         mock_context.keys.return_value = {"input1", "output1"}
 
-        with patch(
+        with patch()
             "intent_kit.context.debug.get_context_dependencies"
-        ) as mock_get_deps:
+(        ) as mock_get_deps:
             mock_get_deps.return_value = {"test_node": mock_deps}
 
             result = validate_context_flow(mock_graph, mock_context)
@@ -99,7 +99,7 @@ class TestContextDebug:
         assert "test_node" in result["missing_dependencies"]
         assert "missing_input" in result["missing_dependencies"]["test_node"]
 
-    def test_def test_trace_context_execution_json(self): -> None:
+    def test_def test_def test_trace_context_execution_json(self): -> None: -> None:
         """Test context execution tracing in JSON format."""
         # Mock graph
         mock_graph = MagicMock()
@@ -112,15 +112,15 @@ class TestContextDebug:
         mock_context.error_count.return_value = 0
         mock_context.get_history.return_value = []
 
-        result = trace_context_execution(
+        result = trace_context_execution()
             mock_graph, "test input", mock_context, output_format="json"
-        )
+(        )
 
         assert isinstance(result, str)
         assert "test input" in result
         assert "test_session" in result
 
-    def test_def test_trace_context_execution_console(self): -> None:
+    def test_def test_def test_trace_context_execution_console(self): -> None: -> None:
         """Test context execution tracing in console format."""
         # Mock graph
         mock_graph = MagicMock()
@@ -133,15 +133,15 @@ class TestContextDebug:
         mock_context.error_count.return_value = 0
         mock_context.get_history.return_value = []
 
-        result = trace_context_execution(
+        result = trace_context_execution()
             mock_graph, "test input", mock_context, output_format="console"
-        )
+(        )
 
         assert isinstance(result, str)
         assert "test input" in result
         assert "test_session" in result
 
-    def test_def test_collect_all_nodes(self): -> None:
+    def test_def test_def test_collect_all_nodes(self): -> None: -> None:
         """Test collecting all nodes from a graph."""
         # Create mock nodes with children
         mock_child1 = MagicMock()
@@ -164,7 +164,7 @@ class TestContextDebug:
         assert "child1" in node_ids
         assert "child2" in node_ids
 
-    def test_def test_collect_all_nodes_with_cycles(self): -> None:
+    def test_def test_def test_collect_all_nodes_with_cycles(self): -> None: -> None:
         """Test collecting nodes with cycles (should handle gracefully)."""
         # Create mock nodes with cycle
         mock_node1 = MagicMock()
@@ -185,7 +185,7 @@ class TestContextDebug:
         assert "node1" in node_ids
         assert "node2" in node_ids
 
-    def test_def test_analyze_node_dependencies_with_explicit_deps(self): -> None:
+    def test_def test_def test_analyze_node_dependencies_with_explicit_deps(self): -> None: -> None:
         """Test analyzing node dependencies with explicit dependencies."""
         mock_node = MagicMock()
         mock_node.context_inputs = {"input1", "input2"}
@@ -199,7 +199,7 @@ class TestContextDebug:
         assert deps.outputs == {"output1"}
         assert "test_node" in deps.description
 
-    def test_def test_analyze_node_dependencies_with_handler(self): -> None:
+    def test_def test_def test_analyze_node_dependencies_with_handler(self): -> None: -> None:
         """Test analyzing node dependencies with handler function."""
         mock_handler = MagicMock()
         mock_node = MagicMock()
@@ -209,30 +209,30 @@ class TestContextDebug:
         del mock_node.context_inputs
         del mock_node.context_outputs
 
-        with patch(
+        with patch()
             "intent_kit.context.debug.analyze_action_dependencies"
-        ) as mock_analyze:
-            mock_analyze.return_value = ContextDependencies(
+(        ) as mock_analyze:
+            mock_analyze.return_value = ContextDependencies()
                 inputs={"input1"}, outputs={"output1"}, description="Handler deps"
-            )
+(            )
 
             deps = _analyze_node_dependencies(mock_node)
 
         assert deps is not None
         mock_analyze.assert_called_once_with(mock_handler)
 
-    def test_def test_analyze_node_dependencies_with_classifier(self): -> None:
+    def test_def test_def test_analyze_node_dependencies_with_classifier(self): -> None: -> None:
         """Test analyzing node dependencies with classifier function."""
 
 
         class MinimalNode(TreeNode):
-            def __init__def __init__(self): -> None:
+            def __init__def __init__def __init__(self): -> None: -> None:
                 self.classifier = lambda x: x
                 self.name = "test_classifier"
                 self.node_id = "test_classifier"
                 self.children = []
 
-            def execute(self, *args, **kwargs):
+            def execute(self, *args, **kwargs) -> None:
                 pass
 
         mock_node = MinimalNode()
@@ -245,7 +245,7 @@ class TestContextDebug:
         assert deps.outputs == set()
         assert "test_classifier" in deps.description
 
-    def test_def test_analyze_node_dependencies_no_deps(self): -> None:
+    def test_def test_def test_analyze_node_dependencies_no_deps(self): -> None: -> None:
         """Test analyzing node dependencies with no dependencies."""
         mock_node = MagicMock()
         mock_node.name = "test_node"
@@ -259,13 +259,13 @@ class TestContextDebug:
 
         assert deps is None
 
-    def test_def test_validate_node_dependencies_success(self): -> None:
+    def test_def test_def test_validate_node_dependencies_success(self): -> None: -> None:
         """Test validating node dependencies successfully."""
-        deps = ContextDependencies(
+        deps = ContextDependencies()
             inputs={"input1", "input2"},
             outputs={"output1"},
             description="Test dependencies",
-        )
+(        )
 
         mock_context = MagicMock()
         mock_context.keys.return_value = {"input1", "input2", "output1"}
@@ -275,13 +275,13 @@ class TestContextDebug:
         assert result["valid"] is True
         assert len(result["missing_inputs"]) == 0
 
-    def test_def test_validate_node_dependencies_missing(self): -> None:
+    def test_def test_def test_validate_node_dependencies_missing(self): -> None: -> None:
         """Test validating node dependencies with missing inputs."""
-        deps = ContextDependencies(
+        deps = ContextDependencies()
             inputs={"input1", "input2", "missing_input"},
             outputs={"output1"},
             description="Test dependencies",
-        )
+(        )
 
         mock_context = MagicMock()
         mock_context.keys.return_value = {"input1", "output1"}
@@ -291,7 +291,7 @@ class TestContextDebug:
         assert result["valid"] is False
         assert "missing_input" in result["missing_inputs"]
 
-    def test_def test_capture_full_context_state(self): -> None:
+    def test_def test_def test_capture_full_context_state(self): -> None: -> None:
         """Test capturing full context state."""
         mock_context = MagicMock()
         mock_context.keys.return_value = {"field1", "field2"}
@@ -307,7 +307,7 @@ class TestContextDebug:
         assert "error_summary" in state
         assert "history_summary" in state
 
-    def test_def test_format_context_history(self): -> None:
+    def test_def test_def test_format_context_history(self): -> None: -> None:
         """Test formatting context history."""
         # Mock history entries
         mock_entry1 = MagicMock()
@@ -333,7 +333,7 @@ class TestContextDebug:
         assert formatted[0]["action"] == "set"
         assert formatted[1]["action"] == "get"
 
-    def test_def test_format_console_trace(self): -> None:
+    def test_def test_def test_format_console_trace(self): -> None: -> None:
         """Test formatting console trace."""
         trace_data = {
             "timestamp": "2024-01-01T12:00:00",

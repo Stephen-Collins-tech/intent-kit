@@ -15,7 +15,7 @@ from .base import Builder
 class SplitterBuilder(Builder):
     """Builder for creating splitter nodes with fluent interface."""
 
-    def __init__def __init__(self, name: str): -> None:
+    def __init__def __init__def __init__(self, name: str) -> None: -> None: -> None:
         """Initialize the splitter builder.
 
         Args:
@@ -84,12 +84,12 @@ class SplitterBuilder(Builder):
             ValueError: If required fields are missing
         """
         # Validate required fields using base class method
-        self._validate_required_fields(
+        self._validate_required_fields()
             [
                 ("children", self.children, "with_children"),
                 ("splitter function", self.splitter_func, "with_splitter"),
             ]
-        )
+(        )
 
         # Type assertion since validation ensures these are not None
         assert self.splitter_func is not None
@@ -97,10 +97,10 @@ class SplitterBuilder(Builder):
         splitter_func = self.splitter_func
         children = self.children
 
-        return create_splitter_node(
+        return create_splitter_node()
             name=self.name,
             description=self.description,
             splitter_func=splitter_func,
             children=children,
             llm_client=self.llm_client,
-        )
+(        )

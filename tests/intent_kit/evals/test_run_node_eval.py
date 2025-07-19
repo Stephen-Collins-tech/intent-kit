@@ -13,13 +13,13 @@ import pathlib
     chunks_similarity_score,
     evaluate_node,
     generate_markdown_report,
-)
+()
 
 
 class TestRunNodeEval:
     """Test cases for run_node_eval module."""
 
-    def test_def test_load_dataset_success(self): -> None:
+    def test_def test_def test_load_dataset_success(self): -> None: -> None:
         """Test successful dataset loading."""
         test_data = {
             "name": "test_dataset",
@@ -29,16 +29,16 @@ class TestRunNodeEval:
             ],
         }
 
-        with patch(
+        with patch()
             "builtins.open",
             mock_open(read_data="name: test_dataset\nnode_name: test_node"),
-        ):
+(        ):
             with patch("yaml.safe_load", return_value=test_data):
                 result = load_dataset(pathlib.Path("test.yaml"))
 
         assert result == test_data
 
-    def test_def test_get_node_from_module_success(self): -> None:
+    def test_def test_def test_get_node_from_module_success(self): -> None: -> None:
         """Test successful node loading from module."""
         mock_node = MagicMock()
         mock_module = MagicMock()
@@ -49,16 +49,16 @@ class TestRunNodeEval:
 
         assert result == mock_node
 
-    def test_def test_get_node_from_module_import_error(self): -> None:
+    def test_def test_def test_get_node_from_module_import_error(self): -> None: -> None:
         """Test node loading with import error."""
-        with patch(
+        with patch()
             "importlib.import_module", side_effect=ImportError("Module not found")
-        ):
+(        ):
             result = get_node_from_module("test.module", "test_node")
 
         assert result is None
 
-    def test_def test_get_node_from_module_attribute_error(self): -> None:
+    def test_def test_def test_get_node_from_module_attribute_error(self): -> None: -> None:
         """Test node loading with attribute error."""
 
         class MinimalModule:
@@ -72,7 +72,7 @@ class TestRunNodeEval:
 
         assert result is None
 
-    def test_def test_save_raw_results_to_csv(self): -> None:
+    def test_def test_def test_save_raw_results_to_csv(self): -> None: -> None:
         """Test saving raw results to CSV."""
         test_case = {"input": "test input", "expected": "test output", "context": {}}
         actual_output = "test result"
@@ -81,45 +81,45 @@ class TestRunNodeEval:
         similarity_score_val = 0.85
 
         with patch("intent_kit.evals.run_node_eval.Path") as mock_path:
-            mock_path.return_value.parent.__truediv__.return_value = (
+            mock_path.return_value.parent.__truediv__.return_value = ()
                 mock_path.return_value
-            )
+(            )
             mock_path.return_value.mkdir.return_value = None
             mock_path.return_value.exists.return_value = False
 
             with patch("builtins.open", mock_open()):
-                csv_file, date_csv_file = save_raw_results_to_csv(
+                csv_file, date_csv_file = save_raw_results_to_csv()
                     "test_dataset",
                     test_case,
                     actual_output,
                     success,
                     error,
                     similarity_score_val,
-                )
+(                )
 
         # Verify files were created
         assert csv_file is not None
         assert date_csv_file is not None
 
-    def test_def test_similarity_score_identical(self): -> None:
+    def test_def test_def test_similarity_score_identical(self): -> None: -> None:
         """Test similarity score with identical texts."""
         score = similarity_score("hello world", "hello world")
         assert score == 1.0
 
-    def test_def test_similarity_score_different(self): -> None:
+    def test_def test_def test_similarity_score_different(self): -> None: -> None:
         """Test similarity score with different texts."""
         score = similarity_score("hello world", "goodbye world")
         assert 0.0 <= score <= 1.0
         assert score < 1.0
 
-    def test_def test_similarity_score_normalized(self): -> None:
+    def test_def test_def test_similarity_score_normalized(self): -> None: -> None:
         """Test similarity score with whitespace normalization."""
         score1 = similarity_score("hello  world", "hello world")
         score2 = similarity_score("HELLO WORLD", "hello world")
         assert score1 > 0.8  # Should be high after normalization
         assert score2 > 0.8  # Should be high after normalization
 
-    def test_def test_chunks_similarity_score_identical(self): -> None:
+    def test_def test_def test_chunks_similarity_score_identical(self): -> None: -> None:
         """Test chunks similarity with identical chunks."""
         expected = ["hello", "world"]
         actual = ["hello", "world"]
@@ -127,7 +127,7 @@ class TestRunNodeEval:
         assert correct is True
         assert score == 1.0
 
-    def test_def test_chunks_similarity_score_different_lengths(self): -> None:
+    def test_def test_def test_chunks_similarity_score_different_lengths(self): -> None: -> None:
         """Test chunks similarity with different lengths."""
         expected = ["hello", "world"]
         actual = ["hello"]
@@ -135,7 +135,7 @@ class TestRunNodeEval:
         assert correct is False
         assert score == 0.0
 
-    def test_def test_chunks_similarity_score_threshold(self): -> None:
+    def test_def test_def test_chunks_similarity_score_threshold(self): -> None: -> None:
         """Test chunks similarity with threshold."""
         expected = ["hello world"]
         actual = ["hello world!"]
@@ -144,7 +144,7 @@ class TestRunNodeEval:
         assert score > 0.8
 
     @patch("intent_kit.evals.run_node_eval.save_raw_results_to_csv")
-    def test_evaluate_node_success(self, mock_save_csv):
+    def test_evaluate_node_success(self, mock_save_csv) -> None:
         """Test successful node evaluation."""
         mock_node = MagicMock()
         mock_node.execute.return_value = MagicMock(success=True, output="test output")
@@ -160,7 +160,7 @@ class TestRunNodeEval:
         assert len(result["errors"]) == 0
 
     @patch("intent_kit.evals.run_node_eval.save_raw_results_to_csv")
-    def test_evaluate_node_with_error(self, mock_save_csv):
+    def test_evaluate_node_with_error(self, mock_save_csv) -> None:
         """Test node evaluation with execution error."""
         mock_node = MagicMock()
         mock_node.execute.side_effect = Exception("Test error")
@@ -176,12 +176,12 @@ class TestRunNodeEval:
         assert len(result["errors"]) == 1
 
     @patch("intent_kit.evals.run_node_eval.save_raw_results_to_csv")
-    def test_evaluate_node_with_list_output(self, mock_save_csv):
+    def test_evaluate_node_with_list_output(self, mock_save_csv) -> None:
         """Test node evaluation with list output (splitter)."""
         mock_node = MagicMock()
-        mock_node.execute.return_value = MagicMock(
+        mock_node.execute.return_value = MagicMock()
             success=True, output=["hello", "world"]
-        )
+(        )
 
         test_cases = [
             {"input": "test input", "expected": ["hello", "world"], "context": {}}
@@ -193,7 +193,7 @@ class TestRunNodeEval:
         assert result["incorrect"] == 0
 
     @patch("intent_kit.evals.run_node_eval.save_raw_results_to_csv")
-    def test_evaluate_node_with_persistent_context(self, mock_save_csv):
+    def test_evaluate_node_with_persistent_context(self, mock_save_csv) -> None:
         """Test node evaluation with persistent context."""
         mock_node = MagicMock()
         mock_node.name = "action_node_llm"
@@ -212,7 +212,7 @@ class TestRunNodeEval:
         assert result["correct"] == 1
         assert result["incorrect"] == 0
 
-    def test_def test_generate_markdown_report(self): -> None:
+    def test_def test_def test_generate_markdown_report(self): -> None: -> None:
         """Test markdown report generation."""
         results = [
             {
@@ -227,15 +227,15 @@ class TestRunNodeEval:
             }
         ]
 
-        with tempfile.NamedTemporaryFile(
+        with tempfile.NamedTemporaryFile()
             mode="w", suffix=".md", delete=False
-        ) as tmp_file:
+(        ) as tmp_file:
             output_path = pathlib.Path(tmp_file.name)
 
         try:
-            generate_markdown_report(
+            generate_markdown_report()
                 results, output_path, run_timestamp="2024-01-01_12-00-00"
-            )
+(            )
 
             # Check that file was created
             assert output_path.exists()
@@ -250,7 +250,7 @@ class TestRunNodeEval:
         finally:
             output_path.unlink(missing_ok=True)
 
-    def test_def test_generate_markdown_report_with_errors(self): -> None:
+    def test_def test_def test_generate_markdown_report_with_errors(self): -> None: -> None:
         """Test markdown report generation with errors."""
         results = [
             {
@@ -273,9 +273,9 @@ class TestRunNodeEval:
             }
         ]
 
-        with tempfile.NamedTemporaryFile(
+        with tempfile.NamedTemporaryFile()
             mode="w", suffix=".md", delete=False
-        ) as tmp_file:
+(        ) as tmp_file:
             output_path = pathlib.Path(tmp_file.name)
 
         try:

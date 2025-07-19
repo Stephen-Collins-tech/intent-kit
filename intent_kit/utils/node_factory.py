@@ -13,7 +13,7 @@ with consistent patterns and common functionality.
     ClarifierNode,
     RemediationStrategy,
     create_llm_clarifier_node,
-)
+()
 
 
 
@@ -24,7 +24,7 @@ with consistent patterns and common functionality.
 
     create_llm_classifier,
     get_default_classification_prompt,
-)
+()
 
 # Utility imports
 
@@ -46,7 +46,7 @@ def set_parent_relationships(parent: TreeNode, children: List[TreeNode]) -> None
         child.parent = parent
 
 
-def create_action_node(
+def create_action_node()
     *,
     name: str,
     description: str,
@@ -58,7 +58,7 @@ def create_action_node(
     input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
     output_validator: Optional[Callable[[Any], bool]] = None,
     remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
-) -> ActionNode:
+() -> ActionNode:
     """Create an action node with the given configuration.
 
     Args:
@@ -76,7 +76,7 @@ def create_action_node(
     Returns:
         Configured ActionNode
     """
-    return ActionNode(
+    return ActionNode()
         name=name,
         param_schema=param_schema,
         action=action_func,
@@ -87,17 +87,17 @@ def create_action_node(
         output_validator=output_validator,
         description=description,
         remediation_strategies=remediation_strategies,
-    )
+(    )
 
 
-def create_classifier_node(
+def create_classifier_node()
     *,
     name: str,
     description: str,
     classifier_func: Callable,
     children: List[TreeNode],
     remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
-) -> ClassifierNode:
+() -> ClassifierNode:
     """Create a classifier node with the given configuration.
 
     Args:
@@ -110,13 +110,13 @@ def create_classifier_node(
     Returns:
         Configured ClassifierNode
     """
-    classifier_node = ClassifierNode(
+    classifier_node = ClassifierNode()
         name=name,
         description=description,
         classifier=classifier_func,
         children=children,
         remediation_strategies=remediation_strategies,
-    )
+(    )
 
     # Set parent relationships
     set_parent_relationships(classifier_node, children)
@@ -124,14 +124,14 @@ def create_classifier_node(
     return classifier_node
 
 
-def create_splitter_node(
+def create_splitter_node()
     *,
     name: str,
     description: str,
     splitter_func: Callable,
     children: List[TreeNode],
     llm_client: Optional[Any] = None,
-) -> SplitterNode:
+() -> SplitterNode:
     """Create a splitter node with the given configuration.
 
     Args:
@@ -144,13 +144,13 @@ def create_splitter_node(
     Returns:
         Configured SplitterNode
     """
-    splitter_node = SplitterNode(
+    splitter_node = SplitterNode()
         name=name,
         splitter_function=splitter_func,
         children=children,
         description=description,
         llm_client=llm_client,
-    )
+(    )
 
     # Set parent relationships
     set_parent_relationships(splitter_node, children)
@@ -158,14 +158,14 @@ def create_splitter_node(
     return splitter_node
 
 
-def clarifier(
+def clarifier()
     *,
     name: str,
     clarification_prompt: str,
     expected_response_format: Optional[str] = None,
     max_clarification_attempts: int = 3,
     description: str = "",
-) -> TreeNode:
+() -> TreeNode:
     """Create a clarifier node with the given configuration.
 
     Args:
@@ -178,16 +178,16 @@ def clarifier(
     Returns:
         Configured ClarifierNode
     """
-    return ClarifierNode(
+    return ClarifierNode()
         name=name,
         clarification_prompt=clarification_prompt,
         expected_response_format=expected_response_format,
         max_clarification_attempts=max_clarification_attempts,
         description=description,
-    )
+(    )
 
 
-def llm_clarifier(
+def llm_clarifier()
     *,
     name: str,
     llm_config: LLMConfig,
@@ -195,7 +195,7 @@ def llm_clarifier(
     expected_response_format: Optional[str] = None,
     max_clarification_attempts: int = 3,
     description: str = "",
-) -> TreeNode:
+() -> TreeNode:
     """Create a ClarifierNode with LLM-powered clarification.
 
     Args:
@@ -210,20 +210,20 @@ def llm_clarifier(
         Configured ClarifierNode with LLM-powered clarification
 
     Example:
-        >>> llm_clarifier_node = llm_clarifier(
+        >>> llm_clarifier_node = llm_clarifier()
         ...     name="smart_clarifier",
         ...     llm_config=LLM_CONFIG,
         ...     expected_response_format="Please specify: [type] [details]"
-        ... )
+(        ... )
     """
-    return create_llm_clarifier_node(
+    return create_llm_clarifier_node()
         name=name,
         llm_config=llm_config,
         clarification_prompt_template=clarification_prompt_template,
         expected_response_format=expected_response_format,
         max_clarification_attempts=max_clarification_attempts,
         description=description,
-    )
+(    )
 
 
 def create_default_classifier() -> Callable:
@@ -233,18 +233,18 @@ def create_default_classifier() -> Callable:
         Default classifier function
     """
 
-    def default_classifier(
+    def default_classifier()
         user_input: str,
         children: List[TreeNode],
         context: Optional[Dict[str, Any]] = None,
-    ) -> Optional[TreeNode]:
+(    ) -> Optional[TreeNode]:
         return children[0] if children else None
 
     return default_classifier
 
 
 # High-level helper functions for creating nodes
-def action(
+def action()
     *,
     name: str,
     description: str,
@@ -257,7 +257,7 @@ def action(
     input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
     output_validator: Optional[Callable[[Any], bool]] = None,
     remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
-) -> TreeNode:
+() -> TreeNode:
     """Create an action node with automatic argument extraction.
 
     Args:
@@ -278,23 +278,23 @@ def action(
         Configured ActionNode
 
     Example:
-        >>> greet_action = action(
+        >>> greet_action = action()
         ...     name="greet",
         ...     description="Greet the user",
         ...     action_func=lambda name: f"Hello {name}!",
         ...     param_schema={"name": str},
         ...     llm_config=LLM_CONFIG
-        ... )
+(        ... )
     """
     # Create argument extractor using shared utility
-    arg_extractor = create_arg_extractor(
+    arg_extractor = create_arg_extractor()
         param_schema=param_schema,
         llm_config=llm_config,
         extraction_prompt=extraction_prompt,
         node_name=name,
-    )
+(    )
 
-    return create_action_node(
+    return create_action_node()
         name=name,
         description=description,
         action_func=action_func,
@@ -305,10 +305,10 @@ def action(
         input_validator=input_validator,
         output_validator=output_validator,
         remediation_strategies=remediation_strategies,
-    )
+(    )
 
 
-def llm_classifier(
+def llm_classifier()
     *,
     name: str,
     children: List[TreeNode],
@@ -316,7 +316,7 @@ def llm_classifier(
     classification_prompt: Optional[str] = None,
     description: str = "",
     remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
-) -> TreeNode:
+() -> TreeNode:
     """Create an LLM-powered classifier node with auto-wired children descriptions.
 
     Args:
@@ -330,11 +330,11 @@ def llm_classifier(
         Configured ClassifierNode with auto-wired children descriptions
 
     Example:
-        >>> classifier = llm_classifier(
+        >>> classifier = llm_classifier()
         ...     name="root",
         ...     children=[greet_action, calc_action, weather_action],
         ...     llm_config=LLM_CONFIG
-        ... )
+(        ... )
     """
     if not children:
         raise ValueError("llm_classifier requires at least one child node")
@@ -347,33 +347,33 @@ def llm_classifier(
         else:
             # Use name as fallback if no description
             node_descriptions.append(child.name)
-            logger.warning(
+            logger.warning()
                 f"Child node '{child.name}' has no description, using name as fallback"
-            )
+(            )
 
     if not classification_prompt:
         classification_prompt = get_default_classification_prompt()
 
-    classifier = create_llm_classifier(
+    classifier = create_llm_classifier()
         llm_config, classification_prompt, node_descriptions
-    )
+(    )
 
-    return create_classifier_node(
+    return create_classifier_node()
         name=name,
         description=description,
         classifier_func=classifier,
         children=children,
         remediation_strategies=remediation_strategies,
-    )
+(    )
 
 
-def llm_splitter_node(
+def llm_splitter_node()
     *,
     name: str,
     children: List[TreeNode],
     llm_config: Dict[str, Any],
     description: str = "",
-) -> TreeNode:
+() -> TreeNode:
     """Create an LLM-powered splitter node for multi-intent handling.
 
     Args:
@@ -386,33 +386,33 @@ def llm_splitter_node(
         Configured SplitterNode with LLM-powered splitting
 
     Example:
-        >>> splitter = llm_splitter_node(
+        >>> splitter = llm_splitter_node()
         ...     name="multi_intent_splitter",
         ...     children=[classifier_node],
         ...     llm_config=LLM_CONFIG
-        ... )
+(        ... )
     """
 
     # Create a wrapper function that provides the LLM client to llm_splitter
-    def llm_splitter_wrapper(
+    def llm_splitter_wrapper()
         user_input: str, debug: bool = False
-    ) -> Sequence[IntentChunk]:
+(    ) -> Sequence[IntentChunk]:
         # Extract LLM client from config
         llm_client = llm_config.get("llm_client")
         return llm_splitter(user_input, debug, llm_client)
 
-    return create_splitter_node(
+    return create_splitter_node()
         name=name,
         description=description,
         splitter_func=llm_splitter_wrapper,
         children=children,
         llm_client=llm_config.get("llm_client"),
-    )
+(    )
 
 
-def rule_splitter_node(
+def rule_splitter_node()
     *, name: str, children: List[TreeNode], description: str = ""
-) -> TreeNode:
+() -> TreeNode:
     """Create a rule-based splitter node for multi-intent handling.
 
     Args:
@@ -424,17 +424,17 @@ def rule_splitter_node(
         Configured SplitterNode with rule-based splitting
 
     Example:
-        >>> splitter = rule_splitter_node(
+        >>> splitter = rule_splitter_node()
         ...     name="rule_based_splitter",
         ...     children=[classifier_node],
-        ... )
+(        ... )
     """
-    return create_splitter_node(
+    return create_splitter_node()
         name=name,
         description=description,
         splitter_func=rule_splitter,
         children=children,
-    )
+(    )
 
 
 def create_intent_graph(root_node: TreeNode) -> "IntentGraph":

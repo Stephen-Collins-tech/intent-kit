@@ -10,7 +10,7 @@ Splitter types - re-exported from central types module.
     ClassifierOutput,
     SplitterFunction,
     ClassifierFunction,
-)
+()
 
 __all__ = [
     "IntentChunk",
