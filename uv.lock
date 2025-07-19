@@ -668,6 +668,15 @@ viz = [
     { name = "pyvis" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "black" },
+    { name = "mypy" },
+    { name = "ruff" },
+    { name = "types-networkx" },
+    { name = "types-pyyaml" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.54.0" },
@@ -707,6 +716,15 @@ requires-dist = [
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12.20250516" },
 ]
 provides-extras = ["all", "anthropic", "dev", "google", "ollama", "openai", "viz", "evals"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=25.1.0" },
+    { name = "mypy", specifier = ">=1.16.1" },
+    { name = "ruff", specifier = ">=0.12.3" },
+    { name = "types-networkx", specifier = ">=3.5.0.20250712" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.20250516" },
+]
 
 [[package]]
 name = "ipykernel"

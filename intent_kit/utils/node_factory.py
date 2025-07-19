@@ -8,7 +8,12 @@ with consistent patterns and common functionality.
 from typing import Any, Callable, List, Optional, Dict, Type, Set, Union, Sequence
 from intent_kit.node import TreeNode
 from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.node.actions import ActionNode, ClarifierNode, RemediationStrategy, create_llm_clarifier_node
+from intent_kit.node.actions import (
+    ActionNode,
+    ClarifierNode,
+    RemediationStrategy,
+    create_llm_clarifier_node,
+)
 from intent_kit.node.splitters import SplitterNode, rule_splitter, llm_splitter
 from intent_kit.utils.logger import Logger
 from intent_kit.types import IntentChunk

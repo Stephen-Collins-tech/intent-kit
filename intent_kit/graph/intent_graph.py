@@ -243,7 +243,7 @@ class IntentGraph:
             The first Clarifier node found, or None if none exist
         """
         from intent_kit.node.enums import NodeType
-        
+
         for node in self.root_nodes:
             if node.node_type == NodeType.CLARIFY:
                 return node
@@ -636,7 +636,9 @@ class IntentGraph:
                             f"Clarifier node '{clarifier_node.name}' failed: {error_message}"
                         )
                         if debug:
-                            self.logger.error(f"Clarifier node '{clarifier_node.name}' failed: {e}")
+                            self.logger.error(
+                                f"Clarifier node '{clarifier_node.name}' failed: {e}"
+                            )
                 else:
                     # Fallback: Create a generic clarification result
                     error_result = ExecutionResult(
