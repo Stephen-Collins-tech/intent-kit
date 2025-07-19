@@ -3,8 +3,8 @@ Tests for the IntentContext system.
 """
 
 import pytest
-from intent_kit.context import IntentContext
-from intent_kit.context.dependencies import (
+
+
     declare_dependencies,
     validate_context_dependencies,
     merge_dependencies,
@@ -14,20 +14,20 @@ from intent_kit.context.dependencies import (
 class TestIntentContext:
     """Test the IntentContext class."""
 
-    def test_context_creation(self):
+    def test_def test_context_creation(self): -> None:
         """Test creating a new context."""
         context = IntentContext(session_id="test_123")
         assert context.session_id == "test_123"
         assert len(context.keys()) == 0
         assert len(context.get_history()) == 0
 
-    def test_context_auto_session_id(self):
+    def test_def test_context_auto_session_id(self): -> None:
         """Test that context gets auto-generated session ID if none provided."""
         context = IntentContext()
         assert context.session_id is not None
         assert len(context.session_id) > 0
 
-    def test_context_set_get(self):
+    def test_def test_context_set_get(self): -> None:
         """Test setting and getting values from context."""
         context = IntentContext(session_id="test_123")
 
@@ -51,13 +51,13 @@ class TestIntentContext:
         # get operations don't have modified_by
         assert history[1].modified_by is None
 
-    def test_context_default_value(self):
+    def test_def test_context_default_value(self): -> None:
         """Test getting default value when key doesn't exist."""
         context = IntentContext()
         value = context.get("nonexistent", default="default_value")
         assert value == "default_value"
 
-    def test_context_has_key(self):
+    def test_def test_context_has_key(self): -> None:
         """Test checking if key exists."""
         context = IntentContext()
         assert not context.has("test_key")
@@ -65,7 +65,7 @@ class TestIntentContext:
         context.set("test_key", "value")
         assert context.has("test_key")
 
-    def test_context_delete(self):
+    def test_def test_context_delete(self): -> None:
         """Test deleting a key."""
         context = IntentContext()
         context.set("test_key", "value")
@@ -79,7 +79,7 @@ class TestIntentContext:
         deleted = context.delete("nonexistent")
         assert deleted is False
 
-    def test_context_keys(self):
+    def test_def test_context_keys(self): -> None:
         """Test getting all keys."""
         context = IntentContext()
         context.set("key1", "value1")
@@ -90,7 +90,7 @@ class TestIntentContext:
         assert "key2" in keys
         assert len(keys) == 2
 
-    def test_context_clear(self):
+    def test_def test_context_clear(self): -> None:
         """Test clearing all fields."""
         context = IntentContext()
         context.set("key1", "value1")
@@ -106,7 +106,7 @@ class TestIntentContext:
         assert len(history) == 3  # 2 sets + 1 clear
         assert history[-1].action == "clear"
 
-    def test_context_get_field_metadata(self):
+    def test_def test_context_get_field_metadata(self): -> None:
         """Test getting field metadata."""
         context = IntentContext()
         context.set("test_key", "test_value", modified_by="test")
@@ -118,7 +118,7 @@ class TestIntentContext:
         assert "created_at" in metadata
         assert "last_modified" in metadata
 
-    def test_context_get_history_filtered(self):
+    def test_def test_context_get_history_filtered(self): -> None:
         """Test getting filtered history."""
         context = IntentContext()
         context.set("key1", "value1")
@@ -133,7 +133,7 @@ class TestIntentContext:
         limited_history = context.get_history(limit=2)
         assert len(limited_history) == 2
 
-    def test_context_thread_safety(self):
+    def test_def test_context_thread_safety(self): -> None:
         """Test that context operations are thread-safe."""
         import threading
         import time
@@ -175,7 +175,7 @@ class TestIntentContext:
 class TestContextDependencies:
     """Test the context dependency system."""
 
-    def test_declare_dependencies(self):
+    def test_def test_declare_dependencies(self): -> None:
         """Test creating dependency declarations."""
         deps = declare_dependencies(
             inputs={"input1", "input2"},
@@ -187,7 +187,7 @@ class TestContextDependencies:
         assert deps.outputs == {"output1"}
         assert deps.description == "Test dependencies"
 
-    def test_validate_context_dependencies(self):
+    def test_def test_validate_context_dependencies(self): -> None:
         """Test validating dependencies against context."""
         context = IntentContext()
         context.set("input1", "value1")
@@ -203,7 +203,7 @@ class TestContextDependencies:
         assert result["available_inputs"] == {"input1", "input2"}
         assert len(result["warnings"]) == 1
 
-    def test_validate_context_dependencies_strict(self):
+    def test_def test_validate_context_dependencies_strict(self): -> None:
         """Test strict validation of dependencies."""
         context = IntentContext()
         context.set("input1", "value1")
@@ -217,7 +217,7 @@ class TestContextDependencies:
         assert result["missing_inputs"] == {"missing_input"}
         assert len(result["warnings"]) == 1
 
-    def test_merge_dependencies(self):
+    def test_def test_merge_dependencies(self): -> None:
         """Test merging multiple dependency declarations."""
         deps1 = declare_dependencies(inputs={"input1"}, outputs={"output1"})
         deps2 = declare_dependencies(inputs={"input2"}, outputs={"output2"})

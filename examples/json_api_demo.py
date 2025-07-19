@@ -8,9 +8,9 @@ Requires: Set the environment variable OPENROUTER_API_KEY with your OpenRouter A
 """
 
 import os
-from intent_kit.builders import IntentGraphBuilder
-from intent_kit.context import IntentContext
-from dotenv import load_dotenv
+
+
+
 
 load_dotenv()
 
@@ -48,7 +48,7 @@ def help_user(context=None) -> str:
     return "I can help you with greetings, calculations, and weather information. Just ask!"
 
 
-def main():
+def main() -> None:
     """Demonstrate JSON-based IntentGraph construction with LLM classifier."""
 
     # Get OpenRouter API key from environment

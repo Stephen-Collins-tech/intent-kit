@@ -5,31 +5,34 @@ This module provides the main IntentGraph class that handles intent splitting,
 routing to root nodes, and result aggregation.
 """
 
-from typing import Dict, Any, Optional, List
+
 from datetime import datetime
-from intent_kit.utils.logger import Logger
-from intent_kit.context import IntentContext
-from intent_kit.types import SplitterFunction, IntentChunk
-from intent_kit.graph.validation import (
+
+
+
+
     validate_splitter_routing,
     validate_graph_structure,
     validate_node_types,
     GraphValidationError,
 )
 
-# from intent_kit.graph.aggregation import aggregate_results, create_error_dict, create_no_intent_error, create_no_tree_error
-from intent_kit.node import ExecutionResult
-from intent_kit.node import ExecutionError
-from intent_kit.node.enums import NodeType
-from intent_kit.node import TreeNode
+# from intent_kit.graph.aggregation import aggregate_results,
+    create_error_dict
+    create_no_intent_error
+    create_no_tree_error
+
+
+
+
 import os
-from intent_kit.node.classifiers import classify_intent_chunk
-from intent_kit.types import IntentAction
+
+
 
 # Add imports for visualization
 try:
-    import networkx as nx
-    from pyvis.network import Network  # type: ignore
+
+
 
     VIZ_AVAILABLE = True
 except ImportError:
@@ -61,8 +64,8 @@ class IntentGraph:
 
         Args:
             root_nodes: List of root nodes that can handle intents
-            splitter: Function to use for splitting intents (default: pass-through splitter)
-            visualize: If True, render the final output to an interactive graph HTML file
+            splitter: Function to use for splitting intents (
+                default: pass-through splitter)            visualize: If True, render the final output to an interactive graph HTML file
             llm_config: LLM configuration for chunk classification (optional)
             debug_context: If True, enable context debugging and state tracking
             context_trace: If True, enable detailed context tracing with timestamps
@@ -242,7 +245,7 @@ class IntentGraph:
         Returns:
             The first Clarifier node found, or None if none exist
         """
-        from intent_kit.node.enums import NodeType
+
 
         for node in self.root_nodes:
             if node.node_type == NodeType.CLARIFY:
@@ -499,8 +502,8 @@ class IntentGraph:
                             output=None,
                             error=ExecutionError(
                                 error_type="NodeExecutionReturnedNone",
-                                message=f"Node '{root_node.name}' execute() returned None instead of ExecutionResult.",
-                                node_name=root_node.name,
+                                message=f"Node '{root_node.name}' execute(
+                                    ) returned None instead of ExecutionResult.",                                node_name=root_node.name,
                                 node_path=[],
                             ),
                         )
@@ -510,8 +513,8 @@ class IntentGraph:
                         )
                         if debug:
                             self.logger.error(
-                                f"Node '{root_node.name}' execute() returned None instead of ExecutionResult."
-                            )
+                                f"Node '{root_node.name}' execute(
+                                    ) returned None instead of ExecutionResult."                            )
                         continue
 
                     # Context debugging: capture state after execution
@@ -721,8 +724,8 @@ class IntentGraph:
                 output=None,
                 error=ExecutionError(
                     error_type="RecursionLimitExceeded",
-                    message=f"Recursion limit exceeded ({max_recursion_depth} chunks processed)",
-                    node_name="recursion_limit",
+                    message=f"Recursion limit exceeded (
+                        {max_recursion_depth} chunks processed)",                    node_name="recursion_limit",
                     node_path=[],
                 ),
             )
@@ -844,7 +847,7 @@ class IntentGraph:
 
         try:
             # Import here to ensure it's available
-            from pyvis.network import Network
+
 
             # Build the graph from the execution path
             net = Network(height="600px", width="100%", directed=True, notebook=False)
@@ -1030,15 +1033,15 @@ class IntentGraph:
                     state_before["fields"].keys()
                 )
                 self.logger.info(
-                    f"Node '{node_name}' added {len(new_fields)} new context fields: {new_fields}"
-                )
+                    f"Node '{node_name}' added {len(
+                        new_fields)} new context fields: {new_fields}"                )
             elif field_count_after < field_count_before:
                 removed_fields = set(state_before["fields"].keys()) - set(
                     state_after["fields"].keys()
                 )
                 self.logger.info(
-                    f"Node '{node_name}' removed {len(removed_fields)} context fields: {removed_fields}"
-                )
+                    f"Node '{node_name}' removed {len(
+                        removed_fields)} context fields: {removed_fields}"                )
 
         # Detailed context tracing
         if context_trace:
@@ -1088,8 +1091,8 @@ class IntentGraph:
             self.logger.info(f"Context trace for node '{node_name}':")
             for change in changed_fields:
                 self.logger.info(
-                    f"  {change['action'].upper()}: {change['key']} = {change['after']} (was: {change['before']})"
-                )
+                    f"  {change['action'].upper(
+                        )}: {change['key']} = {change['after']} (was: {change['before']})"                )
         else:
             self.logger.info(
                 f"Context trace for node '{node_name}': No changes detected"

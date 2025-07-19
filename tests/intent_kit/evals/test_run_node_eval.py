@@ -4,8 +4,8 @@ Tests for run_node_eval module.
 
 import tempfile
 import pathlib
-from unittest.mock import patch, MagicMock, mock_open
-from intent_kit.evals.run_node_eval import (
+
+
     load_dataset,
     get_node_from_module,
     save_raw_results_to_csv,
@@ -19,7 +19,7 @@ from intent_kit.evals.run_node_eval import (
 class TestRunNodeEval:
     """Test cases for run_node_eval module."""
 
-    def test_load_dataset_success(self):
+    def test_def test_load_dataset_success(self): -> None:
         """Test successful dataset loading."""
         test_data = {
             "name": "test_dataset",
@@ -38,7 +38,7 @@ class TestRunNodeEval:
 
         assert result == test_data
 
-    def test_get_node_from_module_success(self):
+    def test_def test_get_node_from_module_success(self): -> None:
         """Test successful node loading from module."""
         mock_node = MagicMock()
         mock_module = MagicMock()
@@ -49,7 +49,7 @@ class TestRunNodeEval:
 
         assert result == mock_node
 
-    def test_get_node_from_module_import_error(self):
+    def test_def test_get_node_from_module_import_error(self): -> None:
         """Test node loading with import error."""
         with patch(
             "importlib.import_module", side_effect=ImportError("Module not found")
@@ -58,7 +58,7 @@ class TestRunNodeEval:
 
         assert result is None
 
-    def test_get_node_from_module_attribute_error(self):
+    def test_def test_get_node_from_module_attribute_error(self): -> None:
         """Test node loading with attribute error."""
 
         class MinimalModule:
@@ -72,7 +72,7 @@ class TestRunNodeEval:
 
         assert result is None
 
-    def test_save_raw_results_to_csv(self):
+    def test_def test_save_raw_results_to_csv(self): -> None:
         """Test saving raw results to CSV."""
         test_case = {"input": "test input", "expected": "test output", "context": {}}
         actual_output = "test result"
@@ -101,25 +101,25 @@ class TestRunNodeEval:
         assert csv_file is not None
         assert date_csv_file is not None
 
-    def test_similarity_score_identical(self):
+    def test_def test_similarity_score_identical(self): -> None:
         """Test similarity score with identical texts."""
         score = similarity_score("hello world", "hello world")
         assert score == 1.0
 
-    def test_similarity_score_different(self):
+    def test_def test_similarity_score_different(self): -> None:
         """Test similarity score with different texts."""
         score = similarity_score("hello world", "goodbye world")
         assert 0.0 <= score <= 1.0
         assert score < 1.0
 
-    def test_similarity_score_normalized(self):
+    def test_def test_similarity_score_normalized(self): -> None:
         """Test similarity score with whitespace normalization."""
         score1 = similarity_score("hello  world", "hello world")
         score2 = similarity_score("HELLO WORLD", "hello world")
         assert score1 > 0.8  # Should be high after normalization
         assert score2 > 0.8  # Should be high after normalization
 
-    def test_chunks_similarity_score_identical(self):
+    def test_def test_chunks_similarity_score_identical(self): -> None:
         """Test chunks similarity with identical chunks."""
         expected = ["hello", "world"]
         actual = ["hello", "world"]
@@ -127,7 +127,7 @@ class TestRunNodeEval:
         assert correct is True
         assert score == 1.0
 
-    def test_chunks_similarity_score_different_lengths(self):
+    def test_def test_chunks_similarity_score_different_lengths(self): -> None:
         """Test chunks similarity with different lengths."""
         expected = ["hello", "world"]
         actual = ["hello"]
@@ -135,7 +135,7 @@ class TestRunNodeEval:
         assert correct is False
         assert score == 0.0
 
-    def test_chunks_similarity_score_threshold(self):
+    def test_def test_chunks_similarity_score_threshold(self): -> None:
         """Test chunks similarity with threshold."""
         expected = ["hello world"]
         actual = ["hello world!"]
@@ -212,7 +212,7 @@ class TestRunNodeEval:
         assert result["correct"] == 1
         assert result["incorrect"] == 0
 
-    def test_generate_markdown_report(self):
+    def test_def test_generate_markdown_report(self): -> None:
         """Test markdown report generation."""
         results = [
             {
@@ -250,7 +250,7 @@ class TestRunNodeEval:
         finally:
             output_path.unlink(missing_ok=True)
 
-    def test_generate_markdown_report_with_errors(self):
+    def test_def test_generate_markdown_report_with_errors(self): -> None:
         """Test markdown report generation with errors."""
         results = [
             {

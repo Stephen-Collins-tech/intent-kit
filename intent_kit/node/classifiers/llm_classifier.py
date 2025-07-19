@@ -5,10 +5,10 @@ This module provides LLM-powered classification functions that can be used
 with ClassifierNode and HandlerNode.
 """
 
-from typing import Any, Callable, Dict, List, Optional, Union
-from intent_kit.services.base_client import BaseLLMClient
-from intent_kit.services.llm_factory import LLMFactory
-from intent_kit.utils.logger import Logger
+
+
+
+
 from ..base import TreeNode
 
 logger = Logger(__name__)
@@ -155,13 +155,13 @@ def create_llm_arg_extractor(
             # Build the extraction prompt
             logger.debug(f"LLM arg extractor param_schema: {param_schema}")
             logger.debug(
-                f"LLM arg extractor param_schema types: {[(name, type(param_type)) for name, param_type in param_schema.items()]}"
-            )
+                f"LLM arg extractor param_schema types: {[(
+                    name, type(param_type)) for name, param_type in param_schema.items()]}"            )
 
             param_descriptions = "\n".join(
                 [
-                    f"- {param_name}: {param_type.__name__ if hasattr(param_type, '__name__') else str(param_type)}"
-                    for param_name, param_type in param_schema.items()
+                    f"- {param_name}: {param_type.__name__ if hasattr(
+                        param_type, '__name__') else str(param_type)}"                    for param_name, param_type in param_schema.items()
                 ]
             )
 

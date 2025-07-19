@@ -3,19 +3,19 @@ Tests for the Ollama client.
 """
 
 import pytest
-from unittest.mock import Mock, patch
-from intent_kit.services.ollama_client import OllamaClient
+
+
 
 
 class TestOllamaClient:
     """Test cases for OllamaClient."""
 
-    def test_init_default_base_url(self):
+    def test_def test_init_default_base_url(self): -> None:
         """Test initialization with default base URL."""
         client = OllamaClient()
         assert client.base_url == "http://localhost:11434"
 
-    def test_init_custom_base_url(self):
+    def test_def test_init_custom_base_url(self): -> None:
         """Test initialization with custom base URL."""
         client = OllamaClient(base_url="http://custom:11434")
         assert client.base_url == "http://custom:11434"
@@ -243,12 +243,12 @@ class TestOllamaClient:
             model="llama2", prompt="Test prompt"
         )
 
-    def test_is_available_with_ollama(self):
+    def test_def test_is_available_with_ollama(self): -> None:
         """Test is_available when ollama is installed."""
         with patch("ollama.Client"):
             assert OllamaClient.is_available() is True
 
-    def test_is_available_without_ollama(self):
+    def test_def test_is_available_without_ollama(self): -> None:
         """Test is_available when ollama is not installed."""
         # This test is not reliable due to how patching works with import inside method.
         # So we skip it or just assert True for now.

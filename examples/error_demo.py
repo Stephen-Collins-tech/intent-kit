@@ -6,8 +6,8 @@ This example shows how the new ExecutionError dataclass provides
 rich, structured error information instead of simple strings.
 """
 
-from intent_kit import action
-from intent_kit.node.classifiers import keyword_classifier
+
+
 
 
 def extract_args(user_input: str, context=None) -> dict:
@@ -37,7 +37,7 @@ def greet_action(name: str, age: int) -> str:
     return f"Hello {name}, you are {age} years old!"
 
 
-def main():
+def main() -> None:
     """Demonstrate structured error handling."""
     print("=== Intent Kit Structured Error Demo ===\n")
 
@@ -51,7 +51,7 @@ def main():
     )
 
     # Create a classifier node manually since we need a custom classifier
-    from intent_kit.node.classifiers import ClassifierNode
+
 
     root_node = ClassifierNode(
         name="Root",

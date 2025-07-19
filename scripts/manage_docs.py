@@ -8,12 +8,12 @@ It helps organize, create, update, and maintain documentation structure.
 
 import argparse
 import json
-from pathlib import Path
-from typing import Dict, Optional
+
+
 
 
 class DocManager:
-    def __init__(self, docs_dir: str = "docs"):
+    def __init__def __init__(self, docs_dir: str = "docs"): -> None:
         self.docs_dir = Path(docs_dir)
         self.structure_file = self.docs_dir / "structure.json"
         self.load_structure()
@@ -366,7 +366,7 @@ class DocManager:
             print("All files exist! ✅")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Manage intent-kit documentation")
     parser.add_argument(
         "command",

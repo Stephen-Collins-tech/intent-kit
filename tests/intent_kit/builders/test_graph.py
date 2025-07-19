@@ -3,16 +3,16 @@ Tests for graph builder module.
 """
 
 import pytest
-from unittest.mock import patch, MagicMock, mock_open
-from intent_kit.builders.graph import IntentGraphBuilder
-from intent_kit.node import TreeNode
-from intent_kit.graph import IntentGraph
+
+
+
+
 
 
 class TestIntentGraphBuilder:
     """Test cases for IntentGraphBuilder."""
 
-    def test_init(self):
+    def test_def test_init(self): -> None:
         """Test IntentGraphBuilder initialization."""
         builder = IntentGraphBuilder()
         assert builder._root_nodes == []
@@ -22,7 +22,7 @@ class TestIntentGraphBuilder:
         assert builder._json_graph is None
         assert builder._function_registry is None
 
-    def test_root(self):
+    def test_def test_root(self): -> None:
         """Test setting root node."""
         builder = IntentGraphBuilder()
         mock_node = MagicMock(spec=TreeNode)
@@ -32,7 +32,7 @@ class TestIntentGraphBuilder:
         assert result is builder
         assert builder._root_nodes == [mock_node]
 
-    def test_splitter(self):
+    def test_def test_splitter(self): -> None:
         """Test setting splitter function."""
         builder = IntentGraphBuilder()
         mock_splitter = MagicMock()
@@ -42,7 +42,7 @@ class TestIntentGraphBuilder:
         assert result is builder
         assert builder._splitter == mock_splitter
 
-    def test_with_json(self):
+    def test_def test_with_json(self): -> None:
         """Test setting JSON graph."""
         builder = IntentGraphBuilder()
         json_graph = {"root": "test", "intents": {}}
@@ -52,7 +52,7 @@ class TestIntentGraphBuilder:
         assert result is builder
         assert builder._json_graph == json_graph
 
-    def test_with_functions(self):
+    def test_def test_with_functions(self): -> None:
         """Test setting function registry."""
         builder = IntentGraphBuilder()
         function_registry = {"test_func": MagicMock()}
@@ -62,7 +62,7 @@ class TestIntentGraphBuilder:
         assert result is builder
         assert builder._function_registry == function_registry
 
-    def test_with_yaml_string(self):
+    def test_def test_with_yaml_string(self): -> None:
         """Test setting YAML from string path."""
         builder = IntentGraphBuilder()
         yaml_content = "root: test\nintents:\n  test: {type: action}"
@@ -74,7 +74,7 @@ class TestIntentGraphBuilder:
         assert result is builder
         assert builder._json_graph is not None
 
-    def test_with_yaml_dict(self):
+    def test_def test_with_yaml_dict(self): -> None:
         """Test setting YAML from dict."""
         builder = IntentGraphBuilder()
         yaml_dict = {"root": "test", "intents": {}}
@@ -84,7 +84,7 @@ class TestIntentGraphBuilder:
         assert result is builder
         assert builder._json_graph == yaml_dict
 
-    def test_with_yaml_import_error(self):
+    def test_def test_with_yaml_import_error(self): -> None:
         """Test with_yaml when PyYAML is not available."""
         builder = IntentGraphBuilder()
 
@@ -96,7 +96,7 @@ class TestIntentGraphBuilder:
                 with pytest.raises(ValueError, match="PyYAML is required"):
                     builder.with_yaml("test.yaml")
 
-    def test_with_yaml_file_error(self):
+    def test_def test_with_yaml_file_error(self): -> None:
         """Test with_yaml when file loading fails."""
         builder = IntentGraphBuilder()
 
@@ -104,14 +104,14 @@ class TestIntentGraphBuilder:
             with pytest.raises(ValueError, match="Failed to load YAML file"):
                 builder.with_yaml("nonexistent.yaml")
 
-    def test_validate_json_graph_no_graph(self):
+    def test_def test_validate_json_graph_no_graph(self): -> None:
         """Test validation when no JSON graph is set."""
         builder = IntentGraphBuilder()
 
         with pytest.raises(ValueError, match="No JSON graph set"):
             builder.validate_json_graph()
 
-    def test_validate_json_graph_missing_root(self):
+    def test_def test_validate_json_graph_missing_root(self): -> None:
         """Test validation with missing root field."""
         builder = IntentGraphBuilder()
         builder._json_graph = {"intents": {}}
@@ -121,7 +121,7 @@ class TestIntentGraphBuilder:
         assert result["valid"] is False
         assert "Missing 'root' field" in result["errors"]
 
-    def test_validate_json_graph_missing_intents(self):
+    def test_def test_validate_json_graph_missing_intents(self): -> None:
         """Test validation with missing intents field."""
         builder = IntentGraphBuilder()
         builder._json_graph = {"root": "test"}
@@ -131,7 +131,7 @@ class TestIntentGraphBuilder:
         assert result["valid"] is False
         assert "Missing 'intents' field" in result["errors"]
 
-    def test_validate_json_graph_root_not_found(self):
+    def test_def test_validate_json_graph_root_not_found(self): -> None:
         builder = IntentGraphBuilder()
         # Setup a graph missing the root node
         builder._json_graph = {
@@ -144,7 +144,7 @@ class TestIntentGraphBuilder:
         ):
             builder.validate_json_graph()
 
-    def test_validate_json_graph_missing_type(self):
+    def test_def test_validate_json_graph_missing_type(self): -> None:
         builder = IntentGraphBuilder()
         builder._json_graph = {"intents": {"test": {}}, "root": "test"}
         with pytest.raises(
@@ -153,7 +153,7 @@ class TestIntentGraphBuilder:
         ):
             builder.validate_json_graph()
 
-    def test_validate_json_graph_action_missing_function(self):
+    def test_def test_validate_json_graph_action_missing_function(self): -> None:
         builder = IntentGraphBuilder()
         builder._json_graph = {"intents": {"test": {"type": "action"}}, "root": "test"}
         with pytest.raises(
@@ -162,7 +162,7 @@ class TestIntentGraphBuilder:
         ):
             builder.validate_json_graph()
 
-    def test_validate_json_graph_llm_classifier_missing_config(self):
+    def test_def test_validate_json_graph_llm_classifier_missing_config(self): -> None:
         builder = IntentGraphBuilder()
         builder._json_graph = {
             "intents": {"test": {"type": "llm_classifier"}},
@@ -174,7 +174,7 @@ class TestIntentGraphBuilder:
         ):
             builder.validate_json_graph()
 
-    def test_validate_json_graph_classifier_missing_function(self):
+    def test_def test_validate_json_graph_classifier_missing_function(self): -> None:
         builder = IntentGraphBuilder()
         builder._json_graph = {
             "intents": {"test": {"type": "classifier"}},
@@ -186,7 +186,7 @@ class TestIntentGraphBuilder:
         ):
             builder.validate_json_graph()
 
-    def test_validate_json_graph_splitter_missing_function(self):
+    def test_def test_validate_json_graph_splitter_missing_function(self): -> None:
         builder = IntentGraphBuilder()
         builder._json_graph = {
             "intents": {"test": {"type": "splitter"}},
@@ -198,7 +198,7 @@ class TestIntentGraphBuilder:
         ):
             builder.validate_json_graph()
 
-    def test_validate_json_graph_valid(self):
+    def test_def test_validate_json_graph_valid(self): -> None:
         """Test validation with valid JSON graph."""
         builder = IntentGraphBuilder()
         builder._json_graph = {
@@ -219,7 +219,7 @@ class TestIntentGraphBuilder:
         assert result["node_count"] == 1
         assert len(result["errors"]) == 0
 
-    def test_build_with_root_nodes(self):
+    def test_def test_build_with_root_nodes(self): -> None:
         """Test building graph with root nodes."""
         builder = IntentGraphBuilder()
         mock_node = MagicMock(spec=TreeNode)
@@ -230,7 +230,7 @@ class TestIntentGraphBuilder:
         assert isinstance(result, IntentGraph)
         assert result.root_nodes == [mock_node]
 
-    def test_build_with_json(self):
+    def test_def test_build_with_json(self): -> None:
         """Test building graph from JSON specification."""
         builder = IntentGraphBuilder()
         builder._json_graph = {
@@ -250,7 +250,7 @@ class TestIntentGraphBuilder:
 
         assert isinstance(result, IntentGraph)
 
-    def test_build_with_json_no_functions(self):
+    def test_def test_build_with_json_no_functions(self): -> None:
         """Test building graph from JSON without function registry."""
         builder = IntentGraphBuilder()
         builder._json_graph = {
@@ -270,7 +270,7 @@ class TestIntentGraphBuilder:
         ):
             builder.build()
 
-    def test_debug_context(self):
+    def test_def test_debug_context(self): -> None:
         """Test enabling debug context."""
         builder = IntentGraphBuilder()
 
@@ -279,7 +279,7 @@ class TestIntentGraphBuilder:
         assert result is builder
         assert builder._debug_context_enabled is True
 
-    def test_context_trace(self):
+    def test_def test_context_trace(self): -> None:
         """Test enabling context trace."""
         builder = IntentGraphBuilder()
 
@@ -288,7 +288,7 @@ class TestIntentGraphBuilder:
         assert result is builder
         assert builder._context_trace_enabled is True
 
-    def test_detect_cycles(self):
+    def test_def test_detect_cycles(self): -> None:
         """Test cycle detection in graph."""
         builder = IntentGraphBuilder()
         intents = {
@@ -302,7 +302,7 @@ class TestIntentGraphBuilder:
         assert len(cycles) > 0
         assert any("A" in cycle and "B" in cycle and "C" in cycle for cycle in cycles)
 
-    def test_find_unreachable_nodes(self):
+    def test_def test_find_unreachable_nodes(self): -> None:
         """Test finding unreachable nodes."""
         builder = IntentGraphBuilder()
         intents = {

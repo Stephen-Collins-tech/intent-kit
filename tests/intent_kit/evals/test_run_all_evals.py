@@ -4,8 +4,8 @@ Tests for run_all_evals module.
 
 import tempfile
 import pathlib
-from unittest.mock import patch, MagicMock, mock_open
-from intent_kit.evals.run_all_evals import (
+
+
     run_all_evaluations,
     run_all_evaluations_internal,
     generate_comprehensive_report,
@@ -161,7 +161,7 @@ class TestRunAllEvals:
         assert len(results) == 0
         assert mock_env["INTENT_KIT_MOCK_MODE"] == "1"
 
-    def test_generate_comprehensive_report(self):
+    def test_def test_generate_comprehensive_report(self): -> None:
         """Test generate_comprehensive_report function."""
         results = [
             {
@@ -209,7 +209,7 @@ class TestRunAllEvals:
         finally:
             pathlib.Path(output_file).unlink(missing_ok=True)
 
-    def test_generate_comprehensive_report_mock_mode(self):
+    def test_def test_generate_comprehensive_report_mock_mode(self): -> None:
         """Test generate_comprehensive_report in mock mode."""
         results = [
             {
@@ -242,7 +242,7 @@ class TestRunAllEvals:
         finally:
             pathlib.Path(output_file).unlink(missing_ok=True)
 
-    def test_generate_comprehensive_report_no_results(self):
+    def test_def test_generate_comprehensive_report_no_results(self): -> None:
         """Test generate_comprehensive_report with no results."""
         results = []
 

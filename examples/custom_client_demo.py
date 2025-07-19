@@ -7,16 +7,16 @@ and use it in an intent graph for both classification and parameter extraction.
 """
 import re
 import os
-from typing import Optional
-from intent_kit import IntentGraphBuilder, action, llm_classifier
-from intent_kit.services.base_client import BaseLLMClient
-from intent_kit.utils.logger import Logger
+
+
+
+
 
 logger = Logger(__name__)
 
 # Safe import of openai
 try:
-    from openai import OpenAI
+
 
     OPENAI_AVAILABLE = True
 except ImportError:
@@ -29,7 +29,7 @@ except ImportError:
 class ExampleLLMClient(BaseLLMClient):
     """Custom LLM client that uses OpenAI API for real LLM responses."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4.1-nano"):
+    def __init__def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4.1-nano"): -> None:
         if not OPENAI_AVAILABLE:
             raise ImportError(
                 "OpenAI package not available. Please install it with: pip install openai"
@@ -135,8 +135,8 @@ class ExampleLLMClient(BaseLLMClient):
             if param_name == "name":
                 # Extract name from common patterns
                 name_match = re.search(
-                    r"(?:my name is|i'm|i am|call me|hello,? i'm|hi,? i'm)\s+([a-zA-Z]+)",
-                    user_input.lower(),
+                    r"(
+                        ?:my name is|i'm|i am|call me|hello,? i'm|hi,? i'm)\s+([a-zA-Z]+)",                    user_input.lower(),
                 )
                 if name_match:
                     extracted_params.append(f"name: {name_match.group(1).title()}")
@@ -182,7 +182,7 @@ def calc_action(a: float, b: float, **_) -> str:
     return f"Sum: {a + b}"
 
 
-def main():
+def main() -> None:
     """Main function with proper error handling."""
     if not OPENAI_AVAILABLE:
         print("❌ OpenAI package not available.")
@@ -227,8 +227,8 @@ def main():
             "Available Intents (names):\n{node_descriptions}\n\n"
             "Instructions:\n"
             "- Analyze the user input carefully\n"
-            "- Select the intent name (not a number) that best matches the user's request\n"
-            "- For 'greet' intent: Choose this for greetings, introductions, name sharing, or any social interaction\n"
+            "- Select the intent name (
+                not a number) that best matches the user's request\n"            "- For 'greet' intent: Choose this for greetings, introductions, name sharing, or any social interaction\n"
             "- For 'calc' intent: Choose this for mathematical operations, calculations, adding numbers\n"
             "- Return only the name of the intent (e.g., greet, calc)\n"
             "- If no intent matches, return 'none'\n\n"

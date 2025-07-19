@@ -5,11 +5,11 @@ This module provides the SplitterNode class which is a node that splits
 user input into multiple intent chunks.
 """
 
-from typing import List, Optional
+
 from ..base import TreeNode
 from ..enums import NodeType
 from ..types import ExecutionResult, ExecutionError
-from intent_kit.context import IntentContext
+
 
 
 class SplitterNode(TreeNode):
@@ -59,8 +59,8 @@ class SplitterNode(TreeNode):
                     children_results=[],
                 )
             self.logger.debug(
-                f"Splitter '{self.name}' found {len(intent_chunks)} chunks: {intent_chunks}"
-            )
+                f"Splitter '{self.name}' found {len(
+                    intent_chunks)} chunks: {intent_chunks}"            )
             children_results = []
             all_outputs = []
             for chunk in intent_chunks:

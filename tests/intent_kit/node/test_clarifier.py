@@ -2,16 +2,16 @@
 Tests for the ClarifierNode class.
 """
 
-from intent_kit.node.actions import ClarifierNode
-from intent_kit.node.enums import NodeType
-from intent_kit.node.types import ExecutionResult, ExecutionError
-from intent_kit.context import IntentContext
+
+
+
+
 
 
 class TestClarifierNode:
     """Test cases for ClarifierNode."""
 
-    def test_clarifier_node_creation(self):
+    def test_def test_clarifier_node_creation(self): -> None:
         """Test that ClarifierNode can be created with basic parameters."""
         node = ClarifierNode(
             name="test_clarifier",
@@ -25,7 +25,7 @@ class TestClarifierNode:
         assert node.expected_response_format is None
         assert node.max_clarification_attempts == 3
 
-    def test_clarifier_node_with_optional_params(self):
+    def test_def test_clarifier_node_with_optional_params(self): -> None:
         """Test that ClarifierNode can be created with all optional parameters."""
         node = ClarifierNode(
             name="test_clarifier",
@@ -41,13 +41,13 @@ class TestClarifierNode:
         assert node.max_clarification_attempts == 5
         assert node.description == "Test clarifier with all params"
 
-    def test_clarifier_node_type(self):
+    def test_def test_clarifier_node_type(self): -> None:
         """Test that ClarifierNode returns the correct node type."""
         node = ClarifierNode(name="test_clarifier", clarification_prompt="Test prompt")
 
         assert node.node_type == NodeType.CLARIFY
 
-    def test_clarifier_node_execute_basic(self):
+    def test_def test_clarifier_node_execute_basic(self): -> None:
         """Test basic execution of ClarifierNode."""
         node = ClarifierNode(
             name="test_clarifier",
@@ -70,7 +70,7 @@ class TestClarifierNode:
         assert result.error is not None
         assert result.error.error_type == "ClarificationNeeded"
 
-    def test_clarifier_node_execute_with_context(self):
+    def test_def test_clarifier_node_execute_with_context(self): -> None:
         """Test ClarifierNode execution with context."""
         node = ClarifierNode(
             name="test_clarifier", clarification_prompt="Please clarify: {input}"
@@ -89,7 +89,7 @@ class TestClarifierNode:
         assert clarification_context["attempts"] == 0
         assert clarification_context["max_attempts"] == 3
 
-    def test_clarifier_node_with_expected_format(self):
+    def test_def test_clarifier_node_with_expected_format(self): -> None:
         """Test ClarifierNode with expected response format."""
         node = ClarifierNode(
             name="test_clarifier",
@@ -104,7 +104,7 @@ class TestClarifierNode:
             "Please provide your response in the following format: Please specify: [type] [date] [time]"
         )
 
-    def test_clarifier_node_with_placeholder_replacement(self):
+    def test_def test_clarifier_node_with_placeholder_replacement(self): -> None:
         """Test that placeholders in clarification prompt are replaced."""
         node = ClarifierNode(
             name="test_clarifier",
@@ -118,7 +118,7 @@ class TestClarifierNode:
         )
         assert result.output["clarification_message"] == expected_message
 
-    def test_clarifier_node_without_placeholder(self):
+    def test_def test_clarifier_node_without_placeholder(self): -> None:
         """Test ClarifierNode with prompt that doesn't contain placeholder."""
         node = ClarifierNode(
             name="test_clarifier",
@@ -131,7 +131,7 @@ class TestClarifierNode:
             result.output["clarification_message"] == "Please provide more information."
         )
 
-    def test_clarifier_node_handle_clarification_response_success(self):
+    def test_def test_clarifier_node_handle_clarification_response_success(self): -> None:
         """Test handling clarification response successfully."""
         node = ClarifierNode(
             name="test_clarifier", clarification_prompt="Please clarify"
@@ -150,7 +150,7 @@ class TestClarifierNode:
         assert response["original_input"] == "book"
         assert response["attempts"] == 1
 
-    def test_clarifier_node_handle_clarification_response_max_attempts(self):
+    def test_def test_clarifier_node_handle_clarification_response_max_attempts(self): -> None:
         """Test handling clarification response when max attempts exceeded."""
         node = ClarifierNode(
             name="test_clarifier",
@@ -174,7 +174,7 @@ class TestClarifierNode:
         assert response["error"] == "Maximum clarification attempts exceeded"
         assert response["attempts"] == 3
 
-    def test_clarifier_node_handle_clarification_response_no_context(self):
+    def test_def test_clarifier_node_handle_clarification_response_no_context(self): -> None:
         """Test handling clarification response without context."""
         node = ClarifierNode(
             name="test_clarifier", clarification_prompt="Please clarify"
@@ -186,7 +186,7 @@ class TestClarifierNode:
         assert response["clarified_input"] == "clarified input"
         assert response["attempts"] == 1
 
-    def test_clarifier_node_path_and_uuid(self):
+    def test_def test_clarifier_node_path_and_uuid(self): -> None:
         """Test that ClarifierNode has proper path and UUID functionality."""
         parent = ClarifierNode(name="parent", clarification_prompt="Parent prompt")
 
@@ -199,14 +199,14 @@ class TestClarifierNode:
         assert len(child.get_uuid_path()) == 2
         assert child.has_name is True
 
-    def test_clarifier_node_children_handling(self):
+    def test_def test_clarifier_node_children_handling(self): -> None:
         """Test that ClarifierNode properly handles children (should be empty)."""
         node = ClarifierNode(name="test_clarifier", clarification_prompt="Test prompt")
 
         # Clarifier nodes should be leaf nodes with no children
         assert len(node.children) == 0
 
-    def test_clarifier_node_execution_result_structure(self):
+    def test_def test_clarifier_node_execution_result_structure(self): -> None:
         """Test that ClarifierNode execution returns properly structured result."""
         node = ClarifierNode(
             name="test_clarifier", clarification_prompt="Please clarify: {input}"
@@ -235,7 +235,7 @@ class TestClarifierNode:
         assert isinstance(result.children_results, list)
         assert len(result.children_results) == 0
 
-    def test_clarifier_node_error_structure(self):
+    def test_def test_clarifier_node_error_structure(self): -> None:
         """Test that ClarifierNode error has proper structure."""
         node = ClarifierNode(
             name="test_clarifier", clarification_prompt="Please clarify"

@@ -6,17 +6,17 @@ Run evaluations on all datasets and generate comprehensive markdown reports.
 """
 
 import argparse
-from intent_kit.evals import load_dataset
-from intent_kit.evals.run_node_eval import (
+
+
     get_node_from_module,
     evaluate_node,
     generate_markdown_report,
 )
-from intent_kit.services.yaml_service import yaml_service
-from typing import Dict, List, Any, Optional
+
+
 from datetime import datetime
 import pathlib
-from dotenv import load_dotenv
+
 
 load_dotenv()
 
@@ -180,8 +180,8 @@ def run_all_evaluations_internal(
         accuracy = result["accuracy"]
         mode_indicator = "[MOCK]" if mock_mode else ""
         print(
-            f"  Accuracy: {accuracy:.1%} ({result['correct']}/{result['total_cases']}) {mode_indicator}"
-        )
+            f"  Accuracy: {accuracy:.1%} (
+                {result['correct']}/{result['total_cases']}) {mode_indicator}"        )
 
     return results
 
@@ -243,8 +243,8 @@ def generate_comprehensive_report(
 
     for result in results:
         report += f"### {result['dataset']}\n\n"
-        report += f"**Accuracy:** {result['accuracy']:.1%} ({result['correct']}/{result['total_cases']})  \n"
-        report += (
+        report += f"**Accuracy:** {result['accuracy']:.1%} (
+            {result['correct']}/{result['total_cases']})  \n"        report += (
             f"**Status:** {'PASSED' if result['accuracy'] >= 0.8 else 'FAILED'}\n\n"
         )
 

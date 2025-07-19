@@ -5,14 +5,14 @@ This module provides functionality to create IntentGraph instances from JSON def
 and function registries, enabling portable intent graph configurations.
 """
 
-from typing import Dict, List, Optional, Callable
-from intent_kit.utils.logger import Logger
+
+
 
 
 class FunctionRegistry:
     """Registry for mapping function names to callable functions."""
 
-    def __init__(self, functions: Optional[Dict[str, Callable]] = None):
+    def __init__def __init__(self, functions: Optional[Dict[str, Callable]] = None): -> None:
         """
         Initialize the function registry.
 

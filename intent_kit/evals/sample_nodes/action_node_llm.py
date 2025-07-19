@@ -1,13 +1,13 @@
-from typing import Optional, Dict, Any
-from intent_kit.node.actions.action import ActionNode
-from intent_kit.context import IntentContext
+
+
+
 
 
 def extract_booking_args_llm(
     user_input: str, context: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """Extract booking parameters using LLM."""
-    from intent_kit.services.llm_factory import LLMFactory
+
 
     # Check for mock mode
     import os
@@ -63,8 +63,8 @@ Rules:
 - If the user says "travel to X", extract X as destination
 - If the user says "fly to X", extract X as destination
 - If the user says "go to X", extract X as destination
-- For dates, extract the exact date mentioned (e.g., "next Friday", "December 15th", "tomorrow")
-- If no date is mentioned, use "ASAP"
+- For dates, extract the exact date mentioned (
+    e.g., "next Friday", "December 15th", "tomorrow")- If no date is mentioned, use "ASAP"
 - Clean up any extra words like "for" or "to" from the date field
 
 Examples:

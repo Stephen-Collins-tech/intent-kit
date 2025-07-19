@@ -3,10 +3,10 @@
 Simple test script to verify the validation functionality.
 """
 
-from intent_kit import action, rule_splitter_node
-from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.graph import IntentGraph
-from intent_kit.graph.validation import GraphValidationError
+
+
+
+
 
 
 def test_valid_graph():
@@ -78,7 +78,7 @@ def test_invalid_graph():
         print(f"  Child type: {e.child_type}")
 
 
-def main():
+def main() -> None:
     print("Validation System Test")
     print("=" * 40)
 

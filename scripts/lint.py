@@ -4,7 +4,7 @@ import sys
 import subprocess
 
 
-def main():
+def main() -> None:
     """Run ruff check with the current directory."""
     try:
         cmd = [sys.executable, "-m", "ruff", "check", "."] + sys.argv[1:]

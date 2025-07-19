@@ -4,7 +4,7 @@ import os
 class ColorManager:
     """Handles all color-related logic for terminal output."""
 
-    def __init__(self):
+    def __init__def __init__(self): -> None:
         pass
 
     def get_color(self, level):
@@ -206,7 +206,7 @@ class Logger:
         "off",  # No logging
     ]
 
-    def __init__(self, name, level=""):
+    def __init__def __init__(self, name, level=""): -> None:
         self.name = name
         self.level = level or os.getenv("LOG_LEVEL", "info")
         self._validate_log_level()
@@ -234,8 +234,8 @@ class Logger:
         try:
             current_index = self.VALID_LOG_LEVELS.index(self.level)
             message_index = self.VALID_LOG_LEVELS.index(message_level)
-            # Log if message level is at or above current level (lower index = more verbose)
-            return message_index >= current_index
+            # Log if message level is at or above current level (
+                lower index = more verbose)            return message_index >= current_index
         except ValueError:
             # If message_level is not in VALID_LOG_LEVELS, don't log it
             return False

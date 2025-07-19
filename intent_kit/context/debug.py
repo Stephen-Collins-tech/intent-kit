@@ -6,13 +6,13 @@ through intent graphs. It includes functions for analyzing context dependencies,
 generating debug output, and visualizing context flow.
 """
 
-from typing import Dict, Any, Optional, List, cast
+
 from datetime import datetime
 import json
 from . import IntentContext
 from .dependencies import ContextDependencies, analyze_action_dependencies
-from intent_kit.node import TreeNode
-from intent_kit.utils.logger import Logger
+
+
 from . import ContextHistoryEntry
 
 logger = Logger(__name__)
@@ -193,8 +193,8 @@ def _analyze_node_dependencies(node: TreeNode) -> Optional[ContextDependencies]:
             return ContextDependencies(
                 inputs=set(),
                 outputs=set(),
-                description=f"Classifier {node.name} (no context dependencies detected)",
-            )
+                description=f"Classifier {node.name} (
+                    no context dependencies detected)",            )
 
     return None
 

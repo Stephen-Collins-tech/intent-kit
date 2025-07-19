@@ -6,9 +6,9 @@ using both rule-based and LLM-based approaches.
 """
 
 import re
-from typing import Any, Callable, Dict, Optional, Type, Union
-from intent_kit.services.base_client import BaseLLMClient
-from intent_kit.utils.logger import Logger
+
+
+
 
 logger = Logger(__name__)
 
@@ -118,9 +118,9 @@ def _extract_location_parameter(input_lower: str) -> Dict[str, str]:
 def _extract_calculation_parameters(input_lower: str) -> Dict[str, Any]:
     """Extract calculation parameters from input text."""
     calc_patterns = [
-        r"(\d+(?:\.\d+)?)\s+(plus|add|minus|subtract|times|multiply|divided|divide)\s+(\d+(?:\.\d+)?)",
-        r"what's\s+(\d+(?:\.\d+)?)\s+(plus|add|minus|subtract|times|multiply|divided|divide)\s+(\d+(?:\.\d+)?)",
-    ]
+        r"(
+            \d+(?:\.\d+)?)\s+(plus|add|minus|subtract|times|multiply|divided|divide)\s+(\d+(?:\.\d+)?)",        r"what's\s+(
+            \d+(?:\.\d+)?)\s+(plus|add|minus|subtract|times|multiply|divided|divide)\s+(\d+(?:\.\d+)?)",    ]
 
     for pattern in calc_patterns:
         match = re.search(pattern, input_lower)
@@ -154,7 +154,7 @@ def create_arg_extractor(
     if llm_config and param_schema:
         # Use LLM-based extraction
         logger.debug(f"Creating LLM-based extractor for node '{node_name}'")
-        from intent_kit.node.classifiers import (
+
             create_llm_arg_extractor,
             get_default_extraction_prompt,
         )

@@ -3,20 +3,20 @@ Tests for intent_kit.services.llm_factory module.
 """
 
 import pytest
-from unittest.mock import Mock, patch
 
-from intent_kit.services.llm_factory import LLMFactory
-from intent_kit.services.openai_client import OpenAIClient
-from intent_kit.services.anthropic_client import AnthropicClient
-from intent_kit.services.google_client import GoogleClient
-from intent_kit.services.openrouter_client import OpenRouterClient
-from intent_kit.services.ollama_client import OllamaClient
+
+
+
+
+
+
+
 
 
 class TestLLMFactory:
     """Test the LLMFactory class."""
 
-    def test_create_client_openai(self):
+    def test_def test_create_client_openai(self): -> None:
         """Test creating OpenAI client."""
         llm_config = {"provider": "openai", "api_key": "test-api-key"}
 
@@ -24,7 +24,7 @@ class TestLLMFactory:
 
         assert isinstance(client, OpenAIClient)
 
-    def test_create_client_anthropic(self):
+    def test_def test_create_client_anthropic(self): -> None:
         """Test creating Anthropic client."""
         llm_config = {"provider": "anthropic", "api_key": "test-api-key"}
 
@@ -32,7 +32,7 @@ class TestLLMFactory:
 
         assert isinstance(client, AnthropicClient)
 
-    def test_create_client_google(self):
+    def test_def test_create_client_google(self): -> None:
         """Test creating Google client."""
         llm_config = {"provider": "google", "api_key": "test-api-key"}
 
@@ -40,7 +40,7 @@ class TestLLMFactory:
 
         assert isinstance(client, GoogleClient)
 
-    def test_create_client_openrouter(self):
+    def test_def test_create_client_openrouter(self): -> None:
         """Test creating OpenRouter client."""
         llm_config = {"provider": "openrouter", "api_key": "test-api-key"}
 
@@ -48,7 +48,7 @@ class TestLLMFactory:
 
         assert isinstance(client, OpenRouterClient)
 
-    def test_create_client_ollama(self):
+    def test_def test_create_client_ollama(self): -> None:
         """Test creating Ollama client."""
         llm_config = {"provider": "ollama"}
 
@@ -56,7 +56,7 @@ class TestLLMFactory:
 
         assert isinstance(client, OllamaClient)
 
-    def test_create_client_ollama_with_base_url(self):
+    def test_def test_create_client_ollama_with_base_url(self): -> None:
         """Test creating Ollama client with custom base URL."""
         llm_config = {"provider": "ollama", "base_url": "http://custom-ollama:11434"}
 
@@ -64,7 +64,7 @@ class TestLLMFactory:
 
         assert isinstance(client, OllamaClient)
 
-    def test_create_client_case_insensitive_provider(self):
+    def test_def test_create_client_case_insensitive_provider(self): -> None:
         """Test that provider names are case insensitive."""
         llm_config = {"provider": "OPENAI", "api_key": "test-api-key"}
 
@@ -72,24 +72,24 @@ class TestLLMFactory:
 
         assert isinstance(client, OpenAIClient)
 
-    def test_create_client_empty_config(self):
+    def test_def test_create_client_empty_config(self): -> None:
         """Test creating client with empty config raises error."""
         with pytest.raises(ValueError, match="LLM config cannot be empty"):
             LLMFactory.create_client({})
 
-    def test_create_client_none_config(self):
+    def test_def test_create_client_none_config(self): -> None:
         """Test creating client with None config raises error."""
         with pytest.raises(ValueError, match="LLM config cannot be empty"):
             LLMFactory.create_client(None)
 
-    def test_create_client_missing_provider(self):
+    def test_def test_create_client_missing_provider(self): -> None:
         """Test creating client without provider raises error."""
         llm_config = {"api_key": "test-api-key"}
 
         with pytest.raises(ValueError, match="LLM config must include 'provider'"):
             LLMFactory.create_client(llm_config)
 
-    def test_create_client_missing_api_key_for_openai(self):
+    def test_def test_create_client_missing_api_key_for_openai(self): -> None:
         """Test creating OpenAI client without API key raises error."""
         llm_config = {"provider": "openai"}
 
@@ -98,7 +98,7 @@ class TestLLMFactory:
         ):
             LLMFactory.create_client(llm_config)
 
-    def test_create_client_missing_api_key_for_anthropic(self):
+    def test_def test_create_client_missing_api_key_for_anthropic(self): -> None:
         """Test creating Anthropic client without API key raises error."""
         llm_config = {"provider": "anthropic"}
 
@@ -108,7 +108,7 @@ class TestLLMFactory:
         ):
             LLMFactory.create_client(llm_config)
 
-    def test_create_client_missing_api_key_for_google(self):
+    def test_def test_create_client_missing_api_key_for_google(self): -> None:
         """Test creating Google client without API key raises error."""
         llm_config = {"provider": "google"}
 
@@ -117,7 +117,7 @@ class TestLLMFactory:
         ):
             LLMFactory.create_client(llm_config)
 
-    def test_create_client_missing_api_key_for_openrouter(self):
+    def test_def test_create_client_missing_api_key_for_openrouter(self): -> None:
         """Test creating OpenRouter client without API key raises error."""
         llm_config = {"provider": "openrouter"}
 
@@ -127,7 +127,7 @@ class TestLLMFactory:
         ):
             LLMFactory.create_client(llm_config)
 
-    def test_create_client_unsupported_provider(self):
+    def test_def test_create_client_unsupported_provider(self): -> None:
         """Test creating client with unsupported provider raises error."""
         llm_config = {"provider": "unsupported", "api_key": "test-api-key"}
 
@@ -260,7 +260,7 @@ class TestLLMFactory:
 class TestLLMFactoryIntegration:
     """Integration tests for LLMFactory."""
 
-    def test_create_client_all_providers(self):
+    def test_def test_create_client_all_providers(self): -> None:
         """Test creating clients for all supported providers."""
         providers = [
             ("openai", OpenAIClient),
@@ -279,7 +279,7 @@ class TestLLMFactoryIntegration:
             client = LLMFactory.create_client(llm_config)
             assert isinstance(client, expected_class)
 
-    def test_generate_with_config_all_providers(self):
+    def test_def test_generate_with_config_all_providers(self): -> None:
         """Test generating text with all supported providers."""
         providers = ["openai", "anthropic", "google", "openrouter", "ollama"]
 
@@ -297,7 +297,7 @@ class TestLLMFactoryIntegration:
                 # Expected for test environment without real API keys
                 pass
 
-    def test_config_validation_edge_cases(self):
+    def test_def test_config_validation_edge_cases(self): -> None:
         """Test config validation with edge cases."""
         # Test with None values
         with pytest.raises(ValueError):
@@ -315,7 +315,7 @@ class TestLLMFactoryIntegration:
         with pytest.raises(ValueError):
             LLMFactory.create_client({"provider": "unsupported", "api_key": "test"})
 
-    def test_ollama_special_handling(self):
+    def test_def test_ollama_special_handling(self): -> None:
         """Test that Ollama is handled specially (no API key required)."""
         # Should work without API key
         client = LLMFactory.create_client({"provider": "ollama"})

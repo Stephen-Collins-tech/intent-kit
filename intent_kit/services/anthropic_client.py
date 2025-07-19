@@ -1,9 +1,9 @@
 # Anthropic Claude client wrapper for intent-kit
 # Requires: pip install anthropic
 
-from intent_kit.utils.logger import Logger
-from intent_kit.services.base_client import BaseLLMClient
-from typing import Optional
+
+
+
 
 # Dummy assignment for testing
 anthropic = None
@@ -12,7 +12,7 @@ logger = Logger("anthropic_service")
 
 
 class AnthropicClient(BaseLLMClient):
-    def __init__(self, api_key: str):
+    def __init__def __init__(self, api_key: str): -> None:
         if not api_key:
             raise TypeError("API key is required")
         self.api_key = api_key

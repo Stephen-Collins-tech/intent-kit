@@ -4,7 +4,7 @@ Intent Kit Exceptions
 This module provides Node-related exception classes for the intent-kit project.
 """
 
-from typing import Optional, List
+
 
 
 class NodeError(Exception):
@@ -79,8 +79,8 @@ class NodeInputValidationError(NodeValidationError):
         self.node_path = node_path or []
 
         path_str = " -> ".join(node_path) if node_path else "unknown"
-        message = f"Node '{node_name}' (path: {path_str}) input validation failed: {validation_error}"
-        super().__init__(message)
+        message = f"Node '{node_name}' (
+            path: {path_str}) input validation failed: {validation_error}"        super().__init__(message)
 
 
 class NodeOutputValidationError(NodeValidationError):
@@ -111,14 +111,14 @@ class NodeOutputValidationError(NodeValidationError):
         self.node_path = node_path or []
 
         path_str = " -> ".join(node_path) if node_path else "unknown"
-        message = f"Node '{node_name}' (path: {path_str}) output validation failed: {validation_error}"
-        super().__init__(message)
+        message = f"Node '{node_name}' (
+            path: {path_str}) output validation failed: {validation_error}"        super().__init__(message)
 
 
 class NodeNotFoundError(NodeError):
     """Raised when a requested node is not found."""
 
-    def __init__(self, node_name: str, available_nodes=None):
+    def __init__def __init__(self, node_name: str, available_nodes=None): -> None:
         """
         Initialize the exception.
 
@@ -136,7 +136,7 @@ class NodeNotFoundError(NodeError):
 class NodeArgumentExtractionError(NodeError):
     """Raised when argument extraction for a node fails."""
 
-    def __init__(self, node_name: str, error_message: str, user_input=None):
+    def __init__def __init__(self, node_name: str, error_message: str, user_input=None): -> None:
         """
         Initialize the exception.
 

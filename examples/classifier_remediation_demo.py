@@ -12,14 +12,14 @@ Usage:
 """
 
 import os
-from dotenv import load_dotenv
-from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult
-from intent_kit import action
-from intent_kit.node.actions import (
+
+
+
+
+
     register_remediation_strategy,
 )
-from typing import Optional, Callable, List
+
 
 # --- Setup LLM config ---
 load_dotenv()
@@ -88,11 +88,11 @@ def help_action(context: IntentContext) -> str:
 
 def create_custom_classifier_fallback():
     """Create a custom classifier fallback strategy."""
-    from intent_kit.node.actions import RemediationStrategy
-    from intent_kit.node.types import ExecutionResult, ExecutionError
+
+
 
     class CustomClassifierFallbackStrategy(RemediationStrategy):
-        def __init__(self):
+        def __init__def __init__(self): -> None:
             super().__init__(
                 "custom_classifier_fallback", "Custom classifier fallback strategy"
             )
@@ -209,7 +209,7 @@ def create_intent_graph():
     ]
 
     # Create classifier with a failing classifier to force remediation
-    from intent_kit.node.classifiers import ClassifierNode
+
 
     # Use a failing classifier instead of LLM classifier to demonstrate remediation
     failing_classifier = create_failing_classifier()
@@ -225,7 +225,7 @@ def create_intent_graph():
     return classifier
 
 
-def main():
+def main() -> None:
     context = IntentContext()
     print("=== Classifier Remediation Demo ===\n")
 

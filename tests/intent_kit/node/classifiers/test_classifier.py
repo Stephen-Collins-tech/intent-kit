@@ -2,18 +2,18 @@
 Tests for classifier node module.
 """
 
-from unittest.mock import patch, MagicMock
-from intent_kit.node.classifiers.classifier import ClassifierNode
-from intent_kit.node.enums import NodeType
-from intent_kit.node.types import ExecutionResult
-from intent_kit.context import IntentContext
-from intent_kit.node.actions.remediation import RemediationStrategy
+
+
+
+
+
+
 
 
 class TestClassifierNode:
     """Test cases for ClassifierNode."""
 
-    def test_init(self):
+    def test_def test_init(self): -> None:
         """Test ClassifierNode initialization."""
         mock_classifier = MagicMock()
         mock_children = [MagicMock(), MagicMock()]
@@ -31,7 +31,7 @@ class TestClassifierNode:
         assert node.description == "Test classifier"
         assert node.remediation_strategies == []
 
-    def test_init_with_remediation_strategies(self):
+    def test_def test_init_with_remediation_strategies(self): -> None:
         """Test ClassifierNode initialization with remediation strategies."""
         mock_classifier = MagicMock()
         mock_children = [MagicMock()]
@@ -46,7 +46,7 @@ class TestClassifierNode:
 
         assert node.remediation_strategies == remediation_strategies
 
-    def test_node_type(self):
+    def test_def test_node_type(self): -> None:
         """Test node_type property."""
         mock_classifier = MagicMock()
         mock_children = [MagicMock()]
@@ -57,7 +57,7 @@ class TestClassifierNode:
 
         assert node.node_type == NodeType.CLASSIFIER
 
-    def test_execute_success(self):
+    def test_def test_execute_success(self): -> None:
         """Test successful execution with classifier routing."""
         mock_classifier = MagicMock()
         mock_child = MagicMock()
@@ -88,7 +88,7 @@ class TestClassifierNode:
         assert "test_child" in result.params["available_children"]
         assert len(result.children_results) == 1
 
-    def test_execute_no_routing(self):
+    def test_def test_execute_no_routing(self): -> None:
         """Test execution when classifier cannot route input."""
         mock_classifier = MagicMock()
         mock_classifier.return_value = None  # No routing possible
@@ -107,7 +107,7 @@ class TestClassifierNode:
         assert result.error.error_type == "ClassifierRoutingError"
         assert "could not route input" in result.error.message
 
-    def test_execute_with_remediation_success(self):
+    def test_def test_execute_with_remediation_success(self): -> None:
         """Test execution with successful remediation."""
         mock_classifier = MagicMock()
         mock_classifier.return_value = None  # No routing possible
@@ -142,7 +142,7 @@ class TestClassifierNode:
         assert result.output == "remediated output"
         mock_strategy.execute.assert_called_once()
 
-    def test_execute_with_remediation_failure(self):
+    def test_def test_execute_with_remediation_failure(self): -> None:
         """Test execution with failed remediation."""
         mock_classifier = MagicMock()
         mock_classifier.return_value = None  # No routing possible
@@ -167,7 +167,7 @@ class TestClassifierNode:
         assert result.error is not None
         assert result.error.error_type == "ClassifierRoutingError"
 
-    def test_execute_with_string_remediation_strategy(self):
+    def test_def test_execute_with_string_remediation_strategy(self): -> None:
         """Test execution with string-based remediation strategy."""
         mock_classifier = MagicMock()
         mock_classifier.return_value = None
@@ -207,7 +207,7 @@ class TestClassifierNode:
             assert result.output == "registry output"
             mock_get.assert_called_once_with("registry_strategy")
 
-    def test_execute_with_invalid_remediation_strategy(self):
+    def test_def test_execute_with_invalid_remediation_strategy(self): -> None:
         """Test execution with invalid remediation strategy type."""
         mock_classifier = MagicMock()
         mock_classifier.return_value = None
@@ -229,7 +229,7 @@ class TestClassifierNode:
         assert result.success is False
         assert result.error is not None
 
-    def test_execute_with_missing_registry_strategy(self):
+    def test_def test_execute_with_missing_registry_strategy(self): -> None:
         """Test execution with missing registry strategy."""
         mock_classifier = MagicMock()
         mock_classifier.return_value = None
@@ -253,7 +253,7 @@ class TestClassifierNode:
             assert result.success is False
             assert result.error is not None
 
-    def test_execute_with_remediation_exception(self):
+    def test_def test_execute_with_remediation_exception(self): -> None:
         """Test execution with remediation strategy exception."""
         mock_classifier = MagicMock()
         mock_classifier.return_value = None
@@ -277,7 +277,7 @@ class TestClassifierNode:
         assert result.success is False
         assert result.error is not None
 
-    def test_execute_with_context_dict(self):
+    def test_def test_execute_with_context_dict(self): -> None:
         """Test execution with context dictionary."""
         mock_classifier = MagicMock()
         mock_child = MagicMock()
@@ -305,7 +305,7 @@ class TestClassifierNode:
         assert call_args[0][1] == mock_children  # children
         assert isinstance(call_args[0][2], dict)  # context_dict
 
-    def test_execute_without_context(self):
+    def test_def test_execute_without_context(self): -> None:
         """Test execution without context."""
         mock_classifier = MagicMock()
         mock_child = MagicMock()

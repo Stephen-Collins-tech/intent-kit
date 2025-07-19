@@ -7,18 +7,18 @@ Strategies can be registered by string ID or as custom callable functions.
 
 import time
 import json
-from typing import Any, Callable, Dict, List, Optional
+
 from ..types import ExecutionResult, ExecutionError
 from ..enums import NodeType
-from intent_kit.context import IntentContext
-from intent_kit.utils.logger import Logger
-from intent_kit.utils.text_utils import extract_json_from_text
+
+
+
 
 
 class RemediationStrategy:
     """Base class for remediation strategies."""
 
-    def __init__(self, name: str, description: str = ""):
+    def __init__def __init__(self, name: str, description: str = ""): -> None:
         self.name = name
         self.description = description
         self.logger = Logger(name)
@@ -50,7 +50,7 @@ class RemediationStrategy:
 class RetryOnFailStrategy(RemediationStrategy):
     """Simple retry strategy with exponential backoff."""
 
-    def __init__(self, max_attempts: int = 3, base_delay: float = 1.0):
+    def __init__def __init__(self, max_attempts: int = 3, base_delay: float = 1.0): -> None:
         super().__init__(
             "retry_on_fail",
             f"Retry up to {max_attempts} times with exponential backoff",
@@ -105,8 +105,8 @@ class RetryOnFailStrategy(RemediationStrategy):
 
             except Exception as e:
                 self.logger.warning(
-                    f"RetryOnFailStrategy: Attempt {attempt} failed for {node_name}: {type(e).__name__}: {str(e)}"
-                )
+                    f"RetryOnFailStrategy: Attempt {attempt} failed for {node_name}: {type(
+                        e).__name__}: {str(e)}"                )
 
                 if attempt < self.max_attempts:
                     delay = self.base_delay * (
@@ -126,7 +126,7 @@ class RetryOnFailStrategy(RemediationStrategy):
 class FallbackToAnotherNodeStrategy(RemediationStrategy):
     """Fallback to a specified alternative handler."""
 
-    def __init__(self, fallback_handler: Callable, fallback_name: str = "fallback"):
+    def __init__def __init__(self, fallback_handler: Callable, fallback_name: str = "fallback"): -> None:
         super().__init__("fallback_to_another_node", f"Fallback to {fallback_name}")
         self.fallback_handler = fallback_handler
         self.fallback_name = fallback_name
@@ -175,15 +175,15 @@ class FallbackToAnotherNodeStrategy(RemediationStrategy):
 
         except Exception as e:
             self.logger.error(
-                f"FallbackToAnotherNodeStrategy: Fallback {self.fallback_name} failed for {node_name}: {type(e).__name__}: {str(e)}"
-            )
+                f"FallbackToAnotherNodeStrategy: Fallback {self.fallback_name} failed for {node_name}: {type(
+                    e).__name__}: {str(e)}"            )
             return None
 
 
 class SelfReflectStrategy(RemediationStrategy):
     """LLM critiques its own output and retries with improved approach."""
 
-    def __init__(self, llm_config: Dict[str, Any], max_reflections: int = 2):
+    def __init__def __init__(self, llm_config: Dict[str, Any], max_reflections: int = 2): -> None:
         super().__init__(
             "self_reflect", f"LLM self-reflection with up to {max_reflections} attempts"
         )
@@ -207,7 +207,7 @@ class SelfReflectStrategy(RemediationStrategy):
             )
             return None
 
-        from intent_kit.services.llm_factory import LLMFactory
+
 
         llm_client = LLMFactory.create_client(self.llm_config)
 
@@ -244,8 +244,8 @@ Provide your analysis in JSON format:
                 try:
                     reflection_data = extract_json_from_text(reflection_response) or {}
                     self.logger.info(
-                        f"SelfReflectStrategy: LLM reflection for {node_name}: {reflection_data.get('analysis', 'No analysis')}"
-                    )
+                        f"SelfReflectStrategy: LLM reflection for {node_name}: {reflection_data.get(
+                            'analysis', 'No analysis')}"                    )
 
                     # Try with modified parameters if suggested
                     modified_params = reflection_data.get(
@@ -297,8 +297,8 @@ Provide your analysis in JSON format:
 
             except Exception as e:
                 self.logger.warning(
-                    f"SelfReflectStrategy: Reflection {reflection + 1} failed for {node_name}: {type(e).__name__}: {str(e)}"
-                )
+                    f"SelfReflectStrategy: Reflection {reflection + 1} failed for {node_name}: {type(
+                        e).__name__}: {str(e)}"                )
 
         self.logger.error(
             f"SelfReflectStrategy: All {self.max_reflections} reflections failed for {node_name}"
@@ -309,11 +309,11 @@ Provide your analysis in JSON format:
 class ConsensusVoteStrategy(RemediationStrategy):
     """Ensemble voting among multiple LLM approaches."""
 
-    def __init__(self, llm_configs: List[Dict[str, Any]], vote_threshold: float = 0.6):
+    def __init__def __init__(self, llm_configs: List[Dict[str, Any]], vote_threshold: float = 0.6): -> None:
         super().__init__(
             "consensus_vote",
-            f"Ensemble voting with {len(llm_configs)} models, threshold {vote_threshold}",
-        )
+            f"Ensemble voting with {len(
+                llm_configs)} models, threshold {vote_threshold}",        )
         self.llm_configs = llm_configs
         self.vote_threshold = vote_threshold
 
@@ -334,7 +334,7 @@ class ConsensusVoteStrategy(RemediationStrategy):
             )
             return None
 
-        from intent_kit.services.llm_factory import LLMFactory
+
 
         # Create voting prompt
         voting_prompt = f"""
@@ -368,8 +368,8 @@ Common parameter modifications:
         for i, llm_config in enumerate(self.llm_configs):
             try:
                 self.logger.info(
-                    f"ConsensusVoteStrategy: Getting vote {i + 1}/{len(self.llm_configs)} for {node_name}"
-                )
+                    f"ConsensusVoteStrategy: Getting vote {i + 1}/{len(
+                        self.llm_configs)} for {node_name}"                )
 
                 llm_client = LLMFactory.create_client(llm_config)
                 vote_response = llm_client.generate(voting_prompt)
@@ -443,8 +443,8 @@ Common parameter modifications:
 
             except Exception as e:
                 self.logger.warning(
-                    f"ConsensusVoteStrategy: Model {i} failed for {node_name}: {type(e).__name__}: {str(e)}"
-                )
+                    f"ConsensusVoteStrategy: Model {i} failed for {node_name}: {type(
+                        e).__name__}: {str(e)}"                )
 
         if not votes:
             self.logger.error(
@@ -457,8 +457,8 @@ Common parameter modifications:
         avg_confidence = total_confidence / len(votes)
 
         self.logger.info(
-            f"ConsensusVoteStrategy: {successful_votes}/{len(self.llm_configs)} models voted for {node_name}, avg confidence: {avg_confidence:.2f}"
-        )
+            f"ConsensusVoteStrategy: {successful_votes}/{len(
+                self.llm_configs)} models voted for {node_name}, avg confidence: {avg_confidence:.2f}"        )
 
         if avg_confidence >= self.vote_threshold:
             # Use the highest confidence vote
@@ -494,15 +494,15 @@ Common parameter modifications:
 
             except Exception as e:
                 self.logger.error(
-                    f"ConsensusVoteStrategy: Execution failed despite consensus for {node_name}: {type(e).__name__}: {str(e)}"
-                )
+                    f"ConsensusVoteStrategy: Execution failed despite consensus for {node_name}: {type(
+                        e).__name__}: {str(e)}"                )
                 self.logger.error(
                     f"ConsensusVoteStrategy: Params that caused failure: {best_vote['modified_params']}"
                 )
 
         self.logger.error(
-            f"ConsensusVoteStrategy: Insufficient confidence ({avg_confidence:.2f} < {self.vote_threshold}) for {node_name}"
-        )
+            f"ConsensusVoteStrategy: Insufficient confidence (
+                {avg_confidence:.2f} < {self.vote_threshold}) for {node_name}"        )
         return None
 
 
@@ -514,8 +514,8 @@ class RetryWithAlternatePromptStrategy(RemediationStrategy):
     ):
         super().__init__(
             "retry_with_alternate_prompt",
-            f"Retry with {len(alternate_prompts) if alternate_prompts else 'default'} alternate prompts",
-        )
+            f"Retry with {len(
+                alternate_prompts) if alternate_prompts else 'default'} alternate prompts",        )
         self.llm_config = llm_config
         if alternate_prompts is not None and isinstance(alternate_prompts, list):
             self.alternate_prompts = alternate_prompts
@@ -556,8 +556,8 @@ class RetryWithAlternatePromptStrategy(RemediationStrategy):
                 k: max(0, v) if isinstance(v, (int, float)) else v
                 for k, v in params.items()
             },
-            # Strategy 3: Try with default values (1 for numbers, empty string for strings)
-            lambda params: {
+            # Strategy 3: Try with default values (
+                1 for numbers, empty string for strings)            lambda params: {
                 k: (
                     (1 if isinstance(v, (int, float)) else "")
                     if v is None or (isinstance(v, (int, float)) and v < 0)
@@ -574,8 +574,8 @@ class RetryWithAlternatePromptStrategy(RemediationStrategy):
         for i, strategy in enumerate(modification_strategies):
             try:
                 self.logger.info(
-                    f"RetryWithAlternatePromptStrategy: Trying modification strategy {i + 1}/{len(modification_strategies)} for {node_name}"
-                )
+                    f"RetryWithAlternatePromptStrategy: Trying modification strategy {i + 1}/{len(
+                        modification_strategies)} for {node_name}"                )
 
                 # Apply the modification strategy
                 modified_params = strategy(validated_params)
@@ -603,19 +603,19 @@ class RetryWithAlternatePromptStrategy(RemediationStrategy):
 
             except Exception as e:
                 self.logger.warning(
-                    f"RetryWithAlternatePromptStrategy: Strategy {i + 1} failed for {node_name}: {type(e).__name__}: {str(e)}"
-                )
+                    f"RetryWithAlternatePromptStrategy: Strategy {i + 1} failed for {node_name}: {type(
+                        e).__name__}: {str(e)}"                )
 
         self.logger.error(
-            f"RetryWithAlternatePromptStrategy: All {len(modification_strategies)} strategies failed for {node_name}"
-        )
+            f"RetryWithAlternatePromptStrategy: All {len(
+                modification_strategies)} strategies failed for {node_name}"        )
         return None
 
 
 class RemediationRegistry:
     """Registry for remediation strategies."""
 
-    def __init__(self):
+    def __init__def __init__(self): -> None:
         self._strategies: Dict[str, RemediationStrategy] = {}
         self._register_builtin_strategies()
 
@@ -783,15 +783,15 @@ class ClassifierFallbackStrategy(RemediationStrategy):
 
         except Exception as e:
             self.logger.error(
-                f"ClassifierFallbackStrategy: Fallback {self.fallback_name} failed for {node_name}: {type(e).__name__}: {str(e)}"
-            )
+                f"ClassifierFallbackStrategy: Fallback {self.fallback_name} failed for {node_name}: {type(
+                    e).__name__}: {str(e)}"            )
             return None
 
 
 class KeywordFallbackStrategy(RemediationStrategy):
     """Keyword-based fallback strategy for classifiers."""
 
-    def __init__(self):
+    def __init__def __init__(self): -> None:
         super().__init__("keyword_fallback", "Keyword-based classification fallback")
 
     def execute(
@@ -887,8 +887,8 @@ class KeywordFallbackStrategy(RemediationStrategy):
 
         except Exception as e:
             self.logger.error(
-                f"KeywordFallbackStrategy: Keyword fallback failed for {node_name}: {type(e).__name__}: {str(e)}"
-            )
+                f"KeywordFallbackStrategy: Keyword fallback failed for {node_name}: {type(
+                    e).__name__}: {str(e)}"            )
             return None
 
 

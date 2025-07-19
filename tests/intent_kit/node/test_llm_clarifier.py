@@ -2,21 +2,21 @@
 Tests for the LLM Clarifier functionality.
 """
 
-from unittest.mock import patch
-from intent_kit.node.actions import (
+
+
     create_llm_clarifier,
     get_default_clarification_prompt,
     create_llm_clarifier_node,
 )
-from intent_kit.node.enums import NodeType
-from intent_kit.node.types import ExecutionResult
-from intent_kit.context import IntentContext
+
+
+
 
 
 class TestLLMClarifier:
     """Test cases for LLM Clarifier functionality."""
 
-    def test_get_default_clarification_prompt(self):
+    def test_def test_get_default_clarification_prompt(self): -> None:
         """Test that the default clarification prompt is properly formatted."""
         prompt = get_default_clarification_prompt()
 
@@ -27,7 +27,7 @@ class TestLLMClarifier:
         assert "{expected_format}" in prompt
         assert "{max_attempts}" in prompt
 
-    def test_create_llm_clarifier_basic(self):
+    def test_def test_create_llm_clarifier_basic(self): -> None:
         """Test creating a basic LLM clarifier function."""
         # Mock LLM config
         mock_llm_config = {"provider": "openrouter", "model": "google/gemma-3-27b-it"}
@@ -56,7 +56,7 @@ class TestLLMClarifier:
             )
             mock_generate.assert_called_once()
 
-    def test_create_llm_clarifier_with_context(self):
+    def test_def test_create_llm_clarifier_with_context(self): -> None:
         """Test LLM clarifier with context information."""
         mock_llm_config = {"provider": "openrouter", "model": "google/gemma-3-27b-it"}
         mock_response = "Based on your previous bookings, I need more details about your flight request."
@@ -81,7 +81,7 @@ class TestLLMClarifier:
             assert mock_response in result
             mock_generate.assert_called_once()
 
-    def test_create_llm_clarifier_fallback_on_error(self):
+    def test_def test_create_llm_clarifier_fallback_on_error(self): -> None:
         """Test that LLM clarifier falls back to simple message on error."""
         mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
 
@@ -101,7 +101,7 @@ class TestLLMClarifier:
             assert "Your request 'book something' is unclear" in result
             assert "Please specify: [details]" in result
 
-    def test_create_llm_clarifier_node(self):
+    def test_def test_create_llm_clarifier_node(self): -> None:
         """Test creating an LLM clarifier node."""
         mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "I need more details about your request."
@@ -125,7 +125,7 @@ class TestLLMClarifier:
             assert node.max_clarification_attempts == 3
             assert node.description == "Test LLM clarifier"
 
-    def test_llm_clarifier_node_execution(self):
+    def test_def test_llm_clarifier_node_execution(self): -> None:
         """Test that LLM clarifier node executes correctly."""
         mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "I need more details about your booking request."
@@ -150,7 +150,7 @@ class TestLLMClarifier:
             assert result.output["requires_clarification"] is True
             assert mock_response in result.output["clarification_message"]
 
-    def test_llm_clarifier_node_with_custom_prompt(self):
+    def test_def test_llm_clarifier_node_with_custom_prompt(self): -> None:
         """Test LLM clarifier node with custom prompt template."""
         mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "Custom clarification message."
@@ -174,7 +174,7 @@ class TestLLMClarifier:
             assert mock_response in result.output["clarification_message"]
             mock_generate.assert_called_once()
 
-    def test_llm_clarifier_node_with_context(self):
+    def test_def test_llm_clarifier_node_with_context(self): -> None:
         """Test LLM clarifier node with context."""
         mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "Based on your preferences, I need more details."
@@ -203,7 +203,7 @@ class TestLLMClarifier:
             assert clarification_context is not None
             assert clarification_context["original_input"] == "book flight"
 
-    def test_llm_clarifier_node_handle_clarification_response(self):
+    def test_def test_llm_clarifier_node_handle_clarification_response(self): -> None:
         """Test LLM clarifier node handling clarification responses."""
         mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
 
@@ -226,7 +226,7 @@ class TestLLMClarifier:
         assert response["original_input"] == "book"
         assert response["attempts"] == 1
 
-    def test_llm_clarifier_node_max_attempts(self):
+    def test_def test_llm_clarifier_node_max_attempts(self): -> None:
         """Test LLM clarifier node max attempts handling."""
         mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
 
@@ -252,7 +252,7 @@ class TestLLMClarifier:
         assert response["error"] == "Maximum clarification attempts exceeded"
         assert response["attempts"] == 3
 
-    def test_llm_clarifier_node_without_expected_format(self):
+    def test_def test_llm_clarifier_node_without_expected_format(self): -> None:
         """Test LLM clarifier node without expected response format."""
         mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "I need more details about your request."
@@ -277,7 +277,7 @@ class TestLLMClarifier:
                 not in result.output["clarification_message"]
             )
 
-    def test_llm_clarifier_node_error_structure(self):
+    def test_def test_llm_clarifier_node_error_structure(self): -> None:
         """Test that LLM clarifier node error has proper structure."""
         mock_llm_config = {"provider": "openrouter", "model": "switchpoint/router"}
         mock_response = "I need more details."

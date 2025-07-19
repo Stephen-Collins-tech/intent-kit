@@ -3,21 +3,21 @@ Tests for YAML service.
 """
 
 import pytest
-from unittest.mock import patch, Mock
-from io import StringIO
 
-from intent_kit.services.yaml_service import YamlService, yaml_service
+
+
+
 
 
 class TestYamlService:
     """Test YamlService class."""
 
-    def test_init_with_yaml_available(self):
+    def test_def test_init_with_yaml_available(self): -> None:
         """Test initialization when PyYAML is available."""
         service = YamlService()
         assert service.yaml is not None
 
-    def test_init_without_yaml(self):
+    def test_def test_init_without_yaml(self): -> None:
         """Test initialization when PyYAML is not available."""
         with patch(
             "builtins.__import__", side_effect=ImportError("No module named 'yaml'")
@@ -27,7 +27,7 @@ class TestYamlService:
                 assert service.yaml is None
                 mock_logger.warning.assert_called_once()
 
-    def test_safe_load_with_yaml_available(self):
+    def test_def test_safe_load_with_yaml_available(self): -> None:
         """Test safe_load when PyYAML is available."""
         service = YamlService()
         mock_yaml = Mock()
@@ -39,7 +39,7 @@ class TestYamlService:
         assert result == {"key": "value"}
         mock_yaml.safe_load.assert_called_once_with('{"key": "value"}')
 
-    def test_safe_load_with_file_object(self):
+    def test_def test_safe_load_with_file_object(self): -> None:
         """Test safe_load with file-like object."""
         service = YamlService()
         mock_yaml = Mock()
@@ -52,7 +52,7 @@ class TestYamlService:
         assert result == {"key": "value"}
         mock_yaml.safe_load.assert_called_once_with(file_obj)
 
-    def test_safe_load_without_yaml(self):
+    def test_def test_safe_load_without_yaml(self): -> None:
         """Test safe_load when PyYAML is not available."""
         service = YamlService()
         service.yaml = None
@@ -60,7 +60,7 @@ class TestYamlService:
         with pytest.raises(ImportError, match="PyYAML is required for YAML support"):
             service.safe_load("test")
 
-    def test_dump_with_yaml_available(self):
+    def test_def test_dump_with_yaml_available(self): -> None:
         """Test dump when PyYAML is available."""
         service = YamlService()
         mock_yaml = Mock()
@@ -73,7 +73,7 @@ class TestYamlService:
         assert result == "key: value\n"
         mock_yaml.dump.assert_called_once_with(data, stream=None)
 
-    def test_dump_with_stream(self):
+    def test_def test_dump_with_stream(self): -> None:
         """Test dump with stream parameter."""
         service = YamlService()
         mock_yaml = Mock()
@@ -87,7 +87,7 @@ class TestYamlService:
         assert result is None
         mock_yaml.dump.assert_called_once_with(data, stream=stream)
 
-    def test_dump_with_kwargs(self):
+    def test_def test_dump_with_kwargs(self): -> None:
         """Test dump with additional keyword arguments."""
         service = YamlService()
         mock_yaml = Mock()
@@ -102,7 +102,7 @@ class TestYamlService:
             data, stream=None, default_flow_style=False, indent=2
         )
 
-    def test_dump_without_yaml(self):
+    def test_def test_dump_without_yaml(self): -> None:
         """Test dump when PyYAML is not available."""
         service = YamlService()
         service.yaml = None
@@ -110,7 +110,7 @@ class TestYamlService:
         with pytest.raises(ImportError, match="PyYAML is required for YAML support"):
             service.dump({"key": "value"})
 
-    def test_dump_without_yaml_with_stream(self):
+    def test_def test_dump_without_yaml_with_stream(self): -> None:
         """Test dump with stream when PyYAML is not available."""
         service = YamlService()
         service.yaml = None
@@ -118,7 +118,7 @@ class TestYamlService:
         with pytest.raises(ImportError, match="PyYAML is required for YAML support"):
             service.dump({"key": "value"}, stream=StringIO())
 
-    def test_safe_load_with_complex_data(self):
+    def test_def test_safe_load_with_complex_data(self): -> None:
         """Test safe_load with complex YAML data."""
         service = YamlService()
         mock_yaml = Mock()
@@ -142,7 +142,7 @@ class TestYamlService:
         assert result == complex_data
         mock_yaml.safe_load.assert_called_once_with(yaml_string)
 
-    def test_dump_with_complex_data(self):
+    def test_def test_dump_with_complex_data(self): -> None:
         """Test dump with complex data structures."""
         service = YamlService()
         mock_yaml = Mock()
@@ -158,7 +158,7 @@ class TestYamlService:
         assert result == "nested:\n  list: [1, 2, 3]\n"
         mock_yaml.dump.assert_called_once_with(complex_data, stream=None)
 
-    def test_safe_load_with_empty_string(self):
+    def test_def test_safe_load_with_empty_string(self): -> None:
         """Test safe_load with empty string."""
         service = YamlService()
         mock_yaml = Mock()
@@ -170,7 +170,7 @@ class TestYamlService:
         assert result is None
         mock_yaml.safe_load.assert_called_once_with("")
 
-    def test_dump_with_empty_data(self):
+    def test_def test_dump_with_empty_data(self): -> None:
         """Test dump with empty data."""
         service = YamlService()
         mock_yaml = Mock()
@@ -182,7 +182,7 @@ class TestYamlService:
         assert result == "{}\n"
         mock_yaml.dump.assert_called_once_with({}, stream=None)
 
-    def test_safe_load_with_yaml_error(self):
+    def test_def test_safe_load_with_yaml_error(self): -> None:
         """Test safe_load when PyYAML raises an error."""
         service = YamlService()
         mock_yaml = Mock()
@@ -192,7 +192,7 @@ class TestYamlService:
         with pytest.raises(Exception, match="YAML parsing error"):
             service.safe_load("invalid yaml")
 
-    def test_dump_with_yaml_error(self):
+    def test_def test_dump_with_yaml_error(self): -> None:
         """Test dump when PyYAML raises an error."""
         service = YamlService()
         mock_yaml = Mock()
@@ -202,7 +202,7 @@ class TestYamlService:
         with pytest.raises(Exception, match="YAML dumping error"):
             service.dump({"key": "value"})
 
-    def test_safe_load_with_none_input(self):
+    def test_def test_safe_load_with_none_input(self): -> None:
         """Test safe_load with None input."""
         service = YamlService()
         mock_yaml = Mock()
@@ -214,7 +214,7 @@ class TestYamlService:
         assert result is None
         mock_yaml.safe_load.assert_called_once_with(None)
 
-    def test_dump_with_none_input(self):
+    def test_def test_dump_with_none_input(self): -> None:
         """Test dump with None input."""
         service = YamlService()
         mock_yaml = Mock()
@@ -226,7 +226,7 @@ class TestYamlService:
         assert result == "null\n"
         mock_yaml.dump.assert_called_once_with(None, stream=None)
 
-    def test_safe_load_with_unicode_string(self):
+    def test_def test_safe_load_with_unicode_string(self): -> None:
         """Test safe_load with unicode string."""
         service = YamlService()
         mock_yaml = Mock()
@@ -239,7 +239,7 @@ class TestYamlService:
         assert result == {"unicode": "测试"}
         mock_yaml.safe_load.assert_called_once_with(yaml_string)
 
-    def test_dump_with_unicode_data(self):
+    def test_def test_dump_with_unicode_data(self): -> None:
         """Test dump with unicode data."""
         service = YamlService()
         mock_yaml = Mock()
@@ -252,7 +252,7 @@ class TestYamlService:
         assert result == "unicode: 测试\n"
         mock_yaml.dump.assert_called_once_with(data, stream=None)
 
-    def test_safe_load_with_binary_data(self):
+    def test_def test_safe_load_with_binary_data(self): -> None:
         """Test safe_load with binary data."""
         service = YamlService()
         mock_yaml = Mock()
@@ -265,7 +265,7 @@ class TestYamlService:
         assert result == {"binary": b"data"}
         mock_yaml.safe_load.assert_called_once_with(binary_data)
 
-    def test_dump_with_binary_data(self):
+    def test_def test_dump_with_binary_data(self): -> None:
         """Test dump with binary data."""
         service = YamlService()
         mock_yaml = Mock()
@@ -278,7 +278,7 @@ class TestYamlService:
         assert result == b"binary: data\n"
         mock_yaml.dump.assert_called_once_with(data, stream=None)
 
-    def test_safe_load_with_custom_loader(self):
+    def test_def test_safe_load_with_custom_loader(self): -> None:
         """Test safe_load with custom loader."""
         service = YamlService()
         mock_yaml = Mock()
@@ -290,7 +290,7 @@ class TestYamlService:
         assert result == {"custom": "loader"}
         mock_yaml.safe_load.assert_called_once_with("custom: loader")
 
-    def test_dump_with_custom_dumper(self):
+    def test_def test_dump_with_custom_dumper(self): -> None:
         """Test dump with custom dumper."""
         service = YamlService()
         mock_yaml = Mock()
@@ -307,12 +307,12 @@ class TestYamlService:
 class TestYamlServiceSingleton:
     """Test YamlService singleton functionality."""
 
-    def test_singleton_instance(self):
+    def test_def test_singleton_instance(self): -> None:
         """Test that yaml_service is a singleton instance."""
         assert yaml_service is not None
         assert isinstance(yaml_service, YamlService)
 
-    def test_singleton_safe_load(self):
+    def test_def test_singleton_safe_load(self): -> None:
         """Test singleton safe_load method."""
         mock_yaml = Mock()
         mock_yaml.safe_load.return_value = {"singleton": "test"}
@@ -323,7 +323,7 @@ class TestYamlServiceSingleton:
         assert result == {"singleton": "test"}
         mock_yaml.safe_load.assert_called_once_with('{"singleton": "test"}')
 
-    def test_singleton_dump(self):
+    def test_def test_singleton_dump(self): -> None:
         """Test singleton dump method."""
         mock_yaml = Mock()
         mock_yaml.dump.return_value = "singleton: test\n"
@@ -335,7 +335,7 @@ class TestYamlServiceSingleton:
         assert result == "singleton: test\n"
         mock_yaml.dump.assert_called_once_with(data, stream=None)
 
-    def test_singleton_without_yaml(self):
+    def test_def test_singleton_without_yaml(self): -> None:
         """Test singleton when PyYAML is not available."""
         original_yaml = yaml_service.yaml
         yaml_service.yaml = None
@@ -357,7 +357,7 @@ class TestYamlServiceSingleton:
 class TestYamlServiceIntegration:
     """Test YamlService integration scenarios."""
 
-    def test_full_workflow_with_yaml_available(self):
+    def test_def test_full_workflow_with_yaml_available(self): -> None:
         """Test complete YAML workflow when PyYAML is available."""
         service = YamlService()
         mock_yaml = Mock()
@@ -377,7 +377,7 @@ class TestYamlServiceIntegration:
         mock_yaml.safe_load.assert_called_once_with("input: data")
         mock_yaml.dump.assert_called_once_with({"input": "data"}, stream=None)
 
-    def test_full_workflow_without_yaml(self):
+    def test_def test_full_workflow_without_yaml(self): -> None:
         """Test complete YAML workflow when PyYAML is not available."""
         service = YamlService()
         service.yaml = None
@@ -389,7 +389,7 @@ class TestYamlServiceIntegration:
         with pytest.raises(ImportError, match="PyYAML is required for YAML support"):
             service.dump({"input": "data"})
 
-    def test_file_like_object_handling(self):
+    def test_def test_file_like_object_handling(self): -> None:
         """Test handling of file-like objects."""
         service = YamlService()
         mock_yaml = Mock()
@@ -410,7 +410,7 @@ class TestYamlServiceIntegration:
         # The mock should have been called with the stream
         mock_yaml.dump.assert_called_with({"file": "content"}, stream=output_file)
 
-    def test_error_propagation(self):
+    def test_def test_error_propagation(self): -> None:
         """Test that errors are properly propagated."""
         service = YamlService()
         mock_yaml = Mock()

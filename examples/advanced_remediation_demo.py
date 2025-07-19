@@ -15,11 +15,11 @@ Usage:
 
 import os
 import random
-from dotenv import load_dotenv
-from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult
-from intent_kit import action
-from intent_kit.node.actions import (
+
+
+
+
+
     create_self_reflect_strategy,
     create_consensus_vote_strategy,
     create_alternate_prompt_strategy,
@@ -99,7 +99,7 @@ actions = [
 ]
 
 
-def main():
+def main() -> None:
     context = IntentContext()
     print("=== Advanced Remediation Strategies Demo ===\n")
 

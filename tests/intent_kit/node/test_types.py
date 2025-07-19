@@ -2,14 +2,14 @@
 Tests for node types and data structures.
 """
 
-from intent_kit.node.types import ExecutionError, ExecutionResult
-from intent_kit.node.enums import NodeType
+
+
 
 
 class TestExecutionError:
     """Test the ExecutionError class."""
 
-    def test_init_basic(self):
+    def test_def test_init_basic(self): -> None:
         """Test basic initialization."""
         error = ExecutionError(
             error_type="TestError",
@@ -28,7 +28,7 @@ class TestExecutionError:
         assert error.params is None
         assert error.original_exception is None
 
-    def test_init_with_optional_fields(self):
+    def test_def test_init_with_optional_fields(self): -> None:
         """Test initialization with all optional fields."""
         original_exception = ValueError("Test exception")
         error = ExecutionError(
@@ -49,7 +49,7 @@ class TestExecutionError:
         assert error.params == {"param": "value"}
         assert error.original_exception == original_exception
 
-    def test_from_exception_basic(self):
+    def test_def test_from_exception_basic(self): -> None:
         """Test creating ExecutionError from basic exception."""
         exception = ValueError("Test exception")
         error = ExecutionError.from_exception(
@@ -63,11 +63,11 @@ class TestExecutionError:
         assert error.node_id is None
         assert error.original_exception == exception
 
-    def test_from_exception_with_validation_error(self):
+    def test_def test_from_exception_with_validation_error(self): -> None:
         """Test creating ExecutionError from exception with validation_error attribute."""
 
         class ValidationException(Exception):
-            def __init__(self, message, validation_error, input_data):
+            def __init__def __init__(self, message, validation_error, input_data): -> None:
                 super().__init__(message)
                 self.validation_error = validation_error
                 self.input_data = input_data
@@ -91,11 +91,11 @@ class TestExecutionError:
         assert error.input_data == {"input": "data"}
         assert error.params == {"input": "data"}
 
-    def test_from_exception_with_error_message(self):
+    def test_def test_from_exception_with_error_message(self): -> None:
         """Test creating ExecutionError from exception with error_message attribute."""
 
         class CustomException(Exception):
-            def __init__(self, message, error_message, params):
+            def __init__def __init__(self, message, error_message, params): -> None:
                 super().__init__(message)
                 self.error_message = error_message
                 self.params = params
@@ -112,7 +112,7 @@ class TestExecutionError:
         assert error.message == "Custom error message"
         assert error.params == {"param": "value"}
 
-    def test_to_dict(self):
+    def test_def test_to_dict(self): -> None:
         """Test converting ExecutionError to dictionary."""
         error = ExecutionError(
             error_type="TestError",
@@ -140,7 +140,7 @@ class TestExecutionError:
 
         assert result == expected
 
-    def test_to_dict_with_none_values(self):
+    def test_def test_to_dict_with_none_values(self): -> None:
         """Test to_dict with None values."""
         error = ExecutionError(
             error_type="TestError",
@@ -168,7 +168,7 @@ class TestExecutionError:
 class TestExecutionResult:
     """Test the ExecutionResult class."""
 
-    def test_init_success(self):
+    def test_def test_init_success(self): -> None:
         """Test initialization for successful execution."""
         result = ExecutionResult(
             success=True,
@@ -193,7 +193,7 @@ class TestExecutionResult:
         assert result.children_results == []
         assert result.visualization_html is None
 
-    def test_init_failure(self):
+    def test_def test_init_failure(self): -> None:
         """Test initialization for failed execution."""
         error = ExecutionError(
             error_type="TestError",
@@ -218,7 +218,7 @@ class TestExecutionResult:
         assert result.error == error
         assert result.output is None
 
-    def test_init_with_visualization(self):
+    def test_def test_init_with_visualization(self): -> None:
         """Test initialization with visualization HTML."""
         result = ExecutionResult(
             success=True,
@@ -235,7 +235,7 @@ class TestExecutionResult:
 
         assert result.visualization_html == "<div>Test visualization</div>"
 
-    def test_init_with_children_results(self):
+    def test_def test_init_with_children_results(self): -> None:
         """Test initialization with children results."""
         child_result = ExecutionResult(
             success=True,
@@ -264,7 +264,7 @@ class TestExecutionResult:
         assert len(result.children_results) == 1
         assert result.children_results[0] == child_result
 
-    def test_init_with_complex_output(self):
+    def test_def test_init_with_complex_output(self): -> None:
         """Test initialization with complex output data."""
         complex_output = {
             "result": "success",
@@ -286,7 +286,7 @@ class TestExecutionResult:
 
         assert result.output == complex_output
 
-    def test_init_with_none_values(self):
+    def test_def test_init_with_none_values(self): -> None:
         """Test initialization with None values."""
         result = ExecutionResult(
             success=True,
@@ -305,7 +305,7 @@ class TestExecutionResult:
         assert result.params is None
         assert result.visualization_html is None
 
-    def test_different_node_types(self):
+    def test_def test_different_node_types(self): -> None:
         """Test initialization with different node types."""
         node_types = [
             NodeType.UNKNOWN,
@@ -332,7 +332,7 @@ class TestExecutionResult:
 
             assert result.node_type == node_type
 
-    def test_complex_tree_structure(self):
+    def test_def test_complex_tree_structure(self): -> None:
         """Test creating a complex tree of execution results."""
         # Create leaf nodes
         leaf1 = ExecutionResult(

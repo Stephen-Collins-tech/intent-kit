@@ -5,17 +5,17 @@ This module provides a builder class for creating IntentGraph instances
 with a more readable and type-safe approach.
 """
 
-from typing import List, Dict, Any, Optional, Callable, Union
-from intent_kit.node import TreeNode
-from intent_kit.graph import IntentGraph
+
+
+
 from .base import Builder
-from intent_kit.services.yaml_service import yaml_service
+
 
 
 class IntentGraphBuilder(Builder):
     """Builder for creating IntentGraph instances with fluent interface."""
 
-    def __init__(self):
+    def __init__def __init__(self): -> None:
         """Initialize the graph builder."""
         super().__init__("intent_graph")
         self._root_nodes: List[TreeNode] = []
@@ -455,7 +455,7 @@ class IntentGraphBuilder(Builder):
         function_registry: Dict[str, Callable],
     ) -> TreeNode:
         """Create an ActionNode from specification."""
-        from intent_kit.utils.node_factory import action
+
 
         if "function" not in node_spec:
             raise ValueError(f"Action node '{node_id}' must have a 'function' field")
@@ -470,8 +470,8 @@ class IntentGraphBuilder(Builder):
         param_schema_raw = node_spec.get("param_schema", {})
 
         # Parse parameter schema from string types to Python types
-        from intent_kit.utils.param_extraction import parse_param_schema
-        from intent_kit.utils.logger import Logger
+
+
 
         logger = Logger("graph_builder")
 
@@ -518,8 +518,8 @@ class IntentGraphBuilder(Builder):
 
         # Create a temporary node for now - children will be set later
         # We'll need to create a placeholder and update it after all nodes are created
-        from intent_kit.node.classifiers import ClassifierNode
-        from intent_kit.node.classifiers import (
+
+
             create_llm_classifier,
             get_default_classification_prompt,
         )
@@ -547,7 +547,7 @@ class IntentGraphBuilder(Builder):
         function_registry: Dict[str, Callable],
     ) -> TreeNode:
         """Create a ClassifierNode from specification."""
-        from intent_kit.node.classifiers import ClassifierNode
+
 
         if "classifier_function" not in node_spec:
             raise ValueError(
@@ -580,7 +580,7 @@ class IntentGraphBuilder(Builder):
         function_registry: Dict[str, Callable],
     ) -> TreeNode:
         """Create a SplitterNode from specification."""
-        from intent_kit.node.splitters import SplitterNode
+
 
         if "splitter_function" not in node_spec:
             raise ValueError(
@@ -613,7 +613,7 @@ class IntentGraphBuilder(Builder):
         function_registry: Dict[str, Callable],
     ) -> TreeNode:
         """Create a ClarifierNode from specification."""
-        from intent_kit.node.actions import ClarifierNode
+
 
         if "clarification_prompt" not in node_spec:
             raise ValueError(
@@ -641,7 +641,7 @@ class IntentGraphBuilder(Builder):
         function_registry: Dict[str, Callable],
     ) -> TreeNode:
         """Create an LLMClarifierNode from specification."""
-        from intent_kit.node.actions import create_llm_clarifier_node
+
 
         if "llm_config" not in node_spec:
             raise ValueError(

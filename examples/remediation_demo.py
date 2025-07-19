@@ -13,16 +13,16 @@ Usage:
 
 import os
 import random
-from dotenv import load_dotenv
-from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult
-from intent_kit import action
-from intent_kit.node.actions import (
+
+
+
+
+
     register_remediation_strategy,
 )
-from intent_kit.node.types import ExecutionError
-from intent_kit.node.enums import NodeType
-from typing import Optional
+
+
+
 
 
 # --- Setup LLM config ---
@@ -98,10 +98,10 @@ def simple_greeter(name: str, context: IntentContext) -> str:
 
 def create_custom_remediation_strategy():
     """Create a custom remediation strategy that logs and continues."""
-    from intent_kit.node.actions import RemediationStrategy
+
 
     class LogAndContinueStrategy(RemediationStrategy):
-        def __init__(self):
+        def __init__def __init__(self): -> None:
             super().__init__(
                 "log_and_continue", "Log error and return default response"
             )
@@ -180,7 +180,7 @@ def create_intent_graph():
     ]
 
     # Create classifier
-    from intent_kit.node.classifiers import ClassifierNode
+
 
     def simple_classifier(user_input: str, children, context=None):
         """Simple classifier that routes to the first child."""
@@ -196,7 +196,7 @@ def create_intent_graph():
     return classifier
 
 
-def main():
+def main() -> None:
     context = IntentContext()
     print("=== Remediation Strategies Demo ===\n")
 

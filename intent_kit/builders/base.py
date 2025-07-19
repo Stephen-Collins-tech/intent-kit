@@ -5,8 +5,8 @@ This module provides a base class that all specific builders inherit from,
 ensuring consistent patterns and common functionality.
 """
 
-from abc import ABC, abstractmethod
-from typing import Any
+
+
 
 
 class Builder(ABC):
@@ -16,7 +16,7 @@ class Builder(ABC):
     across all builder implementations.
     """
 
-    def __init__(self, name: str):
+    def __init__def __init__(self, name: str): -> None:
         """Initialize the base builder.
 
         Args:

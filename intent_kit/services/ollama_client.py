@@ -1,15 +1,15 @@
 # Ollama client wrapper for intent-kit
 # Requires: pip install ollama
 
-from intent_kit.utils.logger import Logger
-from intent_kit.services.base_client import BaseLLMClient
-from typing import Optional
+
+
+
 
 logger = Logger("ollama_service")
 
 
 class OllamaClient(BaseLLMClient):
-    def __init__(self, base_url: str = "http://localhost:11434"):
+    def __init__def __init__(self, base_url: str = "http://localhost:11434"): -> None:
         self.base_url = base_url
         super().__init__(base_url=base_url)
 
@@ -20,7 +20,7 @@ class OllamaClient(BaseLLMClient):
     def get_client(self):
         """Get the Ollama client."""
         try:
-            from ollama import Client
+
 
             return Client(host=self.base_url)
         except ImportError:
@@ -142,7 +142,7 @@ class OllamaClient(BaseLLMClient):
     def is_available(cls) -> bool:
         """Check if Ollama package is available."""
         try:
-            import importlib.util
+
 
             return importlib.util.find_spec("ollama") is not None
         except ImportError:

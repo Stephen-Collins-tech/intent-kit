@@ -1,6 +1,6 @@
 """Keyword-based classifier module."""
 
-from typing import Optional, Dict, Any
+
 from ..base import TreeNode
 
 

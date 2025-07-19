@@ -5,11 +5,11 @@ This module provides a builder class for creating ClassifierNode instances
 with a more readable and type-safe approach.
 """
 
-from typing import Callable, List, Optional, Union
-from intent_kit.node import TreeNode
-from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.node.actions import RemediationStrategy
-from intent_kit.utils.node_factory import (
+
+
+
+
+
     create_classifier_node,
     create_default_classifier,
 )
@@ -19,7 +19,7 @@ from .base import Builder
 class ClassifierBuilder(Builder):
     """Builder for creating classifier nodes with fluent interface."""
 
-    def __init__(self, name: str):
+    def __init__def __init__(self, name: str): -> None:
         """Initialize the classifier builder.
 
         Args:

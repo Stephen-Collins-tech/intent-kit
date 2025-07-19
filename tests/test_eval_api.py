@@ -6,9 +6,9 @@ Tests for the new evaluation API.
 """
 
 import pytest
-from pathlib import Path
-import intent_kit.evals
-from unittest.mock import patch
+
+
+
 
 
 @patch("intent_kit.evals.yaml_service")

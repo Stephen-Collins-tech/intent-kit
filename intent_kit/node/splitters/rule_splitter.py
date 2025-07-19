@@ -2,10 +2,10 @@
 Rule-based intent splitter for IntentGraph.
 """
 
-from typing import List
+
 import re
-from intent_kit.utils.logger import Logger
-from intent_kit.types import IntentChunk
+
+
 
 
 def rule_splitter(user_input: str, debug: bool = False) -> List[IntentChunk]:

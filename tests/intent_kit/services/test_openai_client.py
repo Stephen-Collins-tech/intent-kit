@@ -3,14 +3,14 @@ Tests for OpenAI client.
 """
 
 import pytest
-from unittest.mock import Mock, patch
-from intent_kit.services.openai_client import OpenAIClient
+
+
 
 
 class TestOpenAIClient:
     """Test OpenAIClient class."""
 
-    def test_init_with_api_key(self):
+    def test_def test_init_with_api_key(self): -> None:
         """Test initialization with API key."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -21,7 +21,7 @@ class TestOpenAIClient:
             assert client.api_key == "test_api_key"
             assert client._client == mock_client
 
-    def test_get_client_success(self):
+    def test_def test_get_client_success(self): -> None:
         """Test successful client creation."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -32,7 +32,7 @@ class TestOpenAIClient:
 
             assert result == mock_client
 
-    def test_get_client_import_error(self):
+    def test_def test_get_client_import_error(self): -> None:
         """Test client creation when OpenAI package is not installed."""
         with patch.object(
             OpenAIClient,
@@ -42,7 +42,7 @@ class TestOpenAIClient:
             with pytest.raises(ImportError, match="OpenAI package not installed"):
                 OpenAIClient("test_api_key")
 
-    def test_ensure_imported_success(self):
+    def test_def test_ensure_imported_success(self): -> None:
         """Test _ensure_imported when client exists."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -52,7 +52,7 @@ class TestOpenAIClient:
             # Should not raise
             client._ensure_imported()
 
-    def test_ensure_imported_recreate_client(self):
+    def test_def test_ensure_imported_recreate_client(self): -> None:
         """Test _ensure_imported when client is None."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -65,7 +65,7 @@ class TestOpenAIClient:
 
             assert client._client == mock_client
 
-    def test_ensure_imported_import_error(self):
+    def test_def test_ensure_imported_import_error(self): -> None:
         """Test _ensure_imported when import fails."""
         with patch.object(
             OpenAIClient,
@@ -80,7 +80,7 @@ class TestOpenAIClient:
             with pytest.raises(ImportError, match="OpenAI package not installed"):
                 client._ensure_imported()
 
-    def test_generate_success(self):
+    def test_def test_generate_success(self): -> None:
         """Test successful text generation."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -103,7 +103,7 @@ class TestOpenAIClient:
                 max_tokens=1000,
             )
 
-    def test_generate_with_custom_model(self):
+    def test_def test_generate_with_custom_model(self): -> None:
         """Test text generation with custom model."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -126,7 +126,7 @@ class TestOpenAIClient:
                 max_tokens=1000,
             )
 
-    def test_generate_empty_response(self):
+    def test_def test_generate_empty_response(self): -> None:
         """Test text generation with empty response."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -144,7 +144,7 @@ class TestOpenAIClient:
 
             assert result == ""
 
-    def test_generate_no_choices(self):
+    def test_def test_generate_no_choices(self): -> None:
         """Test text generation with no choices in response."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -159,7 +159,7 @@ class TestOpenAIClient:
 
             assert result == ""
 
-    def test_generate_exception_handling(self):
+    def test_def test_generate_exception_handling(self): -> None:
         """Test text generation with exception handling."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -171,7 +171,7 @@ class TestOpenAIClient:
             with pytest.raises(Exception, match="API Error"):
                 client.generate("Test prompt")
 
-    def test_generate_text_alias(self):
+    def test_def test_generate_text_alias(self): -> None:
         """Test generate_text alias method."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -194,7 +194,7 @@ class TestOpenAIClient:
                 max_tokens=1000,
             )
 
-    def test_generate_with_client_recreation(self):
+    def test_def test_generate_with_client_recreation(self): -> None:
         """Test generate when client needs to be recreated."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -215,20 +215,20 @@ class TestOpenAIClient:
             assert result == "Generated response"
             assert client._client == mock_client
 
-    def test_is_available_method(self):
+    def test_def test_is_available_method(self): -> None:
         """Test is_available method."""
         # Test when openai is available
         with patch("importlib.util.find_spec", return_value=Mock()):
             assert OpenAIClient.is_available() is True
 
-    def test_is_available_method_import_error(self):
+    def test_def test_is_available_method_import_error(self): -> None:
         """Test is_available method when import fails."""
         with patch(
             "builtins.__import__", side_effect=ImportError("No module named 'openai'")
         ):
             assert OpenAIClient.is_available() is False
 
-    def test_generate_with_different_prompts(self):
+    def test_def test_generate_with_different_prompts(self): -> None:
         """Test generate with different prompts."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -254,7 +254,7 @@ class TestOpenAIClient:
                     max_tokens=1000,
                 )
 
-    def test_generate_with_different_models(self):
+    def test_def test_generate_with_different_models(self): -> None:
         """Test generate with different models."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:
             mock_client = Mock()

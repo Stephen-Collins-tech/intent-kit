@@ -3,8 +3,8 @@ Tests for the remediation strategies.
 """
 
 import json
-from unittest.mock import Mock, patch, MagicMock
-from intent_kit.node.actions.remediation import (
+
+
     RemediationStrategy,
     RetryOnFailStrategy,
     FallbackToAnotherNodeStrategy,
@@ -21,22 +21,22 @@ from intent_kit.node.actions.remediation import (
     create_consensus_vote_strategy,
     create_alternate_prompt_strategy,
 )
-from intent_kit.node.types import ExecutionError
-from intent_kit.context import IntentContext
-from intent_kit.utils.text_utils import extract_json_from_text
+
+
+
 
 
 class TestRetryOnFailStrategy:
     """Test the RetryOnFailStrategy."""
 
-    def test_retry_strategy_creation(self):
+    def test_def test_retry_strategy_creation(self): -> None:
         """Test creating a retry strategy."""
         strategy = RetryOnFailStrategy(max_attempts=3, base_delay=1.0)
         assert strategy.name == "retry_on_fail"
         assert strategy.max_attempts == 3
         assert strategy.base_delay == 1.0
 
-    def test_retry_strategy_success_on_first_attempt(self):
+    def test_def test_retry_strategy_success_on_first_attempt(self): -> None:
         """Test retry strategy when handler succeeds on first attempt."""
         strategy = RetryOnFailStrategy(max_attempts=3, base_delay=0.1)
         handler_func = Mock(return_value="success")
@@ -55,7 +55,7 @@ class TestRetryOnFailStrategy:
         assert result.params == validated_params
         handler_func.assert_called_once_with(**validated_params)
 
-    def test_retry_strategy_success_on_retry(self):
+    def test_def test_retry_strategy_success_on_retry(self): -> None:
         """Test retry strategy when handler succeeds on retry."""
         strategy = RetryOnFailStrategy(max_attempts=3, base_delay=0.1)
         handler_func = Mock(side_effect=[Exception("fail"), "success"])
@@ -73,7 +73,7 @@ class TestRetryOnFailStrategy:
         assert result.output == "success"
         assert handler_func.call_count == 2
 
-    def test_retry_strategy_all_attempts_fail(self):
+    def test_def test_retry_strategy_all_attempts_fail(self): -> None:
         """Test retry strategy when all attempts fail."""
         strategy = RetryOnFailStrategy(max_attempts=2, base_delay=0.1)
         handler_func = Mock(side_effect=Exception("always fail"))
@@ -89,7 +89,7 @@ class TestRetryOnFailStrategy:
         assert result is None
         assert handler_func.call_count == 2
 
-    def test_retry_strategy_with_context(self):
+    def test_def test_retry_strategy_with_context(self): -> None:
         """Test retry strategy with context parameter."""
         strategy = RetryOnFailStrategy(max_attempts=1, base_delay=0.1)
         handler_func = Mock(return_value="success")
@@ -108,7 +108,7 @@ class TestRetryOnFailStrategy:
         assert result.success is True
         handler_func.assert_called_once_with(**validated_params, context=context)
 
-    def test_retry_strategy_missing_parameters(self):
+    def test_def test_retry_strategy_missing_parameters(self): -> None:
         """Test retry strategy with missing handler_func or validated_params."""
         strategy = RetryOnFailStrategy()
 
@@ -129,7 +129,7 @@ class TestRetryOnFailStrategy:
 class TestFallbackToAnotherNodeStrategy:
     """Test the FallbackToAnotherNodeStrategy."""
 
-    def test_fallback_strategy_creation(self):
+    def test_def test_fallback_strategy_creation(self): -> None:
         """Test creating a fallback strategy."""
         fallback_handler = Mock()
         strategy = FallbackToAnotherNodeStrategy(fallback_handler, "fallback_name")
@@ -137,7 +137,7 @@ class TestFallbackToAnotherNodeStrategy:
         assert strategy.fallback_handler == fallback_handler
         assert strategy.fallback_name == "fallback_name"
 
-    def test_fallback_strategy_success(self):
+    def test_def test_fallback_strategy_success(self): -> None:
         """Test fallback strategy when fallback handler succeeds."""
         fallback_handler = Mock(return_value="fallback success")
         strategy = FallbackToAnotherNodeStrategy(fallback_handler, "fallback")
@@ -156,7 +156,7 @@ class TestFallbackToAnotherNodeStrategy:
         assert result.node_name == "fallback"
         fallback_handler.assert_called_once_with(**validated_params)
 
-    def test_fallback_strategy_with_context(self):
+    def test_def test_fallback_strategy_with_context(self): -> None:
         """Test fallback strategy with context parameter."""
         fallback_handler = Mock(return_value="fallback success")
         strategy = FallbackToAnotherNodeStrategy(fallback_handler, "fallback")
@@ -175,7 +175,7 @@ class TestFallbackToAnotherNodeStrategy:
         assert result.success is True
         fallback_handler.assert_called_once_with(**validated_params, context=context)
 
-    def test_fallback_strategy_no_validated_params(self):
+    def test_def test_fallback_strategy_no_validated_params(self): -> None:
         """Test fallback strategy when no validated_params provided."""
         fallback_handler = Mock(return_value="fallback success")
         strategy = FallbackToAnotherNodeStrategy(fallback_handler, "fallback")
@@ -188,7 +188,7 @@ class TestFallbackToAnotherNodeStrategy:
         assert result.success is True
         fallback_handler.assert_called_once_with(user_input="test input")
 
-    def test_fallback_strategy_failure(self):
+    def test_def test_fallback_strategy_failure(self): -> None:
         """Test fallback strategy when fallback handler fails."""
         fallback_handler = Mock(side_effect=Exception("fallback failed"))
         strategy = FallbackToAnotherNodeStrategy(fallback_handler, "fallback")
@@ -442,7 +442,7 @@ class TestConsensusVoteStrategy:
 class TestRetryWithAlternatePromptStrategy:
     """Test the RetryWithAlternatePromptStrategy."""
 
-    def test_alternate_prompt_strategy_creation(self):
+    def test_def test_alternate_prompt_strategy_creation(self): -> None:
         """Test creating an alternate prompt strategy."""
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
         strategy = RetryWithAlternatePromptStrategy(llm_config)
@@ -450,7 +450,7 @@ class TestRetryWithAlternatePromptStrategy:
         assert strategy.llm_config == llm_config
         assert len(strategy.alternate_prompts) == 4
 
-    def test_alternate_prompt_strategy_custom_prompts(self):
+    def test_def test_alternate_prompt_strategy_custom_prompts(self): -> None:
         """Test alternate prompt strategy with custom prompts."""
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
         custom_prompts = ["Try {user_input}", "Test {user_input}"]
@@ -547,13 +547,13 @@ class TestRetryWithAlternatePromptStrategy:
 class TestRemediationRegistry:
     """Test the RemediationRegistry."""
 
-    def test_registry_creation(self):
+    def test_def test_registry_creation(self): -> None:
         """Test creating a remediation registry."""
         registry = RemediationRegistry()
         assert isinstance(registry._strategies, dict)
         assert len(registry._strategies) == 0
 
-    def test_registry_register_get(self):
+    def test_def test_registry_register_get(self): -> None:
         """Test registering and getting strategies."""
         registry = RemediationRegistry()
         strategy = Mock(spec=RemediationStrategy)
@@ -563,13 +563,13 @@ class TestRemediationRegistry:
         retrieved = registry.get("test_id")
         assert retrieved == strategy
 
-    def test_registry_get_nonexistent(self):
+    def test_def test_registry_get_nonexistent(self): -> None:
         """Test getting a non-existent strategy."""
         registry = RemediationRegistry()
         result = registry.get("nonexistent")
         assert result is None
 
-    def test_registry_list_strategies(self):
+    def test_def test_registry_list_strategies(self): -> None:
         """Test listing registered strategies."""
         registry = RemediationRegistry()
         strategy1 = Mock(spec=RemediationStrategy)
@@ -587,14 +587,14 @@ class TestRemediationRegistry:
 class TestRemediationFactoryFunctions:
     """Test the factory functions for creating remediation strategies."""
 
-    def test_create_retry_strategy(self):
+    def test_def test_create_retry_strategy(self): -> None:
         """Test creating a retry strategy via factory function."""
         strategy = create_retry_strategy(max_attempts=5, base_delay=2.0)
         assert isinstance(strategy, RetryOnFailStrategy)
         assert strategy.max_attempts == 5
         assert strategy.base_delay == 2.0
 
-    def test_create_fallback_strategy(self):
+    def test_def test_create_fallback_strategy(self): -> None:
         """Test creating a fallback strategy via factory function."""
         fallback_handler = Mock()
         strategy = create_fallback_strategy(fallback_handler, "custom_fallback")
@@ -623,7 +623,7 @@ class TestRemediationFactoryFunctions:
         assert strategy.llm_configs == llm_configs
         assert strategy.vote_threshold == 0.7
 
-    def test_create_alternate_prompt_strategy(self):
+    def test_def test_create_alternate_prompt_strategy(self): -> None:
         """Test creating an alternate prompt strategy via factory function."""
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
         custom_prompts = ["Custom prompt 1", "Custom prompt 2"]
@@ -636,7 +636,7 @@ class TestRemediationFactoryFunctions:
 class TestGlobalRegistry:
     """Test the global remediation registry."""
 
-    def test_register_get_strategy(self):
+    def test_def test_register_get_strategy(self): -> None:
         """Test registering and getting strategies from global registry."""
         strategy = Mock(spec=RemediationStrategy)
         strategy.name = "global_test_strategy"
@@ -645,7 +645,7 @@ class TestGlobalRegistry:
         retrieved = get_remediation_strategy("global_test")
         assert retrieved == strategy
 
-    def test_list_remediation_strategies(self):
+    def test_def test_list_remediation_strategies(self): -> None:
         """Test listing all registered remediation strategies."""
         # Clear any existing strategies for this test
         strategies = list_remediation_strategies()

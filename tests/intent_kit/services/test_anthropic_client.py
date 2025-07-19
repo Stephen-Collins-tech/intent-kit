@@ -3,15 +3,15 @@ Tests for Anthropic client.
 """
 
 import pytest
-from unittest.mock import Mock, patch
-from intent_kit.services.anthropic_client import AnthropicClient
+
+
 import sys
 
 
 class TestAnthropicClient:
     """Test AnthropicClient class."""
 
-    def test_init_with_api_key(self):
+    def test_def test_init_with_api_key(self): -> None:
         """Test initialization with API key."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -23,7 +23,7 @@ class TestAnthropicClient:
             assert client._client == mock_client
             mock_get_client.assert_called_once()
 
-    def test_get_client_success(self):
+    def test_def test_get_client_success(self): -> None:
         """Test successful client creation."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -34,7 +34,7 @@ class TestAnthropicClient:
 
             assert result == mock_client
 
-    def test_get_client_import_error(self):
+    def test_def test_get_client_import_error(self): -> None:
         """Test client creation when Anthropic package is not installed."""
         with patch.object(
             AnthropicClient,
@@ -44,7 +44,7 @@ class TestAnthropicClient:
             with pytest.raises(ImportError, match="Anthropic package not installed"):
                 AnthropicClient("test_api_key")
 
-    def test_ensure_imported_success(self):
+    def test_def test_ensure_imported_success(self): -> None:
         """Test _ensure_imported when client exists."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -54,9 +54,9 @@ class TestAnthropicClient:
             # Should not raise
             client._ensure_imported()
 
-    def test_ensure_imported_recreate_client(self):
+    def test_def test_ensure_imported_recreate_client(self): -> None:
         """Test _ensure_imported when client is None."""
-        from intent_kit.services.anthropic_client import AnthropicClient
+
 
         mock_anthropic = Mock()
         mock_client = Mock()
@@ -73,7 +73,7 @@ class TestAnthropicClient:
         # Clean up
         del sys.modules["anthropic"]
 
-    def test_generate_success(self):
+    def test_def test_generate_success(self): -> None:
         """Test successful text generation."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -93,7 +93,7 @@ class TestAnthropicClient:
                 messages=[{"role": "user", "content": "Test prompt"}],
             )
 
-    def test_generate_with_custom_model(self):
+    def test_def test_generate_with_custom_model(self): -> None:
         """Test text generation with custom model."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -113,7 +113,7 @@ class TestAnthropicClient:
                 messages=[{"role": "user", "content": "Test prompt"}],
             )
 
-    def test_generate_empty_response(self):
+    def test_def test_generate_empty_response(self): -> None:
         """Test text generation with empty response."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -127,7 +127,7 @@ class TestAnthropicClient:
 
             assert result == ""
 
-    def test_generate_no_content(self):
+    def test_def test_generate_no_content(self): -> None:
         """Test text generation with no content in response."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -141,7 +141,7 @@ class TestAnthropicClient:
 
             assert result == ""
 
-    def test_generate_exception_handling(self):
+    def test_def test_generate_exception_handling(self): -> None:
         """Test text generation with exception handling."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -153,7 +153,7 @@ class TestAnthropicClient:
             with pytest.raises(Exception, match="API Error"):
                 client.generate("Test prompt")
 
-    def test_generate_text_alias(self):
+    def test_def test_generate_text_alias(self): -> None:
         """Test generate_text alias method."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -175,7 +175,7 @@ class TestAnthropicClient:
                 messages=[{"role": "user", "content": "Test prompt"}],
             )
 
-    def test_generate_with_client_recreation(self):
+    def test_def test_generate_with_client_recreation(self): -> None:
         """Test generate when client needs to be recreated."""
         mock_anthropic = Mock()
         mock_client = Mock()
@@ -200,7 +200,7 @@ class TestAnthropicClient:
     # Note: is_available method doesn't exist on AnthropicClient class
     # These tests have been removed as they test non-existent functionality
 
-    def test_generate_with_different_prompts(self):
+    def test_def test_generate_with_different_prompts(self): -> None:
         """Test generate with different prompt types."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -224,7 +224,7 @@ class TestAnthropicClient:
             # Verify calls
             assert mock_client.messages.create.call_count == 2
 
-    def test_generate_with_different_models(self):
+    def test_def test_generate_with_different_models(self): -> None:
         """Test generate with different model types."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -252,7 +252,7 @@ class TestAnthropicClient:
             # Verify different models were used
             assert mock_client.messages.create.call_count == 3
 
-    def test_generate_with_multiple_content_parts(self):
+    def test_def test_generate_with_multiple_content_parts(self): -> None:
         """Test generate with multiple content parts in response."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -270,7 +270,7 @@ class TestAnthropicClient:
             result = client.generate("Test prompt")
             assert result == "Part 1"
 
-    def test_generate_with_logging(self):
+    def test_def test_generate_with_logging(self): -> None:
         """Test generate with debug logging."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -286,7 +286,7 @@ class TestAnthropicClient:
             assert result == "Generated response"
             # Note: No debug logging is currently implemented in the generate method
 
-    def test_generate_with_api_error(self):
+    def test_def test_generate_with_api_error(self): -> None:
         """Test generate with API error handling."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -298,7 +298,7 @@ class TestAnthropicClient:
             with pytest.raises(Exception, match="Rate limit exceeded"):
                 client.generate("Test prompt")
 
-    def test_generate_with_network_error(self):
+    def test_def test_generate_with_network_error(self): -> None:
         """Test generate with network error handling."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
@@ -310,12 +310,12 @@ class TestAnthropicClient:
             with pytest.raises(Exception, match="Connection timeout"):
                 client.generate("Test prompt")
 
-    def test_client_initialization_without_api_key(self):
+    def test_def test_client_initialization_without_api_key(self): -> None:
         """Test client initialization without API key."""
         with pytest.raises(TypeError):
             AnthropicClient(api_key=None)  # type: ignore[call-arg]
 
-    def test_client_initialization_with_empty_api_key(self):
+    def test_def test_client_initialization_with_empty_api_key(self): -> None:
         """Test client initialization with empty API key."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()

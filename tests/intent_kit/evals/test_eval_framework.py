@@ -4,10 +4,10 @@ Tests for the evaluation framework in intent_kit.evals.
 This tests the evaluation framework itself, not the sample nodes.
 """
 
-from unittest.mock import patch
-from collections import namedtuple
 
-from intent_kit.evals import (
+
+
+
     EvalTestCase,
     Dataset,
     EvalTestResult,
@@ -20,7 +20,7 @@ from intent_kit.evals import (
 class TestEvalTestCase:
     """Test EvalTestCase dataclass."""
 
-    def test_init_basic(self):
+    def test_def test_init_basic(self): -> None:
         """Test basic EvalTestCase initialization."""
         test_case = EvalTestCase(
             input="Hello world", expected="Hello world", context={"user_id": "123"}
@@ -30,7 +30,7 @@ class TestEvalTestCase:
         assert test_case.expected == "Hello world"
         assert test_case.context == {"user_id": "123"}
 
-    def test_init_with_none_context(self):
+    def test_def test_init_with_none_context(self): -> None:
         """Test EvalTestCase initialization with None context."""
         test_case = EvalTestCase(
             input="Hello world", expected="Hello world", context=None
@@ -42,7 +42,7 @@ class TestEvalTestCase:
 class TestDataset:
     """Test Dataset dataclass."""
 
-    def test_init_basic(self):
+    def test_def test_init_basic(self): -> None:
         """Test basic Dataset initialization."""
         test_cases = [
             EvalTestCase("input1", "expected1", {}),
@@ -63,7 +63,7 @@ class TestDataset:
         assert dataset.node_name == "test_handler"
         assert len(dataset.test_cases) == 2
 
-    def test_init_with_none_description(self):
+    def test_def test_init_with_none_description(self): -> None:
         """Test Dataset initialization with None description."""
         dataset = Dataset(
             name="test_dataset",
@@ -79,7 +79,7 @@ class TestDataset:
 class TestEvalTestResult:
     """Test EvalTestResult dataclass."""
 
-    def test_init_basic(self):
+    def test_def test_init_basic(self): -> None:
         """Test basic EvalTestResult initialization."""
         result = EvalTestResult(
             input="Hello world",
@@ -96,7 +96,7 @@ class TestEvalTestResult:
         assert result.context == {"user_id": "123"}
         assert result.error is None
 
-    def test_init_with_error(self):
+    def test_def test_init_with_error(self): -> None:
         """Test EvalTestResult initialization with error."""
         result = EvalTestResult(
             input="Hello world",
@@ -110,7 +110,7 @@ class TestEvalTestResult:
         assert result.passed is False
         assert result.error == "Unexpected output"
 
-    def test_init_with_none_context(self):
+    def test_def test_init_with_none_context(self): -> None:
         """Test EvalTestResult initialization with None context."""
         result = EvalTestResult(
             input="Hello world",
@@ -126,7 +126,7 @@ class TestEvalTestResult:
 class TestEvalResult:
     """Test EvalResult class."""
 
-    def test_init_basic(self):
+    def test_def test_init_basic(self): -> None:
         """Test basic EvalResult initialization."""
         results = [
             EvalTestResult("input1", "expected1", "actual1", True, {}),
@@ -138,7 +138,7 @@ class TestEvalResult:
         assert eval_result.results == results
         assert eval_result.dataset_name == "test_dataset"
 
-    def test_all_passed_true(self):
+    def test_def test_all_passed_true(self): -> None:
         """Test all_passed when all tests pass."""
         results = [
             EvalTestResult("input1", "expected1", "actual1", True, {}),
@@ -148,7 +148,7 @@ class TestEvalResult:
         eval_result = EvalResult(results)
         assert eval_result.all_passed() is True
 
-    def test_all_passed_false(self):
+    def test_def test_all_passed_false(self): -> None:
         """Test all_passed when some tests fail."""
         results = [
             EvalTestResult("input1", "expected1", "actual1", True, {}),
@@ -158,7 +158,7 @@ class TestEvalResult:
         eval_result = EvalResult(results)
         assert eval_result.all_passed() is False
 
-    def test_accuracy_all_passed(self):
+    def test_def test_accuracy_all_passed(self): -> None:
         """Test accuracy calculation when all tests pass."""
         results = [
             EvalTestResult("input1", "expected1", "actual1", True, {}),
@@ -168,7 +168,7 @@ class TestEvalResult:
         eval_result = EvalResult(results)
         assert eval_result.accuracy() == 1.0
 
-    def test_accuracy_some_failed(self):
+    def test_def test_accuracy_some_failed(self): -> None:
         """Test accuracy calculation when some tests fail."""
         results = [
             EvalTestResult("input1", "expected1", "actual1", True, {}),
@@ -179,12 +179,12 @@ class TestEvalResult:
         eval_result = EvalResult(results)
         assert eval_result.accuracy() == 2 / 3
 
-    def test_accuracy_empty_results(self):
+    def test_def test_accuracy_empty_results(self): -> None:
         """Test accuracy calculation with empty results."""
         eval_result = EvalResult([])
         assert eval_result.accuracy() == 0.0
 
-    def test_counts(self):
+    def test_def test_counts(self): -> None:
         """Test count methods."""
         results = [
             EvalTestResult("input1", "expected1", "actual1", True, {}),
@@ -197,7 +197,7 @@ class TestEvalResult:
         assert eval_result.failed_count() == 1
         assert eval_result.total_count() == 3
 
-    def test_errors(self):
+    def test_def test_errors(self): -> None:
         """Test errors method returns failed tests."""
         results = [
             EvalTestResult("input1", "expected1", "actual1", True, {}),
@@ -344,7 +344,7 @@ test_cases:
 class TestRunEval:
     """Test run_eval function."""
 
-    def test_run_eval_success(self):
+    def test_def test_run_eval_success(self): -> None:
         """Test successful evaluation run."""
         Result = namedtuple("Result", ["success", "output"])
 
@@ -368,7 +368,7 @@ class TestRunEval:
         assert result.results[0].passed is True
         assert result.accuracy() == 1.0
 
-    def test_run_eval_failure(self):
+    def test_def test_run_eval_failure(self): -> None:
         """Test evaluation run with failures."""
         Result = namedtuple("Result", ["success", "output"])
 
@@ -392,7 +392,7 @@ class TestRunEval:
         assert result.results[0].passed is False
         assert result.accuracy() == 0.0
 
-    def test_run_eval_with_custom_comparator(self):
+    def test_def test_run_eval_with_custom_comparator(self): -> None:
         """Test evaluation run with custom comparator."""
         Result = namedtuple("Result", ["success", "output"])
 

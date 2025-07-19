@@ -1,16 +1,16 @@
 import uuid
-from typing import List, Optional
-from abc import ABC, abstractmethod
-from intent_kit.utils.logger import Logger
-from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult
-from intent_kit.node.enums import NodeType
+
+
+
+
+
+
 
 
 class Node:
     """Base class for all nodes with UUID identification and optional user-defined names."""
 
-    def __init__(self, name: Optional[str] = None, parent: Optional["Node"] = None):
+    def __init__def __init__(self, name: Optional[str] = None, parent: Optional["Node"] = None): -> None:
         self.node_id = str(uuid.uuid4())
         self.name = name or self.node_id
         self.parent = parent

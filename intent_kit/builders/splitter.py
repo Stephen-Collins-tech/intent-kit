@@ -5,17 +5,17 @@ This module provides a builder class for creating SplitterNode instances
 with a more readable and type-safe approach.
 """
 
-from typing import Any, Callable, List, Optional
-from intent_kit.node import TreeNode
-from intent_kit.node.splitters import SplitterNode
-from intent_kit.utils.node_factory import create_splitter_node
+
+
+
+
 from .base import Builder
 
 
 class SplitterBuilder(Builder):
     """Builder for creating splitter nodes with fluent interface."""
 
-    def __init__(self, name: str):
+    def __init__def __init__(self, name: str): -> None:
         """Initialize the splitter builder.
 
         Args:

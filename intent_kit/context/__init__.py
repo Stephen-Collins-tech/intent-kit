@@ -5,13 +5,13 @@ This module provides the core IntentContext class that enables state sharing
 between different steps of a workflow, across conversations, and between taxonomies.
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List, Set
-from threading import Lock
+
+
+
 import uuid
 import traceback
 from datetime import datetime
-from intent_kit.utils.logger import Logger
+
 
 
 @dataclass
@@ -63,7 +63,7 @@ class IntentContext:
     - Type-safe field access
     """
 
-    def __init__(self, session_id: Optional[str] = None, debug: bool = False):
+    def __init__def __init__(self, session_id: Optional[str] = None, debug: bool = False): -> None:
         """
         Initialize a new IntentContext.
 
@@ -347,8 +347,8 @@ class IntentContext:
             history_count = len(self._history)
             error_count = len(self._errors)
 
-        return f"IntentContext(session_id={self.session_id}, fields={field_count}, history={history_count}, errors={error_count})"
-
+        return f"IntentContext(
+            session_id={self.session_id}, fields={field_count}, history={history_count}, errors={error_count})"
     def __repr__(self) -> str:
         """Detailed string representation of the context."""
         return self.__str__()

@@ -4,9 +4,9 @@ Tests for intent_kit.node.classifiers.llm_classifier module.
 
 import pytest
 
-from unittest.mock import patch
 
-from intent_kit.node.classifiers.llm_classifier import (
+
+
     create_llm_classifier,
     create_llm_arg_extractor,
     get_default_classification_prompt,
@@ -17,7 +17,7 @@ from intent_kit.node.classifiers.llm_classifier import (
 class MockTreeNode:
     """Mock TreeNode for testing."""
 
-    def __init__(self, name: str, description: str = ""):
+    def __init__def __init__(self, name: str, description: str = ""): -> None:
         self.name = name
         self.description = description
 
@@ -25,7 +25,7 @@ class MockTreeNode:
 class TestCreateLLMClassifier:
     """Test the create_llm_classifier function."""
 
-    def test_create_llm_classifier_returns_function(self):
+    def test_def test_create_llm_classifier_returns_function(self): -> None:
         """Test that create_llm_classifier returns a callable function."""
         llm_config = {"provider": "openai", "model": "gpt-4"}
         classification_prompt = "Test prompt"
@@ -274,7 +274,7 @@ class TestCreateLLMClassifier:
 class TestCreateLLMArgExtractor:
     """Test the create_llm_arg_extractor function."""
 
-    def test_create_llm_arg_extractor_returns_function(self):
+    def test_def test_create_llm_arg_extractor_returns_function(self): -> None:
         """Test that create_llm_arg_extractor returns a callable function."""
         llm_config = {"provider": "openai", "model": "gpt-4"}
         extraction_prompt = "Extract parameters: {user_input}\n{param_descriptions}"
@@ -443,7 +443,7 @@ class TestCreateLLMArgExtractor:
 class TestDefaultPrompts:
     """Test the default prompt functions."""
 
-    def test_get_default_classification_prompt(self):
+    def test_def test_get_default_classification_prompt(self): -> None:
         """Test the default classification prompt template."""
         prompt = get_default_classification_prompt()
 
@@ -454,7 +454,7 @@ class TestDefaultPrompts:
         assert "intent classifier" in prompt.lower()
         assert "return only the number" in prompt.lower()
 
-    def test_get_default_extraction_prompt(self):
+    def test_def test_get_default_extraction_prompt(self): -> None:
         """Test the default extraction prompt template."""
         prompt = get_default_extraction_prompt()
 
@@ -464,7 +464,7 @@ class TestDefaultPrompts:
         assert "parameter extractor" in prompt.lower()
         assert "param_name: value" in prompt.lower()
 
-    def test_default_classification_prompt_formatting(self):
+    def test_def test_default_classification_prompt_formatting(self): -> None:
         """Test that default classification prompt can be formatted."""
         prompt_template = get_default_classification_prompt()
 
@@ -480,7 +480,7 @@ class TestDefaultPrompts:
         assert "User is logged in" in formatted
         assert "1-2" in formatted
 
-    def test_default_extraction_prompt_formatting(self):
+    def test_def test_default_extraction_prompt_formatting(self): -> None:
         """Test that default extraction prompt can be formatted."""
         prompt_template = get_default_extraction_prompt()
 
@@ -498,7 +498,7 @@ class TestDefaultPrompts:
 class TestLLMClassifierIntegration:
     """Integration tests for LLM classifier."""
 
-    def test_classifier_with_empty_children(self):
+    def test_def test_classifier_with_empty_children(self): -> None:
         """Test classifier with empty children list."""
         llm_config = {"provider": "openai", "model": "gpt-4"}
         classification_prompt = "Select a node: {user_input}\n{node_descriptions}"
@@ -512,7 +512,7 @@ class TestLLMClassifierIntegration:
 
         assert result is None
 
-    def test_classifier_with_single_child(self):
+    def test_def test_classifier_with_single_child(self): -> None:
         """Test classifier with single child."""
         llm_config = {"provider": "openai", "model": "gpt-4"}
         classification_prompt = "Select a node: {user_input}\n{node_descriptions}"
@@ -525,7 +525,7 @@ class TestLLMClassifierIntegration:
         # Should work with single child
         assert classifier is not None
 
-    def test_arg_extractor_with_complex_schema(self):
+    def test_def test_arg_extractor_with_complex_schema(self): -> None:
         """Test argument extractor with complex parameter schema."""
         llm_config = {"provider": "openai", "model": "gpt-4"}
         extraction_prompt = "Extract parameters: {user_input}\n{param_descriptions}"
@@ -538,7 +538,7 @@ class TestLLMClassifierIntegration:
         # Should handle complex schema
         assert extractor is not None
 
-    def test_prompt_formatting_edge_cases(self):
+    def test_def test_prompt_formatting_edge_cases(self): -> None:
         """Test prompt formatting with edge cases."""
         llm_config = {"provider": "openai", "model": "gpt-4"}
         classification_prompt = "Test: {user_input}"

@@ -5,11 +5,11 @@ This module provides the ClassifierNode class which is an intermediate node
 that uses a classifier to select child nodes.
 """
 
-from typing import Any, Callable, List, Optional, Dict, Union
+
 from ..base import TreeNode
 from ..enums import NodeType
 from ..types import ExecutionResult, ExecutionError
-from intent_kit.context import IntentContext
+
 from ..actions.remediation import (
     get_remediation_strategy,
     RemediationStrategy,
@@ -49,8 +49,8 @@ class ClassifierNode(TreeNode):
         chosen = self.classifier(user_input, self.children, context_dict)
         if not chosen:
             self.logger.error(
-                f"Classifier at '{self.name}' (Path: {'.'.join(self.get_path())}) could not route input."
-            )
+                f"Classifier at '{self.name}' (
+                    Path: {'.'.join(self.get_path())}) could not route input."            )
 
             # Try remediation strategies
             error = ExecutionError(
@@ -148,8 +148,8 @@ class ClassifierNode(TreeNode):
                     )
             except Exception as e:
                 self.logger.error(
-                    f"Remediation strategy '{strategy.name}' error for {self.name}: {type(e).__name__}: {str(e)}"
-                )
+                    f"Remediation strategy '{strategy.name}' error for {self.name}: {type(
+                        e).__name__}: {str(e)}"                )
 
         self.logger.error(f"All remediation strategies failed for {self.name}")
         return None

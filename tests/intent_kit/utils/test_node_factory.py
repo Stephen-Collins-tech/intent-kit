@@ -2,10 +2,10 @@
 Tests for node factory utilities.
 """
 
-from unittest.mock import Mock, patch
-from typing import Dict, List, Any, cast, Union
 
-from intent_kit.utils.node_factory import (
+
+
+
     set_parent_relationships,
     create_action_node,
     create_classifier_node,
@@ -17,18 +17,18 @@ from intent_kit.utils.node_factory import (
     rule_splitter_node,
     create_intent_graph,
 )
-from intent_kit.node import TreeNode
-from intent_kit.node.actions import ActionNode
-from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.node.splitters import SplitterNode
-from intent_kit.graph import IntentGraph
-from intent_kit.node.actions.remediation import RemediationStrategy
+
+
+
+
+
+
 
 
 class TestSetParentRelationships:
     """Test parent-child relationship setting."""
 
-    def test_set_parent_relationships(self):
+    def test_def test_set_parent_relationships(self): -> None:
         """Test setting parent relationships for children."""
         parent = Mock(spec=TreeNode)
         child1 = Mock(spec=TreeNode)
@@ -40,7 +40,7 @@ class TestSetParentRelationships:
         assert child1.parent == parent
         assert child2.parent == parent
 
-    def test_set_parent_relationships_empty_list(self):
+    def test_def test_set_parent_relationships_empty_list(self): -> None:
         """Test setting parent relationships with empty list."""
         parent = Mock(spec=TreeNode)
         children = []
@@ -52,7 +52,7 @@ class TestSetParentRelationships:
 class TestCreateActionNode:
     """Test action node creation."""
 
-    def test_create_action_node_basic(self):
+    def test_def test_create_action_node_basic(self): -> None:
         """Test creating basic action node."""
 
         def action_func(name: str) -> str:
@@ -76,7 +76,7 @@ class TestCreateActionNode:
         assert node.action == action_func
         assert node.arg_extractor == arg_extractor
 
-    def test_create_action_node_with_context(self):
+    def test_def test_create_action_node_with_context(self): -> None:
         """Test creating action node with context inputs/outputs."""
 
         def action_func(name: str) -> str:
@@ -100,7 +100,7 @@ class TestCreateActionNode:
         assert node.context_inputs == context_inputs
         assert node.context_outputs == context_outputs
 
-    def test_create_action_node_with_validators(self):
+    def test_def test_create_action_node_with_validators(self): -> None:
         """Test creating action node with validators."""
 
         def action_func(name: str) -> str:
@@ -128,7 +128,7 @@ class TestCreateActionNode:
         assert node.input_validator == input_validator
         assert node.output_validator == output_validator
 
-    def test_create_action_node_with_remediation(self):
+    def test_def test_create_action_node_with_remediation(self): -> None:
         """Test creating action node with remediation strategies."""
 
         def action_func(name: str) -> str:
@@ -155,7 +155,7 @@ class TestCreateActionNode:
 class TestCreateClassifierNode:
     """Test classifier node creation."""
 
-    def test_create_classifier_node_basic(self):
+    def test_def test_create_classifier_node_basic(self): -> None:
         """Test creating basic classifier node."""
 
         def classifier_func(
@@ -184,7 +184,7 @@ class TestCreateClassifierNode:
         assert child1.parent == node
         assert child2.parent == node
 
-    def test_create_classifier_node_with_remediation(self):
+    def test_def test_create_classifier_node_with_remediation(self): -> None:
         """Test creating classifier node with remediation strategies."""
 
         def classifier_func(
@@ -212,7 +212,7 @@ class TestCreateClassifierNode:
 class TestCreateSplitterNode:
     """Test splitter node creation."""
 
-    def test_create_splitter_node_basic(self):
+    def test_def test_create_splitter_node_basic(self): -> None:
         """Test creating basic splitter node."""
 
         def splitter_func(user_input: str, debug: bool = False):
@@ -239,7 +239,7 @@ class TestCreateSplitterNode:
         assert child1.parent == node
         assert child2.parent == node
 
-    def test_create_splitter_node_with_llm_client(self):
+    def test_def test_create_splitter_node_with_llm_client(self): -> None:
         """Test creating splitter node with LLM client."""
 
         def splitter_func(user_input: str, debug: bool = False):
@@ -263,7 +263,7 @@ class TestCreateSplitterNode:
 class TestCreateDefaultClassifier:
     """Test default classifier creation."""
 
-    def test_create_default_classifier(self):
+    def test_def test_create_default_classifier(self): -> None:
         """Test creating default classifier."""
         classifier_func = create_default_classifier()
 
@@ -274,7 +274,7 @@ class TestCreateDefaultClassifier:
         result = classifier_func("test input", children, {})
         assert result == child1
 
-    def test_create_default_classifier_empty_children(self):
+    def test_def test_create_default_classifier_empty_children(self): -> None:
         """Test default classifier with empty children list."""
         classifier_func = create_default_classifier()
         children = []
@@ -448,8 +448,8 @@ class TestLLMClassifierFactory:
 
         mock_create_llm_classifier.assert_called_once_with(
             llm_config,
-            "You are an intent classifier. Given a user input, select the most appropriate intent from the available options.\n\nUser Input: {user_input}\n\nAvailable Intents:\n{node_descriptions}\n\n{context_info}\n\nInstructions:\n- Analyze the user input carefully\n- Consider the available context information when making your decision\n- Select the intent that best matches the user's request\n- Return only the number (1-{num_nodes}) corresponding to your choice\n- If no intent matches, return 0\n\nYour choice (number only):",
-            ["child1", "child2"],
+            "You are an intent classifier. Given a user input, select the most appropriate intent from the available options.\n\nUser Input: {user_input}\n\nAvailable Intents:\n{node_descriptions}\n\n{context_info}\n\nInstructions:\n- Analyze the user input carefully\n- Consider the available context information when making your decision\n- Select the intent that best matches the user's request\n- Return only the number (
+                1-{num_nodes}) corresponding to your choice\n- If no intent matches, return 0\n\nYour choice (number only):",            ["child1", "child2"],
         )
         mock_create_classifier_node.assert_called_once_with(
             name="route",

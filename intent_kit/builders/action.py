@@ -5,18 +5,18 @@ This module provides a builder class for creating ActionNode instances
 with a more readable and type-safe approach.
 """
 
-from typing import Any, Callable, Dict, Type, Set, List, Optional, Union
-from intent_kit.node.actions import ActionNode
-from intent_kit.node.actions import RemediationStrategy
-from intent_kit.utils.param_extraction import create_arg_extractor
-from intent_kit.utils.node_factory import create_action_node
+
+
+
+
+
 from .base import Builder
 
 
 class ActionBuilder(Builder):
     """Builder for creating action nodes with fluent interface."""
 
-    def __init__(self, name: str):
+    def __init__def __init__(self, name: str): -> None:
         """Initialize the action builder.
 
         Args:

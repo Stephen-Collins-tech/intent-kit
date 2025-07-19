@@ -5,8 +5,8 @@ A minimal demonstration showing how to configure an intent graph with actions an
 """
 
 import os
-from dotenv import load_dotenv
-from intent_kit import IntentGraphBuilder, action, llm_classifier
+
+
 
 load_dotenv()
 
@@ -97,7 +97,7 @@ def create_intent_graph():
 
 # Test the graph
 if __name__ == "__main__":
-    from intent_kit.context import IntentContext
+
 
     graph = create_intent_graph()
     context = IntentContext(session_id="simple_demo")

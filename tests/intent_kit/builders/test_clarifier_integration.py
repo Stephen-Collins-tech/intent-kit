@@ -3,17 +3,17 @@ Integration tests for Clarifier nodes with graph builder and intent graph.
 """
 
 import pytest
-from unittest.mock import patch
-from intent_kit.builders import IntentGraphBuilder
-from intent_kit.node.actions import ClarifierNode
-from intent_kit.node.enums import NodeType
-from intent_kit.context import IntentContext
+
+
+
+
+
 
 
 class TestClarifierIntegration:
     """Integration tests for Clarifier nodes."""
 
-    def test_graph_builder_with_clarifier_node(self):
+    def test_def test_graph_builder_with_clarifier_node(self): -> None:
         """Test that graph builder can create graphs with Clarifier nodes."""
 
         # Create a simple function registry
@@ -60,7 +60,7 @@ class TestClarifierIntegration:
         )
         assert clarifier_node.max_clarification_attempts == 3
 
-    def test_graph_builder_validation_with_clarifier(self):
+    def test_def test_graph_builder_validation_with_clarifier(self): -> None:
         """Test that graph builder validation works with Clarifier nodes."""
         json_graph = {
             "root": "clarifier_node",
@@ -80,7 +80,7 @@ class TestClarifierIntegration:
         assert validation_result["node_count"] == 1
         assert len(validation_result["errors"]) == 0
 
-    def test_graph_builder_validation_missing_clarification_prompt(self):
+    def test_def test_graph_builder_validation_missing_clarification_prompt(self): -> None:
         """Test that validation fails when clarification_prompt is missing."""
         json_graph = {
             "root": "clarifier_node",
@@ -100,7 +100,7 @@ class TestClarifierIntegration:
         ):
             builder.with_json(json_graph).validate_json_graph()
 
-    def test_intent_graph_with_clarifier_node(self):
+    def test_def test_intent_graph_with_clarifier_node(self): -> None:
         """Test that IntentGraph can handle Clarifier nodes in routing."""
         # Create a clarifier node
         clarifier_node = ClarifierNode(
@@ -113,7 +113,7 @@ class TestClarifierIntegration:
         def book_action(user_input: str) -> str:
             return f"Booked: {user_input}"
 
-        from intent_kit.utils.node_factory import action
+
 
         action_node = action(
             name="book_action",
@@ -123,7 +123,7 @@ class TestClarifierIntegration:
         )
 
         # Create graph with both nodes
-        from intent_kit.graph import IntentGraph
+
 
         graph = IntentGraph(root_nodes=[clarifier_node, action_node])
 
@@ -149,9 +149,9 @@ class TestClarifierIntegration:
                 in clarifier_result.output["clarification_message"]
             )
 
-    def test_clarifier_node_factory_function(self):
+    def test_def test_clarifier_node_factory_function(self): -> None:
         """Test the clarifier factory function."""
-        from intent_kit.utils.node_factory import clarifier
+
 
         node = clarifier(
             name="test_clarifier",
@@ -168,7 +168,7 @@ class TestClarifierIntegration:
         assert node.max_clarification_attempts == 5
         assert node.description == "Test clarifier"
 
-    def test_clarifier_node_with_context_integration(self):
+    def test_def test_clarifier_node_with_context_integration(self): -> None:
         """Test Clarifier node with context integration."""
         clarifier_node = ClarifierNode(
             name="test_clarifier", clarification_prompt="Please clarify: {input}"
@@ -199,7 +199,7 @@ class TestClarifierIntegration:
         assert updated_context["attempts"] == 1
         assert updated_context["last_response"] == "clarified input"
 
-    def test_clarifier_node_max_attempts_integration(self):
+    def test_def test_clarifier_node_max_attempts_integration(self): -> None:
         """Test Clarifier node max attempts integration."""
         clarifier_node = ClarifierNode(
             name="test_clarifier",
@@ -226,7 +226,7 @@ class TestClarifierIntegration:
         assert response["error"] == "Maximum clarification attempts exceeded"
         assert response["attempts"] == 3
 
-    def test_clarifier_node_placeholder_replacement_integration(self):
+    def test_def test_clarifier_node_placeholder_replacement_integration(self): -> None:
         """Test Clarifier node placeholder replacement in integration."""
         clarifier_node = ClarifierNode(
             name="test_clarifier",
@@ -240,7 +240,7 @@ class TestClarifierIntegration:
         )
         assert result.output["clarification_message"] == expected_message
 
-    def test_clarifier_node_with_expected_format_integration(self):
+    def test_def test_clarifier_node_with_expected_format_integration(self): -> None:
         """Test Clarifier node with expected format in integration."""
         clarifier_node = ClarifierNode(
             name="test_clarifier",

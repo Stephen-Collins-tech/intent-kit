@@ -4,7 +4,7 @@ import sys
 import subprocess
 
 
-def main():
+def main() -> None:
     """Run mypy with the current directory."""
     try:
         cmd = [sys.executable, "-m", "mypy", "."] + sys.argv[1:]

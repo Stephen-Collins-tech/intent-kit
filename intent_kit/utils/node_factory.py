@@ -5,29 +5,29 @@ This module provides factory functions for creating different types of nodes
 with consistent patterns and common functionality.
 """
 
-from typing import Any, Callable, List, Optional, Dict, Type, Set, Union, Sequence
-from intent_kit.node import TreeNode
-from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.node.actions import (
+
+
+
+
     ActionNode,
     ClarifierNode,
     RemediationStrategy,
     create_llm_clarifier_node,
 )
-from intent_kit.node.splitters import SplitterNode, rule_splitter, llm_splitter
-from intent_kit.utils.logger import Logger
-from intent_kit.types import IntentChunk
-from intent_kit.graph import IntentGraph
-from intent_kit.services.base_client import BaseLLMClient
+
+
+
+
+
 
 # LLM classifier imports
-from intent_kit.node.classifiers import (
+
     create_llm_classifier,
     get_default_classification_prompt,
 )
 
 # Utility imports
-from intent_kit.utils.param_extraction import create_arg_extractor
+
 
 logger = Logger("node_factory")
 
@@ -446,7 +446,7 @@ def create_intent_graph(root_node: TreeNode) -> "IntentGraph":
     Returns:
         Configured IntentGraph instance
     """
-    from intent_kit.builders import IntentGraphBuilder
+
 
     return IntentGraphBuilder().root(root_node).build()
 

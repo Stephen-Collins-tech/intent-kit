@@ -5,10 +5,10 @@ This example shows how Clarifier nodes can be used to handle ambiguous
 user input and request clarification when needed.
 """
 
-from intent_kit.builders import IntentGraphBuilder
-from intent_kit.node.enums import NodeType
-from intent_kit.context import IntentContext
-from intent_kit.utils.node_factory import action, clarifier, llm_clarifier
+
+
+
+
 
 
 def book_flight(destination: str, date: str, time: str = "any") -> str:
@@ -142,7 +142,7 @@ Clarification Prompt:""",
             return flight_clarifier
 
     # Create the graph
-    from intent_kit.graph import IntentGraph
+
 
     graph = IntentGraph(
         root_nodes=[

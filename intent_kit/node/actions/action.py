@@ -5,12 +5,12 @@ This module provides the ActionNode class which is a leaf node representing
 an executable action with argument extraction and validation.
 """
 
-from typing import Any, Callable, Dict, Optional, Set, Type, List, Union
+
 from ..base import TreeNode
 from ..enums import NodeType
 from ..types import ExecutionResult, ExecutionError
-from intent_kit.context import IntentContext
-from intent_kit.context.dependencies import declare_dependencies
+
+
 from .remediation import (
     get_remediation_strategy,
     RemediationStrategy,
@@ -70,8 +70,8 @@ class ActionNode(TreeNode):
             extracted_params = self.arg_extractor(user_input, context_dict or {})
         except Exception as e:
             self.logger.error(
-                f"Argument extraction failed for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-            )
+                f"Argument extraction failed for intent '{self.name}' (
+                    Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"            )
             return ExecutionResult(
                 success=False,
                 node_name=self.name,
@@ -92,8 +92,8 @@ class ActionNode(TreeNode):
             try:
                 if not self.input_validator(extracted_params):
                     self.logger.error(
-                        f"Input validation failed for intent '{self.name}' (Path: {'.'.join(self.get_path())})"
-                    )
+                        f"Input validation failed for intent '{self.name}' (
+                            Path: {'.'.join(self.get_path())})"                    )
                     return ExecutionResult(
                         success=False,
                         node_name=self.name,
@@ -112,8 +112,8 @@ class ActionNode(TreeNode):
                     )
             except Exception as e:
                 self.logger.error(
-                    f"Input validation error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-                )
+                    f"Input validation error for intent '{self.name}' (
+                        Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"                )
                 return ExecutionResult(
                     success=False,
                     node_name=self.name,
@@ -134,8 +134,8 @@ class ActionNode(TreeNode):
             validated_params = self._validate_types(extracted_params)
         except Exception as e:
             self.logger.error(
-                f"Type validation error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-            )
+                f"Type validation error for intent '{self.name}' (
+                    Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"            )
             return ExecutionResult(
                 success=False,
                 node_name=self.name,
@@ -159,8 +159,8 @@ class ActionNode(TreeNode):
                 output = self.action(**validated_params)
         except Exception as e:
             self.logger.error(
-                f"Action execution error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-            )
+                f"Action execution error for intent '{self.name}' (
+                    Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"            )
 
             # Try remediation strategies
             error = ExecutionError(
@@ -196,8 +196,8 @@ class ActionNode(TreeNode):
             try:
                 if not self.output_validator(output):
                     self.logger.error(
-                        f"Output validation failed for intent '{self.name}' (Path: {'.'.join(self.get_path())})"
-                    )
+                        f"Output validation failed for intent '{self.name}' (
+                            Path: {'.'.join(self.get_path())})"                    )
                     return ExecutionResult(
                         success=False,
                         node_name=self.name,
@@ -216,8 +216,8 @@ class ActionNode(TreeNode):
                     )
             except Exception as e:
                 self.logger.error(
-                    f"Output validation error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-                )
+                    f"Output validation error for intent '{self.name}' (
+                        Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"                )
                 return ExecutionResult(
                     success=False,
                     node_name=self.name,
@@ -286,8 +286,8 @@ class ActionNode(TreeNode):
                         return remediation_result
             except Exception as e:
                 self.logger.error(
-                    f"Remediation strategy execution failed for intent '{self.name}': {type(e).__name__}: {str(e)}"
-                )
+                    f"Remediation strategy execution failed for intent '{self.name}': {type(
+                        e).__name__}: {str(e)}"                )
 
         return None
 
@@ -320,7 +320,7 @@ class ActionNode(TreeNode):
                     validated_params[param_name] = param_value
             except (ValueError, TypeError) as e:
                 raise ValueError(
-                    f"Invalid type for parameter '{param_name}': expected {param_type.__name__}, got {type(param_value).__name__}"
-                ) from e
+                    f"Invalid type for parameter '{param_name}': expected {param_type.__name__}, got {type(
+                        param_value).__name__}"                ) from e
 
         return validated_params

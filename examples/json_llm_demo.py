@@ -6,8 +6,8 @@ with LLM-based argument extraction for intelligent parameter parsing.
 """
 
 import os
-from dotenv import load_dotenv
-from intent_kit import IntentGraphBuilder
+
+
 
 load_dotenv()
 
@@ -112,7 +112,7 @@ def smart_classifier(user_input: str, children, context=None):
         return children[3]
 
 
-def main():
+def main() -> None:
     """Demonstrate JSON serialization with LLM-based argument extraction."""
 
     print("🤖 IntentKit JSON + LLM Demo")

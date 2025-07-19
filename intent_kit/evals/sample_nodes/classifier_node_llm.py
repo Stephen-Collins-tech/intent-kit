@@ -1,15 +1,15 @@
-from typing import Optional, List, Dict, Any
-from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.node.actions.action import ActionNode as HandlerNode
-from intent_kit.context import IntentContext
-from intent_kit.node.base import TreeNode
+
+
+
+
+
 
 
 def extract_weather_args_llm(
     user_input: str, context: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """Extract weather parameters using LLM."""
-    from intent_kit.services.llm_factory import LLMFactory
+
 
     # Check for mock mode
     import os
@@ -22,9 +22,9 @@ def extract_weather_args_llm(
 
         location_patterns = [
             r"(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)",
-            r"(?:weather|temperature|forecast)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)",
-            r"(?:What\'s|How\'s)\s+(?:the\s+)?(?:weather|temperature)\s+(?:like\s+)?(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)",
-            r"(?:weather|temperature)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)",
+            r"(
+                ?:weather|temperature|forecast)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)",            r"(
+                ?:What\'s|How\'s)\s+(?:the\s+)?(?:weather|temperature)\s+(?:like\s+)?(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)",            r"(?:weather|temperature)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)",
             r"(?:weather|temperature|forecast)\s+for\s+([A-Za-z\s]+?)(?:\?|$)",
             r"(?:weather|temperature)\s+in\s+([A-Za-z\s]+?)(?:\?|$)",
         ]
@@ -92,8 +92,8 @@ JSON:"""
     location_patterns = [
         r"(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)",
         r"(?:weather|temperature|forecast)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\s|$)",
-        r"(?:What\'s|How\'s)\s+(?:the\s+)?(?:weather|temperature)\s+(?:like\s+)?(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)",
-        r"(?:weather|temperature)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)",
+        r"(
+            ?:What\'s|How\'s)\s+(?:the\s+)?(?:weather|temperature)\s+(?:like\s+)?(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)",        r"(?:weather|temperature)\s+(?:in|for|at)\s+([A-Za-z\s]+?)(?:\?|$)",
         r"(?:weather|temperature|forecast)\s+for\s+([A-Za-z\s]+?)(?:\?|$)",
         r"(?:weather|temperature)\s+in\s+([A-Za-z\s]+?)(?:\?|$)",
     ]
@@ -117,7 +117,7 @@ def extract_cancel_args_llm(
     user_input: str, context: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """Extract cancellation parameters using LLM."""
-    from intent_kit.services.llm_factory import LLMFactory
+
 
     # Check for mock mode
     import os
@@ -131,9 +131,9 @@ def extract_cancel_args_llm(
         cancel_patterns = [
             r"cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",
             r"cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\?|$)",
-            r"(?:I\s+need\s+to\s+)?cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",
-            r"(?:cancel|cancellation)\s+(?:of\s+)?(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",
-        ]
+            r"(
+                ?:I\s+need\s+to\s+)?cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",            r"(
+                ?:cancel|cancellation)\s+(?:of\s+)?(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",        ]
 
         item = "reservation"
         for pattern in cancel_patterns:
@@ -169,8 +169,8 @@ Return a JSON object with this field:
 - item: The specific item/reservation to cancel
 
 Rules:
-- Extract the exact item name (e.g., "flight reservation", "hotel booking", "restaurant reservation")
-- Be precise and extract the full item description
+- Extract the exact item name (
+    e.g., "flight reservation", "hotel booking", "restaurant reservation")- Be precise and extract the full item description
 - If no specific item is mentioned, use "reservation"
 
 Examples:
@@ -203,8 +203,8 @@ JSON:"""
         r"cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",
         r"cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\?|$)",
         r"(?:I\s+need\s+to\s+)?cancel\s+(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",
-        r"(?:cancel|cancellation)\s+(?:of\s+)?(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",
-    ]
+        r"(
+            ?:cancel|cancellation)\s+(?:of\s+)?(?:my\s+)?([^,\s]+(?:\s+[^,\s]+)*?)(?:\s|$)",    ]
 
     item = "reservation"
     for pattern in cancel_patterns:
@@ -243,7 +243,7 @@ def intent_classifier_llm(
     user_input: str, children: List[TreeNode], context: Optional[Dict[str, Any]] = None
 ) -> Optional[TreeNode]:
     """Classify user intent using LLM."""
-    from intent_kit.services.llm_factory import LLMFactory
+
 
     # Check for mock mode
     import os
@@ -295,8 +295,8 @@ Rules:
 - If the user wants to cancel something, return "cancel_handler"
 - Be precise and match the exact handler name
 
-Return only the handler name (e.g., "weather_handler" or "cancel_handler") or "none" if no handler matches.
-
+Return only the handler name (
+    e.g., "weather_handler" or "cancel_handler") or "none" if no handler matches.
 Handler:"""
 
         response = llm_client.generate(prompt, model=llm_config["model"])

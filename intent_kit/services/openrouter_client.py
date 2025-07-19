@@ -1,15 +1,15 @@
 # OpenRouter client wrapper for intent-kit
 # Requires: pip install openai
 
-from intent_kit.utils.logger import Logger
-from intent_kit.services.base_client import BaseLLMClient
-from typing import Optional
+
+
+
 
 logger = Logger("openrouter_service")
 
 
 class OpenRouterClient(BaseLLMClient):
-    def __init__(self, api_key: str):
+    def __init__def __init__(self, api_key: str): -> None:
         self.api_key = api_key
         super().__init__(api_key=api_key)
 

@@ -3,16 +3,16 @@ Tests for intent_kit.graph.intent_graph module.
 """
 
 import pytest
-from unittest.mock import Mock, patch
-from typing import List, Optional
 
-from intent_kit.graph.intent_graph import IntentGraph
-from intent_kit.node import TreeNode
-from intent_kit.node.enums import NodeType
-from intent_kit.types import IntentChunk
-from intent_kit.context import IntentContext
-from intent_kit.node import ExecutionResult
-from intent_kit.graph.validation import GraphValidationError
+
+
+
+
+
+
+
+
+
 
 
 class MockTreeNode(TreeNode):
@@ -50,7 +50,7 @@ class MockTreeNode(TreeNode):
 class MockClassifierNode(MockTreeNode):
     """Mock ClassifierNode for testing."""
 
-    def __init__(self, name: str, description: str = ""):
+    def __init__def __init__(self, name: str, description: str = ""): -> None:
         super().__init__(name, description, NodeType.CLASSIFIER)
 
     def classify(
@@ -69,7 +69,7 @@ class MockClassifierNode(MockTreeNode):
 class MockSplitterNode(MockTreeNode):
     """Mock SplitterNode for testing."""
 
-    def __init__(self, name: str, description: str = ""):
+    def __init__def __init__(self, name: str, description: str = ""): -> None:
         super().__init__(name, description, NodeType.SPLITTER)
 
     def split(self, user_input: str, context=None) -> List[IntentChunk]:
@@ -80,7 +80,7 @@ class MockSplitterNode(MockTreeNode):
 class TestIntentGraphInitialization:
     """Test IntentGraph initialization."""
 
-    def test_init_with_no_args(self):
+    def test_def test_init_with_no_args(self): -> None:
         """Test initialization with no arguments."""
         graph = IntentGraph()
 
@@ -91,7 +91,7 @@ class TestIntentGraphInitialization:
         assert graph.debug_context is False
         assert graph.context_trace is False
 
-    def test_init_with_root_nodes(self):
+    def test_def test_init_with_root_nodes(self): -> None:
         """Test initialization with root nodes."""
         root_node = MockTreeNode("root", "Root node")
         graph = IntentGraph(root_nodes=[root_node])
@@ -99,7 +99,7 @@ class TestIntentGraphInitialization:
         assert len(graph.root_nodes) == 1
         assert graph.root_nodes[0] == root_node
 
-    def test_init_with_splitter(self):
+    def test_def test_init_with_splitter(self): -> None:
         """Test initialization with custom splitter."""
 
         def custom_splitter(user_input: str, debug: bool = False) -> List[IntentChunk]:
@@ -109,7 +109,7 @@ class TestIntentGraphInitialization:
 
         assert graph.splitter == custom_splitter
 
-    def test_init_with_all_options(self):
+    def test_def test_init_with_all_options(self): -> None:
         """Test initialization with all options."""
         root_node = MockTreeNode("root", "Root node")
 
@@ -136,7 +136,7 @@ class TestIntentGraphInitialization:
 class TestIntentGraphNodeManagement:
     """Test IntentGraph node management methods."""
 
-    def test_add_root_node_success(self):
+    def test_def test_add_root_node_success(self): -> None:
         """Test successfully adding a root node."""
         graph = IntentGraph()
         root_node = MockTreeNode("root", "Root node")
@@ -146,14 +146,14 @@ class TestIntentGraphNodeManagement:
         assert len(graph.root_nodes) == 1
         assert graph.root_nodes[0] == root_node
 
-    def test_add_root_node_invalid_type(self):
+    def test_def test_add_root_node_invalid_type(self): -> None:
         """Test adding a non-TreeNode as root node."""
         graph = IntentGraph()
 
         with pytest.raises(ValueError, match="Root node must be a TreeNode"):
             graph.add_root_node("not a node")  # type: ignore[arg-type]
 
-    def test_add_root_node_with_validation_failure(self):
+    def test_def test_add_root_node_with_validation_failure(self): -> None:
         """Test adding root node when validation fails."""
         graph = IntentGraph()
         root_node = MockTreeNode("root", "Root node")
@@ -170,7 +170,7 @@ class TestIntentGraphNodeManagement:
             # Node should be removed after validation failure
             assert len(graph.root_nodes) == 0
 
-    def test_remove_root_node_success(self):
+    def test_def test_remove_root_node_success(self): -> None:
         """Test successfully removing a root node."""
         graph = IntentGraph()
         root_node = MockTreeNode("root", "Root node")
@@ -180,7 +180,7 @@ class TestIntentGraphNodeManagement:
 
         assert len(graph.root_nodes) == 0
 
-    def test_remove_root_node_not_found(self):
+    def test_def test_remove_root_node_not_found(self): -> None:
         """Test removing a root node that doesn't exist."""
         graph = IntentGraph()
         root_node = MockTreeNode("root", "Root node")
@@ -190,7 +190,7 @@ class TestIntentGraphNodeManagement:
 
         assert len(graph.root_nodes) == 0
 
-    def test_list_root_nodes(self):
+    def test_def test_list_root_nodes(self): -> None:
         """Test listing root node names."""
         graph = IntentGraph()
         root_node1 = MockTreeNode("root1", "Root node 1")
@@ -207,7 +207,7 @@ class TestIntentGraphNodeManagement:
 class TestIntentGraphValidation:
     """Test IntentGraph validation methods."""
 
-    def test_validate_graph_success(self):
+    def test_def test_validate_graph_success(self): -> None:
         """Test successful graph validation."""
         graph = IntentGraph()
         root_node = MockTreeNode("root", "Root node")
@@ -239,7 +239,7 @@ class TestIntentGraphValidation:
             assert result["total_nodes"] == 1
             assert result["routing_valid"] is True
 
-    def test_validate_graph_with_validation_failure(self):
+    def test_def test_validate_graph_with_validation_failure(self): -> None:
         """Test graph validation when validation fails."""
         graph = IntentGraph()
         root_node = MockTreeNode("root", "Root node")
@@ -256,7 +256,7 @@ class TestIntentGraphValidation:
             with pytest.raises(GraphValidationError):
                 graph.validate_graph()
 
-    def test_validate_splitter_routing(self):
+    def test_def test_validate_splitter_routing(self): -> None:
         """Test splitter routing validation."""
         graph = IntentGraph()
         root_node = MockTreeNode("root", "Root node")
@@ -273,7 +273,7 @@ class TestIntentGraphValidation:
 class TestIntentGraphSplitting:
     """Test IntentGraph splitting functionality."""
 
-    def test_call_splitter_default(self):
+    def test_def test_call_splitter_default(self): -> None:
         """Test calling the default pass-through splitter."""
         graph = IntentGraph()
 
@@ -281,7 +281,7 @@ class TestIntentGraphSplitting:
 
         assert result == ["test input"]
 
-    def test_call_splitter_custom(self):
+    def test_def test_call_splitter_custom(self): -> None:
         """Test calling a custom splitter."""
 
         def custom_splitter(user_input: str, debug: bool = False) -> List[IntentChunk]:
@@ -293,7 +293,7 @@ class TestIntentGraphSplitting:
 
         assert result == ["test input", "split part"]
 
-    def test_call_splitter_with_context(self):
+    def test_def test_call_splitter_with_context(self): -> None:
         """Test calling splitter with context."""
 
         def custom_splitter(
@@ -314,7 +314,7 @@ class TestIntentGraphSplitting:
 class TestIntentGraphRouting:
     """Test IntentGraph routing functionality."""
 
-    def test_route_chunk_to_root_node_success(self):
+    def test_def test_route_chunk_to_root_node_success(self): -> None:
         """Test successfully routing a chunk to a root node."""
         graph = IntentGraph()
         root_node = MockTreeNode("root", "Root node")
@@ -324,7 +324,7 @@ class TestIntentGraphRouting:
 
         assert result == root_node
 
-    def test_route_chunk_to_root_node_no_match(self):
+    def test_def test_route_chunk_to_root_node_no_match(self): -> None:
         """Test routing a chunk when no root node matches."""
         graph = IntentGraph()
         root_node = MockTreeNode("root", "Root node")
@@ -344,7 +344,7 @@ class TestIntentGraphRouting:
 
             assert result is None
 
-    def test_route_chunk_to_root_node_with_llm_config(self):
+    def test_def test_route_chunk_to_root_node_with_llm_config(self): -> None:
         """Test routing with LLM configuration."""
         graph = IntentGraph(llm_config={"provider": "openai"})
         root_node = MockTreeNode("root", "Root node")
@@ -369,7 +369,7 @@ class TestIntentGraphRouting:
 class TestIntentGraphExecution:
     """Test IntentGraph execution functionality."""
 
-    def test_route_simple_execution(self):
+    def test_def test_route_simple_execution(self): -> None:
         """Test simple routing and execution."""
         graph = IntentGraph()
         root_node = MockTreeNode("root", "Root node")
@@ -382,7 +382,7 @@ class TestIntentGraphExecution:
         assert "Mock result for test input" in str(result.output)
         assert result.node_name == "root"
 
-    def test_route_with_splitter(self):
+    def test_def test_route_with_splitter(self): -> None:
         """Test routing with splitter that creates multiple chunks."""
 
         def custom_splitter(user_input: str, debug: bool = False) -> List[IntentChunk]:
@@ -399,7 +399,7 @@ class TestIntentGraphExecution:
         # Should execute for both parts
         assert root_node.executed
 
-    def test_route_with_context(self):
+    def test_def test_route_with_context(self): -> None:
         """Test routing with context."""
         graph = IntentGraph()
         root_node = MockTreeNode("root", "Root node")
@@ -411,7 +411,7 @@ class TestIntentGraphExecution:
 
         assert result.success is True
 
-    def test_route_with_debug_options(self):
+    def test_def test_route_with_debug_options(self): -> None:
         """Test routing with debug options."""
         graph = IntentGraph(debug_context=True, context_trace=True)
         root_node = MockTreeNode("root", "Root node")
@@ -421,7 +421,7 @@ class TestIntentGraphExecution:
 
         assert result.success is True
 
-    def test_route_with_no_root_nodes(self):
+    def test_def test_route_with_no_root_nodes(self): -> None:
         """Test routing when no root nodes are available."""
         graph = IntentGraph()
 
@@ -431,7 +431,7 @@ class TestIntentGraphExecution:
         assert result.error is not None
         assert "No root nodes available" in result.error.message
 
-    def test_route_with_execution_error(self):
+    def test_def test_route_with_execution_error(self): -> None:
         """Test routing when node execution fails."""
         graph = IntentGraph()
 
@@ -451,7 +451,7 @@ class TestIntentGraphExecution:
 class TestIntentGraphContextTracking:
     """Test IntentGraph context tracking functionality."""
 
-    def test_capture_context_state(self):
+    def test_def test_capture_context_state(self): -> None:
         """Test capturing context state."""
         graph = IntentGraph()
         context = IntentContext()
@@ -464,7 +464,7 @@ class TestIntentGraphContextTracking:
         assert state["key2"] == "value2"
         assert "timestamp" in state
 
-    def test_log_context_changes(self):
+    def test_def test_log_context_changes(self): -> None:
         """Test logging context changes."""
         graph = IntentGraph(debug_context=True)
 
@@ -476,7 +476,7 @@ class TestIntentGraphContextTracking:
             state_before, state_after, "test_node", debug=True, context_trace=False
         )
 
-    def test_log_detailed_context_trace(self):
+    def test_def test_log_detailed_context_trace(self): -> None:
         """Test detailed context tracing."""
         graph = IntentGraph()
 
@@ -490,7 +490,7 @@ class TestIntentGraphContextTracking:
 class TestIntentGraphVisualization:
     """Test IntentGraph visualization functionality."""
 
-    def test_render_execution_graph_no_visualization(self):
+    def test_def test_render_execution_graph_no_visualization(self): -> None:
         """Test rendering execution graph when visualization is disabled."""
         graph = IntentGraph(visualize=False)
 
@@ -511,7 +511,7 @@ class TestIntentGraphVisualization:
         assert result == ""
 
     @patch("intent_kit.graph.intent_graph.VIZ_AVAILABLE", False)
-    def test_render_execution_graph_no_visualization_library(self):
+    def test_def test_render_execution_graph_no_visualization_library(self): -> None:
         """Test rendering when visualization libraries are not available."""
         graph = IntentGraph(visualize=True)
 
@@ -530,7 +530,7 @@ class TestIntentGraphVisualization:
         with pytest.raises(ImportError):
             graph._render_execution_graph([mock_result], "test input")
 
-    def test_extract_execution_paths(self):
+    def test_def test_extract_execution_paths(self): -> None:
         """Test extracting execution paths from results."""
         graph = IntentGraph()
 
@@ -556,7 +556,7 @@ class TestIntentGraphVisualization:
 class TestIntentGraphIntegration:
     """Integration tests for IntentGraph."""
 
-    def test_complete_workflow(self):
+    def test_def test_complete_workflow(self): -> None:
         """Test a complete workflow with multiple components."""
         # Create handler nodes
         handler1 = MockTreeNode("handler1", "Handler 1")
@@ -573,7 +573,7 @@ class TestIntentGraphIntegration:
         assert result.success is True
         assert handler1.executed is True  # First handler should be executed
 
-    def test_graph_with_multiple_root_nodes(self):
+    def test_def test_graph_with_multiple_root_nodes(self): -> None:
         """Test graph with multiple root nodes."""
         graph = IntentGraph()
 
@@ -586,7 +586,7 @@ class TestIntentGraphIntegration:
         assert len(graph.root_nodes) == 2
         assert graph.list_root_nodes() == ["root1", "root2"]
 
-    def test_graph_validation_integration(self):
+    def test_def test_graph_validation_integration(self): -> None:
         """Test graph validation integration."""
         graph = IntentGraph()
 

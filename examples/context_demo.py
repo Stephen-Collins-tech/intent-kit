@@ -7,9 +7,9 @@ A demonstration showing how context can be shared between workflow steps.
 
 import os
 from datetime import datetime
-from dotenv import load_dotenv
-from intent_kit import IntentGraphBuilder, action, llm_classifier
-from intent_kit.context import IntentContext
+
+
+
 
 load_dotenv()
 
@@ -120,8 +120,8 @@ def show_calculation_history_action(context: IntentContext) -> str:
     if last_calc.get("result") is not None:
         return f"Your last calculation was: {last_calc['a']} {last_calc['operation']} {last_calc['b']} = {last_calc['result']}"
     else:
-        return f"Your last calculation was: {last_calc['a']} {last_calc['operation']} {last_calc['b']} (result not available)"
-
+        return f"Your last calculation was: {last_calc['a']} {last_calc['operation']} {last_calc['b']} (
+            result not available)"
 
 def build_context_aware_tree():
     """Build an intent tree with context-aware actions using the new API."""
@@ -189,7 +189,7 @@ def build_context_aware_tree():
     )
 
 
-def main():
+def main() -> None:
     print("IntentKit Context Demo")
     print("This demo shows how context can be shared between workflow steps.")
     print("You must set a valid API key in LLM_CONFIG for this to work.")
@@ -231,8 +231,8 @@ def main():
                     for i, child_result in enumerate(result.children_results):
                         path_str = ".".join(child_result.node_path)
                         print(
-                            f"    {i+1}. {child_result.node_name} ({child_result.node_type}) - Path: {path_str}"
-                        )
+                            f"    {i+1}. {child_result.node_name} (
+                                {child_result.node_type}) - Path: {path_str}"                        )
                         if child_result.params:
                             print(f"       Params: {child_result.params}")
                         if child_result.output:
@@ -245,11 +245,11 @@ def main():
                 print(f"    Greeting count: {context.get('greeting_count', 0)}")
                 print(f"    Last greeted: {context.get('last_greeted', 'None')}")
                 print(
-                    f"    Calc history: {len(context.get('calculation_history', []))} entries"
-                )
+                    f"    Calc history: {len(
+                        context.get('calculation_history', []))} entries"                )
                 print(
-                    f"    Last weather: {context.get('last_weather', {}).get('location', 'None')}"
-                )
+                    f"    Last weather: {context.get(
+                        'last_weather', {}).get('location', 'None')}"                )
             else:
                 print(f"  Error: {result.error}")
 
@@ -263,8 +263,8 @@ def main():
                 print(f"  Context errors: {len(errors)} total")
                 for error in errors[-2:]:  # Show last 2 errors
                     print(
-                        f"    [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name}: {error.error_message}"
-                    )
+                        f"    [{error.timestamp.strftime(
+                            '%H:%M:%S')}] {error.node_name}: {error.error_message}"                    )
 
         except Exception as e:
             print(f"  Error: {e}")

@@ -5,8 +5,8 @@ run_node_eval.py
 Run evaluations on sample nodes using datasets.
 """
 
-from typing import Dict, Any, List, Optional
-from pathlib import Path
+
+
 import sys
 import os
 import importlib
@@ -15,11 +15,11 @@ import csv
 from datetime import datetime
 
 # Add text similarity imports
-from difflib import SequenceMatcher
+
 import re
-from dotenv import load_dotenv
-from intent_kit.context import IntentContext
-from intent_kit.services.yaml_service import yaml_service
+
+
+
 
 load_dotenv()
 
@@ -311,9 +311,9 @@ def generate_markdown_report(
     # Generate the report content
     mock_indicator = " (MOCK MODE)" if mock_mode else ""
     report_content = f"# Node Evaluation Report{mock_indicator}\n\n"
-    report_content += f"Generated on: {importlib.import_module('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-    report_content += f"Mode: {'Mock (simulated responses)' if mock_mode else 'Live (real API calls)'}\n\n"
-
+    report_content += f"Generated on: {importlib.import_module(
+        'datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"    report_content += f"Mode: {'Mock (
+        simulated responses)' if mock_mode else 'Live (real API calls)'}\n\n"
     # Summary
     report_content += "## Summary\n\n"
     total_cases = sum(r["total_cases"] for r in results)
@@ -328,8 +328,8 @@ def generate_markdown_report(
     report_content += "## Dataset Results\n\n"
     for result in results:
         report_content += f"### {result['dataset']}\n"
-        report_content += f"- **Accuracy**: {result['accuracy']:.1%} ({result['correct']}/{result['total_cases']})\n"
-        report_content += f"- **Correct**: {result['correct']}\n"
+        report_content += f"- **Accuracy**: {result['accuracy']:.1%} (
+            {result['correct']}/{result['total_cases']})\n"        report_content += f"- **Correct**: {result['correct']}\n"
         report_content += f"- **Incorrect**: {result['incorrect']}\n"
         report_content += f"- **Raw Results**: `{result['raw_results_file']}`\n\n"
 
@@ -373,7 +373,7 @@ def generate_markdown_report(
         f.write(report_content)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Run node evaluations")
     parser.add_argument("--dataset", help="Specific dataset to run")
     parser.add_argument("--output", help="Output file for markdown report")
@@ -484,8 +484,8 @@ def main():
         total_correct = sum(r["correct"] for r in results)
         overall_accuracy = total_correct / total_cases if total_cases > 0 else 0
         print(
-            f"\nOverall Accuracy: {overall_accuracy:.1%} ({total_correct}/{total_cases})"
-        )
+            f"\nOverall Accuracy: {overall_accuracy:.1%} (
+                {total_correct}/{total_cases})"        )
 
 
 if __name__ == "__main__":

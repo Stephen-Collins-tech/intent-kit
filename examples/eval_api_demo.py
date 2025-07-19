@@ -5,8 +5,8 @@ eval_api_demo.py
 Demonstration of the new intent-kit evaluation API.
 """
 
-from dotenv import load_dotenv
-from intent_kit.evals import (
+
+
     load_dataset,
     run_eval,
     run_eval_from_path,
@@ -14,7 +14,7 @@ from intent_kit.evals import (
     EvalTestCase,
     Dataset,
 )
-from intent_kit.evals.sample_nodes.classifier_node_llm import classifier_node_llm
+
 
 load_dotenv()
 
@@ -172,7 +172,7 @@ def demo_error_handling():
     return result
 
 
-def main():
+def main() -> None:
     """Run all demos."""
     import os
 

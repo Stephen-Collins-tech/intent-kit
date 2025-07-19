@@ -5,10 +5,10 @@ Demonstrates the new context debugging features in under 150 lines.
 """
 
 import os
-from intent_kit import IntentGraphBuilder, action, llm_classifier
-from intent_kit import trace_context_execution
-from intent_kit.context import IntentContext
-from dotenv import load_dotenv
+
+
+
+
 
 load_dotenv()
 
@@ -73,7 +73,7 @@ def build_graph():
     )
 
 
-def main():
+def main() -> None:
     print("Context Debugging Demo")
     print("=" * 40)
 

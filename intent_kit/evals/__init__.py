@@ -7,11 +7,11 @@ A clean Python API for evaluating intent-kit nodes against YAML datasets.
 
 import csv
 import importlib
-from typing import Any, Dict, List, Optional, Callable, Union
-from pathlib import Path
-from dataclasses import dataclass
+
+
+
 from datetime import datetime
-from intent_kit.services.yaml_service import yaml_service
+
 
 
 @dataclass
@@ -61,7 +61,7 @@ class EvalTestResult:
 class EvalResult:
     """Results from evaluating a node against a dataset."""
 
-    def __init__(self, results: List[EvalTestResult], dataset_name: str = ""):
+    def __init__def __init__(self, results: List[EvalTestResult], dataset_name: str = ""): -> None:
         self.results = results
         self.dataset_name = dataset_name
 
@@ -88,8 +88,8 @@ class EvalResult:
     def print_summary(self) -> None:
         print(f"\nEvaluation Results for {self.dataset_name or 'Dataset'}:")
         print(
-            f"  Accuracy: {self.accuracy():.1%} ({self.passed_count()}/{self.total_count()})"
-        )
+            f"  Accuracy: {self.accuracy(
+                ):.1%} ({self.passed_count()}/{self.total_count()})"        )
         print(f"  Passed: {self.passed_count()}")
         print(f"  Failed: {self.failed_count()}")
         if self.errors():
@@ -266,7 +266,7 @@ def run_eval(
             if callable(node):
                 actual = node(test_case.input, context=test_case.context)
             elif hasattr(node, "execute"):
-                from intent_kit.context import IntentContext
+
 
                 context = IntentContext()
                 if test_case.context:

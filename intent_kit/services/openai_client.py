@@ -1,9 +1,9 @@
 # OpenAI client wrapper for intent-kit
 # Requires: pip install openai
 
-from intent_kit.utils.logger import Logger
-from intent_kit.services.base_client import BaseLLMClient
-from typing import Optional
+
+
+
 
 # Dummy assignment for testing
 openai = None
@@ -12,7 +12,7 @@ logger = Logger("openai_service")
 
 
 class OpenAIClient(BaseLLMClient):
-    def __init__(self, api_key: str):
+    def __init__def __init__(self, api_key: str): -> None:
         self.api_key = api_key
         super().__init__(api_key=api_key)
 
@@ -25,7 +25,7 @@ class OpenAIClient(BaseLLMClient):
         """Check if OpenAI package is available."""
         try:
             # Only check for import, do not actually use it
-            import importlib.util
+
 
             return importlib.util.find_spec("openai") is not None
         except ImportError:

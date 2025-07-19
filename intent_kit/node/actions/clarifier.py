@@ -5,11 +5,11 @@ This module provides the ClarifierNode class which is a leaf node that
 requests clarification from the user when input is ambiguous or underspecified.
 """
 
-from typing import Any, Dict, Optional
+
 from ..base import TreeNode
 from ..enums import NodeType
 from ..types import ExecutionResult, ExecutionError
-from intent_kit.context import IntentContext
+
 
 
 class ClarifierNode(TreeNode):
