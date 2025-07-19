@@ -27,7 +27,7 @@ class TestLLMClarifier:
     def test_create_llm_clarifier_basic(self):
         """Test creating a basic LLM clarifier function."""
         # Mock LLM config
-        mock_llm_config = {"provider": "ollama", "model": "gemma3:27b"}
+        mock_llm_config = {"provider": "openrouter", "model": "anthropic/claude-3-haiku"}
         
         # Mock LLM response
         mock_response = "I need more details about your booking request. Please specify the destination and date."
@@ -49,7 +49,7 @@ class TestLLMClarifier:
 
     def test_create_llm_clarifier_with_context(self):
         """Test LLM clarifier with context information."""
-        mock_llm_config = {"provider": "ollama", "model": "gemma3:27b"}
+        mock_llm_config = {"provider": "openrouter", "model": "anthropic/claude-3-haiku"}
         mock_response = "Based on your previous bookings, I need more details about your flight request."
         
         with patch('intent_kit.services.llm_factory.LLMFactory.generate_with_config') as mock_generate:

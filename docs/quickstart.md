@@ -34,7 +34,7 @@ greet_action = action(
 classifier = llm_classifier(
     name="main",
     children=[greet_action],
-    llm_config={"provider": "ollama", "model": "gemma3:27b"}
+    llm_config={"provider": "openrouter", "model": "anthropic/claude-3-haiku"}
 )
 
 # Build your workflow
