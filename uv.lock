@@ -670,10 +670,15 @@ viz = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "anthropic" },
     { name = "black" },
+    { name = "google-genai" },
     { name = "mypy" },
+    { name = "ollama" },
+    { name = "openai" },
     { name = "pytest" },
     { name = "python-dotenv" },
+    { name = "pyyaml" },
     { name = "ruff" },
     { name = "types-networkx" },
     { name = "types-pyyaml" },
@@ -721,10 +726,15 @@ provides-extras = ["all", "anthropic", "dev", "google", "ollama", "openai", "viz
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "anthropic", specifier = ">=0.57.1" },
     { name = "black", specifier = ">=25.1.0" },
+    { name = "google-genai", specifier = ">=1.25.0" },
     { name = "mypy", specifier = ">=1.16.1" },
+    { name = "ollama", specifier = ">=0.5.1" },
+    { name = "openai", specifier = ">=1.95.1" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "ruff", specifier = ">=0.12.3" },
     { name = "types-networkx", specifier = ">=3.5.0.20250712" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250516" },
