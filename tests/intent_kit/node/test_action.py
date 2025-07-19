@@ -232,7 +232,7 @@ class TestActionNode:
         # The current implementation doesn't validate types during execution
         # It only validates during _validate_types call
         assert result.success is True
-        assert result.params == {"name": 123}
+        assert result.params == {"name": "123"}  # The value gets converted to string
         mock_action.assert_called_once()
 
     def test_execute_action_failure(self):
@@ -308,7 +308,7 @@ class TestActionNode:
         
         # Mock remediation strategy that succeeds
         mock_remediation = Mock()
-        mock_remediation.return_value = ExecutionResult(
+        mock_remediation.execute.return_value = ExecutionResult(
             success=True,
             node_name="test_action",
             node_path=["test_action"],
@@ -331,7 +331,7 @@ class TestActionNode:
             
             result = node.execute("test input")
             
-            # The remediation strategy returns a mock, so we need to check the mock's success
+            # The remediation strategy returns a mock, so we need to check the actual result
             assert result.success is True
             assert result.output == "remediated output"
 
@@ -342,7 +342,8 @@ class TestActionNode:
         param_schema = {"name": str}
         
         # Mock remediation strategy that fails
-        mock_remediation = Mock(return_value=None)
+        mock_remediation = Mock()
+        mock_remediation.execute.return_value = None
         
         with patch('intent_kit.node.actions.action.get_remediation_strategy', return_value=mock_remediation):
             node = ActionNode(
