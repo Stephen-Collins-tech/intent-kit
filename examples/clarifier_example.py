@@ -9,7 +9,7 @@ from intent_kit.builders import IntentGraphBuilder
 from intent_kit.node.actions import ClarifierNode
 from intent_kit.node.enums import NodeType
 from intent_kit.context import IntentContext
-from intent_kit.utils.node_factory import action, clarifier
+from intent_kit.utils.node_factory import action, clarifier, llm_clarifier
 
 
 def book_flight(destination: str, date: str, time: str = "any") -> str:
@@ -66,7 +66,7 @@ def create_booking_graph():
         }
     )
     
-    # Create Clarifier nodes for different booking types
+    # Create regular Clarifier nodes for different booking types
     flight_clarifier = clarifier(
         name="flight_clarifier",
         clarification_prompt="I need more details about your flight booking. Your request '{input}' is unclear.",
@@ -91,6 +91,38 @@ def create_booking_graph():
         description="Clarifies restaurant reservation requests"
     )
     
+    # Create LLM-powered Clarifier nodes for smart clarification
+    smart_booking_clarifier = llm_clarifier(
+        name="smart_booking_clarifier",
+        llm_config={"provider": "openai", "model": "gpt-3.5-turbo"},
+        expected_response_format="Please specify: [type] [details] [date] [time]",
+        max_clarification_attempts=3,
+        description="Smart LLM-powered clarifier for booking requests"
+    )
+    
+    smart_flight_clarifier = llm_clarifier(
+        name="smart_flight_clarifier",
+        llm_config={"provider": "openai", "model": "gpt-3.5-turbo"},
+        clarification_prompt_template="""You are a travel booking assistant. The user wants to book a flight but their request is unclear.
+
+User Input: {user_input}
+{context_info}
+
+Generate a helpful clarification prompt that:
+1. Acknowledges their intent to book a flight
+2. Identifies what specific information is missing (destination, date, time, etc.)
+3. Asks for the missing details in a friendly way
+4. Provides guidance on the expected format
+
+Expected Response Format: {expected_format}
+Maximum Clarification Attempts: {max_attempts}
+
+Clarification Prompt:""",
+        expected_response_format="Please specify: [destination] [date] [time] [preferences]",
+        max_clarification_attempts=3,
+        description="Smart LLM-powered clarifier for flight bookings"
+    )
+    
     # Create a simple classifier function
     def booking_classifier(user_input: str, children, context=None):
         """Simple classifier that routes to appropriate nodes based on keywords."""
@@ -112,7 +144,8 @@ def create_booking_graph():
     # Create the graph
     from intent_kit.graph import IntentGraph
     graph = IntentGraph(root_nodes=[flight_action, hotel_action, restaurant_action, 
-                                   flight_clarifier, hotel_clarifier, restaurant_clarifier])
+                                   flight_clarifier, hotel_clarifier, restaurant_clarifier,
+                                   smart_booking_clarifier, smart_flight_clarifier])
     
     return graph
 
@@ -222,6 +255,59 @@ def demonstrate_clarifier_with_context():
     print()
 
 
+def demonstrate_llm_clarifier():
+    """Demonstrate LLM-powered Clarifier nodes."""
+    
+    print("=== LLM Clarifier Node Example ===\n")
+    
+    # Create an LLM clarifier with custom prompt
+    smart_clarifier = llm_clarifier(
+        name="smart_booking_clarifier",
+        llm_config={"provider": "openai", "model": "gpt-3.5-turbo"},
+        clarification_prompt_template="""You are a helpful travel booking assistant. The user's request is unclear and needs clarification.
+
+User Input: {user_input}
+{context_info}
+
+Generate a helpful clarification prompt that:
+1. Acknowledges their intent to make a booking
+2. Identifies what specific information is missing
+3. Asks for the missing details in a friendly, helpful way
+4. Provides guidance on the expected format
+
+Expected Response Format: {expected_format}
+Maximum Clarification Attempts: {max_attempts}
+
+Clarification Prompt:""",
+        expected_response_format="Please specify: [type] [destination] [date] [time] [preferences]",
+        max_clarification_attempts=3,
+        description="Smart LLM-powered clarifier for travel bookings"
+    )
+    
+    print("LLM Clarifier created:")
+    print(f"  Node name: {smart_clarifier.name}")
+    print(f"  Node type: {smart_clarifier.node_type}")
+    print(f"  Expected format: {smart_clarifier.expected_response_format}")
+    print(f"  Max attempts: {smart_clarifier.max_clarification_attempts}")
+    
+    # Test with context
+    context = IntentContext()
+    context.set("user_preferences", "window seat, vegetarian meal")
+    context.set("previous_bookings", "Paris, London")
+    
+    print("\nTesting LLM clarifier with context:")
+    print(f"  User preferences: {context.get('user_preferences')}")
+    print(f"  Previous bookings: {context.get('previous_bookings')}")
+    
+    # Note: In a real scenario, this would call the actual LLM
+    # For this example, we'll just show the structure
+    print("\nLLM clarifier would generate contextual clarification based on:")
+    print("  - User's unclear input")
+    print("  - User preferences and history")
+    print("  - Expected response format")
+    print("  - Maximum attempts limit")
+
+
 def demonstrate_json_based_clarifier():
     """Demonstrate creating Clarifier nodes from JSON configuration."""
     
@@ -264,7 +350,51 @@ def demonstrate_json_based_clarifier():
     print(f"  Clarification message: {result.output['clarification_message']}")
 
 
+def demonstrate_json_based_llm_clarifier():
+    """Demonstrate creating LLM Clarifier nodes from JSON configuration."""
+    
+    print("=== JSON-based LLM Clarifier Node Example ===\n")
+    
+    # Define the graph in JSON with LLM clarifier
+    json_graph = {
+        "root": "smart_booking_clarifier",
+        "intents": {
+            "smart_booking_clarifier": {
+                "type": "llm_clarifier",
+                "name": "smart_booking_clarifier",
+                "description": "Smart LLM-powered clarifier for booking requests",
+                "llm_config": {"provider": "openai", "model": "gpt-3.5-turbo"},
+                "clarification_prompt_template": "Generate a helpful clarification for: {user_input}",
+                "expected_response_format": "Please specify: [type] [details] [date] [time]",
+                "max_clarification_attempts": 3
+            }
+        }
+    }
+    
+    # Create function registry (empty for clarifier nodes)
+    function_registry = {}
+    
+    # Build the graph
+    builder = IntentGraphBuilder()
+    graph = builder.with_json(json_graph).with_functions(function_registry).build()
+    
+    print("Graph created from JSON configuration with LLM clarifier:")
+    print(f"  Root nodes: {[node.name for node in graph.root_nodes]}")
+    
+    clarifier_node = graph.root_nodes[0]
+    print(f"  Clarifier node type: {clarifier_node.node_type}")
+    print(f"  Expected format: {clarifier_node.expected_response_format}")
+    print(f"  Max attempts: {clarifier_node.max_clarification_attempts}")
+    
+    # Test the LLM clarifier
+    print("\nTesting LLM clarifier with ambiguous input: 'book'")
+    result = clarifier_node.execute("book")
+    print(f"  Clarification message: {result.output['clarification_message']}")
+
+
 if __name__ == "__main__":
     demonstrate_clarifier_usage()
     demonstrate_clarifier_with_context()
+    demonstrate_llm_clarifier()
     demonstrate_json_based_clarifier()
+    demonstrate_json_based_llm_clarifier()

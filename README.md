@@ -171,7 +171,7 @@ result = graph.route("book something")
 ### Advanced Clarification Features
 
 ```python
-# Clarifier with context tracking
+# Regular clarifier with context tracking
 clarifier_node = clarifier(
     name="smart_clarifier",
     clarification_prompt="I need more details about your request: {input}",
@@ -179,13 +179,33 @@ clarifier_node = clarifier(
     max_clarification_attempts=2
 )
 
+# LLM-powered clarifier for contextual clarification
+llm_clarifier_node = llm_clarifier(
+    name="smart_llm_clarifier",
+    llm_config={"provider": "openai", "model": "gpt-3.5-turbo"},
+    clarification_prompt_template="""You are a helpful assistant. The user's request is unclear.
+
+User Input: {user_input}
+{context_info}
+
+Generate a helpful clarification prompt that identifies what information is missing.
+
+Expected Response Format: {expected_format}
+Maximum Clarification Attempts: {max_attempts}
+
+Clarification Prompt:""",
+    expected_response_format="Please specify: [details]",
+    max_clarification_attempts=3
+)
+
 # Handle clarification responses
 context = IntentContext()
-result = clarifier_node.execute("unclear request", context=context)
+context.set("user_preferences", "window seat")
+result = llm_clarifier_node.execute("book something", context=context)
 
 # User provides clarification
-response = clarifier_node.handle_clarification_response(
-    "clarified details", context=context
+response = llm_clarifier_node.handle_clarification_response(
+    "book a flight to Paris tomorrow", context=context
 )
 ```
 

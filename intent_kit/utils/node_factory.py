@@ -8,7 +8,7 @@ with consistent patterns and common functionality.
 from typing import Any, Callable, List, Optional, Dict, Type, Set, Union, Sequence
 from intent_kit.node import TreeNode
 from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.node.actions import ActionNode, ClarifierNode, RemediationStrategy
+from intent_kit.node.actions import ActionNode, ClarifierNode, RemediationStrategy, create_llm_clarifier_node
 from intent_kit.node.splitters import SplitterNode, rule_splitter, llm_splitter
 from intent_kit.utils.logger import Logger
 from intent_kit.types import IntentChunk
@@ -176,6 +176,45 @@ def clarifier(
     return ClarifierNode(
         name=name,
         clarification_prompt=clarification_prompt,
+        expected_response_format=expected_response_format,
+        max_clarification_attempts=max_clarification_attempts,
+        description=description,
+    )
+
+
+def llm_clarifier(
+    *,
+    name: str,
+    llm_config: LLMConfig,
+    clarification_prompt_template: Optional[str] = None,
+    expected_response_format: Optional[str] = None,
+    max_clarification_attempts: int = 3,
+    description: str = "",
+) -> TreeNode:
+    """Create a ClarifierNode with LLM-powered clarification.
+
+    Args:
+        name: Name of the clarifier node
+        llm_config: LLM configuration or client instance
+        clarification_prompt_template: Optional custom prompt template
+        expected_response_format: Optional format specification for expected response
+        max_clarification_attempts: Maximum number of clarification attempts
+        description: Description of the clarifier
+
+    Returns:
+        Configured ClarifierNode with LLM-powered clarification
+
+    Example:
+        >>> llm_clarifier_node = llm_clarifier(
+        ...     name="smart_clarifier",
+        ...     llm_config=LLM_CONFIG,
+        ...     expected_response_format="Please specify: [type] [details]"
+        ... )
+    """
+    return create_llm_clarifier_node(
+        name=name,
+        llm_config=llm_config,
+        clarification_prompt_template=clarification_prompt_template,
         expected_response_format=expected_response_format,
         max_clarification_attempts=max_clarification_attempts,
         description=description,

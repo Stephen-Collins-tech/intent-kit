@@ -199,6 +199,13 @@ class IntentGraphBuilder(Builder):
                         )
                         validation_results["valid"] = False
 
+                elif node_type == "llm_clarifier":
+                    if "llm_config" not in node_spec:
+                        validation_results["errors"].append(
+                            f"LLM clarifier node '{node_id}' missing 'llm_config' field"
+                        )
+                        validation_results["valid"] = False
+
                 else:
                     validation_results["errors"].append(
                         f"Unknown node type '{node_type}' for node '{node_id}'"
@@ -430,6 +437,10 @@ class IntentGraphBuilder(Builder):
             return self._create_clarifier_node(
                 node_id, name, description, node_spec, function_registry
             )
+        elif node_type == "llm_clarifier":
+            return self._create_llm_clarifier_node(
+                node_id, name, description, node_spec, function_registry
+            )
         else:
             raise ValueError(f"Unknown node type '{node_type}' for node '{node_id}'")
 
@@ -617,6 +628,36 @@ class IntentGraphBuilder(Builder):
             clarification_prompt=clarification_prompt,
             expected_response_format=expected_response_format,
             max_clarification_attempts=max_clarification_attempts,
+        )
+
+    def _create_llm_clarifier_node(
+        self,
+        node_id: str,
+        name: str,
+        description: str,
+        node_spec: Dict[str, Any],
+        function_registry: Dict[str, Callable],
+    ) -> TreeNode:
+        """Create an LLMClarifierNode from specification."""
+        from intent_kit.node.actions import create_llm_clarifier_node
+
+        if "llm_config" not in node_spec:
+            raise ValueError(
+                f"LLM clarifier node '{node_id}' must have an 'llm_config' field"
+            )
+
+        llm_config = node_spec["llm_config"]
+        clarification_prompt_template = node_spec.get("clarification_prompt_template")
+        expected_response_format = node_spec.get("expected_response_format")
+        max_clarification_attempts = node_spec.get("max_clarification_attempts", 3)
+
+        return create_llm_clarifier_node(
+            name=name,
+            llm_config=llm_config,
+            clarification_prompt_template=clarification_prompt_template,
+            expected_response_format=expected_response_format,
+            max_clarification_attempts=max_clarification_attempts,
+            description=description,
         )
 
     # Internal debug methods (for development use only)
