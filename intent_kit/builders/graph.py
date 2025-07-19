@@ -245,6 +245,13 @@ class IntentGraphBuilder(Builder):
             validation_results["errors"].append(f"Validation error: {e}")
             validation_results["valid"] = False
 
+        # Raise ValueError if validation failed
+        if not validation_results["valid"]:
+            error_message = "Graph validation failed: " + "; ".join(
+                validation_results["errors"]
+            )
+            raise ValueError(error_message)
+
         return validation_results
 
     def _detect_cycles(self, intents: Dict[str, Any]) -> List[List[str]]:

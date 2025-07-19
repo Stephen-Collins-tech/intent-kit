@@ -134,9 +134,9 @@ class TestGoogleClient:
         with patch.object(GoogleClient, "get_client") as mock_get_client:
             mock_client = Mock()
             mock_get_client.return_value = mock_client
-            
+
             client = GoogleClient("test_api_key")
-            
+
             with patch.object(client, "generate", side_effect=Exception("API Error")):
                 with pytest.raises(Exception, match="API Error"):
                     client.generate("Test prompt")
@@ -252,10 +252,12 @@ class TestGoogleClient:
         with patch.object(GoogleClient, "get_client") as mock_get_client:
             mock_client = Mock()
             mock_get_client.return_value = mock_client
-            
+
             client = GoogleClient("test_api_key")
-            
-            with patch.object(client, "generate", side_effect=Exception("Rate limit exceeded")):
+
+            with patch.object(
+                client, "generate", side_effect=Exception("Rate limit exceeded")
+            ):
                 with pytest.raises(Exception, match="Rate limit exceeded"):
                     client.generate("Test prompt")
 
@@ -264,10 +266,12 @@ class TestGoogleClient:
         with patch.object(GoogleClient, "get_client") as mock_get_client:
             mock_client = Mock()
             mock_get_client.return_value = mock_client
-            
+
             client = GoogleClient("test_api_key")
-            
-            with patch.object(client, "generate", side_effect=Exception("Connection timeout")):
+
+            with patch.object(
+                client, "generate", side_effect=Exception("Connection timeout")
+            ):
                 with pytest.raises(Exception, match="Connection timeout"):
                     client.generate("Test prompt")
 

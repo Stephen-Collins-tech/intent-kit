@@ -2,6 +2,7 @@
 Integration tests for Clarifier nodes with graph builder and intent graph.
 """
 
+import pytest
 from unittest.mock import patch
 from intent_kit.builders import IntentGraphBuilder
 from intent_kit.node.actions import ClarifierNode
@@ -93,14 +94,11 @@ class TestClarifierIntegration:
         }
 
         builder = IntentGraphBuilder()
-        validation_result = builder.with_json(json_graph).validate_json_graph()
-
-        assert validation_result["valid"] is False
-        assert len(validation_result["errors"]) > 0
-        assert any(
-            "missing 'clarification_prompt' field" in error
-            for error in validation_result["errors"]
-        )
+        with pytest.raises(
+            ValueError,
+            match="Graph validation failed: Clarifier node 'clarifier_node' missing 'clarification_prompt' field",
+        ):
+            builder.with_json(json_graph).validate_json_graph()
 
     def test_intent_graph_with_clarifier_node(self):
         """Test that IntentGraph can handle Clarifier nodes in routing."""
