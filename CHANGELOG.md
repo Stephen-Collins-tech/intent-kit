@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.3.0] - 2025-07-18
+
+### Added
+- Comprehensive test suites for core types, nodes, and services
+- Custom LLM client demo example showcasing extensibility
+- Enhanced test coverage across all major modules
+- Script to fix trailing whitespace issues
+
+### Changed
+- Simplified README description of Intent Kit's control feature for clarity
+- Updated documentation links and improved messaging
+- Enhanced test organization and formatting
+
+### Removed
+- Unused imports across test files for cleaner codebase
+
 ## [v0.2.0] - 2025-07-14
 
 ### Added
