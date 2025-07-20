@@ -6,9 +6,9 @@ using both rule-based and LLM-based approaches.
 """
 
 import re
-from typing import Any, Callable, Dict, Optional, Type, Union
-from intent_kit.services.base_client import BaseLLMClient
-from intent_kit.utils.logger import Logger
+
+
+
 
 logger = Logger(__name__)
 
@@ -46,9 +46,9 @@ def parse_param_schema(schema_data: Dict[str, str]) -> Dict[str, Type]:
     return param_schema
 
 
-def create_rule_based_extractor(
+def create_rule_based_extractor()
     param_schema: Dict[str, Type],
-) -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
+() -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
     """Create a rule-based argument extractor function.
 
     Args:
@@ -58,9 +58,9 @@ def create_rule_based_extractor(
         Function that extracts parameters from text using simple rules
     """
 
-    def simple_extractor(
+    def simple_extractor()
         user_input: str, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+(    ) -> Dict[str, Any]:
         """Simple keyword-based argument extractor."""
         extracted_params = {}
         input_lower = user_input.lower()
@@ -118,9 +118,10 @@ def _extract_location_parameter(input_lower: str) -> Dict[str, str]:
 def _extract_calculation_parameters(input_lower: str) -> Dict[str, Any]:
     """Extract calculation parameters from input text."""
     calc_patterns = [
-        r"(\d+(?:\.\d+)?)\s+(plus|add|minus|subtract|times|multiply|divided|divide)\s+(\d+(?:\.\d+)?)",
-        r"what's\s+(\d+(?:\.\d+)?)\s+(plus|add|minus|subtract|times|multiply|divided|divide)\s+(\d+(?:\.\d+)?)",
-    ]
+        r"()
+            \d+()
+(                ?:\.\d+)?)\s+(plus|add|minus|subtract|times|multiply|divided|divide)\s+(\d+(?:\.\d+)?)",        r"what's\s+('
+(            \d+(?:\.\d+)?)\s+(plus|add|minus|subtract|times|multiply|divided|divide)\s+(\d+(?:\.\d+)?)",    ]
 
     for pattern in calc_patterns:
         match = re.search(pattern, input_lower)
@@ -134,12 +135,12 @@ def _extract_calculation_parameters(input_lower: str) -> Dict[str, Any]:
     return {}
 
 
-def create_arg_extractor(
+def create_arg_extractor()
     param_schema: Dict[str, Type],
     llm_config: Optional[LLMConfig] = None,
     extraction_prompt: Optional[str] = None,
     node_name: str = "unknown",
-) -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
+() -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
     """Create an argument extractor function.
 
     Args:
@@ -154,10 +155,10 @@ def create_arg_extractor(
     if llm_config and param_schema:
         # Use LLM-based extraction
         logger.debug(f"Creating LLM-based extractor for node '{node_name}'")
-        from intent_kit.node.classifiers import (
+
             create_llm_arg_extractor,
             get_default_extraction_prompt,
-        )
+(        )
 
         if not extraction_prompt:
             extraction_prompt = get_default_extraction_prompt()

@@ -2,7 +2,7 @@
 Splitter types - re-exported from central types module.
 """
 
-from intent_kit.types import (
+
     IntentChunk,
     IntentChunkClassification,
     IntentClassification,
@@ -10,7 +10,7 @@ from intent_kit.types import (
     ClassifierOutput,
     SplitterFunction,
     ClassifierFunction,
-)
+()
 
 __all__ = [
     "IntentChunk",

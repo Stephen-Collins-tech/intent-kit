@@ -1,9 +1,9 @@
 # OpenAI client wrapper for intent-kit
 # Requires: pip install openai
 
-from intent_kit.utils.logger import Logger
-from intent_kit.services.base_client import BaseLLMClient
-from typing import Optional
+
+
+
 
 # Dummy assignment for testing
 openai = None
@@ -12,7 +12,7 @@ logger = Logger("openai_service")
 
 
 class OpenAIClient(BaseLLMClient):
-    def __init__(self, api_key: str):
+    def __init__def __init__def __init__(self, api_key: str) -> None: -> None: -> None:
         self.api_key = api_key
         super().__init__(api_key=api_key)
 
@@ -25,7 +25,7 @@ class OpenAIClient(BaseLLMClient):
         """Check if OpenAI package is available."""
         try:
             # Only check for import, do not actually use it
-            import importlib.util
+
 
             return importlib.util.find_spec("openai") is not None
         except ImportError:
@@ -38,9 +38,9 @@ class OpenAIClient(BaseLLMClient):
 
             return openai.OpenAI(api_key=self.api_key)
         except ImportError:
-            raise ImportError(
+            raise ImportError()
                 "OpenAI package not installed. Install with: pip install openai"
-            )
+(            )
 
     def _ensure_imported(self):
         """Ensure the OpenAI package is imported."""
@@ -48,13 +48,13 @@ class OpenAIClient(BaseLLMClient):
             self._client = self.get_client()
 
     def generate(self, prompt: str, model: Optional[str] = None) -> str:
-        """Generate text using OpenAI's GPT model."""
+        """Generate text using OpenAI's GPT model."""'
         self._ensure_imported()
         assert self._client is not None  # Type assertion for linter
         model = model or "gpt-4"
-        response = self._client.chat.completions.create(
+        response = self._client.chat.completions.create()
             model=model, messages=[{"role": "user", "content": prompt}], max_tokens=1000
-        )
+(        )
         if not response.choices:
             return ""
         content = response.choices[0].message.content

@@ -3,22 +3,22 @@ Tests for graph registry functionality.
 """
 
 import pytest
-from unittest.mock import Mock, patch
 
 
-from intent_kit.graph.registry import FunctionRegistry
+
+
 
 
 class TestFunctionRegistry:
     """Test the FunctionRegistry class."""
 
-    def test_init_empty(self):
+    def test_def test_def test_init_empty(self): -> None: -> None:
         """Test initialization with no functions."""
         registry = FunctionRegistry()
         assert registry.functions == {}
         assert registry.logger is not None
 
-    def test_init_with_functions(self):
+    def test_def test_def test_init_with_functions(self): -> None: -> None:
         """Test initialization with existing functions."""
 
         def test_func():
@@ -29,7 +29,7 @@ class TestFunctionRegistry:
         assert registry.functions == functions
         assert registry.get("test") == test_func
 
-    def test_register_function(self):
+    def test_def test_def test_register_function(self): -> None: -> None:
         """Test registering a function."""
         registry = FunctionRegistry()
 
@@ -39,7 +39,7 @@ class TestFunctionRegistry:
         registry.register("test_func", test_func)
         assert registry.functions["test_func"] == test_func
 
-    def test_register_overwrites_existing(self):
+    def test_def test_def test_register_overwrites_existing(self): -> None: -> None:
         """Test that registering overwrites existing function."""
         registry = FunctionRegistry()
 
@@ -53,7 +53,7 @@ class TestFunctionRegistry:
         registry.register("test", func2)
         assert registry.functions["test"] == func2
 
-    def test_get_existing_function(self):
+    def test_def test_def test_get_existing_function(self): -> None: -> None:
         """Test getting an existing function."""
         registry = FunctionRegistry()
 
@@ -64,15 +64,15 @@ class TestFunctionRegistry:
         result = registry.get("test")
         assert result == test_func
 
-    def test_get_nonexistent_function(self):
+    def test_def test_def test_get_nonexistent_function(self): -> None: -> None:
         """Test getting a non-existent function."""
         registry = FunctionRegistry()
-        with pytest.raises(
+        with pytest.raises()
             ValueError, match="Function 'nonexistent' not found in registry"
-        ):
+(        ):
             registry.get("nonexistent")
 
-    def test_has_existing_function(self):
+    def test_def test_def test_has_existing_function(self): -> None: -> None:
         """Test checking for existing function."""
         registry = FunctionRegistry()
 
@@ -82,18 +82,18 @@ class TestFunctionRegistry:
         registry.register("test", test_func)
         assert registry.has("test") is True
 
-    def test_has_nonexistent_function(self):
+    def test_def test_def test_has_nonexistent_function(self): -> None: -> None:
         """Test checking for non-existent function."""
         registry = FunctionRegistry()
         assert registry.has("nonexistent") is False
 
-    def test_list_functions_empty(self):
+    def test_def test_def test_list_functions_empty(self): -> None: -> None:
         """Test listing functions when registry is empty."""
         registry = FunctionRegistry()
         functions = registry.list_functions()
         assert functions == []
 
-    def test_list_functions_with_registered(self):
+    def test_def test_def test_list_functions_with_registered(self): -> None: -> None:
         """Test listing functions with registered functions."""
         registry = FunctionRegistry()
 
@@ -109,7 +109,7 @@ class TestFunctionRegistry:
         functions = registry.list_functions()
         assert set(functions) == {"func1", "func2"}
 
-    def test_list_functions_returns_copy(self):
+    def test_def test_def test_list_functions_returns_copy(self): -> None: -> None:
         """Test that list_functions returns a copy, not the original."""
         registry = FunctionRegistry()
 
@@ -126,7 +126,7 @@ class TestFunctionRegistry:
         assert registry.list_functions() == ["test"]
 
     @patch("intent_kit.graph.registry.Logger")
-    def test_register_logs_debug(self, mock_logger_class):
+    def test_register_logs_debug(self, mock_logger_class) -> None:
         """Test that register logs debug message."""
         mock_logger = Mock()
         mock_logger_class.return_value = mock_logger
@@ -140,7 +140,7 @@ class TestFunctionRegistry:
 
         mock_logger.debug.assert_called_once_with("Registered function 'test_func'")
 
-    def test_function_callability(self):
+    def test_def test_def test_function_callability(self): -> None: -> None:
         """Test that registered functions are callable."""
         registry = FunctionRegistry()
 
@@ -153,7 +153,7 @@ class TestFunctionRegistry:
         assert callable(func)
         assert func() == "test_result"
 
-    def test_multiple_function_types(self):
+    def test_def test_def test_multiple_function_types(self): -> None: -> None:
         """Test registering different types of callables."""
         registry = FunctionRegistry()
 
@@ -194,7 +194,7 @@ class TestFunctionRegistry:
         assert lambda_func() == "lambda"  # type: ignore
         assert method_func() == "method"  # type: ignore
 
-    def test_function_with_arguments(self):
+    def test_def test_def test_function_with_arguments(self): -> None: -> None:
         """Test registering and calling functions with arguments."""
         registry = FunctionRegistry()
 
@@ -208,7 +208,7 @@ class TestFunctionRegistry:
         assert func(2, 3) == 5
         assert func(10, 20) == 30
 
-    def test_function_with_keyword_arguments(self):
+    def test_def test_def test_function_with_keyword_arguments(self): -> None: -> None:
         """Test registering and calling functions with keyword arguments."""
         registry = FunctionRegistry()
 

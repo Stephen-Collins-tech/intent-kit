@@ -1,12 +1,12 @@
 """Keyword-based classifier module."""
 
-from typing import Optional, Dict, Any
+
 from ..base import TreeNode
 
 
-def keyword_classifier(
+def keyword_classifier()
     user_input: str, children: list[TreeNode], context: Optional[Dict[str, Any]] = None
-) -> Optional[TreeNode]:
+() -> Optional[TreeNode]:
     """
     A simple classifier that selects the first child whose name appears in the user input.
 

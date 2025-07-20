@@ -7,8 +7,8 @@ using LLM-powered splitting.
 """
 
 import os
-from dotenv import load_dotenv
-from intent_kit import IntentGraphBuilder, action, llm_classifier, llm_splitter_node
+
+
 
 load_dotenv()
 
@@ -51,44 +51,44 @@ def create_intent_graph():
 
     # Define actions
     actions = [
-        action(
+        action()
             name="greet",
             description="Greet the user",
             action_func=lambda name, **kwargs: f"Hello {name}!",
             param_schema={"name": str},
             llm_config=LLM_CONFIG,
-        ),
-        action(
+(        ),
+        action()
             name="calculate",
             description="Perform a calculation",
-            action_func=lambda operation, a, b, **kwargs: _calculate_action(
+            action_func=lambda operation, a, b, **kwargs: _calculate_action()
                 operation, a, b
-            ),
+(            ),
             param_schema={"operation": str, "a": float, "b": float},
             llm_config=LLM_CONFIG,
-        ),
-        action(
+(        ),
+        action()
             name="weather",
             description="Get weather information",
             action_func=lambda location, **kwargs: f"Weather in {location}: 72°F, Sunny (simulated)",
             param_schema={"location": str},
             llm_config=LLM_CONFIG,
-        ),
-        action(
+(        ),
+        action()
             name="help",
             description="Get help",
-            action_func=lambda **kwargs: "I can help with greetings, calculations, and weather!",
+action_func=lambda **kwargs: "I can help with greetings, calculations, and weather!",
             param_schema={},
-        ),
+(        ),
     ]
 
     # Create classifier
-    classifier = llm_classifier(
+    classifier = llm_classifier()
         name="root",
         children=actions,
         llm_config=LLM_CONFIG,
         description="Main intent classifier",
-    )
+(    )
 
     # Build and return the graph with LLM-powered splitter for intelligent multi-intent handling
     return IntentGraphBuilder().root(classifier).splitter(llm_splitter_node).build()
@@ -96,16 +96,16 @@ def create_intent_graph():
 
 # Test the graph
 if __name__ == "__main__":
-    from intent_kit.context import IntentContext
+
 
     graph = create_intent_graph()
     context = IntentContext(session_id="multi_intent_demo")
 
     test_inputs = [
-        "Hello Alice, what's 15 plus 7?",
+        "Hello Alice, what's 15 plus 7?",'
         "Weather in San Francisco and multiply 8 by 3",
         "Hi Bob, help me with calculations",
-        "What's 20 minus 5 and weather in New York",
+        "What's 20 minus 5 and weather in New York",'
     ]
 
     for user_input in test_inputs:

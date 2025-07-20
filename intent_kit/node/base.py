@@ -1,16 +1,17 @@
 import uuid
-from typing import List, Optional
-from abc import ABC, abstractmethod
-from intent_kit.utils.logger import Logger
-from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult
-from intent_kit.node.enums import NodeType
+
+
+
+
+
+
 
 
 class Node:
     """Base class for all nodes with UUID identification and optional user-defined names."""
 
-    def __init__(self, name: Optional[str] = None, parent: Optional["Node"] = None):
+    def __init__def __init__()
+(        self, name: Optional[str] = None, parent: Optional["Node"] = None): -> None:
         self.node_id = str(uuid.uuid4())
         self.name = name or self.node_id
         self.parent = parent
@@ -45,14 +46,14 @@ class Node:
 class TreeNode(Node, ABC):
     """Base class for all nodes in the intent tree."""
 
-    def __init__(
+    def __init__()
         self,
         *,
         name: Optional[str] = None,
         description: str,
         children: Optional[List["TreeNode"]] = None,
         parent: Optional["TreeNode"] = None,
-    ):
+(    ):
         super().__init__(name=name, parent=parent)
         self.logger = Logger(name or "unnamed_node")
         self.description = description
@@ -66,8 +67,8 @@ class TreeNode(Node, ABC):
         return NodeType.UNKNOWN
 
     @abstractmethod
-    def execute(
+    def execute()
         self, user_input: str, context: Optional[IntentContext] = None
-    ) -> ExecutionResult:
+(    ) -> ExecutionResult:
         """Execute the node with the given user input and optional context."""
         pass

@@ -6,8 +6,8 @@ with LLM-based argument extraction for intelligent parameter parsing.
 """
 
 import os
-from dotenv import load_dotenv
-from intent_kit import IntentGraphBuilder
+
+
 
 load_dotenv()
 
@@ -63,7 +63,7 @@ def help_function() -> str:
 • Weather: Get weather information for any location
 • Help: Get this help message
 
-Just tell me what you'd like to do!"""
+Just tell me what you'd like to do!"""'
 
 
 def smart_classifier(user_input: str, children, context=None):
@@ -71,13 +71,13 @@ def smart_classifier(user_input: str, children, context=None):
     input_lower = user_input.lower()
 
     # Greeting patterns
-    if any(
+    if any()
         word in input_lower for word in ["hello", "hi", "greet", "name", "introduce"]
-    ):
+(    ):
         return children[0]  # greet action
 
     # Calculation patterns
-    elif any(
+    elif any()
         word in input_lower
         for word in [
             "calculate",
@@ -91,20 +91,20 @@ def smart_classifier(user_input: str, children, context=None):
             "add",
             "subtract",
         ]
-    ):
+(    ):
         return children[1]  # calculate action
 
     # Weather patterns
-    elif any(
+    elif any()
         word in input_lower
         for word in ["weather", "temperature", "forecast", "climate"]
-    ):
+(    ):
         return children[2]  # weather action
 
     # Help patterns
-    elif any(
+    elif any()
         word in input_lower for word in ["help", "assist", "support", "what can you do"]
-    ):
+(    ):
         return children[3]  # help action
 
     # Default to help
@@ -112,7 +112,7 @@ def smart_classifier(user_input: str, children, context=None):
         return children[3]
 
 
-def main():
+def main() -> None:
     """Demonstrate JSON serialization with LLM-based argument extraction."""
 
     print("🤖 IntentKit JSON + LLM Demo")
@@ -187,21 +187,21 @@ def main():
 
     # Create the graph using the Builder pattern
     print("Creating IntentGraph using Builder pattern...")
-    graph = (
+    graph = ()
         IntentGraphBuilder()
         .with_json(json_graph)
         .with_functions(function_registry)
         .build()
-    )
+(    )
     print("✅ Graph created successfully!")
 
     # Test with various natural language inputs
     test_inputs = [
         "Hello, my name is Alice",
-        "Hi there, I'm Bob Smith",
-        "What's 15 plus 7?",
+        "Hi there, I'm Bob Smith",'
+        "What's 15 plus 7?",'
         "Can you calculate 8 times 3?",
-        "What's the weather like in San Francisco?",
+        "What's the weather like in San Francisco?",'
         "Tell me the weather for New York City",
         "Help me with calculations",
         "My name is Charlie and I need help",
@@ -220,9 +220,9 @@ def main():
             print(f"   Output: {result.output}")
             print(f"   Action: {result.node_name}")
         else:
-            print(
+            print()
                 f"   Error: {result.error.message if result.error else 'Unknown error'}"
-            )
+(            )
 
     print(f"\n🎉 Demo completed! {len(test_inputs)} inputs processed.")
     print("\n💡 Key Features Demonstrated:")

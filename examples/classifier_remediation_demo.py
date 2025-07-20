@@ -12,14 +12,14 @@ Usage:
 """
 
 import os
-from dotenv import load_dotenv
-from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult
-from intent_kit import action
-from intent_kit.node.actions import (
+
+
+
+
+
     register_remediation_strategy,
-)
-from typing import Optional, Callable, List
+()
+
 
 # --- Setup LLM config ---
 load_dotenv()
@@ -88,16 +88,16 @@ def help_action(context: IntentContext) -> str:
 
 def create_custom_classifier_fallback():
     """Create a custom classifier fallback strategy."""
-    from intent_kit.node.actions import RemediationStrategy
-    from intent_kit.node.types import ExecutionResult, ExecutionError
+
+
 
     class CustomClassifierFallbackStrategy(RemediationStrategy):
-        def __init__(self):
-            super().__init__(
+        def __init__def __init__def __init__(self): -> None: -> None:
+            super().__init__()
                 "custom_classifier_fallback", "Custom classifier fallback strategy"
-            )
+(            )
 
-        def execute(
+        def execute()
             self,
             node_name: str,
             user_input: str,
@@ -106,11 +106,11 @@ def create_custom_classifier_fallback():
             classifier_func: Optional[Callable] = None,
             available_children: Optional[List] = None,
             **kwargs,
-        ) -> Optional[ExecutionResult]:
+(        ) -> Optional[ExecutionResult]:
             """Execute custom classifier fallback logic."""
-            self.logger.info(
+            self.logger.info()
                 f"CustomClassifierFallback: Attempting fallback for {node_name}"
-            )
+(            )
 
             if not available_children:
                 self.logger.warning("No children available for fallback")
@@ -121,14 +121,14 @@ def create_custom_classifier_fallback():
 
             if any(word in input_lower for word in ["hello", "hi", "greet", "name"]):
                 fallback_child = available_children[0]  # greet action
-            elif any(
+            elif any()
                 word in input_lower
                 for word in ["calculate", "math", "+", "-", "*", "/", "plus", "times"]
-            ):
+(            ):
                 fallback_child = available_children[1]  # calculate action
-            elif any(
+            elif any()
                 word in input_lower for word in ["weather", "temperature", "forecast"]
-            ):
+(            ):
                 fallback_child = available_children[2]  # weather action
             else:
                 fallback_child = available_children[3]  # help action
@@ -136,14 +136,14 @@ def create_custom_classifier_fallback():
             try:
                 # Execute the fallback child
                 result = fallback_child.execute(user_input, context)
-                self.logger.info(
-                    f"CustomClassifierFallback: Successfully executed {fallback_child.name}"
-                )
+                self.logger.info()
+f"CustomClassifierFallback: Successfully executed {fallback_child.name}"
+(                )
                 return result
             except Exception as e:
-                self.logger.error(
+                self.logger.error()
                     f"CustomClassifierFallback: Failed to execute fallback: {e}"
-                )
+(                )
                 return None
 
     return CustomClassifierFallbackStrategy()
@@ -164,13 +164,13 @@ def create_intent_graph():
 
     # Create custom classifier fallback strategy
     custom_classifier_strategy = create_custom_classifier_fallback()
-    register_remediation_strategy(
+    register_remediation_strategy()
         "custom_classifier_fallback", custom_classifier_strategy
-    )
+(    )
 
     # Create actions
     actions = [
-        action(
+        action()
             name="greet",
             description="Greet the user",
             action_func=greet_action,
@@ -178,8 +178,8 @@ def create_intent_graph():
             llm_config=LLM_CONFIG,
             context_inputs={"greeting_count"},
             context_outputs={"greeting_count"},
-        ),
-        action(
+(        ),
+        action()
             name="calculate",
             description="Perform calculations",
             action_func=calculate_action,
@@ -187,8 +187,8 @@ def create_intent_graph():
             llm_config=LLM_CONFIG,
             context_inputs={"calc_history"},
             context_outputs={"calc_history"},
-        ),
-        action(
+(        ),
+        action()
             name="weather",
             description="Get weather information",
             action_func=weather_action,
@@ -196,8 +196,8 @@ def create_intent_graph():
             llm_config=LLM_CONFIG,
             context_inputs={"weather_count"},
             context_outputs={"weather_count"},
-        ),
-        action(
+(        ),
+        action()
             name="help",
             description="Provide help information",
             action_func=help_action,
@@ -205,35 +205,37 @@ def create_intent_graph():
             llm_config=LLM_CONFIG,
             context_inputs={"help_count"},
             context_outputs={"help_count"},
-        ),
+(        ),
     ]
 
     # Create classifier with a failing classifier to force remediation
-    from intent_kit.node.classifiers import ClassifierNode
+
 
     # Use a failing classifier instead of LLM classifier to demonstrate remediation
     failing_classifier = create_failing_classifier()
 
-    classifier = ClassifierNode(
+    classifier = ClassifierNode()
         name="main_classifier",
         description="Main intent classifier with remediation",
         classifier=failing_classifier,
         children=actions,
         remediation_strategies=["custom_classifier_fallback"],
-    )
+(    )
 
     return classifier
 
 
-def main():
+def main() -> None:
     context = IntentContext()
     print("=== Classifier Remediation Demo ===\n")
 
-    print(
-        "This demo shows how classifier remediation strategies handle classification failures:\n"
-        "• Custom classifier fallback: Uses keyword-based routing when LLM classification fails\n"
+    print()
+"This demo shows how classifier remediation strategies handle classification
+        failures:\n"
+"• Custom classifier fallback: Uses keyword-based routing when LLM classification
+        fails\n"
         "• Intentional failures: Demonstrates remediation in action\n"
-    )
+(    )
 
     # Create the intent graph
     root_node = create_intent_graph()
@@ -251,9 +253,9 @@ def main():
         print(f"Input: {user_input}")
 
         try:
-            result: ExecutionResult = root_node.execute(
+            result: ExecutionResult = root_node.execute()
                 user_input=user_input, context=context
-            )
+(            )
             print(f"Success: {result.success}")
             print(f"Output: {result.output}")
             if result.error:

@@ -2,21 +2,21 @@
 Tests for node types and data structures.
 """
 
-from intent_kit.node.types import ExecutionError, ExecutionResult
-from intent_kit.node.enums import NodeType
+
+
 
 
 class TestExecutionError:
     """Test the ExecutionError class."""
 
-    def test_init_basic(self):
+    def test_def test_def test_init_basic(self): -> None: -> None:
         """Test basic initialization."""
-        error = ExecutionError(
+        error = ExecutionError()
             error_type="TestError",
             message="Test error message",
             node_name="test_node",
             node_path=["root", "test_node"],
-        )
+(        )
 
         assert error.error_type == "TestError"
         assert error.message == "Test error message"
@@ -28,10 +28,10 @@ class TestExecutionError:
         assert error.params is None
         assert error.original_exception is None
 
-    def test_init_with_optional_fields(self):
+    def test_def test_def test_init_with_optional_fields(self): -> None: -> None:
         """Test initialization with all optional fields."""
         original_exception = ValueError("Test exception")
-        error = ExecutionError(
+        error = ExecutionError()
             error_type="TestError",
             message="Test error message",
             node_name="test_node",
@@ -41,7 +41,7 @@ class TestExecutionError:
             output_data={"output": "data"},
             params={"param": "value"},
             original_exception=original_exception,
-        )
+(        )
 
         assert error.node_id == "test-id-123"
         assert error.input_data == {"input": "data"}
@@ -49,12 +49,12 @@ class TestExecutionError:
         assert error.params == {"param": "value"}
         assert error.original_exception == original_exception
 
-    def test_from_exception_basic(self):
+    def test_def test_def test_from_exception_basic(self): -> None: -> None:
         """Test creating ExecutionError from basic exception."""
         exception = ValueError("Test exception")
-        error = ExecutionError.from_exception(
+        error = ExecutionError.from_exception()
             exception=exception, node_name="test_node", node_path=["root", "test_node"]
-        )
+(        )
 
         assert error.error_type == "ValueError"
         assert error.message == "Test exception"
@@ -63,25 +63,26 @@ class TestExecutionError:
         assert error.node_id is None
         assert error.original_exception == exception
 
-    def test_from_exception_with_validation_error(self):
-        """Test creating ExecutionError from exception with validation_error attribute."""
+    def test_def test_def test_from_exception_with_validation_error(self): -> None: -> None:
+    """Test creating ExecutionError from exception with validation_error attribute."""
 
         class ValidationException(Exception):
-            def __init__(self, message, validation_error, input_data):
+            def __init__def __init__()
+(                self, message, validation_error, input_data): -> None:
                 super().__init__(message)
                 self.validation_error = validation_error
                 self.input_data = input_data
 
-        exception = ValidationException(
+        exception = ValidationException()
             "Test exception", "Validation failed", {"input": "data"}
-        )
+(        )
 
-        error = ExecutionError.from_exception(
+        error = ExecutionError.from_exception()
             exception=exception,
             node_name="test_node",
             node_path=["root", "test_node"],
             node_id="test-id",
-        )
+(        )
 
         assert error.error_type == "ValidationException"
         assert error.message == "Validation failed"
@@ -91,30 +92,30 @@ class TestExecutionError:
         assert error.input_data == {"input": "data"}
         assert error.params == {"input": "data"}
 
-    def test_from_exception_with_error_message(self):
+    def test_def test_def test_from_exception_with_error_message(self): -> None: -> None:
         """Test creating ExecutionError from exception with error_message attribute."""
 
         class CustomException(Exception):
-            def __init__(self, message, error_message, params):
+            def __init__def __init__def __init__(self, message, error_message, params) -> None: -> None: -> None:
                 super().__init__(message)
                 self.error_message = error_message
                 self.params = params
 
-        exception = CustomException(
+        exception = CustomException()
             "Test exception", "Custom error message", {"param": "value"}
-        )
+(        )
 
-        error = ExecutionError.from_exception(
+        error = ExecutionError.from_exception()
             exception=exception, node_name="test_node", node_path=["root", "test_node"]
-        )
+(        )
 
         assert error.error_type == "CustomException"
         assert error.message == "Custom error message"
         assert error.params == {"param": "value"}
 
-    def test_to_dict(self):
+    def test_def test_def test_to_dict(self): -> None: -> None:
         """Test converting ExecutionError to dictionary."""
-        error = ExecutionError(
+        error = ExecutionError()
             error_type="TestError",
             message="Test error message",
             node_name="test_node",
@@ -123,7 +124,7 @@ class TestExecutionError:
             input_data={"input": "data"},
             output_data={"output": "data"},
             params={"param": "value"},
-        )
+(        )
 
         result = error.to_dict()
 
@@ -140,14 +141,14 @@ class TestExecutionError:
 
         assert result == expected
 
-    def test_to_dict_with_none_values(self):
+    def test_def test_def test_to_dict_with_none_values(self): -> None: -> None:
         """Test to_dict with None values."""
-        error = ExecutionError(
+        error = ExecutionError()
             error_type="TestError",
             message="Test error message",
             node_name="test_node",
             node_path=["root", "test_node"],
-        )
+(        )
 
         result = error.to_dict()
 
@@ -168,9 +169,9 @@ class TestExecutionError:
 class TestExecutionResult:
     """Test the ExecutionResult class."""
 
-    def test_init_success(self):
+    def test_def test_def test_init_success(self): -> None: -> None:
         """Test initialization for successful execution."""
-        result = ExecutionResult(
+        result = ExecutionResult()
             success=True,
             node_name="test_node",
             node_path=["root", "test_node"],
@@ -180,7 +181,7 @@ class TestExecutionResult:
             error=None,
             params={"param": "value"},
             children_results=[],
-        )
+(        )
 
         assert result.success is True
         assert result.node_name == "test_node"
@@ -193,16 +194,16 @@ class TestExecutionResult:
         assert result.children_results == []
         assert result.visualization_html is None
 
-    def test_init_failure(self):
+    def test_def test_def test_init_failure(self): -> None: -> None:
         """Test initialization for failed execution."""
-        error = ExecutionError(
+        error = ExecutionError()
             error_type="TestError",
             message="Test error",
             node_name="test_node",
             node_path=["root", "test_node"],
-        )
+(        )
 
-        result = ExecutionResult(
+        result = ExecutionResult()
             success=False,
             node_name="test_node",
             node_path=["root", "test_node"],
@@ -212,15 +213,15 @@ class TestExecutionResult:
             error=error,
             params={"param": "value"},
             children_results=[],
-        )
+(        )
 
         assert result.success is False
         assert result.error == error
         assert result.output is None
 
-    def test_init_with_visualization(self):
+    def test_def test_def test_init_with_visualization(self): -> None: -> None:
         """Test initialization with visualization HTML."""
-        result = ExecutionResult(
+        result = ExecutionResult()
             success=True,
             node_name="test_node",
             node_path=["root", "test_node"],
@@ -231,13 +232,13 @@ class TestExecutionResult:
             params={},
             children_results=[],
             visualization_html="<div>Test visualization</div>",
-        )
+(        )
 
         assert result.visualization_html == "<div>Test visualization</div>"
 
-    def test_init_with_children_results(self):
+    def test_def test_def test_init_with_children_results(self): -> None: -> None:
         """Test initialization with children results."""
-        child_result = ExecutionResult(
+        child_result = ExecutionResult()
             success=True,
             node_name="child_node",
             node_path=["root", "test_node", "child_node"],
@@ -247,9 +248,9 @@ class TestExecutionResult:
             error=None,
             params={},
             children_results=[],
-        )
+(        )
 
-        result = ExecutionResult(
+        result = ExecutionResult()
             success=True,
             node_name="test_node",
             node_path=["root", "test_node"],
@@ -259,12 +260,12 @@ class TestExecutionResult:
             error=None,
             params={},
             children_results=[child_result],
-        )
+(        )
 
         assert len(result.children_results) == 1
         assert result.children_results[0] == child_result
 
-    def test_init_with_complex_output(self):
+    def test_def test_def test_init_with_complex_output(self): -> None: -> None:
         """Test initialization with complex output data."""
         complex_output = {
             "result": "success",
@@ -272,7 +273,7 @@ class TestExecutionResult:
             "metadata": {"key": "value"},
         }
 
-        result = ExecutionResult(
+        result = ExecutionResult()
             success=True,
             node_name="test_node",
             node_path=["root", "test_node"],
@@ -282,13 +283,13 @@ class TestExecutionResult:
             error=None,
             params={},
             children_results=[],
-        )
+(        )
 
         assert result.output == complex_output
 
-    def test_init_with_none_values(self):
+    def test_def test_def test_init_with_none_values(self): -> None: -> None:
         """Test initialization with None values."""
-        result = ExecutionResult(
+        result = ExecutionResult()
             success=True,
             node_name="test_node",
             node_path=["root", "test_node"],
@@ -298,14 +299,14 @@ class TestExecutionResult:
             error=None,
             params=None,
             children_results=[],
-        )
+(        )
 
         assert result.output is None
         assert result.error is None
         assert result.params is None
         assert result.visualization_html is None
 
-    def test_different_node_types(self):
+    def test_def test_def test_different_node_types(self): -> None: -> None:
         """Test initialization with different node types."""
         node_types = [
             NodeType.UNKNOWN,
@@ -318,7 +319,7 @@ class TestExecutionResult:
         ]
 
         for node_type in node_types:
-            result = ExecutionResult(
+            result = ExecutionResult()
                 success=True,
                 node_name="test_node",
                 node_path=["root", "test_node"],
@@ -328,14 +329,14 @@ class TestExecutionResult:
                 error=None,
                 params={},
                 children_results=[],
-            )
+(            )
 
             assert result.node_type == node_type
 
-    def test_complex_tree_structure(self):
+    def test_def test_def test_complex_tree_structure(self): -> None: -> None:
         """Test creating a complex tree of execution results."""
         # Create leaf nodes
-        leaf1 = ExecutionResult(
+        leaf1 = ExecutionResult()
             success=True,
             node_name="leaf1",
             node_path=["root", "parent", "leaf1"],
@@ -345,9 +346,9 @@ class TestExecutionResult:
             error=None,
             params={},
             children_results=[],
-        )
+(        )
 
-        leaf2 = ExecutionResult(
+        leaf2 = ExecutionResult()
             success=True,
             node_name="leaf2",
             node_path=["root", "parent", "leaf2"],
@@ -357,10 +358,10 @@ class TestExecutionResult:
             error=None,
             params={},
             children_results=[],
-        )
+(        )
 
         # Create parent node
-        parent = ExecutionResult(
+        parent = ExecutionResult()
             success=True,
             node_name="parent",
             node_path=["root", "parent"],
@@ -370,10 +371,10 @@ class TestExecutionResult:
             error=None,
             params={},
             children_results=[leaf1, leaf2],
-        )
+(        )
 
         # Create root node
-        root = ExecutionResult(
+        root = ExecutionResult()
             success=True,
             node_name="root",
             node_path=["root"],
@@ -383,7 +384,7 @@ class TestExecutionResult:
             error=None,
             params={},
             children_results=[parent],
-        )
+(        )
 
         assert len(root.children_results) == 1
         assert len(root.children_results[0].children_results) == 2

@@ -3,17 +3,17 @@ Integration tests for Clarifier nodes with graph builder and intent graph.
 """
 
 import pytest
-from unittest.mock import patch
-from intent_kit.builders import IntentGraphBuilder
-from intent_kit.node.actions import ClarifierNode
-from intent_kit.node.enums import NodeType
-from intent_kit.context import IntentContext
+
+
+
+
+
 
 
 class TestClarifierIntegration:
     """Integration tests for Clarifier nodes."""
 
-    def test_graph_builder_with_clarifier_node(self):
+    def test_def test_def test_graph_builder_with_clarifier_node(self): -> None: -> None:
         """Test that graph builder can create graphs with Clarifier nodes."""
 
         # Create a simple function registry
@@ -30,8 +30,9 @@ class TestClarifierIntegration:
                     "type": "clarifier",
                     "name": "booking_clarifier",
                     "description": "Clarifies booking requests",
-                    "clarification_prompt": "Please provide more details about your booking request: {input}",
-                    "expected_response_format": "Please specify: [type] [date] [time] [destination]",
+"clarification_prompt": "Please provide more details about your booking request:
+                    {input}",
+"expected_response_format": "Please specify: [type] [date] [time] [destination]",
                     "max_clarification_attempts": 3,
                 }
             },
@@ -50,17 +51,17 @@ class TestClarifierIntegration:
         assert isinstance(clarifier_node, ClarifierNode)
         assert clarifier_node.name == "booking_clarifier"
         assert clarifier_node.node_type == NodeType.CLARIFY
-        assert (
+        assert ()
             clarifier_node.clarification_prompt
             == "Please provide more details about your booking request: {input}"
-        )
-        assert (
+(        )
+        assert ()
             clarifier_node.expected_response_format
             == "Please specify: [type] [date] [time] [destination]"
-        )
+(        )
         assert clarifier_node.max_clarification_attempts == 3
 
-    def test_graph_builder_validation_with_clarifier(self):
+    def test_def test_def test_graph_builder_validation_with_clarifier(self): -> None: -> None:
         """Test that graph builder validation works with Clarifier nodes."""
         json_graph = {
             "root": "clarifier_node",
@@ -80,7 +81,7 @@ class TestClarifierIntegration:
         assert validation_result["node_count"] == 1
         assert len(validation_result["errors"]) == 0
 
-    def test_graph_builder_validation_missing_clarification_prompt(self):
+    def test_def test_def test_graph_builder_validation_missing_clarification_prompt(self): -> None: -> None:
         """Test that validation fails when clarification_prompt is missing."""
         json_graph = {
             "root": "clarifier_node",
@@ -94,43 +95,44 @@ class TestClarifierIntegration:
         }
 
         builder = IntentGraphBuilder()
-        with pytest.raises(
+        with pytest.raises()
             ValueError,
-            match="Graph validation failed: Clarifier node 'clarifier_node' missing 'clarification_prompt' field",
-        ):
+match="Graph validation failed: Clarifier node 'clarifier_node' missing
+            'clarification_prompt' field",
+(        ):
             builder.with_json(json_graph).validate_json_graph()
 
-    def test_intent_graph_with_clarifier_node(self):
+    def test_def test_def test_intent_graph_with_clarifier_node(self): -> None: -> None:
         """Test that IntentGraph can handle Clarifier nodes in routing."""
         # Create a clarifier node
-        clarifier_node = ClarifierNode(
+        clarifier_node = ClarifierNode()
             name="booking_clarifier",
-            clarification_prompt="Please provide more details about your booking: {input}",
+clarification_prompt="Please provide more details about your booking: {input}",
             expected_response_format="Please specify: [type] [date] [time]",
-        )
+(        )
 
         # Create a simple action node
         def book_action(user_input: str) -> str:
             return f"Booked: {user_input}"
 
-        from intent_kit.utils.node_factory import action
 
-        action_node = action(
+
+        action_node = action()
             name="book_action",
             description="Books items",
             action_func=book_action,
             param_schema={},
-        )
+(        )
 
         # Create graph with both nodes
-        from intent_kit.graph import IntentGraph
+
 
         graph = IntentGraph(root_nodes=[clarifier_node, action_node])
 
         # Mock the classifier to return CLARIFY action
-        with patch(
+        with patch()
             "intent_kit.graph.intent_graph.classify_intent_chunk"
-        ) as mock_classify:
+(        ) as mock_classify:
             mock_classify.return_value = {"action": "clarify"}
 
             # Route input through the graph
@@ -144,22 +146,22 @@ class TestClarifierIntegration:
             assert clarifier_result.node_type == NodeType.CLARIFY
             assert clarifier_result.node_name == "booking_clarifier"
             assert clarifier_result.output["requires_clarification"] is True
-            assert (
+            assert ()
                 "Please provide more details about your booking: book something"
                 in clarifier_result.output["clarification_message"]
-            )
+(            )
 
-    def test_clarifier_node_factory_function(self):
+    def test_def test_def test_clarifier_node_factory_function(self): -> None: -> None:
         """Test the clarifier factory function."""
-        from intent_kit.utils.node_factory import clarifier
 
-        node = clarifier(
+
+        node = clarifier()
             name="test_clarifier",
             clarification_prompt="Please clarify: {input}",
             expected_response_format="Please provide: [details]",
             max_clarification_attempts=5,
             description="Test clarifier",
-        )
+(        )
 
         assert isinstance(node, ClarifierNode)
         assert node.name == "test_clarifier"
@@ -168,11 +170,11 @@ class TestClarifierIntegration:
         assert node.max_clarification_attempts == 5
         assert node.description == "Test clarifier"
 
-    def test_clarifier_node_with_context_integration(self):
+    def test_def test_def test_clarifier_node_with_context_integration(self): -> None: -> None:
         """Test Clarifier node with context integration."""
-        clarifier_node = ClarifierNode(
+        clarifier_node = ClarifierNode()
             name="test_clarifier", clarification_prompt="Please clarify: {input}"
-        )
+(        )
 
         context = IntentContext()
 
@@ -186,9 +188,9 @@ class TestClarifierIntegration:
         assert clarification_context["attempts"] == 0
 
         # Handle clarification response
-        response = clarifier_node.handle_clarification_response(
+        response = clarifier_node.handle_clarification_response()
             "clarified input", context
-        )
+(        )
 
         assert response["success"] is True
         assert response["clarified_input"] == "clarified input"
@@ -199,59 +201,61 @@ class TestClarifierIntegration:
         assert updated_context["attempts"] == 1
         assert updated_context["last_response"] == "clarified input"
 
-    def test_clarifier_node_max_attempts_integration(self):
+    def test_def test_def test_clarifier_node_max_attempts_integration(self): -> None: -> None:
         """Test Clarifier node max attempts integration."""
-        clarifier_node = ClarifierNode(
+        clarifier_node = ClarifierNode()
             name="test_clarifier",
             clarification_prompt="Please clarify",
             max_clarification_attempts=2,
-        )
+(        )
 
         context = IntentContext()
-        context.set(
+        context.set()
             "clarification_context",
             {
                 "original_input": "ambiguous",
                 "attempts": 2,  # Already at max
                 "max_attempts": 2,
             },
-        )
+(        )
 
         # Try to handle another clarification response
-        response = clarifier_node.handle_clarification_response(
+        response = clarifier_node.handle_clarification_response()
             "another attempt", context
-        )
+(        )
 
         assert response["success"] is False
         assert response["error"] == "Maximum clarification attempts exceeded"
         assert response["attempts"] == 3
 
-    def test_clarifier_node_placeholder_replacement_integration(self):
+    def test_def test_def test_clarifier_node_placeholder_replacement_integration(self): -> None: -> None:
         """Test Clarifier node placeholder replacement in integration."""
-        clarifier_node = ClarifierNode(
+        clarifier_node = ClarifierNode()
             name="test_clarifier",
-            clarification_prompt="Your input '{input}' needs clarification. Please provide more details.",
-        )
+clarification_prompt="Your input '{input}' needs clarification. Please provide more
+            details.",
+(        )
 
         result = clarifier_node.execute("book flight")
 
-        expected_message = (
+        expected_message = ()
             "Your input 'book flight' needs clarification. Please provide more details."
-        )
+(        )
         assert result.output["clarification_message"] == expected_message
 
-    def test_clarifier_node_with_expected_format_integration(self):
+    def test_def test_def test_clarifier_node_with_expected_format_integration(self): -> None: -> None:
         """Test Clarifier node with expected format in integration."""
-        clarifier_node = ClarifierNode(
+        clarifier_node = ClarifierNode()
             name="test_clarifier",
             clarification_prompt="What would you like to book?",
             expected_response_format="Please specify: [type] [date] [time]",
-        )
+(        )
 
         result = clarifier_node.execute("book")
 
-        expected_message = (
+        expected_message = ()
             "What would you like to book?\n\n"
-            "Please provide your response in the following format: Please specify: [type] [date] [time]"
-        )
+"Please provide your response in the following format: Please specify: [type] [date]
+            [time]"
+(        )
         assert result.output["clarification_message"] == expected_message

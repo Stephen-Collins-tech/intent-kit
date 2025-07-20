@@ -2,7 +2,7 @@
 IntentKit - A Python library for building hierarchical intent classification and execution systems.
 
 This library provides:
-- Tree-based intent architecture with classifier and intent nodes
+    - Tree-based intent architecture with classifier and intent nodes
 - IntentGraph for multi-intent routing and splitting
 - Context-aware execution with dependency tracking
 - Multiple AI service backends (OpenAI, Anthropic, Google AI, Ollama)
@@ -14,23 +14,23 @@ from .node.classifiers import ClassifierNode
 from .node.actions import ActionNode
 from .node.splitters import SplitterNode
 from .builders import IntentGraphBuilder
-from .utils.node_factory import (
+from .utils.node_factory import ()
     action,
     llm_classifier,
     llm_splitter_node,
     rule_splitter_node,
     create_intent_graph,
-)
+()
 from .graph import IntentGraph
-from .graph.registry import (
+from .graph.registry import ()
     FunctionRegistry,
-)
+()
 from .context import IntentContext
-from .context.debug import (
+from .context.debug import ()
     get_context_dependencies,
     validate_context_flow,
     trace_context_execution,
-)
+()
 from .node.classifiers import keyword_classifier
 from .node.classifiers import create_llm_classifier, create_llm_arg_extractor
 from .node.splitters import rule_splitter, llm_splitter

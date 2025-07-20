@@ -5,21 +5,21 @@ This module provides a builder class for creating ClassifierNode instances
 with a more readable and type-safe approach.
 """
 
-from typing import Callable, List, Optional, Union
-from intent_kit.node import TreeNode
-from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.node.actions import RemediationStrategy
-from intent_kit.utils.node_factory import (
+
+
+
+
+
     create_classifier_node,
     create_default_classifier,
-)
+()
 from .base import Builder
 
 
 class ClassifierBuilder(Builder):
     """Builder for creating classifier nodes with fluent interface."""
 
-    def __init__(self, name: str):
+    def __init__def __init__def __init__(self, name: str) -> None: -> None: -> None:
         """Initialize the classifier builder.
 
         Args:
@@ -28,9 +28,9 @@ class ClassifierBuilder(Builder):
         super().__init__(name)
         self.classifier_func: Optional[Callable] = None
         self.children: List[TreeNode] = []
-        self.remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = (
+        self.remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = ()
             None
-        )
+(        )
 
     def with_classifier(self, classifier_func: Callable) -> "ClassifierBuilder":
         """Set the classifier function.
@@ -68,9 +68,9 @@ class ClassifierBuilder(Builder):
         self.children.append(child)
         return self
 
-    def with_remediation_strategies(
+    def with_remediation_strategies()
         self, strategies: List[Union[str, RemediationStrategy]]
-    ) -> "ClassifierBuilder":
+(    ) -> "ClassifierBuilder":
         """Set remediation strategies.
 
         Args:
@@ -98,10 +98,10 @@ class ClassifierBuilder(Builder):
         if not self.classifier_func:
             self.classifier_func = create_default_classifier()
 
-        return create_classifier_node(
+        return create_classifier_node()
             name=self.name,
             description=self.description,
             classifier_func=self.classifier_func,
             children=self.children,
             remediation_strategies=self.remediation_strategies,
-        )
+(        )

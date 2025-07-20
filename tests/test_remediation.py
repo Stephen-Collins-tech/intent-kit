@@ -3,8 +3,8 @@ Tests for the remediation strategies.
 """
 
 import json
-from unittest.mock import Mock, patch, MagicMock
-from intent_kit.node.actions.remediation import (
+
+
     RemediationStrategy,
     RetryOnFailStrategy,
     FallbackToAnotherNodeStrategy,
@@ -20,34 +20,34 @@ from intent_kit.node.actions.remediation import (
     create_self_reflect_strategy,
     create_consensus_vote_strategy,
     create_alternate_prompt_strategy,
-)
-from intent_kit.node.types import ExecutionError
-from intent_kit.context import IntentContext
-from intent_kit.utils.text_utils import extract_json_from_text
+()
+
+
+
 
 
 class TestRetryOnFailStrategy:
     """Test the RetryOnFailStrategy."""
 
-    def test_retry_strategy_creation(self):
+    def test_def test_def test_retry_strategy_creation(self): -> None: -> None:
         """Test creating a retry strategy."""
         strategy = RetryOnFailStrategy(max_attempts=3, base_delay=1.0)
         assert strategy.name == "retry_on_fail"
         assert strategy.max_attempts == 3
         assert strategy.base_delay == 1.0
 
-    def test_retry_strategy_success_on_first_attempt(self):
+    def test_def test_def test_retry_strategy_success_on_first_attempt(self): -> None: -> None:
         """Test retry strategy when handler succeeds on first attempt."""
         strategy = RetryOnFailStrategy(max_attempts=3, base_delay=0.1)
         handler_func = Mock(return_value="success")
         validated_params = {"x": 5}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-        )
+(        )
 
         assert result is not None
         assert result.success is True
@@ -55,81 +55,81 @@ class TestRetryOnFailStrategy:
         assert result.params == validated_params
         handler_func.assert_called_once_with(**validated_params)
 
-    def test_retry_strategy_success_on_retry(self):
+    def test_def test_def test_retry_strategy_success_on_retry(self): -> None: -> None:
         """Test retry strategy when handler succeeds on retry."""
         strategy = RetryOnFailStrategy(max_attempts=3, base_delay=0.1)
         handler_func = Mock(side_effect=[Exception("fail"), "success"])
         validated_params = {"x": 5}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-        )
+(        )
 
         assert result is not None
         assert result.success is True
         assert result.output == "success"
         assert handler_func.call_count == 2
 
-    def test_retry_strategy_all_attempts_fail(self):
+    def test_def test_def test_retry_strategy_all_attempts_fail(self): -> None: -> None:
         """Test retry strategy when all attempts fail."""
         strategy = RetryOnFailStrategy(max_attempts=2, base_delay=0.1)
         handler_func = Mock(side_effect=Exception("always fail"))
         validated_params = {"x": 5}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-        )
+(        )
 
         assert result is None
         assert handler_func.call_count == 2
 
-    def test_retry_strategy_with_context(self):
+    def test_def test_def test_retry_strategy_with_context(self): -> None: -> None:
         """Test retry strategy with context parameter."""
         strategy = RetryOnFailStrategy(max_attempts=1, base_delay=0.1)
         handler_func = Mock(return_value="success")
         validated_params = {"x": 5}
         context = IntentContext()
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             context=context,
             handler_func=handler_func,
             validated_params=validated_params,
-        )
+(        )
 
         assert result is not None
         assert result.success is True
         handler_func.assert_called_once_with(**validated_params, context=context)
 
-    def test_retry_strategy_missing_parameters(self):
+    def test_def test_def test_retry_strategy_missing_parameters(self): -> None: -> None:
         """Test retry strategy with missing handler_func or validated_params."""
         strategy = RetryOnFailStrategy()
 
         # Missing handler_func
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node", user_input="test input", validated_params={"x": 5}
-        )
+(        )
         assert result is None
 
         # Missing validated_params
         handler_func = Mock()
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node", user_input="test input", handler_func=handler_func
-        )
+(        )
         assert result is None
 
 
 class TestFallbackToAnotherNodeStrategy:
     """Test the FallbackToAnotherNodeStrategy."""
 
-    def test_fallback_strategy_creation(self):
+    def test_def test_def test_fallback_strategy_creation(self): -> None: -> None:
         """Test creating a fallback strategy."""
         fallback_handler = Mock()
         strategy = FallbackToAnotherNodeStrategy(fallback_handler, "fallback_name")
@@ -137,18 +137,18 @@ class TestFallbackToAnotherNodeStrategy:
         assert strategy.fallback_handler == fallback_handler
         assert strategy.fallback_name == "fallback_name"
 
-    def test_fallback_strategy_success(self):
+    def test_def test_def test_fallback_strategy_success(self): -> None: -> None:
         """Test fallback strategy when fallback handler succeeds."""
         fallback_handler = Mock(return_value="fallback success")
         strategy = FallbackToAnotherNodeStrategy(fallback_handler, "fallback")
         validated_params = {"x": 5}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=Mock(),
             validated_params=validated_params,
-        )
+(        )
 
         assert result is not None
         assert result.success is True
@@ -156,49 +156,49 @@ class TestFallbackToAnotherNodeStrategy:
         assert result.node_name == "fallback"
         fallback_handler.assert_called_once_with(**validated_params)
 
-    def test_fallback_strategy_with_context(self):
+    def test_def test_def test_fallback_strategy_with_context(self): -> None: -> None:
         """Test fallback strategy with context parameter."""
         fallback_handler = Mock(return_value="fallback success")
         strategy = FallbackToAnotherNodeStrategy(fallback_handler, "fallback")
         validated_params = {"x": 5}
         context = IntentContext()
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             context=context,
             handler_func=Mock(),
             validated_params=validated_params,
-        )
+(        )
 
         assert result is not None
         assert result.success is True
         fallback_handler.assert_called_once_with(**validated_params, context=context)
 
-    def test_fallback_strategy_no_validated_params(self):
+    def test_def test_def test_fallback_strategy_no_validated_params(self): -> None: -> None:
         """Test fallback strategy when no validated_params provided."""
         fallback_handler = Mock(return_value="fallback success")
         strategy = FallbackToAnotherNodeStrategy(fallback_handler, "fallback")
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node", user_input="test input", handler_func=Mock()
-        )
+(        )
 
         assert result is not None
         assert result.success is True
         fallback_handler.assert_called_once_with(user_input="test input")
 
-    def test_fallback_strategy_failure(self):
+    def test_def test_def test_fallback_strategy_failure(self): -> None: -> None:
         """Test fallback strategy when fallback handler fails."""
         fallback_handler = Mock(side_effect=Exception("fallback failed"))
         strategy = FallbackToAnotherNodeStrategy(fallback_handler, "fallback")
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=Mock(),
             validated_params={"x": 5},
-        )
+(        )
 
         assert result is None
 
@@ -207,7 +207,7 @@ class TestSelfReflectStrategy:
     """Test the SelfReflectStrategy."""
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_self_reflect_strategy_creation(self, mock_llm_factory):
+    def test_self_reflect_strategy_creation(self, mock_llm_factory) -> None:
         """Test creating a self-reflect strategy."""
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
         strategy = SelfReflectStrategy(llm_config, max_reflections=2)
@@ -216,18 +216,18 @@ class TestSelfReflectStrategy:
         assert strategy.max_reflections == 2
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_self_reflect_strategy_success(self, mock_llm_factory):
+    def test_self_reflect_strategy_success(self, mock_llm_factory) -> None:
         """Test self-reflect strategy when LLM provides good analysis."""
         # Mock LLM client
         mock_client = Mock()
-        mock_client.generate.return_value = json.dumps(
+        mock_client.generate.return_value = json.dumps()
             {
                 "analysis": "The handler failed because of negative input",
                 "suggestions": ["Use absolute value", "Use positive numbers"],
                 "modified_params": {"x": 5},
                 "confidence": 0.8,
             }
-        )
+(        )
         mock_llm_factory.create_client.return_value = mock_client
 
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
@@ -235,18 +235,18 @@ class TestSelfReflectStrategy:
         handler_func = Mock(return_value="success")
         validated_params = {"x": -3}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-            original_error=ExecutionError(
+            original_error=ExecutionError()
                 error_type="ValueError",
                 message="Cannot handle negative numbers",
                 node_name="test_node",
                 node_path=["test_node"],
-            ),
-        )
+(            ),
+(        )
 
         assert result is not None
         assert result.success is True
@@ -255,7 +255,7 @@ class TestSelfReflectStrategy:
         handler_func.assert_called_once_with(x=5)
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_self_reflect_strategy_invalid_json(self, mock_llm_factory):
+    def test_self_reflect_strategy_invalid_json(self, mock_llm_factory) -> None:
         """Test self-reflect strategy when LLM returns invalid JSON."""
         # Mock LLM client
         mock_client = Mock()
@@ -267,12 +267,12 @@ class TestSelfReflectStrategy:
         handler_func = Mock(return_value="success")
         validated_params = {"x": 3}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-        )
+(        )
 
         assert result is not None
         assert result.success is True
@@ -281,7 +281,7 @@ class TestSelfReflectStrategy:
         assert result.params == validated_params
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_self_reflect_strategy_llm_failure(self, mock_llm_factory):
+    def test_self_reflect_strategy_llm_failure(self, mock_llm_factory) -> None:
         """Test self-reflect strategy when LLM fails."""
         # Mock LLM client that raises exception
         mock_client = Mock()
@@ -293,12 +293,12 @@ class TestSelfReflectStrategy:
         handler_func = Mock()
         validated_params = {"x": 3}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-        )
+(        )
 
         assert result is None
 
@@ -307,7 +307,7 @@ class TestConsensusVoteStrategy:
     """Test the ConsensusVoteStrategy."""
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_consensus_vote_strategy_creation(self, mock_llm_factory):
+    def test_consensus_vote_strategy_creation(self, mock_llm_factory) -> None:
         """Test creating a consensus vote strategy."""
         llm_configs = [
             {"provider": "openai", "model": "gpt-4", "api_key": "test-key"},
@@ -319,28 +319,28 @@ class TestConsensusVoteStrategy:
         assert strategy.vote_threshold == 0.6
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_consensus_vote_strategy_success(self, mock_llm_factory):
+    def test_consensus_vote_strategy_success(self, mock_llm_factory) -> None:
         """Test consensus vote strategy when models agree."""
         # Mock LLM clients
         mock_client1 = Mock()
-        mock_client1.generate.return_value = json.dumps(
+        mock_client1.generate.return_value = json.dumps()
             {
                 "approach": "Use positive numbers",
                 "confidence": 0.8,
                 "modified_params": {"x": 5},
                 "reasoning": "Negative numbers cause errors",
             }
-        )
+(        )
 
         mock_client2 = Mock()
-        mock_client2.generate.return_value = json.dumps(
+        mock_client2.generate.return_value = json.dumps()
             {
                 "approach": "Use absolute value",
                 "confidence": 0.9,
                 "modified_params": {"x": 3},
                 "reasoning": "Convert negative to positive",
             }
-        )
+(        )
 
         mock_llm_factory.create_client.side_effect = [mock_client1, mock_client2]
 
@@ -352,18 +352,18 @@ class TestConsensusVoteStrategy:
         handler_func = Mock(return_value="success")
         validated_params = {"x": -3}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-            original_error=ExecutionError(
+            original_error=ExecutionError()
                 error_type="ValueError",
                 message="Cannot handle negative numbers",
                 node_name="test_node",
                 node_path=["test_node"],
-            ),
-        )
+(            ),
+(        )
 
         assert result is not None
         assert result.success is True
@@ -372,28 +372,28 @@ class TestConsensusVoteStrategy:
         assert result.params == {"x": 3}
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_consensus_vote_strategy_low_confidence(self, mock_llm_factory):
+    def test_consensus_vote_strategy_low_confidence(self, mock_llm_factory) -> None:
         """Test consensus vote strategy when confidence is too low."""
         # Mock LLM clients with low confidence
         mock_client1 = Mock()
-        mock_client1.generate.return_value = json.dumps(
+        mock_client1.generate.return_value = json.dumps()
             {
                 "approach": "Try something",
                 "confidence": 0.3,
                 "modified_params": {"x": 5},
                 "reasoning": "Low confidence approach",
             }
-        )
+(        )
 
         mock_client2 = Mock()
-        mock_client2.generate.return_value = json.dumps(
+        mock_client2.generate.return_value = json.dumps()
             {
                 "approach": "Try another thing",
                 "confidence": 0.4,
                 "modified_params": {"x": 3},
                 "reasoning": "Another low confidence approach",
             }
-        )
+(        )
 
         mock_llm_factory.create_client.side_effect = [mock_client1, mock_client2]
 
@@ -401,23 +401,23 @@ class TestConsensusVoteStrategy:
             {"provider": "openai", "model": "gpt-4", "api_key": "test-key"},
             {"provider": "google", "model": "gemini", "api_key": "test-key"},
         ]
-        strategy = ConsensusVoteStrategy(
+        strategy = ConsensusVoteStrategy()
             llm_configs, vote_threshold=0.6
-        )  # Higher threshold
+(        )  # Higher threshold
         handler_func = Mock()
         validated_params = {"x": -3}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-        )
+(        )
 
         assert result is None  # Should fail due to low confidence
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_consensus_vote_strategy_no_votes(self, mock_llm_factory):
+    def test_consensus_vote_strategy_no_votes(self, mock_llm_factory) -> None:
         """Test consensus vote strategy when no models provide valid votes."""
         # Mock LLM client that fails
         mock_client = Mock()
@@ -429,12 +429,12 @@ class TestConsensusVoteStrategy:
         handler_func = Mock()
         validated_params = {"x": -3}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-        )
+(        )
 
         assert result is None
 
@@ -442,7 +442,7 @@ class TestConsensusVoteStrategy:
 class TestRetryWithAlternatePromptStrategy:
     """Test the RetryWithAlternatePromptStrategy."""
 
-    def test_alternate_prompt_strategy_creation(self):
+    def test_def test_def test_alternate_prompt_strategy_creation(self): -> None: -> None:
         """Test creating an alternate prompt strategy."""
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
         strategy = RetryWithAlternatePromptStrategy(llm_config)
@@ -450,7 +450,7 @@ class TestRetryWithAlternatePromptStrategy:
         assert strategy.llm_config == llm_config
         assert len(strategy.alternate_prompts) == 4
 
-    def test_alternate_prompt_strategy_custom_prompts(self):
+    def test_def test_def test_alternate_prompt_strategy_custom_prompts(self): -> None: -> None:
         """Test alternate prompt strategy with custom prompts."""
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
         custom_prompts = ["Try {user_input}", "Test {user_input}"]
@@ -458,21 +458,21 @@ class TestRetryWithAlternatePromptStrategy:
         assert strategy.alternate_prompts == custom_prompts
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_alternate_prompt_strategy_success_with_absolute_values(
+    def test_alternate_prompt_strategy_success_with_absolute_values()
         self, mock_llm_factory
-    ):
+(    ):
         """Test alternate prompt strategy with absolute value modification."""
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
         strategy = RetryWithAlternatePromptStrategy(llm_config)
         handler_func = Mock(return_value="success")
         validated_params = {"x": -3}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-        )
+(        )
 
         assert result is not None
         assert result.success is True
@@ -481,21 +481,21 @@ class TestRetryWithAlternatePromptStrategy:
         assert result.params == {"x": 3}
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_alternate_prompt_strategy_success_with_positive_values(
+    def test_alternate_prompt_strategy_success_with_positive_values()
         self, mock_llm_factory
-    ):
+(    ):
         """Test alternate prompt strategy with positive value modification."""
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
         strategy = RetryWithAlternatePromptStrategy(llm_config)
         handler_func = Mock(side_effect=[Exception("fail"), "success"])
         validated_params = {"x": -3}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-        )
+(        )
 
         assert result is not None
         assert result.success is True
@@ -504,36 +504,36 @@ class TestRetryWithAlternatePromptStrategy:
         assert result.params == {"x": 0}
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_alternate_prompt_strategy_all_strategies_fail(self, mock_llm_factory):
+    def test_alternate_prompt_strategy_all_strategies_fail(self, mock_llm_factory) -> None:
         """Test alternate prompt strategy when all strategies fail."""
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
         strategy = RetryWithAlternatePromptStrategy(llm_config)
         handler_func = Mock(side_effect=Exception("always fail"))
         validated_params = {"x": -3}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-        )
+(        )
 
         assert result is None
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_alternate_prompt_strategy_mixed_parameter_types(self, mock_llm_factory):
+    def test_alternate_prompt_strategy_mixed_parameter_types(self, mock_llm_factory) -> None:
         """Test alternate prompt strategy with mixed parameter types."""
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
         strategy = RetryWithAlternatePromptStrategy(llm_config)
         handler_func = Mock(return_value="success")
         validated_params = {"x": -3, "y": "test", "z": 0.5}
 
-        result = strategy.execute(
+        result = strategy.execute()
             node_name="test_node",
             user_input="test input",
             handler_func=handler_func,
             validated_params=validated_params,
-        )
+(        )
 
         assert result is not None
         assert result.success is True
@@ -547,13 +547,13 @@ class TestRetryWithAlternatePromptStrategy:
 class TestRemediationRegistry:
     """Test the RemediationRegistry."""
 
-    def test_registry_creation(self):
+    def test_def test_def test_registry_creation(self): -> None: -> None:
         """Test creating a remediation registry."""
         registry = RemediationRegistry()
         assert isinstance(registry._strategies, dict)
         assert len(registry._strategies) == 0
 
-    def test_registry_register_get(self):
+    def test_def test_def test_registry_register_get(self): -> None: -> None:
         """Test registering and getting strategies."""
         registry = RemediationRegistry()
         strategy = Mock(spec=RemediationStrategy)
@@ -563,13 +563,13 @@ class TestRemediationRegistry:
         retrieved = registry.get("test_id")
         assert retrieved == strategy
 
-    def test_registry_get_nonexistent(self):
+    def test_def test_def test_registry_get_nonexistent(self): -> None: -> None:
         """Test getting a non-existent strategy."""
         registry = RemediationRegistry()
         result = registry.get("nonexistent")
         assert result is None
 
-    def test_registry_list_strategies(self):
+    def test_def test_def test_registry_list_strategies(self): -> None: -> None:
         """Test listing registered strategies."""
         registry = RemediationRegistry()
         strategy1 = Mock(spec=RemediationStrategy)
@@ -587,14 +587,14 @@ class TestRemediationRegistry:
 class TestRemediationFactoryFunctions:
     """Test the factory functions for creating remediation strategies."""
 
-    def test_create_retry_strategy(self):
+    def test_def test_def test_create_retry_strategy(self): -> None: -> None:
         """Test creating a retry strategy via factory function."""
         strategy = create_retry_strategy(max_attempts=5, base_delay=2.0)
         assert isinstance(strategy, RetryOnFailStrategy)
         assert strategy.max_attempts == 5
         assert strategy.base_delay == 2.0
 
-    def test_create_fallback_strategy(self):
+    def test_def test_def test_create_fallback_strategy(self): -> None: -> None:
         """Test creating a fallback strategy via factory function."""
         fallback_handler = Mock()
         strategy = create_fallback_strategy(fallback_handler, "custom_fallback")
@@ -603,7 +603,7 @@ class TestRemediationFactoryFunctions:
         assert strategy.fallback_name == "custom_fallback"
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_create_self_reflect_strategy(self, mock_llm_factory):
+    def test_create_self_reflect_strategy(self, mock_llm_factory) -> None:
         """Test creating a self-reflect strategy via factory function."""
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
         strategy = create_self_reflect_strategy(llm_config, max_reflections=3)
@@ -612,7 +612,7 @@ class TestRemediationFactoryFunctions:
         assert strategy.max_reflections == 3
 
     @patch("intent_kit.services.llm_factory.LLMFactory")
-    def test_create_consensus_vote_strategy(self, mock_llm_factory):
+    def test_create_consensus_vote_strategy(self, mock_llm_factory) -> None:
         """Test creating a consensus vote strategy via factory function."""
         llm_configs = [
             {"provider": "openai", "model": "gpt-4", "api_key": "test-key"},
@@ -623,7 +623,7 @@ class TestRemediationFactoryFunctions:
         assert strategy.llm_configs == llm_configs
         assert strategy.vote_threshold == 0.7
 
-    def test_create_alternate_prompt_strategy(self):
+    def test_def test_def test_create_alternate_prompt_strategy(self): -> None: -> None:
         """Test creating an alternate prompt strategy via factory function."""
         llm_config = {"provider": "openai", "model": "gpt-4", "api_key": "test-key"}
         custom_prompts = ["Custom prompt 1", "Custom prompt 2"]
@@ -636,7 +636,7 @@ class TestRemediationFactoryFunctions:
 class TestGlobalRegistry:
     """Test the global remediation registry."""
 
-    def test_register_get_strategy(self):
+    def test_def test_def test_register_get_strategy(self): -> None: -> None:
         """Test registering and getting strategies from global registry."""
         strategy = Mock(spec=RemediationStrategy)
         strategy.name = "global_test_strategy"
@@ -645,7 +645,7 @@ class TestGlobalRegistry:
         retrieved = get_remediation_strategy("global_test")
         assert retrieved == strategy
 
-    def test_list_remediation_strategies(self):
+    def test_def test_def test_list_remediation_strategies(self): -> None: -> None:
         """Test listing all registered remediation strategies."""
         # Clear any existing strategies for this test
         strategies = list_remediation_strategies()
@@ -662,13 +662,13 @@ class TestGlobalRegistry:
 
 
 def test_reflection_response_valid_json():
-    with patch(
+    with patch()
         "intent_kit.services.llm_factory.LLMFactory.create_client"
-    ) as mock_create_client:
+(    ) as mock_create_client:
         mock_client = MagicMock()
-        mock_client.generate.return_value = (
+        mock_client.generate.return_value = ()
             '{"analysis": "Looks good", "confidence": 0.9}'
-        )
+(        )
         mock_create_client.return_value = mock_client
         reflection_response = '{"analysis": "Looks good", "confidence": 0.9}'
         data = extract_json_from_text(reflection_response)
@@ -676,9 +676,9 @@ def test_reflection_response_valid_json():
 
 
 def test_reflection_response_malformed():
-    with patch(
+    with patch()
         "intent_kit.services.llm_factory.LLMFactory.create_client"
-    ) as mock_create_client:
+(    ) as mock_create_client:
         mock_client = MagicMock()
         mock_client.generate.return_value = "analysis: Looks good, confidence: 0.9"
         mock_create_client.return_value = mock_client
@@ -688,9 +688,9 @@ def test_reflection_response_malformed():
 
 
 def test_vote_response_empty():
-    with patch(
+    with patch()
         "intent_kit.services.llm_factory.LLMFactory.create_client"
-    ) as mock_create_client:
+(    ) as mock_create_client:
         mock_client = MagicMock()
         mock_client.generate.return_value = ""
         mock_create_client.return_value = mock_client

@@ -5,22 +5,23 @@ This module provides the ActionNode class which is a leaf node representing
 an executable action with argument extraction and validation.
 """
 
-from typing import Any, Callable, Dict, Optional, Set, Type, List, Union
+
 from ..base import TreeNode
 from ..enums import NodeType
 from ..types import ExecutionResult, ExecutionError
-from intent_kit.context import IntentContext
-from intent_kit.context.dependencies import declare_dependencies
-from .remediation import (
+
+
+from .remediation import ()
     get_remediation_strategy,
     RemediationStrategy,
-)
+()
 
 
 class ActionNode(TreeNode):
-    """Leaf node representing an executable action with argument extraction and validation."""
+    """Leaf node representing an executable action with argument extraction and
+    validation."""
 
-    def __init__(
+    def __init__()
         self,
         name: Optional[str],
         param_schema: Dict[str, Type],
@@ -33,7 +34,7 @@ class ActionNode(TreeNode):
         description: str = "",
         parent: Optional["TreeNode"] = None,
         remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
-    ):
+(    ):
         super().__init__(name=name, description=description, children=[], parent=parent)
         self.param_schema = param_schema
         self.action = action
@@ -42,11 +43,11 @@ class ActionNode(TreeNode):
         self.context_outputs = context_outputs or set()
         self.input_validator = input_validator
         self.output_validator = output_validator
-        self.context_dependencies = declare_dependencies(
+        self.context_dependencies = declare_dependencies()
             inputs=self.context_inputs,
             outputs=self.context_outputs,
             description=f"Context dependencies for intent '{self.name}'",
-        )
+(        )
 
         # Store remediation strategies
         self.remediation_strategies = remediation_strategies or []
@@ -56,9 +57,9 @@ class ActionNode(TreeNode):
         """Get the type of this node."""
         return NodeType.ACTION
 
-    def execute(
+    def execute()
         self, user_input: str, context: Optional[IntentContext] = None
-    ) -> ExecutionResult:
+(    ) -> ExecutionResult:
         try:
             context_dict: Optional[Dict[str, Any]] = None
             if context:
@@ -69,119 +70,119 @@ class ActionNode(TreeNode):
                 }
             extracted_params = self.arg_extractor(user_input, context_dict or {})
         except Exception as e:
-            self.logger.error(
-                f"Argument extraction failed for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-            )
-            return ExecutionResult(
+            self.logger.error()
+                f"Argument extraction failed for intent '{self.name}' ()"
+((                    Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"            )
+            return ExecutionResult()
                 success=False,
                 node_name=self.name,
                 node_path=self.get_path(),
                 node_type=NodeType.ACTION,
                 input=user_input,
                 output=None,
-                error=ExecutionError(
+                error=ExecutionError()
                     error_type=type(e).__name__,
                     message=str(e),
                     node_name=self.name,
                     node_path=self.get_path(),
-                ),
+(                ),
                 params=None,
                 children_results=[],
-            )
+(            )
         if self.input_validator:
             try:
                 if not self.input_validator(extracted_params):
-                    self.logger.error(
-                        f"Input validation failed for intent '{self.name}' (Path: {'.'.join(self.get_path())})"
-                    )
-                    return ExecutionResult(
+                    self.logger.error()
+                        f"Input validation failed for intent '{self.name}' ()"
+((                            Path: {'.'.join(self.get_path())})"                    )
+                    return ExecutionResult()
                         success=False,
                         node_name=self.name,
                         node_path=self.get_path(),
                         node_type=NodeType.ACTION,
                         input=user_input,
                         output=None,
-                        error=ExecutionError(
+                        error=ExecutionError()
                             error_type="InputValidationError",
                             message="Input validation failed",
                             node_name=self.name,
                             node_path=self.get_path(),
-                        ),
+(                        ),
                         params=extracted_params,
                         children_results=[],
-                    )
+(                    )
             except Exception as e:
-                self.logger.error(
-                    f"Input validation error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-                )
-                return ExecutionResult(
+                self.logger.error()
+                    f"Input validation error for intent '{self.name}' ()"
+((                        Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"                )
+                return ExecutionResult()
                     success=False,
                     node_name=self.name,
                     node_path=self.get_path(),
                     node_type=NodeType.ACTION,
                     input=user_input,
                     output=None,
-                    error=ExecutionError(
+                    error=ExecutionError()
                         error_type=type(e).__name__,
                         message=str(e),
                         node_name=self.name,
                         node_path=self.get_path(),
-                    ),
+(                    ),
                     params=extracted_params,
                     children_results=[],
-                )
+(                )
         try:
             validated_params = self._validate_types(extracted_params)
         except Exception as e:
-            self.logger.error(
-                f"Type validation error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-            )
-            return ExecutionResult(
+            self.logger.error()
+                f"Type validation error for intent '{self.name}' ()"
+((                    Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"            )
+            return ExecutionResult()
                 success=False,
                 node_name=self.name,
                 node_path=self.get_path(),
                 node_type=NodeType.ACTION,
                 input=user_input,
                 output=None,
-                error=ExecutionError(
+                error=ExecutionError()
                     error_type=type(e).__name__,
                     message=str(e),
                     node_name=self.name,
                     node_path=self.get_path(),
-                ),
+(                ),
                 params=extracted_params,
                 children_results=[],
-            )
+(            )
         try:
             if context is not None:
                 output = self.action(**validated_params, context=context)
             else:
                 output = self.action(**validated_params)
         except Exception as e:
-            self.logger.error(
-                f"Action execution error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-            )
+            self.logger.error()
+                f"Action execution error for intent '{self.name}' ()"
+((                    Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"            )
 
             # Try remediation strategies
-            error = ExecutionError(
+            error = ExecutionError()
                 error_type=type(e).__name__,
                 message=str(e),
                 node_name=self.name,
                 node_path=self.get_path(),
-            )
+(            )
 
-            remediation_result = self._execute_remediation_strategies(
+            remediation_result = self._execute_remediation_strategies()
                 user_input=user_input,
                 context=context,
                 original_error=error,
                 validated_params=validated_params,
-            )
+(            )
 
             if remediation_result:
                 return remediation_result
 
             # If no remediation succeeded, return the original error
-            return ExecutionResult(
+            return ExecutionResult()
                 success=False,
                 node_name=self.name,
                 node_path=self.get_path(),
@@ -191,49 +192,49 @@ class ActionNode(TreeNode):
                 error=error,
                 params=validated_params,
                 children_results=[],
-            )
+(            )
         if self.output_validator:
             try:
                 if not self.output_validator(output):
-                    self.logger.error(
-                        f"Output validation failed for intent '{self.name}' (Path: {'.'.join(self.get_path())})"
-                    )
-                    return ExecutionResult(
+                    self.logger.error()
+                        f"Output validation failed for intent '{self.name}' ()"
+((                            Path: {'.'.join(self.get_path())})"                    )
+                    return ExecutionResult()
                         success=False,
                         node_name=self.name,
                         node_path=self.get_path(),
                         node_type=NodeType.ACTION,
                         input=user_input,
                         output=None,
-                        error=ExecutionError(
+                        error=ExecutionError()
                             error_type="OutputValidationError",
                             message="Output validation failed",
                             node_name=self.name,
                             node_path=self.get_path(),
-                        ),
+(                        ),
                         params=validated_params,
                         children_results=[],
-                    )
+(                    )
             except Exception as e:
-                self.logger.error(
-                    f"Output validation error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-                )
-                return ExecutionResult(
+                self.logger.error()
+                    f"Output validation error for intent '{self.name}' ()"
+((                        Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"                )
+                return ExecutionResult()
                     success=False,
                     node_name=self.name,
                     node_path=self.get_path(),
                     node_type=NodeType.ACTION,
                     input=user_input,
                     output=None,
-                    error=ExecutionError(
+                    error=ExecutionError()
                         error_type=type(e).__name__,
                         message=str(e),
                         node_name=self.name,
                         node_path=self.get_path(),
-                    ),
+(                    ),
                     params=validated_params,
                     children_results=[],
-                )
+(                )
 
         # Update context with outputs
         if context is not None:
@@ -243,7 +244,7 @@ class ActionNode(TreeNode):
                 elif isinstance(output, dict) and key in output:
                     context.set(key, output[key], self.name)
 
-        return ExecutionResult(
+        return ExecutionResult()
             success=True,
             node_name=self.name,
             node_path=self.get_path(),
@@ -253,15 +254,15 @@ class ActionNode(TreeNode):
             error=None,
             params=validated_params,
             children_results=[],
-        )
+(        )
 
-    def _execute_remediation_strategies(
+    def _execute_remediation_strategies()
         self,
         user_input: str,
         context: Optional[IntentContext] = None,
         original_error: Optional[ExecutionError] = None,
         validated_params: Optional[Dict[str, Any]] = None,
-    ) -> Optional[ExecutionResult]:
+(    ) -> Optional[ExecutionResult]:
         """Execute remediation strategies in order until one succeeds."""
         for strategy in self.remediation_strategies:
             try:
@@ -271,23 +272,24 @@ class ActionNode(TreeNode):
                     strategy_instance = strategy
 
                 if strategy_instance:
-                    remediation_result = strategy_instance.execute(
+                    remediation_result = strategy_instance.execute()
                         node_name=self.name or "unknown",
                         user_input=user_input,
                         context=context,
                         original_error=original_error,
                         handler_func=self.action,
                         validated_params=validated_params,
-                    )
+(                    )
                     if remediation_result and remediation_result.success:
-                        self.logger.info(
-                            f"Remediation strategy '{strategy_instance.__class__.__name__}' succeeded for intent '{self.name}'"
-                        )
+                        self.logger.info()
+f"Remediation strategy '{strategy_instance.__class__.__name__}' succeeded for intent"
+                            '{self.name}'"
+(                        )
                         return remediation_result
             except Exception as e:
-                self.logger.error(
-                    f"Remediation strategy execution failed for intent '{self.name}': {type(e).__name__}: {str(e)}"
-                )
+                self.logger.error()
+                    f"Remediation strategy execution failed for intent '{self.name}': {type()"
+((                        e).__name__}: {str(e)}"                )
 
         return None
 
@@ -308,19 +310,19 @@ class ActionNode(TreeNode):
                     validated_params[param_name] = float(param_value)
                 elif param_type is bool:
                     if isinstance(param_value, str):
-                        validated_params[param_name] = param_value.lower() in (
+                        validated_params[param_name] = param_value.lower() in ()
                             "true",
                             "1",
                             "yes",
                             "on",
-                        )
+(                        )
                     else:
                         validated_params[param_name] = bool(param_value)
                 else:
                     validated_params[param_name] = param_value
             except (ValueError, TypeError) as e:
-                raise ValueError(
-                    f"Invalid type for parameter '{param_name}': expected {param_type.__name__}, got {type(param_value).__name__}"
-                ) from e
+                raise ValueError()
+                    f"Invalid type for parameter '{param_name}': expected {param_type.__name__}, got {type()"
+((                        param_value).__name__}"                ) from e
 
         return validated_params

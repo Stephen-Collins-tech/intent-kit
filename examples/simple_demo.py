@@ -5,8 +5,8 @@ A minimal demonstration showing how to configure an intent graph with actions an
 """
 
 import os
-from dotenv import load_dotenv
-from intent_kit import IntentGraphBuilder, action, llm_classifier
+
+
 
 load_dotenv()
 
@@ -51,45 +51,45 @@ def create_intent_graph():
 
     # Define actions
     actions = [
-        action(
+        action()
             name="greet",
             description="Greet the user",
             action_func=lambda name, **kwargs: f"Hello {name}!",
             param_schema={"name": str},
             llm_config=LLM_CONFIG,  # Remove this line for rule-based extraction
-        ),
-        action(
+(        ),
+        action()
             name="calculate",
             description="Perform a calculation",
-            action_func=lambda operation, a, b, **kwargs: _calculate_action(
+            action_func=lambda operation, a, b, **kwargs: _calculate_action()
                 operation, a, b
-            ),
+(            ),
             param_schema={"operation": str, "a": float, "b": float},
             llm_config=LLM_CONFIG,
-        ),
-        action(
+(        ),
+        action()
             name="weather",
             description="Get weather information",
             action_func=lambda location, **kwargs: f"Weather in {location}: 72°F, Sunny (simulated)",
             param_schema={"location": str},
             llm_config=LLM_CONFIG,
-        ),
-        action(
+(        ),
+        action()
             name="help",
             description="Get help",
-            action_func=lambda **kwargs: "I can help with greetings, calculations, and weather!",
+action_func=lambda **kwargs: "I can help with greetings, calculations, and weather!",
             param_schema={},
             llm_config=LLM_CONFIG,
-        ),
+(        ),
     ]
 
     # Create classifier
-    classifier = llm_classifier(
+    classifier = llm_classifier()
         name="root",
         children=actions,
         llm_config=LLM_CONFIG,
         description="Main intent classifier",
-    )
+(    )
 
     # Build and return the graph (uses default pass-through splitter)
     return IntentGraphBuilder().root(classifier).build()
@@ -97,14 +97,14 @@ def create_intent_graph():
 
 # Test the graph
 if __name__ == "__main__":
-    from intent_kit.context import IntentContext
+
 
     graph = create_intent_graph()
     context = IntentContext(session_id="simple_demo")
 
     test_inputs = [
         "Hello, my name is Alice",
-        "What's 15 plus 7?",
+        "What's 15 plus 7?",'
         "Weather in San Francisco",
         "Help me",
         "Multiply 8 and 3",

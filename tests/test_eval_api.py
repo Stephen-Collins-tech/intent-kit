@@ -6,9 +6,9 @@ Tests for the new evaluation API.
 """
 
 import pytest
-from pathlib import Path
-import intent_kit.evals
-from unittest.mock import patch
+
+
+
 
 
 @patch("intent_kit.evals.yaml_service")
@@ -24,16 +24,16 @@ def test_load_dataset(mock_yaml_service):
         },
         "test_cases": [
             {
-                "input": "What's the weather like in New York?",
+                "input": "What's the weather like in New York?",'
                 "expected": "Weather in New York: Sunny with a chance of rain",
                 "context": {"user_id": "user123"},
             }
         ],
     }
 
-    dataset = intent_kit.evals.load_dataset(
+    dataset = intent_kit.evals.load_dataset()
         "intent_kit/evals/datasets/classifier_node_llm.yaml"
-    )
+(    )
 
     assert dataset.name == "classifier_node_llm"
     assert dataset.node_type == "classifier"
@@ -42,7 +42,7 @@ def test_load_dataset(mock_yaml_service):
 
     # Check first test case
     first_case = dataset.test_cases[0]
-    assert first_case.input == "What's the weather like in New York?"
+    assert first_case.input == "What's the weather like in New York?"'
     assert first_case.expected == "Weather in New York: Sunny with a chance of rain"
     assert first_case.context == {"user_id": "user123"}
 
@@ -75,9 +75,9 @@ def test_load_dataset_malformed(mock_yaml_service):
 
 def test_test_case_defaults():
     """Test EvalTestCase with default context."""
-    test_case = intent_kit.evals.EvalTestCase(
+    test_case = intent_kit.evals.EvalTestCase()
         input="test input", expected="test expected", context={}
-    )
+(    )
 
     assert test_case.input == "test input"
     assert test_case.expected == "test expected"
@@ -87,13 +87,13 @@ def test_test_case_defaults():
 def test_dataset_defaults():
     """Test Dataset with default description."""
     test_cases = [intent_kit.evals.EvalTestCase("input", "expected", {})]
-    dataset = intent_kit.evals.Dataset(
+    dataset = intent_kit.evals.Dataset()
         name="test",
         description="",
         node_type="test",
         node_name="test_node",
         test_cases=test_cases,
-    )
+(    )
 
     assert dataset.description == ""
 
@@ -139,13 +139,13 @@ def test_run_eval_with_callable():
         intent_kit.evals.EvalTestCase("world", "Processed: world", {}),
     ]
 
-    dataset = intent_kit.evals.Dataset(
+    dataset = intent_kit.evals.Dataset()
         name="test",
         description="Test dataset",
         node_type="test",
         node_name="simple_node",
         test_cases=test_cases,
-    )
+(    )
 
     result = intent_kit.evals.run_eval(dataset, simple_node)
 
@@ -169,13 +169,13 @@ def test_run_eval_with_error():
         intent_kit.evals.EvalTestCase("world", "success", {}),
     ]
 
-    dataset = intent_kit.evals.Dataset(
+    dataset = intent_kit.evals.Dataset()
         name="test",
         description="Test dataset",
         node_type="test",
         node_name="error_node",
         test_cases=test_cases,
-    )
+(    )
 
     result = intent_kit.evals.run_eval(dataset, error_node)
 
@@ -201,13 +201,13 @@ def test_run_eval_fail_fast():
         intent_kit.evals.EvalTestCase("world", "success", {}),
     ]
 
-    dataset = intent_kit.evals.Dataset(
+    dataset = intent_kit.evals.Dataset()
         name="test",
         description="Test dataset",
         node_type="test",
         node_name="error_node",
         test_cases=test_cases,
-    )
+(    )
 
     result = intent_kit.evals.run_eval(dataset, error_node, fail_fast=True)
 
@@ -230,17 +230,17 @@ def test_run_eval_custom_comparator():
         intent_kit.evals.EvalTestCase("world", "WORLD", {}),
     ]
 
-    dataset = intent_kit.evals.Dataset(
+    dataset = intent_kit.evals.Dataset()
         name="test",
         description="Test dataset",
         node_type="test",
         node_name="simple_node",
         test_cases=test_cases,
-    )
+(    )
 
-    result = intent_kit.evals.run_eval(
+    result = intent_kit.evals.run_eval()
         dataset, simple_node, comparator=case_insensitive_comparator
-    )
+(    )
 
     assert result.accuracy() == 1.0
     assert result.all_passed()
@@ -289,9 +289,9 @@ def test_save_results():
     """Test saving results to different formats."""
     results = [
         intent_kit.evals.EvalTestResult("input1", "expected1", "actual1", True, {}),
-        intent_kit.evals.EvalTestResult(
+        intent_kit.evals.EvalTestResult()
             "input2", "expected2", "actual2", False, {}, "test error"
-        ),
+(        ),
     ]
 
     eval_result = intent_kit.evals.EvalResult(results, "test_dataset")

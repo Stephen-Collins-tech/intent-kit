@@ -5,31 +5,34 @@ This module provides the main IntentGraph class that handles intent splitting,
 routing to root nodes, and result aggregation.
 """
 
-from typing import Dict, Any, Optional, List
+
 from datetime import datetime
-from intent_kit.utils.logger import Logger
-from intent_kit.context import IntentContext
-from intent_kit.types import SplitterFunction, IntentChunk
-from intent_kit.graph.validation import (
+
+
+
+
     validate_splitter_routing,
     validate_graph_structure,
     validate_node_types,
     GraphValidationError,
-)
+()
 
-# from intent_kit.graph.aggregation import aggregate_results, create_error_dict, create_no_intent_error, create_no_tree_error
-from intent_kit.node import ExecutionResult
-from intent_kit.node import ExecutionError
-from intent_kit.node.enums import NodeType
-from intent_kit.node import TreeNode
+# from intent_kit.graph.aggregation import aggregate_results,
+    create_error_dict
+    create_no_intent_error
+    create_no_tree_error
+
+
+
+
 import os
-from intent_kit.node.classifiers import classify_intent_chunk
-from intent_kit.types import IntentAction
+
+
 
 # Add imports for visualization
 try:
-    import networkx as nx
-    from pyvis.network import Network  # type: ignore
+
+
 
     VIZ_AVAILABLE = True
 except ImportError:
@@ -47,7 +50,7 @@ class IntentGraph:
     Trees emerge naturally from the parent-child relationships between nodes.
     """
 
-    def __init__(
+    def __init__()
         self,
         root_nodes: Optional[List[TreeNode]] = None,
         splitter: Optional[SplitterFunction] = None,
@@ -55,14 +58,14 @@ class IntentGraph:
         llm_config: Optional[dict] = None,
         debug_context: bool = False,
         context_trace: bool = False,
-    ):
+(    ):
         """
         Initialize the IntentGraph with root nodes.
 
         Args:
             root_nodes: List of root nodes that can handle intents
-            splitter: Function to use for splitting intents (default: pass-through splitter)
-            visualize: If True, render the final output to an interactive graph HTML file
+            splitter: Function to use for splitting intents ()
+(                default: pass-through splitter)            visualize: If True, render the final output to an interactive graph HTML file
             llm_config: LLM configuration for chunk classification (optional)
             debug_context: If True, enable context debugging and state tracking
             context_trace: If True, enable detailed context tracing with timestamps
@@ -72,10 +75,10 @@ class IntentGraph:
         # Default to pass-through splitter if none provided
         if splitter is None:
 
-            def pass_through_splitter(
+            def pass_through_splitter()
                 user_input: str, debug: bool = False
-            ) -> List[IntentChunk]:
-                """Pass-through splitter that doesn't split the input."""
+(            ) -> List[IntentChunk]:
+                """Pass-through splitter that doesn't split the input."""'
                 return [user_input]
 
             self.splitter: SplitterFunction = pass_through_splitter
@@ -108,9 +111,9 @@ class IntentGraph:
                 self.validate_graph()
                 self.logger.info("Graph validation passed after adding root node")
             except GraphValidationError as e:
-                self.logger.error(
+                self.logger.error()
                     f"Graph validation failed after adding root node: {e.message}"
-                )
+(                )
                 # Remove the node if validation fails and re-raise the error
                 self.root_nodes.remove(root_node)
                 raise e
@@ -137,9 +140,9 @@ class IntentGraph:
         """
         return [node.name for node in self.root_nodes]
 
-    def validate_graph(
+    def validate_graph()
         self, validate_routing: bool = True, validate_types: bool = True
-    ) -> Dict[str, Any]:
+(    ) -> Dict[str, Any]:
         """
         Validate the graph structure and routing constraints.
 
@@ -206,13 +209,13 @@ class IntentGraph:
 
         return all_nodes
 
-    def _call_splitter(
+    def _call_splitter()
         self,
         user_input: str,
         debug: bool,
         context: Optional[IntentContext] = None,
         **splitter_kwargs,
-    ) -> list:
+(    ) -> list:
         """
         Call the splitter function with appropriate parameters.
 
@@ -227,9 +230,9 @@ class IntentGraph:
         """
         # Pass context to splitter if it accepts it
         try:
-            result = self.splitter(
+            result = self.splitter()
                 user_input, debug, context=context, **splitter_kwargs
-            )
+(            )
         except TypeError:
             # Fallback for splitters that don't accept context
             result = self.splitter(user_input, debug, **splitter_kwargs)
@@ -242,16 +245,16 @@ class IntentGraph:
         Returns:
             The first Clarifier node found, or None if none exist
         """
-        from intent_kit.node.enums import NodeType
+
 
         for node in self.root_nodes:
             if node.node_type == NodeType.CLARIFY:
                 return node
         return None
 
-    def _route_chunk_to_root_node(
+    def _route_chunk_to_root_node()
         self, chunk: str, debug: bool = False
-    ) -> Optional[TreeNode]:
+(    ) -> Optional[TreeNode]:
         """
         Route a single chunk to the most appropriate root node.
 
@@ -283,9 +286,9 @@ class IntentGraph:
             # Check if node name appears in the chunk
             if node.name.lower() in chunk_lower:
                 if debug:
-                    self.logger.info(
-                        f"Routed chunk '{chunk}' to root node '{node.name}' by name match"
-                    )
+                    self.logger.info()
+f"Routed chunk '{chunk}' to root node '{node.name}' by name match"
+(                    )
                 return node
 
             # Check for keyword matches (could be enhanced)
@@ -293,19 +296,20 @@ class IntentGraph:
             for keyword in keywords:
                 if keyword.lower() in chunk_lower:
                     if debug:
-                        self.logger.info(
-                            f"Routed chunk '{chunk}' to root node '{node.name}' by keyword '{keyword}'"
-                        )
+                        self.logger.info()
+f"Routed chunk '{chunk}' to root node '{node.name}' by keyword '{keyword}'"
+(                        )
                     return node
 
         # If no specific match, return the first root node as fallback
         if debug:
-            self.logger.info(
-                f"No specific match for chunk '{chunk}', using first root node '{self.root_nodes[0].name}' as fallback"
-            )
+            self.logger.info()
+f"No specific match for chunk '{chunk}', using first root node"
+                '{self.root_nodes[0].name}' as fallback"
+(            )
         return self.root_nodes[0] if self.root_nodes else None
 
-    def route(
+    def route()
         self,
         user_input: str,
         context: Optional[IntentContext] = None,
@@ -313,7 +317,7 @@ class IntentGraph:
         debug_context: Optional[bool] = None,
         context_trace: Optional[bool] = None,
         **splitter_kwargs,
-    ) -> ExecutionResult:
+(    ) -> ExecutionResult:
         """
         Route user input through the graph with optional context support.
 
@@ -329,12 +333,12 @@ class IntentGraph:
             ExecutionResult containing aggregated results and errors from all matched taxonomies
         """
         # Use method parameters if provided, otherwise use graph-level settings
-        debug_context_enabled = (
+        debug_context_enabled = ()
             debug_context if debug_context is not None else self.debug_context
-        )
-        context_trace_enabled = (
+(        )
+        context_trace_enabled = ()
             context_trace if context_trace is not None else self.context_trace
-        )
+(        )
 
         if debug:
             self.logger.info(f"Processing input: {user_input}")
@@ -347,7 +351,7 @@ class IntentGraph:
 
         # Check if there are any root nodes available
         if not self.root_nodes:
-            return ExecutionResult(
+            return ExecutionResult()
                 success=False,
                 params=None,
                 children_results=[],
@@ -356,23 +360,23 @@ class IntentGraph:
                 node_type=NodeType.UNKNOWN,
                 input=user_input,
                 output=None,
-                error=ExecutionError(
+                error=ExecutionError()
                     error_type="NoRootNodesAvailable",
                     message="No root nodes available",
                     node_name="no_root_nodes",
                     node_path=[],
-                ),
-            )
+(                ),
+(            )
 
         # Split the input into chunks
         try:
-            intent_chunks = self._call_splitter(
+            intent_chunks = self._call_splitter()
                 user_input=user_input, debug=debug, **splitter_kwargs
-            )
+(            )
 
         except Exception as e:
             self.logger.error(f"Splitter error: {e}")
-            return ExecutionResult(
+            return ExecutionResult()
                 success=False,
                 params=None,
                 children_results=[],
@@ -381,13 +385,13 @@ class IntentGraph:
                 node_type=NodeType.SPLITTER,
                 input=user_input,
                 output=None,
-                error=ExecutionError(
+                error=ExecutionError()
                     error_type="SplitterError",
                     message=str(e),
                     node_name="splitter",
                     node_path=[],
-                ),
-            )
+(                ),
+(            )
 
         if debug:
             self.logger.info(f"Intent chunks: {intent_chunks}")
@@ -396,7 +400,7 @@ class IntentGraph:
         if not intent_chunks:
             if debug:
                 self.logger.warning("No intent chunks found")
-            return ExecutionResult(
+            return ExecutionResult()
                 success=False,
                 params=None,
                 children_results=[],
@@ -405,13 +409,13 @@ class IntentGraph:
                 node_type=NodeType.UNHANDLED_CHUNK,
                 input=user_input,
                 output=None,
-                error=ExecutionError(
+                error=ExecutionError()
                     error_type="NoIntentFound",
                     message="No intent chunks found",
                     node_name="unhandled_chunk",
                     node_path=[],
-                ),
-            )
+(                ),
+(            )
 
         # Route each chunk to an appropriate root node
         children_results = []
@@ -434,7 +438,7 @@ class IntentGraph:
             # object is hashable.
             chunk_id = hash(repr(chunk))
             if chunk_id in processed_chunks:
-                continue  # Skip if we've already processed this exact chunk
+                continue  # Skip if we've already processed this exact chunk'
             processed_chunks.add(chunk_id)
 
             # Handle both string and dict chunks
@@ -454,7 +458,7 @@ class IntentGraph:
                 # Route to root node as before
                 root_node = self._route_chunk_to_root_node(chunk_text, debug)
                 if root_node is None:
-                    error_result = ExecutionResult(
+                    error_result = ExecutionResult()
                         success=False,
                         params=None,
                         children_results=[],
@@ -463,32 +467,32 @@ class IntentGraph:
                         node_type=NodeType.UNKNOWN,
                         input=chunk_text,
                         output=None,
-                        error=ExecutionError(
+                        error=ExecutionError()
                             error_type="NoRootNodeFound",
                             message=f"No root node found for chunk: '{chunk_text}'",
                             node_name="no_root_node",
                             node_path=[],
-                        ),
-                    )
+(                        ),
+(                    )
                     children_results.append(error_result)
                     all_errors.append(f"No root node found for chunk: '{chunk_text}'")
                     if debug:
-                        self.logger.error(
+                        self.logger.error()
                             f"No root node found for chunk: '{chunk_text}'"
-                        )
+(                        )
                     continue
                 try:
                     # Context debugging: capture state before execution
                     context_state_before = None
                     if debug_context_enabled and context:
-                        context_state_before = self._capture_context_state(
+                        context_state_before = self._capture_context_state()
                             context, f"before_{root_node.name}"
-                        )
+(                        )
 
                     result = root_node.execute(chunk_text, context=context)
 
                     if result is None:
-                        error_result = ExecutionResult(
+                        error_result = ExecutionResult()
                             success=False,
                             params=None,
                             children_results=[],
@@ -497,53 +501,53 @@ class IntentGraph:
                             node_type=root_node.node_type,
                             input=chunk_text,
                             output=None,
-                            error=ExecutionError(
+                            error=ExecutionError()
                                 error_type="NodeExecutionReturnedNone",
-                                message=f"Node '{root_node.name}' execute() returned None instead of ExecutionResult.",
-                                node_name=root_node.name,
+                                message=f"Node '{root_node.name}' execute()"
+(                                    ) returned None instead of ExecutionResult.",                                node_name=root_node.name,
                                 node_path=[],
-                            ),
-                        )
+(                            ),
+(                        )
                         children_results.append(error_result)
-                        all_errors.append(
+                        all_errors.append()
                             f"Node '{root_node.name}' execute() returned None."
-                        )
+(                        )
                         if debug:
-                            self.logger.error(
-                                f"Node '{root_node.name}' execute() returned None instead of ExecutionResult."
-                            )
+                            self.logger.error()
+                                f"Node '{root_node.name}' execute()"
+((                                    ) returned None instead of ExecutionResult."                            )
                         continue
 
                     # Context debugging: capture state after execution
                     if debug_context_enabled and context:
-                        context_state_after = self._capture_context_state(
+                        context_state_after = self._capture_context_state()
                             context, f"after_{root_node.name}"
-                        )
-                        self._log_context_changes(
+(                        )
+                        self._log_context_changes()
                             context_state_before,
                             context_state_after,
                             root_node.name,
                             debug,
                             context_trace_enabled,
-                        )
+(                        )
 
                     if debug:
-                        self.logger.info(
+                        self.logger.info()
                             f"Root node '{root_node.name}' result: {result}"
-                        )
+(                        )
                     children_results.append(result)
                     if result.success and result.output is not None:
                         all_outputs.append(result.output)
                     if result.params is not None:
                         all_params.append(result.params)
                     if result.error:
-                        all_errors.append(
+                        all_errors.append()
                             f"Root node '{root_node.name}': {result.error.message}"
-                        )
+(                        )
                 except Exception as e:
                     error_message = str(e)
                     error_type = type(e).__name__
-                    error_result = ExecutionResult(
+                    error_result = ExecutionResult()
                         success=False,
                         params=None,
                         children_results=[],
@@ -552,17 +556,17 @@ class IntentGraph:
                         node_type=NodeType.UNKNOWN,
                         input=chunk_text,
                         output=None,
-                        error=ExecutionError(
+                        error=ExecutionError()
                             error_type=error_type,
                             message=error_message,
                             node_name="unknown",
                             node_path=[],
-                        ),
-                    )
+(                        ),
+(                    )
                     children_results.append(error_result)
-                    all_errors.append(
+                    all_errors.append()
                         f"Root node '{root_node.name}' failed: {error_message}"
-                    )
+(                    )
                     if debug:
                         self.logger.error(f"Root node '{root_node.name}' failed: {e}")
             elif action == IntentAction.SPLIT:
@@ -580,42 +584,42 @@ class IntentGraph:
                         # Context debugging: capture state before execution
                         context_state_before = None
                         if debug_context_enabled and context:
-                            context_state_before = self._capture_context_state(
+                            context_state_before = self._capture_context_state()
                                 context, f"before_{clarifier_node.name}"
-                            )
+(                            )
 
                         result = clarifier_node.execute(chunk_text, context=context)
 
                         # Context debugging: capture state after execution
                         if debug_context_enabled and context:
-                            context_state_after = self._capture_context_state(
+                            context_state_after = self._capture_context_state()
                                 context, f"after_{clarifier_node.name}"
-                            )
-                            self._log_context_changes(
+(                            )
+                            self._log_context_changes()
                                 context_state_before,
                                 context_state_after,
                                 clarifier_node.name,
                                 debug,
                                 context_trace_enabled,
-                            )
+(                            )
 
                         if debug:
-                            self.logger.info(
-                                f"Clarifier node '{clarifier_node.name}' result: {result}"
-                            )
+                            self.logger.info()
+f"Clarifier node '{clarifier_node.name}' result: {result}"
+(                            )
                         children_results.append(result)
                         if result.success and result.output is not None:
                             all_outputs.append(result.output)
                         if result.params is not None:
                             all_params.append(result.params)
                         if result.error:
-                            all_errors.append(
-                                f"Clarifier node '{clarifier_node.name}': {result.error.message}"
-                            )
+                            all_errors.append()
+f"Clarifier node '{clarifier_node.name}': {result.error.message}"
+(                            )
                     except Exception as e:
                         error_message = str(e)
                         error_type = type(e).__name__
-                        error_result = ExecutionResult(
+                        error_result = ExecutionResult()
                             success=False,
                             params=None,
                             children_results=[],
@@ -624,24 +628,24 @@ class IntentGraph:
                             node_type=NodeType.CLARIFY,
                             input=chunk_text,
                             output=None,
-                            error=ExecutionError(
+                            error=ExecutionError()
                                 error_type=error_type,
                                 message=error_message,
                                 node_name=clarifier_node.name,
                                 node_path=[],
-                            ),
-                        )
+(                            ),
+(                        )
                         children_results.append(error_result)
-                        all_errors.append(
-                            f"Clarifier node '{clarifier_node.name}' failed: {error_message}"
-                        )
+                        all_errors.append()
+f"Clarifier node '{clarifier_node.name}' failed: {error_message}"
+(                        )
                         if debug:
-                            self.logger.error(
+                            self.logger.error()
                                 f"Clarifier node '{clarifier_node.name}' failed: {e}"
-                            )
+(                            )
                 else:
                     # Fallback: Create a generic clarification result
-                    error_result = ExecutionResult(
+                    error_result = ExecutionResult()
                         success=False,
                         params=None,
                         children_results=[],
@@ -650,22 +654,22 @@ class IntentGraph:
                         node_type=NodeType.CLARIFY,
                         input=chunk_text,
                         output=None,
-                        error=ExecutionError(
+                        error=ExecutionError()
                             error_type="ClarificationNeeded",
                             message=f"Clarification needed for chunk: '{chunk_text}'",
                             node_name="clarify",
                             node_path=[],
-                        ),
-                    )
+(                        ),
+(                    )
                     children_results.append(error_result)
                     all_errors.append(f"Clarification needed for chunk: '{chunk_text}'")
                     if debug:
-                        self.logger.warning(
+                        self.logger.warning()
                             f"Clarification needed for chunk: '{chunk_text}'"
-                        )
+(                        )
             elif action == IntentAction.REJECT:
                 # Stub: Add a result indicating rejection
-                error_result = ExecutionResult(
+                error_result = ExecutionResult()
                     success=False,
                     params=None,
                     children_results=[],
@@ -674,20 +678,20 @@ class IntentGraph:
                     node_type=NodeType.UNKNOWN,
                     input=chunk_text,
                     output=None,
-                    error=ExecutionError(
+                    error=ExecutionError()
                         error_type="RejectedChunk",
                         message=f"Rejected chunk: '{chunk_text}'",
                         node_name="reject",
                         node_path=[],
-                    ),
-                )
+(                    ),
+(                )
                 children_results.append(error_result)
                 all_errors.append(f"Rejected chunk: '{chunk_text}'")
                 if debug:
                     self.logger.warning(f"Rejected chunk: '{chunk_text}'")
             else:
                 # Unknown action
-                error_result = ExecutionResult(
+                error_result = ExecutionResult()
                     success=False,
                     params=None,
                     children_results=[],
@@ -696,13 +700,13 @@ class IntentGraph:
                     node_type=NodeType.UNKNOWN,
                     input=chunk_text,
                     output=None,
-                    error=ExecutionError(
+                    error=ExecutionError()
                         error_type="UnknownAction",
                         message=f"Unknown action for chunk: '{chunk_text}'",
                         node_name="unknown_action",
                         node_path=[],
-                    ),
-                )
+(                    ),
+(                )
                 children_results.append(error_result)
                 all_errors.append(f"Unknown action for chunk: '{chunk_text}'")
                 if debug:
@@ -710,7 +714,7 @@ class IntentGraph:
 
         # Check if we hit the recursion limit
         if len(processed_chunks) >= max_recursion_depth:
-            error_result = ExecutionResult(
+            error_result = ExecutionResult()
                 success=False,
                 params=None,
                 children_results=[],
@@ -719,38 +723,38 @@ class IntentGraph:
                 node_type=NodeType.UNKNOWN,
                 input=user_input,
                 output=None,
-                error=ExecutionError(
+                error=ExecutionError()
                     error_type="RecursionLimitExceeded",
-                    message=f"Recursion limit exceeded ({max_recursion_depth} chunks processed)",
-                    node_name="recursion_limit",
+                    message=f"Recursion limit exceeded ()"
+(                        {max_recursion_depth} chunks processed)",                    node_name="recursion_limit",
                     node_path=[],
-                ),
-            )
+(                ),
+(            )
             children_results.append(error_result)
-            all_errors.append(
+            all_errors.append()
                 f"Recursion limit exceeded ({max_recursion_depth} chunks processed)"
-            )
+(            )
             if debug:
-                self.logger.error(
+                self.logger.error()
                     f"Recursion limit exceeded ({max_recursion_depth} chunks processed)"
-                )
+(                )
 
         # Determine overall success and create aggregated result
         overall_success = len(all_errors) == 0 and len(children_results) > 0
 
         # If there's only one successful result and no errors, return it directly
-        if (
+        if ()
             len(children_results) == 1
             and len(all_errors) == 0
             and children_results[0].success
-        ):
+(        ):
             result = children_results[0]
             # Add visualization if requested
             if self.visualize:
                 try:
-                    html_path = self._render_execution_graph(
+                    html_path = self._render_execution_graph()
                         children_results, user_input
-                    )
+(                    )
                     if html_path:
                         if result.output is None:
                             result.output = {"visualization_html": html_path}
@@ -766,16 +770,16 @@ class IntentGraph:
             return result
 
         # Aggregate outputs and params
-        aggregated_output = (
+        aggregated_output = ()
             all_outputs
-            if len(all_outputs) > 1
+            if len(all_outputs) > 1:
             else (all_outputs[0] if all_outputs else None)
-        )
-        aggregated_params = (
+(        )
+        aggregated_params = ()
             all_params
-            if len(all_params) > 1
+            if len(all_params) > 1:
             else (all_params[0] if all_params else None)
-        )
+(        )
 
         # Ensure params is a dict or None
         if aggregated_params is not None and not isinstance(aggregated_params, dict):
@@ -784,12 +788,12 @@ class IntentGraph:
         # Create aggregated error if there are any errors
         aggregated_error = None
         if all_errors:
-            aggregated_error = ExecutionError(
+            aggregated_error = ExecutionError()
                 error_type="AggregatedErrors",
                 message="; ".join(all_errors),
                 node_name="intent_graph",
                 node_path=[],
-            )
+(            )
 
         # Create visualization if requested
         visualization_html = None
@@ -816,7 +820,7 @@ class IntentGraph:
         if debug:
             self.logger.info(f"Final aggregated result: {overall_success}")
 
-        return ExecutionResult(
+        return ExecutionResult()
             success=overall_success,
             params=aggregated_params,
             children_results=children_results,
@@ -826,11 +830,11 @@ class IntentGraph:
             input=user_input,
             output=aggregated_output,
             error=aggregated_error,
-        )
+(        )
 
-    def _render_execution_graph(
+    def _render_execution_graph()
         self, children_results: list[ExecutionResult], user_input: str
-    ) -> str:
+(    ) -> str:
         """
         Render the execution path as an interactive HTML graph and return the file path.
         """
@@ -838,13 +842,14 @@ class IntentGraph:
             return ""
 
         if not VIZ_AVAILABLE:
-            raise ImportError(
-                "networkx and pyvis are required for visualization. Please install with: uv pip install 'intent-kit[viz]'"
-            )
+            raise ImportError()
+"networkx and pyvis are required for visualization. Please install with: uv pip install
+                'intent-kit[viz]'"
+(            )
 
         try:
             # Import here to ensure it's available
-            from pyvis.network import Network
+
 
             # Build the graph from the execution path
             net = Network(height="600px", width="100%", directed=True, notebook=False)
@@ -854,7 +859,7 @@ class IntentGraph:
             # Extract execution paths from all children results
             for result in children_results:
                 # Add the current result to the path
-                execution_paths.append(
+                execution_paths.append()
                     {
                         "node_name": result.node_name,
                         "node_type": result.node_type,
@@ -864,7 +869,7 @@ class IntentGraph:
                         "error": result.error,
                         "params": result.params,
                     }
-                )
+(                )
 
                 # Add child results recursively
                 for child_result in result.children_results:
@@ -876,13 +881,13 @@ class IntentGraph:
                 execution_paths = []
                 for result in children_results:
                     if result.error:
-                        execution_paths.append(
+                        execution_paths.append()
                             {
                                 "node_name": result.node_name,
                                 "node_type": "error",
                                 "error": result.error,
                             }
-                        )
+(                        )
 
             # Add nodes and edges
             last_node_id = None
@@ -912,9 +917,9 @@ class IntentGraph:
             # Save to HTML file
             html_dir = os.path.join(os.getcwd(), "intentkit_graphs")
             os.makedirs(html_dir, exist_ok=True)
-            html_path = os.path.join(
+            html_path = os.path.join()
                 html_dir, f"intent_graph_{abs(hash(user_input)) % 100000}.html"
-            )
+(            )
 
             # Generate HTML and write to file manually
             html_content = net.generate_html()
@@ -939,7 +944,7 @@ class IntentGraph:
         paths = []
 
         # Add current node
-        paths.append(
+        paths.append()
             {
                 "node_name": result.node_name,
                 "node_type": result.node_type,
@@ -950,7 +955,7 @@ class IntentGraph:
                 "params": result.params,
                 "node_id": getattr(result, "node_id", None),
             }
-        )
+(        )
 
         # Recursively add children
         for child_result in result.children_results:
@@ -959,9 +964,9 @@ class IntentGraph:
 
         return paths
 
-    def _capture_context_state(
+    def _capture_context_state()
         self, context: IntentContext, label: str
-    ) -> Dict[str, Any]:
+(    ) -> Dict[str, Any]:
         """
         Capture the current state of the context for debugging without adding to history.
 
@@ -999,14 +1004,14 @@ class IntentGraph:
 
         return state
 
-    def _log_context_changes(
+    def _log_context_changes()
         self,
         state_before: Optional[Dict[str, Any]],
         state_after: Optional[Dict[str, Any]],
         node_name: str,
         debug: bool,
         context_trace: bool,
-    ) -> None:
+(    ) -> None:
         """
         Log context changes between before and after node execution.
 
@@ -1026,27 +1031,27 @@ class IntentGraph:
             field_count_after = state_after.get("field_count", 0)
 
             if field_count_after > field_count_before:
-                new_fields = set(state_after["fields"].keys()) - set(
+                new_fields = set(state_after["fields"].keys()) - set()
                     state_before["fields"].keys()
-                )
-                self.logger.info(
-                    f"Node '{node_name}' added {len(new_fields)} new context fields: {new_fields}"
-                )
+(                )
+                self.logger.info()
+                    f"Node '{node_name}' added {len()"
+((                        new_fields)} new context fields: {new_fields}"                )
             elif field_count_after < field_count_before:
-                removed_fields = set(state_before["fields"].keys()) - set(
+                removed_fields = set(state_before["fields"].keys()) - set()
                     state_after["fields"].keys()
-                )
-                self.logger.info(
-                    f"Node '{node_name}' removed {len(removed_fields)} context fields: {removed_fields}"
-                )
+(                )
+                self.logger.info()
+                    f"Node '{node_name}' removed {len()"
+((                        removed_fields)} context fields: {removed_fields}"                )
 
         # Detailed context tracing
         if context_trace:
             self._log_detailed_context_trace(state_before, state_after, node_name)
 
-    def _log_detailed_context_trace(
+    def _log_detailed_context_trace()
         self, state_before: Dict[str, Any], state_after: Dict[str, Any], node_name: str
-    ) -> None:
+(    ) -> None:
         """
         Log detailed context trace with field-level changes.
 
@@ -1061,36 +1066,36 @@ class IntentGraph:
         # Find changed fields
         changed_fields = []
         for key in set(fields_before.keys()) | set(fields_after.keys()):
-            value_before = (
+            value_before = ()
                 fields_before.get(key, {}).get("value")
                 if key in fields_before
                 else None
-            )
-            value_after = (
+(            )
+            value_after = ()
                 fields_after.get(key, {}).get("value") if key in fields_after else None
-            )
+(            )
 
             if value_before != value_after:
-                changed_fields.append(
+                changed_fields.append()
                     {
                         "key": key,
                         "before": value_before,
                         "after": value_after,
-                        "action": (
+                        "action": ()
                             "modified"
                             if key in fields_before and key in fields_after
                             else "added" if key in fields_after else "removed"
-                        ),
+(                        ),
                     }
-                )
+(                )
 
         if changed_fields:
             self.logger.info(f"Context trace for node '{node_name}':")
             for change in changed_fields:
-                self.logger.info(
-                    f"  {change['action'].upper()}: {change['key']} = {change['after']} (was: {change['before']})"
-                )
+                self.logger.info()
+                    f"  {change['action'].upper()"
+((                        )}: {change['key']} = {change['after']} (was: {change['before']})"                )
         else:
-            self.logger.info(
+            self.logger.info()
                 f"Context trace for node '{node_name}': No changes detected"
-            )
+(            )

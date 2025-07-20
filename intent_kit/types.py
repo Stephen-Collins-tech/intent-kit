@@ -2,8 +2,8 @@
 Core types for intent-kit package.
 """
 
-from typing import TypedDict, Optional, Dict, Any, Sequence, Union, Callable
-from enum import Enum
+
+
 
 
 class IntentClassification(str, Enum):
@@ -29,10 +29,10 @@ class IntentChunkClassification(TypedDict, total=False):
 
 
 # The output of the splitter is still:
-IntentChunk = Union[str, Dict[str, Any]]
+    IntentChunk = Union[str, Dict[str, Any]]
 
 # The output of the classifier is:
-ClassifierOutput = IntentChunkClassification
+    ClassifierOutput = IntentChunkClassification
 
 # Single splitter function type - can accept additional kwargs like context
 SplitterFunction = Callable[..., Sequence[IntentChunk]]

@@ -5,10 +5,10 @@ This example shows how Clarifier nodes can be used to handle ambiguous
 user input and request clarification when needed.
 """
 
-from intent_kit.builders import IntentGraphBuilder
-from intent_kit.node.enums import NodeType
-from intent_kit.context import IntentContext
-from intent_kit.utils.node_factory import action, clarifier, llm_clarifier
+
+
+
+
 
 
 def book_flight(destination: str, date: str, time: str = "any") -> str:
@@ -16,34 +16,34 @@ def book_flight(destination: str, date: str, time: str = "any") -> str:
     return f"Flight booked to {destination} on {date} at {time}"
 
 
-def book_hotel(
+def book_hotel()
     location: str, check_in: str, check_out: str, room_type: str = "standard"
-) -> str:
+() -> str:
     """Book a hotel with the given parameters."""
-    return (
+    return ()
         f"Hotel booked in {location} from {check_in} to {check_out}, {room_type} room"
-    )
+(    )
 
 
 def book_restaurant(name: str, date: str, time: str, party_size: int = 2) -> str:
     """Book a restaurant reservation."""
-    return (
+    return ()
         f"Restaurant reservation at {name} on {date} at {time} for {party_size} people"
-    )
+(    )
 
 
 def create_booking_graph():
     """Create an intent graph with Clarifier nodes for a booking system."""
 
     # Create action nodes
-    flight_action = action(
+    flight_action = action()
         name="book_flight",
         description="Books flights",
         action_func=book_flight,
         param_schema={"destination": str, "date": str, "time": str},
-    )
+(    )
 
-    hotel_action = action(
+    hotel_action = action()
         name="book_hotel",
         description="Books hotels",
         action_func=book_hotel,
@@ -53,59 +53,63 @@ def create_booking_graph():
             "check_out": str,
             "room_type": str,
         },
-    )
+(    )
 
-    restaurant_action = action(
+    restaurant_action = action()
         name="book_restaurant",
         description="Books restaurant reservations",
         action_func=book_restaurant,
         param_schema={"name": str, "date": str, "time": str, "party_size": int},
-    )
+(    )
 
     # Create regular Clarifier nodes for different booking types
-    flight_clarifier = clarifier(
+    flight_clarifier = clarifier()
         name="flight_clarifier",
-        clarification_prompt="I need more details about your flight booking. Your request '{input}' is unclear.",
+clarification_prompt="I need more details about your flight booking. Your request
+        '{input}' is unclear.",
         expected_response_format="Please specify: [destination] [date] [time (optional)]",
         max_clarification_attempts=3,
         description="Clarifies flight booking requests",
-    )
+(    )
 
-    hotel_clarifier = clarifier(
+    hotel_clarifier = clarifier()
         name="hotel_clarifier",
-        clarification_prompt="I need more details about your hotel booking. Your request '{input}' is unclear.",
+clarification_prompt="I need more details about your hotel booking. Your request
+        '{input}' is unclear.",
         expected_response_format="Please specify: [location] [check-in date] [check-out date] [room type (optional)]",
         max_clarification_attempts=3,
         description="Clarifies hotel booking requests",
-    )
+(    )
 
-    restaurant_clarifier = clarifier(
+    restaurant_clarifier = clarifier()
         name="restaurant_clarifier",
-        clarification_prompt="I need more details about your restaurant reservation. Your request '{input}' is unclear.",
+clarification_prompt="I need more details about your restaurant reservation. Your
+        request '{input}' is unclear.",
         expected_response_format="Please specify: [restaurant name] [date] [time] [party size (optional)]",
         max_clarification_attempts=3,
         description="Clarifies restaurant reservation requests",
-    )
+(    )
 
     # Create LLM-powered Clarifier nodes for smart clarification
-    smart_booking_clarifier = llm_clarifier(
+    smart_booking_clarifier = llm_clarifier()
         name="smart_booking_clarifier",
         llm_config={"provider": "openrouter", "model": "google/gemma-3-27b-it"},
         expected_response_format="Please specify: [type] [details] [date] [time]",
         max_clarification_attempts=3,
         description="Smart LLM-powered clarifier for booking requests",
-    )
+(    )
 
-    smart_flight_clarifier = llm_clarifier(
+    smart_flight_clarifier = llm_clarifier()
         name="smart_flight_clarifier",
         llm_config={"provider": "openrouter", "model": "google/gemma-3-27b-it"},
-        clarification_prompt_template="""You are a travel booking assistant. The user wants to book a flight but their request is unclear.
+clarification_prompt_template="""You are a travel booking assistant. The user wants to
+        book a flight but their request is unclear.
 
 User Input: {user_input}
 {context_info}
 
 Generate a helpful clarification prompt that:
-1. Acknowledges their intent to book a flight
+    1. Acknowledges their intent to book a flight
 2. Identifies what specific information is missing (destination, date, time, etc.)
 3. Asks for the missing details in a friendly way
 4. Provides guidance on the expected format
@@ -114,10 +118,10 @@ Expected Response Format: {expected_format}
 Maximum Clarification Attempts: {max_attempts}
 
 Clarification Prompt:""",
-        expected_response_format="Please specify: [destination] [date] [time] [preferences]",
+expected_response_format="Please specify: [destination] [date] [time] [preferences]",
         max_clarification_attempts=3,
         description="Smart LLM-powered clarifier for flight bookings",
-    )
+(    )
 
     # Create a simple classifier function
     def booking_classifier(user_input: str, children, context=None):
@@ -128,11 +132,11 @@ Clarification Prompt:""",
             return flight_action
         elif "hotel" in input_lower or "accommodation" in input_lower:
             return hotel_action
-        elif (
+        elif ()
             "restaurant" in input_lower
             or "dinner" in input_lower
             or "lunch" in input_lower
-        ):
+(        ):
             return restaurant_action
         else:
             # If unclear, return the appropriate clarifier based on context
@@ -142,9 +146,9 @@ Clarification Prompt:""",
             return flight_clarifier
 
     # Create the graph
-    from intent_kit.graph import IntentGraph
 
-    graph = IntentGraph(
+
+    graph = IntentGraph()
         root_nodes=[
             flight_action,
             hotel_action,
@@ -155,7 +159,7 @@ Clarification Prompt:""",
             smart_booking_clarifier,
             smart_flight_clarifier,
         ]
-    )
+(    )
 
     return graph
 
@@ -189,9 +193,9 @@ def demonstrate_clarifier_usage():
             if clarifier_result.node_type == NodeType.CLARIFY:
                 print("  → Clarification needed!")
                 print(f"  → Clarifier node: {clarifier_result.node_name}")
-                print(
+                print()
                     f"  → Message: {clarifier_result.output['clarification_message']}"
-                )
+(                )
 
                 # Simulate user providing clarification
                 clarification_response = "book a flight to Paris on March 15th"
@@ -200,9 +204,9 @@ def demonstrate_clarifier_usage():
                 # Handle the clarification response
                 context = IntentContext()
                 clarifier_node = graph.root_nodes[3]  # flight_clarifier
-                response = clarifier_node.handle_clarification_response(
+                response = clarifier_node.handle_clarification_response()
                     clarification_response, context
-                )
+(                )
 
                 if response["success"]:
                     print("  → Clarification successful!")
@@ -210,21 +214,23 @@ def demonstrate_clarifier_usage():
                     print(f"  → Attempts: {response['attempts']}")
 
                     # Now route the clarified input
-                    clarified_result = graph.route(
+                    clarified_result = graph.route()
                         response["clarified_input"], debug=True
-                    )
+(                    )
                     if clarified_result.success:
                         print(f"  → Final result: {clarified_result.output}")
                     else:
-                        print(
-                            f"  → Still needs processing: {clarified_result.error.message if clarified_result.error else 'Unknown error'}"
-                        )
+                        print()
+f" → Still needs processing: {clarified_result.error.message if clarified_result.error"
+                            else 'Unknown error'}"
+(                        )
                 else:
                     print(f"  → Clarification failed: {response['error']}")
             else:
-                print(
-                    f"  → No clarification needed, but execution failed: {clarifier_result.error.message if clarifier_result.error else 'Unknown error'}"
-                )
+                print()
+f" → No clarification needed, but execution failed: {clarifier_result.error.message if"
+                    clarifier_result.error else 'Unknown error'}"
+(                )
         else:
             print(f"  → Direct execution successful: {result.output}")
 
@@ -237,12 +243,13 @@ def demonstrate_clarifier_with_context():
     print("=== Clarifier Node with Context Example ===\n")
 
     # Create a clarifier node
-    clarifier_node = clarifier(
+    clarifier_node = clarifier()
         name="booking_clarifier",
-        clarification_prompt="Your booking request '{input}' is unclear. Please provide more details.",
+clarification_prompt="Your booking request '{input}' is unclear. Please provide more
+        details.",
         expected_response_format="Please specify: [type] [details]",
         max_clarification_attempts=2,
-    )
+(    )
 
     # Create context
     context = IntentContext()
@@ -264,16 +271,16 @@ def demonstrate_clarifier_with_context():
 
     # Handle second clarification response
     print("\n3. User provides second clarification: 'book a flight to Paris'")
-    response2 = clarifier_node.handle_clarification_response(
+    response2 = clarifier_node.handle_clarification_response()
         "book a flight to Paris", context
-    )
+(    )
     print(f"   Response: {response2}")
 
     # Try third clarification (should fail due to max attempts)
     print("\n4. User provides third clarification: 'book a flight to Paris tomorrow'")
-    response3 = clarifier_node.handle_clarification_response(
+    response3 = clarifier_node.handle_clarification_response()
         "book a flight to Paris tomorrow", context
-    )
+(    )
     print(f"   Response: {response3}")
 
     print()
@@ -285,16 +292,17 @@ def demonstrate_llm_clarifier():
     print("=== LLM Clarifier Node Example ===\n")
 
     # Create an LLM clarifier with custom prompt
-    smart_clarifier = llm_clarifier(
+    smart_clarifier = llm_clarifier()
         name="smart_booking_clarifier",
         llm_config={"provider": "openrouter", "model": "google/gemma-3-27b-it"},
-        clarification_prompt_template="""You are a helpful travel booking assistant. The user's request is unclear and needs clarification.
+clarification_prompt_template="""You are a helpful travel booking assistant. The user's'
+        request is unclear and needs clarification.
 
 User Input: {user_input}
 {context_info}
 
 Generate a helpful clarification prompt that:
-1. Acknowledges their intent to make a booking
+    1. Acknowledges their intent to make a booking
 2. Identifies what specific information is missing
 3. Asks for the missing details in a friendly, helpful way
 4. Provides guidance on the expected format
@@ -303,10 +311,11 @@ Expected Response Format: {expected_format}
 Maximum Clarification Attempts: {max_attempts}
 
 Clarification Prompt:""",
-        expected_response_format="Please specify: [type] [destination] [date] [time] [preferences]",
+expected_response_format="Please specify: [type] [destination] [date] [time]
+        [preferences]",
         max_clarification_attempts=3,
         description="Smart LLM-powered clarifier for travel bookings",
-    )
+(    )
 
     print("LLM Clarifier created:")
     print(f"  Node name: {smart_clarifier.name}")
@@ -326,7 +335,7 @@ Clarification Prompt:""",
     # Note: In a real scenario, this would call the actual LLM
     # For this example, we'll just show the structure
     print("\nLLM clarifier would generate contextual clarification based on:")
-    print("  - User's unclear input")
+    print("  - User's unclear input")'
     print("  - User preferences and history")
     print("  - Expected response format")
     print("  - Maximum attempts limit")
@@ -345,8 +354,9 @@ def demonstrate_json_based_clarifier():
                 "type": "clarifier",
                 "name": "booking_clarifier",
                 "description": "Clarifies booking requests",
-                "clarification_prompt": "Your booking request '{input}' is unclear. Please provide more details.",
-                "expected_response_format": "Please specify: [type] [destination] [date] [time]",
+"clarification_prompt": "Your booking request '{input}' is unclear. Please provide more
+                details.",
+"expected_response_format": "Please specify: [type] [destination] [date] [time]",
                 "max_clarification_attempts": 3,
             }
         },
@@ -391,8 +401,8 @@ def demonstrate_json_based_llm_clarifier():
                     "provider": "openrouter",
                     "model": "google/gemma-3-27b-it",
                 },
-                "clarification_prompt_template": "Generate a helpful clarification for: {user_input}",
-                "expected_response_format": "Please specify: [type] [details] [date] [time]",
+"clarification_prompt_template": "Generate a helpful clarification for: {user_input}",
+"expected_response_format": "Please specify: [type] [details] [date] [time]",
                 "max_clarification_attempts": 3,
             }
         },

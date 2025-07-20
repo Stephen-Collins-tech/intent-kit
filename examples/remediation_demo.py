@@ -13,16 +13,16 @@ Usage:
 
 import os
 import random
-from dotenv import load_dotenv
-from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult
-from intent_kit import action
-from intent_kit.node.actions import (
+
+
+
+
+
     register_remediation_strategy,
-)
-from intent_kit.node.types import ExecutionError
-from intent_kit.node.enums import NodeType
-from typing import Optional
+()
+
+
+
 
 
 # --- Setup LLM config ---
@@ -37,11 +37,11 @@ LLM_CONFIG = {
 # --- Core Actions ---
 
 
-def unreliable_calculator(
+def unreliable_calculator()
     operation: str, a: float, b: float, context: IntentContext
-) -> str:
+() -> str:
     """Unreliable calculator that sometimes fails."""
-    if random.random() < 0.3:  # 30% chance of failure
+    if random.random() < 0.3:  # 30% chance of failure:
         raise ValueError("Random calculation failure")
 
     # Map word operations to mathematical operators
@@ -64,9 +64,9 @@ def unreliable_calculator(
         raise ValueError(f"Calculation error: {str(e)}")
 
 
-def reliable_calculator(
+def reliable_calculator()
     operation: str, a: float, b: float, context: IntentContext
-) -> str:
+() -> str:
     """Reliable calculator as fallback."""
     # Map word operations to mathematical operators
     operation_map = {
@@ -90,7 +90,7 @@ def reliable_calculator(
 
 def simple_greeter(name: str, context: IntentContext) -> str:
     """Simple greeter with custom remediation."""
-    if random.random() < 0.2:  # 20% chance of failure
+    if random.random() < 0.2:  # 20% chance of failure:
         raise ValueError("Random greeting failure")
 
     return f"Hello {name}! Nice to meet you."
@@ -98,27 +98,27 @@ def simple_greeter(name: str, context: IntentContext) -> str:
 
 def create_custom_remediation_strategy():
     """Create a custom remediation strategy that logs and continues."""
-    from intent_kit.node.actions import RemediationStrategy
+
 
     class LogAndContinueStrategy(RemediationStrategy):
-        def __init__(self):
-            super().__init__(
+        def __init__def __init__def __init__(self): -> None: -> None:
+            super().__init__()
                 "log_and_continue", "Log error and return default response"
-            )
+(            )
 
-        def execute(
+        def execute()
             self,
             node_name: str,
             user_input: str,
             context: Optional[IntentContext] = None,
             original_error: Optional[ExecutionError] = None,
             **kwargs,
-        ) -> Optional[ExecutionResult]:
-            self.logger.warning(
+(        ) -> Optional[ExecutionResult]:
+            self.logger.warning()
                 f"LogAndContinue: {node_name} failed, continuing with default"
-            )
+(            )
 
-            return ExecutionResult(
+            return ExecutionResult()
                 success=True,
                 node_name=node_name,
                 node_path=[node_name],
@@ -128,7 +128,7 @@ def create_custom_remediation_strategy():
                 error=None,
                 params={},
                 children_results=[],
-            )
+(            )
 
     return LogAndContinueStrategy()
 
@@ -143,7 +143,7 @@ def create_intent_graph():
     # Create actions with different remediation strategies
     actions = [
         # Action with retry strategy
-        action(
+        action()
             name="unreliable_calc",
             description="Unreliable calculator with retry strategy",
             action_func=unreliable_calculator,
@@ -153,9 +153,9 @@ def create_intent_graph():
             context_outputs={"calc_history"},
             # Built-in retry strategy
             remediation_strategies=["retry_on_fail"],
-        ),
+(        ),
         # Action with fallback strategy
-        action(
+        action()
             name="reliable_calc",
             description="Reliable calculator as fallback",
             action_func=reliable_calculator,
@@ -165,9 +165,9 @@ def create_intent_graph():
             context_outputs={"calc_history"},
             # Built-in fallback strategy
             remediation_strategies=["fallback_to_another_node"],
-        ),
+(        ),
         # Action with custom remediation strategy
-        action(
+        action()
             name="simple_greet",
             description="Simple greeter with custom remediation",
             action_func=simple_greeter,
@@ -176,36 +176,36 @@ def create_intent_graph():
             context_inputs={"greeting_count"},
             context_outputs={"greeting_count"},
             remediation_strategies=["log_and_continue"],  # Custom strategy
-        ),
+(        ),
     ]
 
     # Create classifier
-    from intent_kit.node.classifiers import ClassifierNode
+
 
     def simple_classifier(user_input: str, children, context=None):
         """Simple classifier that routes to the first child."""
         return children[0]
 
-    classifier = ClassifierNode(
+    classifier = ClassifierNode()
         name="root",
         description="Simple classifier",
         classifier=simple_classifier,
         children=actions,
-    )
+(    )
 
     return classifier
 
 
-def main():
+def main() -> None:
     context = IntentContext()
     print("=== Remediation Strategies Demo ===\n")
 
-    print(
+    print()
         "This demo shows how different remediation strategies handle failures:\n"
         "• Retry on failure: Tries again with exponential backoff\n"
         "• Fallback to another action: Uses a different action when one fails\n"
         "• Custom strategy: Logs error and returns default response\n"
-    )
+(    )
 
     # Create the intent graph
     root_node = create_intent_graph()
@@ -222,9 +222,9 @@ def main():
         print(f"Input: {user_input}")
 
         try:
-            result: ExecutionResult = root_node.execute(
+            result: ExecutionResult = root_node.execute()
                 user_input=user_input, context=context
-            )
+(            )
             print(f"Success: {result.success}")
             print(f"Output: {result.output}")
             if result.error:

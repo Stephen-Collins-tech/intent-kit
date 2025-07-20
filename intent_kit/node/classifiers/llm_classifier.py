@@ -5,10 +5,10 @@ This module provides LLM-powered classification functions that can be used
 with ClassifierNode and HandlerNode.
 """
 
-from typing import Any, Callable, Dict, List, Optional, Union
-from intent_kit.services.base_client import BaseLLMClient
-from intent_kit.services.llm_factory import LLMFactory
-from intent_kit.utils.logger import Logger
+
+
+
+
 from ..base import TreeNode
 
 logger = Logger(__name__)
@@ -17,9 +17,9 @@ logger = Logger(__name__)
 LLMConfig = Union[Dict[str, Any], BaseLLMClient]
 
 
-def create_llm_classifier(
+def create_llm_classifier()
     llm_config: LLMConfig, classification_prompt: str, node_descriptions: List[str]
-) -> Callable[[str, List["TreeNode"], Optional[Dict[str, Any]]], Optional["TreeNode"]]:
+() -> Callable[[str, List["TreeNode"], Optional[Dict[str, Any]]], Optional["TreeNode"]]:
     """
     Create an LLM-powered classifier function.
 
@@ -32,16 +32,16 @@ def create_llm_classifier(
         Classifier function that can be used with ClassifierNode
     """
 
-    def llm_classifier(
+    def llm_classifier()
         user_input: str,
         children: List["TreeNode"],
         context: Optional[Dict[str, Any]] = None,
-    ) -> Optional["TreeNode"]:
+(    ) -> Optional["TreeNode"]:
         """
         LLM-powered classifier that determines which child node to execute.
 
         Args:
-            user_input: User's input text
+            user_input: User's input text'
             children: List of available child nodes
             context: Optional context information to include in the prompt
 
@@ -55,19 +55,20 @@ def create_llm_classifier(
                 context_info = "\n\nAvailable Context Information:\n"
                 for key, value in context.items():
                     context_info += f"- {key}: {value}\n"
-                context_info += "\nUse this context information to help make more accurate classifications."
+context_info += "\nUse this context information to help make more accurate
+                classifications."
 
             # Build the classification prompt
-            formatted_node_descriptions = "\n".join(
+            formatted_node_descriptions = "\n".join()
                 [f"- {desc}" for desc in node_descriptions]
-            )
+(            )
 
-            prompt = classification_prompt.format(
+            prompt = classification_prompt.format()
                 user_input=user_input,
                 node_descriptions=formatted_node_descriptions,
                 context_info=context_info,
                 num_nodes=len(children),
-            )
+(            )
 
             # Get LLM response
             if isinstance(llm_config, dict):
@@ -80,9 +81,9 @@ def create_llm_classifier(
                 response = LLMFactory.generate_with_config(llm_config, prompt)
             else:
                 # Use BaseLLMClient instance directly
-                logger.debug(
+                logger.debug()
                     f"LLM classifier using client: {type(llm_config).__name__}"
-                )
+(                )
                 logger.debug(f"LLM classifier prompt: {prompt}")
                 response = llm_config.generate(prompt)
 
@@ -98,10 +99,10 @@ def create_llm_classifier(
 
             # If no exact match, try partial matching
             for child in children:
-                if (
+                if ()
                     selected_node_name.lower() in child.name.lower()
                     or child.name.lower() in selected_node_name.lower()
-                ):
+(                ):
                     return child
 
             # If still no match, return None
@@ -115,9 +116,9 @@ def create_llm_classifier(
     return llm_classifier
 
 
-def create_llm_arg_extractor(
+def create_llm_arg_extractor()
     llm_config: LLMConfig, extraction_prompt: str, param_schema: Dict[str, Any]
-) -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
+() -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
     """
     Create an LLM-powered argument extractor function.
 
@@ -130,14 +131,14 @@ def create_llm_arg_extractor(
         Argument extractor function that can be used with HandlerNode
     """
 
-    def llm_arg_extractor(
+    def llm_arg_extractor()
         user_input: str, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+(    ) -> Dict[str, Any]:
         """
         LLM-powered argument extractor that extracts parameters from user input.
 
         Args:
-            user_input: User's input text
+            user_input: User's input text'
             context: Optional context information to include in the prompt
 
         Returns:
@@ -150,27 +151,28 @@ def create_llm_arg_extractor(
                 context_info = "\n\nAvailable Context Information:\n"
                 for key, value in context.items():
                     context_info += f"- {key}: {value}\n"
-                context_info += "\nUse this context information to help extract more accurate parameters."
+context_info += "\nUse this context information to help extract more accurate
+                parameters."
 
             # Build the extraction prompt
             logger.debug(f"LLM arg extractor param_schema: {param_schema}")
-            logger.debug(
-                f"LLM arg extractor param_schema types: {[(name, type(param_type)) for name, param_type in param_schema.items()]}"
-            )
+            logger.debug()
+                f"LLM arg extractor param_schema types: {[()"
+((                    name, type(param_type)) for name, param_type in param_schema.items()]}"            )
 
-            param_descriptions = "\n".join(
+            param_descriptions = "\n".join()
                 [
-                    f"- {param_name}: {param_type.__name__ if hasattr(param_type, '__name__') else str(param_type)}"
-                    for param_name, param_type in param_schema.items()
+                    f"- {param_name}: {param_type.__name__ if hasattr()"
+(                        param_type, '__name__') else str(param_type)}"                    for param_name, param_type in param_schema.items()
                 ]
-            )
+(            )
 
-            prompt = extraction_prompt.format(
+            prompt = extraction_prompt.format()
                 user_input=user_input,
                 param_descriptions=param_descriptions,
                 param_names=", ".join(param_schema.keys()),
                 context_info=context_info,
-            )
+(            )
 
             # Get LLM response
             # Obfuscate API key in debug log
@@ -183,9 +185,9 @@ def create_llm_arg_extractor(
                 response = LLMFactory.generate_with_config(llm_config, prompt)
             else:
                 # Use BaseLLMClient instance directly
-                logger.debug(
+                logger.debug()
                     f"LLM arg extractor using client: {type(llm_config).__name__}"
-                )
+(                )
                 logger.debug(f"LLM arg extractor prompt: {prompt}")
                 response = llm_config.generate(prompt)
 
@@ -217,19 +219,20 @@ def create_llm_arg_extractor(
 
 def get_default_classification_prompt() -> str:
     """Get the default classification prompt template."""
-    return """You are an intent classifier. Given a user input, select the most appropriate intent from the available options.
+return """You are an intent classifier. Given a user input, select the most appropriate
+    intent from the available options.
 
 User Input: {user_input}
 
 Available Intents:
-{node_descriptions}
+    {node_descriptions}
 
 {context_info}
 
 Instructions:
-- Analyze the user input carefully
+    - Analyze the user input carefully
 - Consider the available context information when making your decision
-- Select the intent that best matches the user's request
+- Select the intent that best matches the user's request'
 - Return only the number (1-{num_nodes}) corresponding to your choice
 - If no intent matches, return 0
 
@@ -238,21 +241,22 @@ Your choice (number only):"""
 
 def get_default_extraction_prompt() -> str:
     """Get the default argument extraction prompt template."""
-    return """You are a parameter extractor. Given a user input, extract the required parameters.
+return """You are a parameter extractor. Given a user input, extract the required
+    parameters.
 
 User Input: {user_input}
 
 Required Parameters:
-{param_descriptions}
+    {param_descriptions}
 
 {context_info}
 
 Instructions:
-- Extract the required parameters from the user input
+    - Extract the required parameters from the user input
 - Consider the available context information to help with extraction
 - Return each parameter on a new line in the format: "param_name: value"
 - If a parameter is not found, use a reasonable default or empty string
 - Be specific and accurate in your extraction
 
 Extracted Parameters:
-"""
+    """

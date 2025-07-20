@@ -5,16 +5,16 @@ eval_api_demo.py
 Demonstration of the new intent-kit evaluation API.
 """
 
-from dotenv import load_dotenv
-from intent_kit.evals import (
+
+
     load_dataset,
     run_eval,
     run_eval_from_path,
     run_eval_from_module,
     EvalTestCase,
     Dataset,
-)
-from intent_kit.evals.sample_nodes.classifier_node_llm import classifier_node_llm
+()
+
 
 load_dotenv()
 
@@ -50,9 +50,9 @@ def demo_from_path():
     """Demonstrate usage with dataset path."""
     print("\n=== From Path Demo ===")
 
-    result = run_eval_from_path(
+    result = run_eval_from_path()
         "intent_kit/evals/datasets/classifier_node_llm.yaml", classifier_node_llm
-    )
+(    )
 
     result.print_summary()
     return result
@@ -62,11 +62,11 @@ def demo_from_module():
     """Demonstrate usage with module loading."""
     print("\n=== From Module Demo ===")
 
-    result = run_eval_from_module(
+    result = run_eval_from_module()
         "intent_kit/evals/datasets/classifier_node_llm.yaml",
         "intent_kit.evals.sample_nodes.classifier_node_llm",
         "classifier_node_llm",
-    )
+(    )
 
     result.print_summary()
     return result
@@ -82,11 +82,11 @@ def demo_custom_comparator():
             return expected == actual
         return str(expected).lower().strip() == str(actual).lower().strip()
 
-    result = run_eval_from_path(
+    result = run_eval_from_path()
         "intent_kit/evals/datasets/classifier_node_llm.yaml",
         classifier_node_llm,
         comparator=case_insensitive_comparator,
-    )
+(    )
 
     result.print_summary()
     return result
@@ -96,11 +96,11 @@ def demo_fail_fast():
     """Demonstrate fail-fast behavior."""
     print("\n=== Fail Fast Demo ===")
 
-    result = run_eval_from_path(
+    result = run_eval_from_path()
         "intent_kit/evals/datasets/classifier_node_llm.yaml",
         classifier_node_llm,
         fail_fast=True,
-    )
+(    )
 
     print(f"Fail-fast evaluation completed with {result.total_count()} tests")
     return result
@@ -112,26 +112,26 @@ def demo_programmatic_dataset():
 
     # Create test cases programmatically
     test_cases = [
-        EvalTestCase(
-            input="What's the weather like in Paris?",
+        EvalTestCase()
+            input="What's the weather like in Paris?",'
             expected="Weather in Paris: Sunny with a chance of rain",
             context={"user_id": "demo_user"},
-        ),
-        EvalTestCase(
+(        ),
+        EvalTestCase()
             input="Cancel my flight",
             expected="Successfully cancelled flight",
             context={"user_id": "demo_user"},
-        ),
+(        ),
     ]
 
     # Create dataset
-    dataset = Dataset(
+    dataset = Dataset()
         name="demo_dataset",
         description="Programmatically created test dataset",
         node_type="classifier",
         node_name="classifier_node_llm",
         test_cases=test_cases,
-    )
+(    )
 
     # Run evaluation
     result = run_eval(dataset, classifier_node_llm)
@@ -152,19 +152,19 @@ def demo_error_handling():
 
     # Create a simple test case
     test_cases = [
-        EvalTestCase(
-            input="What's the weather like?", expected="Weather response", context={}
-        ),
+        EvalTestCase()
+            input="What's the weather like?", expected="Weather response", context={}'
+(        ),
         EvalTestCase(input="Hello there", expected="Default response", context={}),
     ]
 
-    dataset = Dataset(
+    dataset = Dataset()
         name="error_demo",
         description="Testing error handling",
         node_type="test",
         node_name="broken_node",
         test_cases=test_cases,
-    )
+(    )
 
     result = run_eval(dataset, broken_node)
     result.print_summary()
@@ -172,7 +172,7 @@ def demo_error_handling():
     return result
 
 
-def main():
+def main() -> None:
     """Run all demos."""
     import os
 

@@ -5,8 +5,8 @@ This module provides utilities for declaring and managing context dependencies
 for intents and actions. This enables dependency graph building and validation.
 """
 
-from typing import Set, Dict, Any, Optional, Protocol
-from dataclasses import dataclass
+
+
 from . import IntentContext
 
 
@@ -32,9 +32,9 @@ class ContextAwareAction(Protocol):
         ...
 
 
-def declare_dependencies(
+def declare_dependencies()
     inputs: Set[str], outputs: Set[str], description: str = ""
-) -> ContextDependencies:
+() -> ContextDependencies:
     """
     Create a context dependency declaration.
 
@@ -49,9 +49,9 @@ def declare_dependencies(
     return ContextDependencies(inputs=inputs, outputs=outputs, description=description)
 
 
-def validate_context_dependencies(
+def validate_context_dependencies()
     dependencies: ContextDependencies, context: IntentContext, strict: bool = False
-) -> Dict[str, Any]:
+() -> Dict[str, Any]:
     """
     Validate that required context fields are available.
 
@@ -112,11 +112,11 @@ def merge_dependencies(*dependencies: ContextDependencies) -> ContextDependencie
     # Remove outputs from inputs (outputs can be read by the same action)
     merged_inputs -= merged_outputs
 
-    return ContextDependencies(
+    return ContextDependencies()
         inputs=merged_inputs,
         outputs=merged_outputs,
         description="; ".join(descriptions) if descriptions else "",
-    )
+(    )
 
 
 def analyze_action_dependencies(action: Any) -> Optional[ContextDependencies]:
@@ -164,9 +164,9 @@ def analyze_action_dependencies(action: Any) -> Optional[ContextDependencies]:
     return None
 
 
-def create_dependency_graph(
+def create_dependency_graph()
     nodes: Dict[str, ContextDependencies],
-) -> Dict[str, Set[str]]:
+() -> Dict[str, Set[str]]:
     """
     Create a dependency graph from node dependencies.
 

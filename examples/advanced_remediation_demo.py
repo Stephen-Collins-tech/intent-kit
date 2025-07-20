@@ -15,15 +15,15 @@ Usage:
 
 import os
 import random
-from dotenv import load_dotenv
-from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult
-from intent_kit import action
-from intent_kit.node.actions import (
+
+
+
+
+
     create_self_reflect_strategy,
     create_consensus_vote_strategy,
     create_alternate_prompt_strategy,
-)
+()
 
 # --- Setup LLM configs ---
 load_dotenv()
@@ -69,7 +69,7 @@ def analyze_sentiment(review_text: str, context: IntentContext) -> str:
 
 # --- Remediation Actions ---
 actions = [
-    action(
+    action()
         name="self_reflect_sentiment",
         description="Uses self-reflection if it fails on ambiguous reviews.",
         action_func=analyze_sentiment,
@@ -77,51 +77,52 @@ actions = [
         remediation_strategies=[
             create_self_reflect_strategy(LLM_CONFIG_1, max_reflections=1)
         ],
-    ),
-    action(
+(    ),
+    action()
         name="consensus_vote_sentiment",
         description="Uses consensus voting between two LLMs on conflicting reviews.",
         action_func=analyze_sentiment,
         param_schema={"review_text": str},
         remediation_strategies=[
-            create_consensus_vote_strategy(
+            create_consensus_vote_strategy()
                 [LLM_CONFIG_1, LLM_CONFIG_2], vote_threshold=0.5
-            )
+(            )
         ],
-    ),
-    action(
+(    ),
+    action()
         name="alternate_prompt_sentiment",
-        description="Retries with alternate prompt if ambiguous input causes a failure.",
+description="Retries with alternate prompt if ambiguous input causes a failure.",
         action_func=analyze_sentiment,
         param_schema={"review_text": str},
         remediation_strategies=[create_alternate_prompt_strategy(LLM_CONFIG_1)],
-    ),
+(    ),
 ]
 
 
-def main():
+def main() -> None:
     context = IntentContext()
     print("=== Advanced Remediation Strategies Demo ===\n")
 
-    print(
-        "This demo shows how self-reflection, consensus voting, and alternate prompts can recover\n"
-        "from ambiguous or conflicting results in real-world sentiment analysis tasks.\n"
-    )
+    print()
+"This demo shows how self-reflection, consensus voting, and alternate prompts can
+        recover\n"
+"from ambiguous or conflicting results in real-world sentiment analysis tasks.\n"
+(    )
 
     # Each case is designed to *require* remediation.
     test_cases = [
-        (
+        ()
             "This product is not bad at all, actually quite good!",
             "Triggers self-reflection: Model may misinterpret 'not bad'.",
-        ),
-        (
+(        ),
+        ()
             "I hate the design but love the features, not my favorite but not bad.",
             "Triggers consensus voting: LLMs likely to disagree on mixed sentiment.",
-        ),
-        (
+(        ),
+        ()
             "Okay, fine, whatever, not bad I guess, meh",
             "Triggers alternate prompt: All terms are vague, likely to fail first try.",
-        ),
+(        ),
     ]
 
     for i, (review_text, case_desc) in enumerate(test_cases):
@@ -142,12 +143,13 @@ def main():
     print("\n=== What did you just see? ===")
     print("• Self-reflection: Model reviews its own output and tries to fix mistakes.")
     print("• Consensus voting: Multiple models must agree before output is accepted.")
-    print("• Alternate prompt: Action retries with a new prompt if it can't answer.")
+    print("• Alternate prompt: Action retries with a new prompt if it can't answer.")'
 
     if "mock" in OPENAI_API_KEY or "mock" in GOOGLE_API_KEY:
-        print(
-            "\n💡 Pro Tip: For real LLM behavior, add your OpenAI and Gemini API keys to a .env file."
-        )
+        print()
+"\n💡 Pro Tip: For real LLM behavior, add your OpenAI and Gemini API keys to a .env
+            file."
+(        )
 
 
 if __name__ == "__main__":

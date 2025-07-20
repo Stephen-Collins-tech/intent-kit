@@ -6,42 +6,42 @@ Run evaluations on all datasets and generate comprehensive markdown reports.
 """
 
 import argparse
-from intent_kit.evals import load_dataset
-from intent_kit.evals.run_node_eval import (
+
+
     get_node_from_module,
     evaluate_node,
     generate_markdown_report,
-)
-from intent_kit.services.yaml_service import yaml_service
-from typing import Dict, List, Any, Optional
+()
+
+
 from datetime import datetime
 import pathlib
-from dotenv import load_dotenv
+
 
 load_dotenv()
 
 
 def run_all_evaluations():
     """Run all evaluations and generate reports."""
-    parser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser()
         description="Run all evaluations and generate comprehensive report"
-    )
-    parser.add_argument(
+(    )
+    parser.add_argument()
         "--output",
         type=str,
         default="intent_kit/evals/reports/latest/comprehensive_report.md",
         help="Output file for comprehensive report",
-    )
-    parser.add_argument(
+(    )
+    parser.add_argument()
         "--individual",
         action="store_true",
         help="Also generate individual reports for each dataset",
-    )
+(    )
     parser.add_argument("--quiet", action="store_true", help="Suppress output messages")
     parser.add_argument("--llm-config", help="Path to LLM configuration file")
-    parser.add_argument(
+    parser.add_argument()
         "--mock", action="store_true", help="Run in mock mode without real API calls"
-    )
+(    )
 
     # Parse args if called as script, otherwise use defaults
     try:
@@ -70,18 +70,18 @@ def run_all_evaluations():
 
     if not args.quiet:
         print("Generating comprehensive report...")
-    generate_comprehensive_report(
+    generate_comprehensive_report()
         results, str(output_path), run_timestamp=run_timestamp, mock_mode=args.mock
-    )
+(    )
 
     # Also write timestamped copy to date-based archive directory
-    date_comprehensive_report_path = (
+    date_comprehensive_report_path = ()
         date_reports_dir / f"comprehensive_report_{run_timestamp}.md"
-    )
-    with (
+(    )
+    with ()
         open(output_path, "r") as src,
         open(date_comprehensive_report_path, "w") as dst,
-    ):
+(    ):
         dst.write(src.read())
     if not args.quiet:
         print(f"Comprehensive report archived as: {date_comprehensive_report_path}")
@@ -93,22 +93,23 @@ def run_all_evaluations():
             dataset_name = result["dataset"]
             individual_report_path = reports_dir / f"{dataset_name}_report.md"
             # Write to latest
-            generate_markdown_report(
+            generate_markdown_report()
                 [result], individual_report_path, run_timestamp=run_timestamp
-            )
+(            )
             # Also write to date-based archive with timestamp in filename
-            date_individual_report_path = (
+            date_individual_report_path = ()
                 date_reports_dir / f"{dataset_name}_report_{run_timestamp}.md"
-            )
-            with (
+(            )
+            with ()
                 open(individual_report_path, "r") as src,
                 open(date_individual_report_path, "w") as dst,
-            ):
+(            ):
                 dst.write(src.read())
             if not args.quiet:
-                print(
-                    f"Individual report written to: {individual_report_path} and archived as {date_individual_report_path}"
-                )
+                print()
+f"Individual report written to: {individual_report_path} and archived as"
+                    {date_individual_report_path}"
+(                )
 
     if not args.quiet:
         print("Evaluation complete!")
@@ -116,9 +117,9 @@ def run_all_evaluations():
     return True
 
 
-def run_all_evaluations_internal(
+def run_all_evaluations_internal()
     llm_config_path: Optional[str] = None, mock_mode: bool = False
-) -> List[Dict[str, Any]]:
+() -> List[Dict[str, Any]]:
     """Run evaluations on all datasets and return results."""
     dataset_dir = pathlib.Path(__file__).parent / "datasets"
     results = []
@@ -154,13 +155,13 @@ def run_all_evaluations_internal(
 
         # Determine module name based on node name
         if "llm" in node_name:
-            module_name = (
+            module_name = ()
                 f"intent_kit.evals.sample_nodes.{node_name.split('_')[0]}_node_llm"
-            )
+(            )
         else:
-            module_name = (
+            module_name = ()
                 f"intent_kit.evals.sample_nodes.{node_name.split('_')[0]}_node"
-            )
+(            )
 
         # Load node
         node = get_node_from_module(module_name, node_name)
@@ -179,19 +180,19 @@ def run_all_evaluations_internal(
         # Print results
         accuracy = result["accuracy"]
         mode_indicator = "[MOCK]" if mock_mode else ""
-        print(
-            f"  Accuracy: {accuracy:.1%} ({result['correct']}/{result['total_cases']}) {mode_indicator}"
-        )
+        print()
+            f"  Accuracy: {accuracy:.1%} ()"
+((                {result['correct']}/{result['total_cases']}) {mode_indicator}"        )
 
     return results
 
 
-def generate_comprehensive_report(
+def generate_comprehensive_report()
     results: List[Dict[str, Any]],
     output_file: Optional[str] = None,
     run_timestamp: str = "",
     mock_mode: bool = False,
-) -> str:
+() -> str:
     """Generate a comprehensive markdown report for all evaluations."""
 
     total_datasets = len(results)
@@ -206,7 +207,7 @@ def generate_comprehensive_report(
     # Add mock mode indicator
     mock_indicator = " (MOCK MODE)" if mock_mode else ""
 
-    report = f"""# Comprehensive Evaluation Report{mock_indicator}
+    report = f"""# Comprehensive Evaluation Report{mock_indicator}"
 
 **Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 **Mode:** {'Mock (simulated responses)' if mock_mode else 'Live (real API calls)'}
@@ -236,17 +237,18 @@ def generate_comprehensive_report(
         status = "PASSED" if result["accuracy"] >= 0.8 else "FAILED"
         status_icon = "✅" if status == "PASSED" else "❌"
 
-        report += f"| `{result['dataset']}` | {result['accuracy']:.1%} | {status_icon} {status} | {result['correct']}/{result['total_cases']} |\n"
+report += f"| `{result['dataset']}` | {result['accuracy']:.1%} | {status_icon} {status}"
+        | {result['correct']}/{result['total_cases']} |\n"
 
     # Detailed results for each dataset
     report += "\n## Detailed Results\n\n"
 
     for result in results:
         report += f"### {result['dataset']}\n\n"
-        report += f"**Accuracy:** {result['accuracy']:.1%} ({result['correct']}/{result['total_cases']})  \n"
-        report += (
+        report += f"**Accuracy:** {result['accuracy']:.1%} ()"
+            {result['correct']}/{result['total_cases']})  \n"        report += (
             f"**Status:** {'PASSED' if result['accuracy'] >= 0.8 else 'FAILED'}\n\n"
-        )
+(        )
 
         # Show errors if any
         if result["errors"]:

@@ -5,13 +5,13 @@ This module provides the core IntentContext class that enables state sharing
 between different steps of a workflow, across conversations, and between taxonomies.
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List, Set
-from threading import Lock
+
+
+
 import uuid
 import traceback
 from datetime import datetime
-from intent_kit.utils.logger import Logger
+
 
 
 @dataclass
@@ -63,7 +63,8 @@ class IntentContext:
     - Type-safe field access
     """
 
-    def __init__(self, session_id: Optional[str] = None, debug: bool = False):
+    def __init__def __init__()
+(        self, session_id: Optional[str] = None, debug: bool = False): -> None:
         """
         Initialize a new IntentContext.
 
@@ -80,9 +81,9 @@ class IntentContext:
         self.logger = Logger(__name__)
 
         if self._debug:
-            self.logger.info(
+            self.logger.info()
                 f"Created IntentContext with session_id: {self.session_id}"
-            )
+(            )
 
     def get(self, key: str, default: Any = None) -> Any:
         """
@@ -90,7 +91,7 @@ class IntentContext:
 
         Args:
             key: The field key to retrieve
-            default: Default value if key doesn't exist
+            default: Default value if key doesn't exist'
 
         Returns:
             The field value or default
@@ -98,9 +99,9 @@ class IntentContext:
         with self._global_lock:
             if key not in self._fields:
                 if self._debug:
-                    self.logger.debug(
+                    self.logger.debug()
                         f"Key '{key}' not found, returning default: {default}"
-                    )
+(                    )
                 self._log_history("get", key, default, None)
                 return default
             field = self._fields[key]
@@ -136,9 +137,9 @@ class IntentContext:
                     field.last_modified = datetime.now()
                     field.modified_by = modified_by
                     if self._debug:
-                        self.logger.debug(
+                        self.logger.debug()
                             f"Updated field '{key}' from {old_value} to {value}"
-                        )
+(                        )
 
             self._log_history("set", key, value, modified_by)
 
@@ -151,7 +152,7 @@ class IntentContext:
             modified_by: Identifier for who/what deleted this field
 
         Returns:
-            True if field was deleted, False if it didn't exist
+            True if field was deleted, False if it didn't exist'
         """
         with self._global_lock:
             if key not in self._fields:
@@ -189,9 +190,9 @@ class IntentContext:
         with self._global_lock:
             return set(self._fields.keys())
 
-    def get_history(
+    def get_history()
         self, key: Optional[str] = None, limit: Optional[int] = None
-    ) -> List[ContextHistoryEntry]:
+(    ) -> List[ContextHistoryEntry]:
         """
         Get the history of context operations.
 
@@ -223,7 +224,7 @@ class IntentContext:
             key: The field key
 
         Returns:
-            Dictionary with field metadata or None if field doesn't exist
+            Dictionary with field metadata or None if field doesn't exist'
         """
         with self._global_lock:
             if key not in self._fields:
@@ -251,28 +252,28 @@ class IntentContext:
                 self.logger.debug(f"Cleared all fields: {keys}")
             self._log_history("clear", "ALL", None, modified_by)
 
-    def _log_history(
+    def _log_history()
         self, action: str, key: str, value: Any, modified_by: Optional[str]
-    ) -> None:
+(    ) -> None:
         """Log an operation to the history."""
-        entry = ContextHistoryEntry(
+        entry = ContextHistoryEntry()
             timestamp=datetime.now(),
             action=action,
             key=key,
             value=value,
             modified_by=modified_by,
             session_id=self.session_id,
-        )
+(        )
         self._history.append(entry)
 
-    def add_error(
+    def add_error()
         self,
         node_name: str,
         user_input: str,
         error_message: str,
         error_type: str,
         params: Optional[Dict[str, Any]] = None,
-    ) -> None:
+(    ) -> None:
         """
         Add an error to the context error log.
 
@@ -284,7 +285,7 @@ class IntentContext:
             params: Optional parameters that were being processed
         """
         with self._global_lock:
-            error_entry = ContextErrorEntry(
+            error_entry = ContextErrorEntry()
                 timestamp=datetime.now(),
                 node_name=node_name,
                 user_input=user_input,
@@ -293,17 +294,17 @@ class IntentContext:
                 stack_trace=traceback.format_exc(),
                 params=params,
                 session_id=self.session_id,
-            )
+(            )
             self._errors.append(error_entry)
 
             if self._debug:
-                self.logger.error(
+                self.logger.error()
                     f"Added error to context: {node_name}: {error_message}"
-                )
+(                )
 
-    def get_errors(
+    def get_errors()
         self, node_name: Optional[str] = None, limit: Optional[int] = None
-    ) -> List[ContextErrorEntry]:
+(    ) -> List[ContextErrorEntry]:
         """
         Get errors from the context error log.
 
@@ -347,8 +348,8 @@ class IntentContext:
             history_count = len(self._history)
             error_count = len(self._errors)
 
-        return f"IntentContext(session_id={self.session_id}, fields={field_count}, history={history_count}, errors={error_count})"
-
+        return f"IntentContext()"
+(            session_id={self.session_id}, fields={field_count}, history={history_count}, errors={error_count})"
     def __repr__(self) -> str:
         """Detailed string representation of the context."""
         return self.__str__()

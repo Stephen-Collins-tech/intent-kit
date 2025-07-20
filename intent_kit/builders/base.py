@@ -5,8 +5,8 @@ This module provides a base class that all specific builders inherit from,
 ensuring consistent patterns and common functionality.
 """
 
-from abc import ABC, abstractmethod
-from typing import Any
+
+
 
 
 class Builder(ABC):
@@ -16,7 +16,7 @@ class Builder(ABC):
     across all builder implementations.
     """
 
-    def __init__(self, name: str):
+    def __init__def __init__def __init__(self, name: str) -> None: -> None: -> None:
         """Initialize the base builder.
 
         Args:
@@ -49,9 +49,9 @@ class Builder(ABC):
         """
         pass
 
-    def _validate_required_field(
+    def _validate_required_field()
         self, field_name: str, field_value: Any, method_name: str
-    ) -> None:
+(    ) -> None:
         """Validate that a required field is set.
 
         Args:
@@ -63,9 +63,9 @@ class Builder(ABC):
             ValueError: If the field is not set
         """
         if not field_value:
-            raise ValueError(
+            raise ValueError()
                 f"{field_name} must be set. Call .{method_name}() before .build()"
-            )
+(            )
 
     def _validate_required_fields(self, validations: list) -> None:
         """Validate multiple required fields.
