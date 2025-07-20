@@ -46,17 +46,21 @@ def classify_intent_chunk(
 
     # If no LLM config provided, use fallback logic
     if not llm_config:
+        logger.warning("No LLM config provided, using fallback for: {chunk_text}")
         return _fallback_classify(chunk_text)
 
     try:
         # Create LLM prompt for classification
         prompt = _create_classification_prompt(chunk_text)
+        logger.debug(f"LLM Prompt for chunk classification: {prompt}")
 
         # Get LLM response
         response = LLMFactory.generate_with_config(llm_config, prompt)
+        logger.debug(f"LLM Response for chunk classification: {response}")
 
         # Parse the response
         result = _parse_classification_response(response, chunk_text)
+        logger.debug(f"LLM Parsed Response for chunk classification: {result}")
 
         if result:
             return result

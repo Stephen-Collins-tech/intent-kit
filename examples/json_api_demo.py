@@ -135,28 +135,35 @@ def main():
 
     # Create the graph using JSON specification
     print("1. Creating IntentGraph from JSON specification...")
-    graph = (
-        IntentGraphBuilder()
-        .with_json(json_graph)
-        .with_functions(function_registry)
-        .build()
-    )
-    print("✅ Graph created successfully!")
-
-    # Validate the graph
-    print("\n2. Validating graph structure...")
     try:
-        validation_results = (
-            IntentGraphBuilder().with_json(json_graph).validate_json_graph()
+        graph = (
+            IntentGraphBuilder()
+            .with_json(json_graph)
+            .with_functions(function_registry)
+            .build()
         )
+        print("✅ Graph created successfully!")
+    except ValueError as e:
+        print(f"❌ Graph creation failed: {e}")
+        return
+
+    # Optional: Validate the graph and show detailed results
+    print("\n2. Validating graph structure (optional)...")
+    validation_results = (
+        IntentGraphBuilder().with_json(json_graph).validate_json_graph()
+    )
+
+    if validation_results["valid"]:
         print("✅ Graph validation passed!")
         print(f"   - Nodes: {validation_results['node_count']}")
         print(f"   - Edges: {validation_results['edge_count']}")
         if validation_results["warnings"]:
             print(f"   - Warnings: {validation_results['warnings']}")
-    except ValueError as e:
-        print(f"❌ Graph validation failed: {e}")
-        return
+    else:
+        print("❌ Graph validation failed!")
+        print(f"   - Errors: {validation_results['errors']}")
+        if validation_results["warnings"]:
+            print(f"   - Warnings: {validation_results['warnings']}")
 
     # Test the graph with some inputs
     print("\n3. Testing the graph with various inputs...")

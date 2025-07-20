@@ -53,8 +53,11 @@ main_classifier = llm_classifier(
     llm_config={"provider": "openai", "model": "gpt-4"}
 )
 
-# Build graph
-graph = IntentGraphBuilder().root(main_classifier).build()
+# Build graph with LLM configuration for chunk classification
+graph = IntentGraphBuilder().root(main_classifier).with_llm_config({
+    "provider": "openai",
+    "model": "gpt-4"
+}).build()
 ```
 
 ### Using JSON Configuration
@@ -154,6 +157,32 @@ graph.visualize("graph.html")
 graph.route("Hello Alice", debug=True)
 ```
 
+## LLM Configuration
+
+Intent graphs can be configured with LLM settings for intelligent chunk classification:
+
+```python
+# Set LLM configuration at the graph level
+llm_config = {
+    "provider": "openai",
+    "model": "gpt-4",
+    "api_key": "your-api-key"
+}
+
+graph = (
+    IntentGraphBuilder()
+    .root(classifier)
+    .with_llm_config(llm_config)
+    .build()
+)
+```
+
+The `llm_config` is used by the chunk classifier to determine how to process user input:
+- **Atomic chunks** - Single intents that can be handled directly
+- **Composite chunks** - Multiple intents that need to be split
+- **Ambiguous chunks** - Unclear intents that need clarification
+- **Invalid chunks** - Input that should be rejected
+
 ## Best Practices
 
 1. **Clear Node Names** - Use descriptive names for all nodes
@@ -162,3 +191,4 @@ graph.route("Hello Alice", debug=True)
 4. **Error Handling** - Include remediation strategies
 5. **Testing** - Test with various input scenarios
 6. **Documentation** - Document complex graph structures
+7. **LLM Configuration** - Set appropriate LLM config for chunk classification

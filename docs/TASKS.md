@@ -151,9 +151,11 @@ graph = IntentGraphBuilder().root(classifier).build()
 
   * Parse YAML and treat as JSON/dict.
 
-* [x] **(Optional) Add `.validate_json_graph()`**
+* [x] **Add comprehensive JSON validation**
 
-  * Validate the flat graph for cycles, unreachable nodes, or duplicate IDs.
+  * Internal validation during build ensures graph integrity
+  * Optional public validation API for detailed validation reporting
+  * Validate cycles, unreachable nodes, and duplicate IDs
 
 ---
 

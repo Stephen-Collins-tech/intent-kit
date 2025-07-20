@@ -24,6 +24,7 @@ class IntentGraphBuilder(Builder):
         self._context_trace_enabled = False
         self._json_graph: Optional[Dict[str, Any]] = None
         self._function_registry: Optional[Dict[str, Callable]] = None
+        self._llm_config: Optional[Dict[str, Any]] = None
 
     def root(self, node: TreeNode) -> "IntentGraphBuilder":
         """Set the root node for the intent graph.
@@ -102,14 +103,110 @@ class IntentGraphBuilder(Builder):
         self._json_graph = json_graph
         return self
 
+    def with_llm_config(self, llm_config: Dict[str, Any]) -> "IntentGraphBuilder":
+        """Set the LLM configuration for the entire graph.
+
+        Args:
+            llm_config: Dictionary containing LLM configuration parameters.
+
+        Returns:
+            Self for method chaining
+        """
+        self._llm_config = llm_config
+        return self
+
+    def _validate_json_graph(self) -> None:
+        """Validate the JSON graph specification internally.
+
+        Raises:
+            ValueError: If validation fails
+        """
+        if self._json_graph is None:
+            raise ValueError(
+                "No JSON graph set. Call .with_json() or .with_yaml() first"
+            )
+
+        errors = []
+
+        # Basic structure validation
+        if "root" not in self._json_graph:
+            errors.append("Missing 'root' field")
+
+        if "intents" not in self._json_graph:
+            errors.append("Missing 'intents' field")
+
+        if errors:
+            raise ValueError(f"Graph validation failed: {'; '.join(errors)}")
+
+        intents = self._json_graph["intents"]
+        root_id = self._json_graph["root"]
+
+        # Validate root node exists
+        if root_id not in intents:
+            errors.append(f"Root node '{root_id}' not found in intents")
+
+        # Validate each node
+        for node_id, node_spec in intents.items():
+            # Check required fields
+            if "type" not in node_spec:
+                errors.append(f"Node '{node_id}' missing 'type' field")
+                continue
+
+            node_type = node_spec["type"]
+
+            # Type-specific validation
+            if node_type == "action":
+                if "function" not in node_spec:
+                    errors.append(f"Action node '{node_id}' missing 'function' field")
+
+            elif node_type == "llm_classifier":
+                if "llm_config" not in node_spec:
+                    errors.append(
+                        f"LLM classifier node '{node_id}' missing 'llm_config' field"
+                    )
+
+            elif node_type == "classifier":
+                if "classifier_function" not in node_spec:
+                    errors.append(
+                        f"Classifier node '{node_id}' missing 'classifier_function' field"
+                    )
+
+            elif node_type == "splitter":
+                if "splitter_function" not in node_spec:
+                    errors.append(
+                        f"Splitter node '{node_id}' missing 'splitter_function' field"
+                    )
+
+            else:
+                errors.append(f"Unknown node type '{node_type}' for node '{node_id}'")
+
+            # Validate children references
+            if "children" in node_spec:
+                for child_id in node_spec["children"]:
+                    if child_id not in intents:
+                        errors.append(
+                            f"Child node '{child_id}' not found for node '{node_id}'"
+                        )
+
+        # Check for cycles (simple cycle detection)
+        cycles = self._detect_cycles(intents)
+        if cycles:
+            errors.append(f"Cycles detected in graph: {cycles}")
+
+        if errors:
+            raise ValueError(f"Graph validation failed: {'; '.join(errors)}")
+
     def validate_json_graph(self) -> Dict[str, Any]:
-        """Validate the JSON graph specification.
+        """Validate the JSON graph specification and return detailed results.
+
+        This method provides detailed validation information without raising exceptions
+        for validation failures. Use this for debugging and validation reporting.
 
         Returns:
             Dictionary containing validation results and statistics
 
         Raises:
-            ValueError: If validation fails
+            ValueError: If no JSON graph is set
         """
         if self._json_graph is None:
             raise ValueError(
@@ -126,114 +223,100 @@ class IntentGraphBuilder(Builder):
             "unreachable_nodes": [],
         }
 
-        try:
-            # Basic structure validation
-            if "root" not in self._json_graph:
-                validation_results["errors"].append("Missing 'root' field")
-                validation_results["valid"] = False
+        intents = self._json_graph["intents"]
+        root_id = self._json_graph["root"]
 
-            if "intents" not in self._json_graph:
-                validation_results["errors"].append("Missing 'intents' field")
-                validation_results["valid"] = False
+        # Basic structure validation
+        if "root" not in self._json_graph:
+            validation_results["errors"].append("Missing 'root' field")
+            validation_results["valid"] = False
 
-            if not validation_results["valid"]:
-                return validation_results
-
-            intents = self._json_graph["intents"]
-            root_id = self._json_graph["root"]
-
-            # Validate root node exists
-            if root_id not in intents:
-                validation_results["errors"].append(
-                    f"Root node '{root_id}' not found in intents"
-                )
-                validation_results["valid"] = False
-
-            # Validate each node
-            for node_id, node_spec in intents.items():
-                validation_results["node_count"] += 1
-
-                # Check required fields
-                if "type" not in node_spec:
-                    validation_results["errors"].append(
-                        f"Node '{node_id}' missing 'type' field"
-                    )
-                    validation_results["valid"] = False
-                    continue
-
-                node_type = node_spec["type"]
-
-                # Type-specific validation
-                if node_type == "action":
-                    if "function" not in node_spec:
-                        validation_results["errors"].append(
-                            f"Action node '{node_id}' missing 'function' field"
-                        )
-                        validation_results["valid"] = False
-
-                elif node_type == "llm_classifier":
-                    if "llm_config" not in node_spec:
-                        validation_results["errors"].append(
-                            f"LLM classifier node '{node_id}' missing 'llm_config' field"
-                        )
-                        validation_results["valid"] = False
-
-                elif node_type == "classifier":
-                    if "classifier_function" not in node_spec:
-                        validation_results["errors"].append(
-                            f"Classifier node '{node_id}' missing 'classifier_function' field"
-                        )
-                        validation_results["valid"] = False
-
-                elif node_type == "splitter":
-                    if "splitter_function" not in node_spec:
-                        validation_results["errors"].append(
-                            f"Splitter node '{node_id}' missing 'splitter_function' field"
-                        )
-                        validation_results["valid"] = False
-
-                else:
-                    validation_results["errors"].append(
-                        f"Unknown node type '{node_type}' for node '{node_id}'"
-                    )
-                    validation_results["valid"] = False
-
-                # Validate children references
-                if "children" in node_spec:
-                    for child_id in node_spec["children"]:
-                        validation_results["edge_count"] += 1
-                        if child_id not in intents:
-                            validation_results["errors"].append(
-                                f"Child node '{child_id}' not found for node '{node_id}'"
-                            )
-                            validation_results["valid"] = False
-
-            # Check for cycles (simple cycle detection)
-            if validation_results["valid"]:
-                cycles = self._detect_cycles(intents)
-                if cycles:
-                    validation_results["cycles_detected"] = True
-                    validation_results["errors"].append(
-                        f"Cycles detected in graph: {cycles}"
-                    )
-                    validation_results["valid"] = False
-
-            # Check for unreachable nodes
-            if validation_results["valid"]:
-                unreachable = self._find_unreachable_nodes(intents, root_id)
-                if unreachable:
-                    validation_results["unreachable_nodes"] = unreachable
-                    validation_results["warnings"].append(
-                        f"Unreachable nodes found: {unreachable}"
-                    )
-
-        except Exception as e:
-            validation_results["errors"].append(f"Validation error: {e}")
+        if "intents" not in self._json_graph:
+            validation_results["errors"].append("Missing 'intents' field")
             validation_results["valid"] = False
 
         if not validation_results["valid"]:
-            raise ValueError(
-                f"Graph validation failed: {'; '.join(validation_results['errors'])}"
+            return validation_results
+
+        # Validate root node exists
+        if root_id not in intents:
+            validation_results["errors"].append(
+                f"Root node '{root_id}' not found in intents"
+            )
+            validation_results["valid"] = False
+
+        # Validate each node
+        for node_id, node_spec in intents.items():
+            validation_results["node_count"] += 1
+
+            # Check required fields
+            if "type" not in node_spec:
+                validation_results["errors"].append(
+                    f"Node '{node_id}' missing 'type' field"
+                )
+                validation_results["valid"] = False
+                continue
+
+            node_type = node_spec["type"]
+
+            # Type-specific validation
+            if node_type == "action":
+                if "function" not in node_spec:
+                    validation_results["errors"].append(
+                        f"Action node '{node_id}' missing 'function' field"
+                    )
+                    validation_results["valid"] = False
+
+            elif node_type == "llm_classifier":
+                if "llm_config" not in node_spec:
+                    validation_results["errors"].append(
+                        f"LLM classifier node '{node_id}' missing 'llm_config' field"
+                    )
+                    validation_results["valid"] = False
+
+            elif node_type == "classifier":
+                if "classifier_function" not in node_spec:
+                    validation_results["errors"].append(
+                        f"Classifier node '{node_id}' missing 'classifier_function' field"
+                    )
+                    validation_results["valid"] = False
+
+            elif node_type == "splitter":
+                if "splitter_function" not in node_spec:
+                    validation_results["errors"].append(
+                        f"Splitter node '{node_id}' missing 'splitter_function' field"
+                    )
+                    validation_results["valid"] = False
+
+            else:
+                validation_results["errors"].append(
+                    f"Unknown node type '{node_type}' for node '{node_id}'"
+                )
+                validation_results["valid"] = False
+
+            # Validate children references
+            if "children" in node_spec:
+                for child_id in node_spec["children"]:
+                    validation_results["edge_count"] += 1
+                    if child_id not in intents:
+                        validation_results["errors"].append(
+                            f"Child node '{child_id}' not found for node '{node_id}'"
+                        )
+                        validation_results["valid"] = False
+
+        # Check for cycles (simple cycle detection)
+        cycles = self._detect_cycles(intents)
+        if cycles:
+            validation_results["cycles_detected"] = True
+            validation_results["errors"].append(f"Cycles detected in graph: {cycles}")
+            validation_results["valid"] = False
+
+        # Check for unreachable nodes
+        unreachable = self._find_unreachable_nodes(intents, root_id)
+        if unreachable:
+            validation_results["unreachable_nodes"] = unreachable
+            validation_results["warnings"].append(
+                f"Unreachable nodes found: {unreachable}"
             )
 
         return validation_results
@@ -300,6 +383,8 @@ class IntentGraphBuilder(Builder):
             ValueError: If no root nodes have been set and no JSON graph provided
         """
         if self._json_graph is not None:
+            # Validate JSON graph before building
+            self._validate_json_graph()
             return self._build_from_json(
                 self._json_graph, self._function_registry or {}
             )
@@ -312,6 +397,7 @@ class IntentGraphBuilder(Builder):
         graph = IntentGraph(
             root_nodes=self._root_nodes,
             splitter=self._splitter,
+            llm_config=self._llm_config,
             debug_context=self._debug_context_enabled,
             context_trace=self._context_trace_enabled,
         )
@@ -371,6 +457,7 @@ class IntentGraphBuilder(Builder):
         graph = IntentGraph(
             root_nodes=[node_map[root_id]],
             splitter=self._splitter,
+            llm_config=self._llm_config,
             debug_context=self._debug_context_enabled,
             context_trace=self._context_trace_enabled,
         )

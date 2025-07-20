@@ -104,34 +104,30 @@ class TestIntentGraphBuilder:
             with pytest.raises(ValueError, match="Failed to load YAML file"):
                 builder.with_yaml("nonexistent.yaml")
 
-    def test_validate_json_graph_no_graph(self):
-        """Test validation when no JSON graph is set."""
+    def test_build_with_json_validation_no_graph(self):
+        """Test build validation when no JSON graph is set."""
         builder = IntentGraphBuilder()
 
         with pytest.raises(ValueError, match="No JSON graph set"):
-            builder.validate_json_graph()
+            builder._validate_json_graph()
 
-    def test_validate_json_graph_missing_root(self):
-        """Test validation with missing root field."""
+    def test_build_with_json_validation_missing_root(self):
+        """Test build validation with missing root field."""
         builder = IntentGraphBuilder()
         builder._json_graph = {"intents": {}}
 
-        result = builder.validate_json_graph()
+        with pytest.raises(ValueError, match="Missing 'root' field"):
+            builder._validate_json_graph()
 
-        assert result["valid"] is False
-        assert "Missing 'root' field" in result["errors"]
-
-    def test_validate_json_graph_missing_intents(self):
-        """Test validation with missing intents field."""
+    def test_build_with_json_validation_missing_intents(self):
+        """Test build validation with missing intents field."""
         builder = IntentGraphBuilder()
         builder._json_graph = {"root": "test"}
 
-        result = builder.validate_json_graph()
+        with pytest.raises(ValueError, match="Missing 'intents' field"):
+            builder._validate_json_graph()
 
-        assert result["valid"] is False
-        assert "Missing 'intents' field" in result["errors"]
-
-    def test_validate_json_graph_root_not_found(self):
+    def test_build_with_json_validation_root_not_found(self):
         builder = IntentGraphBuilder()
         # Setup a graph missing the root node
         builder._json_graph = {
@@ -140,29 +136,29 @@ class TestIntentGraphBuilder:
         }
         with pytest.raises(
             ValueError,
-            match="Graph validation failed: Root node 'nonexistent' not found in intents; Action node 'test' missing 'function' field",
+            match="Root node 'nonexistent' not found in intents",
         ):
-            builder.validate_json_graph()
+            builder._validate_json_graph()
 
-    def test_validate_json_graph_missing_type(self):
+    def test_build_with_json_validation_missing_type(self):
         builder = IntentGraphBuilder()
         builder._json_graph = {"intents": {"test": {}}, "root": "test"}
         with pytest.raises(
             ValueError,
-            match="Graph validation failed: Node 'test' missing 'type' field",
+            match="Node 'test' missing 'type' field",
         ):
-            builder.validate_json_graph()
+            builder._validate_json_graph()
 
-    def test_validate_json_graph_action_missing_function(self):
+    def test_build_with_json_validation_action_missing_function(self):
         builder = IntentGraphBuilder()
         builder._json_graph = {"intents": {"test": {"type": "action"}}, "root": "test"}
         with pytest.raises(
             ValueError,
-            match="Graph validation failed: Action node 'test' missing 'function' field",
+            match="Action node 'test' missing 'function' field",
         ):
-            builder.validate_json_graph()
+            builder._validate_json_graph()
 
-    def test_validate_json_graph_llm_classifier_missing_config(self):
+    def test_build_with_json_validation_llm_classifier_missing_config(self):
         builder = IntentGraphBuilder()
         builder._json_graph = {
             "intents": {"test": {"type": "llm_classifier"}},
@@ -170,11 +166,11 @@ class TestIntentGraphBuilder:
         }
         with pytest.raises(
             ValueError,
-            match="Graph validation failed: LLM classifier node 'test' missing 'llm_config' field",
+            match="LLM classifier node 'test' missing 'llm_config' field",
         ):
-            builder.validate_json_graph()
+            builder._validate_json_graph()
 
-    def test_validate_json_graph_classifier_missing_function(self):
+    def test_build_with_json_validation_classifier_missing_function(self):
         builder = IntentGraphBuilder()
         builder._json_graph = {
             "intents": {"test": {"type": "classifier"}},
@@ -182,11 +178,11 @@ class TestIntentGraphBuilder:
         }
         with pytest.raises(
             ValueError,
-            match="Graph validation failed: Classifier node 'test' missing 'classifier_function' field",
+            match="Classifier node 'test' missing 'classifier_function' field",
         ):
-            builder.validate_json_graph()
+            builder._validate_json_graph()
 
-    def test_validate_json_graph_splitter_missing_function(self):
+    def test_build_with_json_validation_splitter_missing_function(self):
         builder = IntentGraphBuilder()
         builder._json_graph = {
             "intents": {"test": {"type": "splitter"}},
@@ -194,12 +190,30 @@ class TestIntentGraphBuilder:
         }
         with pytest.raises(
             ValueError,
-            match="Graph validation failed: Splitter node 'test' missing 'splitter_function' field",
+            match="Splitter node 'test' missing 'splitter_function' field",
         ):
-            builder.validate_json_graph()
+            builder._validate_json_graph()
 
-    def test_validate_json_graph_valid(self):
-        """Test validation with valid JSON graph."""
+    def test_build_with_json_validation_valid(self):
+        """Test build validation with valid JSON graph."""
+        builder = IntentGraphBuilder()
+        builder._json_graph = {
+            "root": "test",
+            "intents": {
+                "test": {
+                    "type": "action",
+                    "function": "test_func",
+                    "name": "Test Action",
+                    "description": "Test description",
+                }
+            },
+        }
+
+        # Should not raise any exception
+        builder._validate_json_graph()
+
+    def test_validate_json_graph_public_api(self):
+        """Test the public validate_json_graph method."""
         builder = IntentGraphBuilder()
         builder._json_graph = {
             "root": "test",
@@ -217,7 +231,37 @@ class TestIntentGraphBuilder:
 
         assert result["valid"] is True
         assert result["node_count"] == 1
+        assert result["edge_count"] == 0
         assert len(result["errors"]) == 0
+
+    def test_validate_json_graph_public_api_with_errors(self):
+        """Test the public validate_json_graph method with validation errors."""
+        builder = IntentGraphBuilder()
+        builder._json_graph = {
+            "root": "test",
+            "intents": {
+                "test": {
+                    "type": "action",
+                    # Missing function field
+                    "name": "Test Action",
+                    "description": "Test description",
+                }
+            },
+        }
+
+        result = builder.validate_json_graph()
+
+        assert result["valid"] is False
+        assert result["node_count"] == 1
+        assert len(result["errors"]) > 0
+        assert "missing 'function' field" in result["errors"][0].lower()
+
+    def test_validate_json_graph_public_api_no_graph(self):
+        """Test the public validate_json_graph method when no graph is set."""
+        builder = IntentGraphBuilder()
+
+        with pytest.raises(ValueError, match="No JSON graph set"):
+            builder.validate_json_graph()
 
     def test_build_with_root_nodes(self):
         """Test building graph with root nodes."""
@@ -267,6 +311,46 @@ class TestIntentGraphBuilder:
 
         with pytest.raises(
             ValueError, match="Function 'test_func' not found in function registry"
+        ):
+            builder.build()
+
+    def test_build_with_json_validation_integration(self):
+        """Test that build method calls validation internally."""
+        builder = IntentGraphBuilder()
+        builder._json_graph = {
+            "root": "test",
+            "intents": {
+                "test": {
+                    "type": "action",
+                    "function": "test_func",
+                    "name": "Test Action",
+                    "description": "Test description",
+                }
+            },
+        }
+        builder._function_registry = {"test_func": MagicMock()}
+
+        # Should not raise validation errors since graph is valid
+        result = builder.build()
+        assert isinstance(result, IntentGraph)
+
+    def test_build_with_json_validation_failure(self):
+        """Test that build method fails when validation fails."""
+        builder = IntentGraphBuilder()
+        builder._json_graph = {
+            "root": "test",
+            "intents": {
+                "test": {
+                    "type": "action",
+                    # Missing function field
+                    "name": "Test Action",
+                    "description": "Test description",
+                }
+            },
+        }
+
+        with pytest.raises(
+            ValueError, match="Action node 'test' missing 'function' field"
         ):
             builder.build()
 
