@@ -96,3 +96,10 @@ include = ["intent_kit*", "scripts*"]
 
 [tool.uv.sources]
 intentkit-py = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "python-dotenv>=1.1.1",
+]
