@@ -64,6 +64,6 @@ Create systems that make smart decisions based on user requests.
 ## 📖 Learn More
 
 - **[Quickstart Guide](quickstart.md)** - Get up and running fast
-- **[Examples](examples/)** - See working examples
-- **[Core Concepts](concepts/)** - Understand the fundamentals
-- **[Development](development/)** - Testing, debugging, and deployment
+- **[Examples](examples/index.md)** - See working examples
+- **[Core Concepts](concepts/index.md)** - Understand the fundamentals
+- **[Development](development/index.md)** - Testing, debugging, and deployment

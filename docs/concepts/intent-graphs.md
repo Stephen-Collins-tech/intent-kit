@@ -13,7 +13,7 @@ An intent graph is a directed acyclic graph (DAG) where:
 
 ## Graph Structure
 
-```
+```text
 User Input → Root Classifier → Intent Classifier → Action → Output
 ```
 

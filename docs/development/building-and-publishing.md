@@ -133,6 +133,6 @@ pip install intentkit-py==<version>
 
 ## Related Documentation
 
-- [Development Setup](development.md)
+- [Development Setup](index.md)
 - [Testing](testing.md)
 - [Evaluation](evaluation.md)

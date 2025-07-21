@@ -66,11 +66,11 @@ Uses keyword matching for classification:
 ```python
 from intent_kit import keyword_classifier
 
-greeting_classifier = keyword_classifier(
-    name="greeting",
-    description="Detect greeting intents",
-    keywords=["hello", "hi", "greetings"],
-    children=[formal_greet_action, casual_greet_action]
+main_classifier = keyword_classifier(
+    name="main",
+    description="Route user input to appropriate action",
+    children=[greet_action, weather_action, calculator_action],
+    keywords={"greet": ["hello", "hi"], "weather": ["weather", "forecast"]}
 )
 ```
 

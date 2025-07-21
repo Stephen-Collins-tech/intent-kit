@@ -3,7 +3,7 @@
 This example shows how to build a simple calculator bot that can add and subtract numbers using intent-kit.
 
 ```python
-from intent_kit import IntentGraphBuilder, handler
+from intent_kit import IntentGraphBuilder, action
 
 def add(a: int, b: int) -> str:
     return str(a + b)
@@ -11,24 +11,24 @@ def add(a: int, b: int) -> str:
 def subtract(a: int, b: int) -> str:
     return str(a - b)
 
-add_handler = handler(
+add_action = action(
     name="add",
     description="Add two numbers",
-    handler_func=add,
+    action_func=add,
     param_schema={"a": int, "b": int},
 )
 
-subtract_handler = handler(
+subtract_action = action(
     name="subtract",
     description="Subtract two numbers",
-    handler_func=subtract,
+    action_func=subtract,
     param_schema={"a": int, "b": int},
 )
 
 graph = (
     IntentGraphBuilder()
-    .root(add_handler)
-    .root(subtract_handler)
+    .root(add_action)
+    .root(subtract_action)
     .build()
 )
 

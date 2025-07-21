@@ -38,7 +38,7 @@ class IntentGraphBuilder(Builder):
         self._root_nodes = [node]
         return self
 
-    def splitter(self, splitter_func) -> "IntentGraphBuilder":
+    def splitter(self, splitter_func: Callable[..., Any]) -> "IntentGraphBuilder":
         """Set a custom splitter function for the intent graph.
 
         Args:

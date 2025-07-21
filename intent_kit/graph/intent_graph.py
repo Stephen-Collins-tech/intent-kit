@@ -298,7 +298,7 @@ class IntentGraph:
         debug: bool = False,
         debug_context: Optional[bool] = None,
         context_trace: Optional[bool] = None,
-        **splitter_kwargs,
+        **splitter_kwargs: Any,
     ) -> ExecutionResult:
         """
         Route user input through the graph with optional context support.

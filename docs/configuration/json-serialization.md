@@ -39,8 +39,8 @@ json_graph = {
             "classifier_function": "smart_classifier",
             "children": [
                 {
-                    "name": "greet_handler",
-                    "type": "handler",
+                    "name": "greet_action",
+                    "type": "action",
                     "function_name": "greet_function",
                     "param_schema": {"name": "str"},
                     "llm_config": {"provider": "openai", "model": "gpt-4"},
@@ -63,7 +63,7 @@ graph = IntentGraphBuilder().with_functions(function_registry).with_json(json_gr
   "root_nodes": [
     {
       "name": "node_name",
-      "type": "handler|classifier|splitter",
+      "type": "action|classifier|splitter",
       "description": "Optional description",
       "function_name": "registry_function_name",
       "param_schema": {
@@ -91,11 +91,11 @@ graph = IntentGraphBuilder().with_functions(function_registry).with_json(json_gr
 
 ### Node Types
 
-#### Handler Node
+#### Action Node
 ```json
 {
-  "name": "greet_handler",
-  "type": "handler",
+  "name": "greet_action",
+  "type": "action",
   "function_name": "greet_function",
   "param_schema": {"name": "str"},
   "llm_config": {"provider": "openai", "model": "gpt-4"},
@@ -110,9 +110,9 @@ graph = IntentGraphBuilder().with_functions(function_registry).with_json(json_gr
   "name": "intent_classifier",
   "type": "classifier",
   "classifier_function": "smart_classifier",
-  "description": "Routes to appropriate handler",
+  "description": "Routes to appropriate action",
   "children": [
-    // Child handler nodes
+    // Child action nodes
   ],
   "remediation_strategies": ["fallback", "clarification"]
 }
@@ -133,13 +133,13 @@ graph = IntentGraphBuilder().with_functions(function_registry).with_json(json_gr
 
 ## LLM-Powered Argument Extraction
 
-When you include `llm_config` in a handler node, IntentKit automatically creates an LLM-based argument extractor:
+When you include `llm_config` in an action node, IntentKit automatically creates an LLM-based argument extractor:
 
 ```python
 # JSON with LLM config
 {
-  "name": "weather_handler",
-  "type": "handler",
+  "name": "weather_action",
+  "type": "action",
   "function_name": "weather_function",
   "param_schema": {"location": "str"},
   "llm_config": {
@@ -200,8 +200,8 @@ graph = IntentGraphBuilder().with_functions(greeting_registry.functions).with_js
 ```python
 # JSON with context inputs/outputs
 {
-  "name": "user_profile_handler",
-  "type": "handler",
+  "name": "user_profile_action",
+  "type": "action",
   "function_name": "update_profile",
   "param_schema": {"name": "str", "age": "int"},
   "context_inputs": ["user_id", "current_profile"],
@@ -214,8 +214,8 @@ graph = IntentGraphBuilder().with_functions(greeting_registry.functions).with_js
 ```python
 # JSON with remediation
 {
-  "name": "payment_handler",
-  "type": "handler",
+  "name": "payment_action",
+  "type": "action",
   "function_name": "process_payment",
   "param_schema": {"amount": "float", "card_number": "str"},
   "remediation_strategies": ["retry", "fallback_payment", "human_escalation"]
@@ -228,7 +228,7 @@ The system provides clear error messages for common issues:
 
 ```python
 # Missing function in registry
-ValueError: Handler function 'missing_function' not found in registry
+ValueError: Action function 'missing_function' not found in registry
 
 # Invalid JSON
 ValueError: Invalid JSON: Expecting property name enclosed in double quotes
