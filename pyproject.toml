@@ -105,5 +105,4 @@ dev = [
     "pytest-cov>=6.2.1",
     "python-dotenv>=1.1.1",
     "ruff>=0.12.3",
-    "types-pyyaml>=6.0.12.20250516",
 ]

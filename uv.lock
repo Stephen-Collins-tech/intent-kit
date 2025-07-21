@@ -676,7 +676,6 @@ dev = [
     { name = "pytest-cov" },
     { name = "python-dotenv" },
     { name = "ruff" },
-    { name = "types-pyyaml" },
 ]
 
 [package.metadata]
@@ -727,7 +726,6 @@ dev = [
     { name = "pytest-cov", specifier = ">=6.2.1" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "ruff", specifier = ">=0.12.3" },
-    { name = "types-pyyaml", specifier = ">=6.0.12.20250516" },
 ]
 
 [[package]]
