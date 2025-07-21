@@ -2,13 +2,10 @@
 Tests for ActionNode functionality.
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from typing import Dict, Any, Optional
 
 from intent_kit.node.actions import ActionNode
 from intent_kit.node.enums import NodeType
-from intent_kit.node.types import ExecutionResult, ExecutionError
 from intent_kit.context import IntentContext
 
 
@@ -17,11 +14,14 @@ class TestActionNode:
 
     def test_action_node_initialization(self):
         """Test ActionNode initialization with basic parameters."""
+
         # Arrange
         def mock_action(name: str, age: int) -> str:
             return f"Hello {name}, you are {age} years old"
 
-        def mock_arg_extractor(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        def mock_arg_extractor(
+            user_input: str, context: Optional[Dict[str, Any]] = None
+        ) -> Dict[str, Any]:
             return {"name": "Alice", "age": 30}
 
         param_schema = {"name": str, "age": int}
@@ -32,7 +32,7 @@ class TestActionNode:
             param_schema=param_schema,
             action=mock_action,
             arg_extractor=mock_arg_extractor,
-            description="Greet a user with their name and age"
+            description="Greet a user with their name and age",
         )
 
         # Assert
@@ -50,11 +50,14 @@ class TestActionNode:
 
     def test_action_node_successful_execution(self):
         """Test successful execution of an ActionNode."""
+
         # Arrange
         def mock_action(name: str, age: int) -> str:
             return f"Hello {name}, you are {age} years old"
 
-        def mock_arg_extractor(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        def mock_arg_extractor(
+            user_input: str, context: Optional[Dict[str, Any]] = None
+        ) -> Dict[str, Any]:
             return {"name": "Bob", "age": 25}
 
         param_schema = {"name": str, "age": int}
@@ -62,7 +65,7 @@ class TestActionNode:
             name="greet_user",
             param_schema=param_schema,
             action=mock_action,
-            arg_extractor=mock_arg_extractor
+            arg_extractor=mock_arg_extractor,
         )
 
         # Act
@@ -80,15 +83,18 @@ class TestActionNode:
 
     def test_action_node_parameter_validation(self):
         """Test ActionNode parameter type validation and conversion."""
+
         # Arrange
         def mock_action(name: str, age: int, is_active: bool) -> str:
             return f"User {name} (age: {age}, active: {is_active})"
 
-        def mock_arg_extractor(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        def mock_arg_extractor(
+            user_input: str, context: Optional[Dict[str, Any]] = None
+        ) -> Dict[str, Any]:
             return {
                 "name": "Charlie",
                 "age": "30",  # String that should be converted to int
-                "is_active": "true"  # String that should be converted to bool
+                "is_active": "true",  # String that should be converted to bool
             }
 
         param_schema = {"name": str, "age": int, "is_active": bool}
@@ -96,7 +102,7 @@ class TestActionNode:
             name="create_user",
             param_schema=param_schema,
             action=mock_action,
-            arg_extractor=mock_arg_extractor
+            arg_extractor=mock_arg_extractor,
         )
 
         # Act
@@ -109,11 +115,14 @@ class TestActionNode:
 
     def test_action_node_error_handling(self):
         """Test ActionNode error handling during execution."""
+
         # Arrange
         def mock_action(name: str) -> str:
             raise ValueError("Invalid name provided")
 
-        def mock_arg_extractor(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        def mock_arg_extractor(
+            user_input: str, context: Optional[Dict[str, Any]] = None
+        ) -> Dict[str, Any]:
             return {"name": "invalid_name"}
 
         param_schema = {"name": str}
@@ -121,7 +130,7 @@ class TestActionNode:
             name="process_user",
             param_schema=param_schema,
             action=mock_action,
-            arg_extractor=mock_arg_extractor
+            arg_extractor=mock_arg_extractor,
         )
 
         # Act
@@ -140,19 +149,24 @@ class TestActionNode:
 
     def test_action_node_with_context_integration(self):
         """Test ActionNode with context inputs and outputs."""
+
         # Arrange
-        def mock_action(user_id: str, message: str, context: IntentContext) -> Dict[str, Any]:
+        def mock_action(
+            user_id: str, message: str, context: IntentContext
+        ) -> Dict[str, Any]:
             # Simulate updating context with output
             return {
                 "response": f"Processed message for user {user_id}: {message}",
                 "message_count": 1,
-                "last_processed": "2024-01-01"
+                "last_processed": "2024-01-01",
             }
 
-        def mock_arg_extractor(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        def mock_arg_extractor(
+            user_input: str, context: Optional[Dict[str, Any]] = None
+        ) -> Dict[str, Any]:
             return {
                 "user_id": context.get("user_id") if context else "default_user",
-                "message": "Hello world"
+                "message": "Hello world",
             }
 
         param_schema = {"user_id": str, "message": str}
@@ -162,7 +176,7 @@ class TestActionNode:
             action=mock_action,
             arg_extractor=mock_arg_extractor,
             context_inputs={"user_id"},
-            context_outputs={"message_count", "last_processed"}
+            context_outputs={"message_count", "last_processed"},
         )
 
         # Create context with input
@@ -175,21 +189,27 @@ class TestActionNode:
         # Assert
         assert result.success is True
         assert result.node_name == "process_message"
-        assert result.output["response"] == "Processed message for user user123: Hello world"
+        assert (
+            result.output["response"]
+            == "Processed message for user user123: Hello world"
+        )
         assert result.output["message_count"] == 1
         assert result.output["last_processed"] == "2024-01-01"
-        
+
         # Check that context was updated with outputs
         assert context.get("message_count") == 1
         assert context.get("last_processed") == "2024-01-01"
 
     def test_action_node_with_validators(self):
         """Test ActionNode with input and output validators."""
+
         # Arrange
         def mock_action(name: str, age: int) -> str:
             return f"Hello {name}, you are {age} years old"
 
-        def mock_arg_extractor(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        def mock_arg_extractor(
+            user_input: str, context: Optional[Dict[str, Any]] = None
+        ) -> Dict[str, Any]:
             return {"name": "David", "age": 35}
 
         def input_validator(params: Dict[str, Any]) -> bool:
@@ -205,7 +225,7 @@ class TestActionNode:
             action=mock_action,
             arg_extractor=mock_arg_extractor,
             input_validator=input_validator,
-            output_validator=output_validator
+            output_validator=output_validator,
         )
 
         # Act - Valid case
@@ -216,7 +236,9 @@ class TestActionNode:
         assert result.output == "Hello David, you are 35 years old"
 
         # Test with invalid input (underage)
-        def mock_arg_extractor_invalid(user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        def mock_arg_extractor_invalid(
+            user_input: str, context: Optional[Dict[str, Any]] = None
+        ) -> Dict[str, Any]:
             return {"name": "Young", "age": 15}
 
         action_node.arg_extractor = mock_arg_extractor_invalid
