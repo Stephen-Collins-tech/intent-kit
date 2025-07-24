@@ -247,7 +247,7 @@ if __name__ == "__main__":
             "Calculate 10 times 2",
             "Greet Alice",
         ]
-        timings = []
+        timings: list[tuple[str, float]] = []
         successes = []
         for user_input in test_inputs:
             with PerfUtil.collect(f"Input: {user_input}", timings) as input_perf:

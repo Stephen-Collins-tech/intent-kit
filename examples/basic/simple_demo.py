@@ -86,7 +86,7 @@ if __name__ == "__main__":
             "Multiply 8 and 3",
         ]
 
-        timings = []
+        timings: list[tuple[str, float]] = []
         successes = []
         for user_input in test_inputs:
             with PerfUtil.collect(f"Input: {user_input}", timings) as perf:

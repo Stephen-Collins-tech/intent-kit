@@ -16,6 +16,12 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
+      - id: typecheck
+        name: typecheck
+        entry: uv run typecheck
+        language: system
+        types: [python]
+        pass_filenames: false
       - id: pytest
         name: pytest
         entry: uv run pytest

@@ -216,7 +216,7 @@ if __name__ == "__main__":
 
     with PerfUtil("eval_api_demo.py run time") as perf:
         eval_tasks = ["Task 1", "Task 2", "Task 3"]
-        timings = []
+        timings: list[tuple[str, float]] = []
         successes = []
         for task in eval_tasks:
             with PerfUtil.collect(f"Eval: {str(task)}", timings) as input_perf:
