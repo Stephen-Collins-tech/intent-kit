@@ -1,0 +1,71 @@
+{
+  "root": "main_classifier",
+  "nodes": {
+    "main_classifier": {
+      "id": "main_classifier",
+      "type": "llm_classifier",
+      "name": "main_classifier",
+      "description": "LLM-powered intent classifier with context support",
+      "llm_config": {
+        "provider": "openrouter",
+        "api_key": "${OPENROUTER_API_KEY}",
+        "model": "meta-llama/llama-4-maverick-17b-128e-instruct"
+      },
+      "classification_prompt": "Given the user input: '{user_input}', choose the most appropriate intent from the following list:\n{node_descriptions}\n\nIMPORTANT:\n- Return ONLY the name of the intent, exactly as shown above (e.g., greet_action, calculate_action, weather_action, show_calculation_history_action, help_action).\n- Do NOT return any explanation, number, or invented name.\n- Do NOT return anything except one of the names from the list above.\n\nIf you are unsure, return 'help_action'.\n\nYour answer:",
+      "children": [
+        "greet_action",
+        "calculate_action",
+        "weather_action",
+        "show_calculation_history_action",
+        "help_action"
+      ]
+    },
+    "greet_action": {
+      "id": "greet_action",
+      "type": "action",
+      "name": "greet_action",
+      "description": "Greet the user with context tracking",
+      "function": "greet_action",
+      "param_schema": {"name": "str"},
+      "context_inputs": ["greeting_count", "last_greeted"],
+      "context_outputs": ["greeting_count", "last_greeted", "last_greeting_time"]
+    },
+    "calculate_action": {
+      "id": "calculate_action",
+      "type": "action",
+      "name": "calculate_action",
+      "description": "Perform calculations with history tracking",
+      "function": "calculate_action",
+      "param_schema": {"operation": "str", "a": "float", "b": "float"},
+      "context_inputs": ["calculation_history"],
+      "context_outputs": ["calculation_history", "last_calculation"]
+    },
+    "weather_action": {
+      "id": "weather_action",
+      "type": "action",
+      "name": "weather_action",
+      "description": "Get weather with caching",
+      "function": "weather_action",
+      "param_schema": {"location": "str"},
+      "context_inputs": ["last_weather"],
+      "context_outputs": ["last_weather"]
+    },
+    "show_calculation_history_action": {
+      "id": "show_calculation_history_action",
+      "type": "action",
+      "name": "show_calculation_history_action",
+      "description": "Show calculation history from context",
+      "function": "show_calculation_history_action",
+      "param_schema": {},
+      "context_inputs": ["calculation_history"]
+    },
+    "help_action": {
+      "id": "help_action",
+      "type": "action",
+      "name": "help_action",
+      "description": "Get help",
+      "function": "help_action",
+      "param_schema": {}
+    }
+  }
+}

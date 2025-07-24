@@ -2,10 +2,12 @@
 LLM-based intent splitter for IntentGraph.
 """
 
-from typing import List, Sequence
+from typing import List, Sequence, Callable, Optional, Dict, Any, Union
 from intent_kit.utils.logger import Logger
 from intent_kit.types import IntentChunk
 from intent_kit.utils.text_utils import extract_json_array_from_text
+
+logger = Logger(__name__)
 
 
 def llm_splitter(
@@ -22,8 +24,6 @@ def llm_splitter(
     Returns:
         List of intent chunks as strings
     """
-    logger = Logger(__name__)
-
     if debug:
         logger.info(f"LLM-based splitting input: '{user_input}'")
 
@@ -80,10 +80,10 @@ def llm_splitter(
 
 
 def _create_splitting_prompt(user_input: str) -> str:
-    """Create a prompt for the LLM to split intents."""
+    """Create a prompt for the LLM to split nodes."""
     return f"""Given the user input: "{user_input}"
 
-Please split this into separate intents if it contains multiple distinct requests. If the input contains multiple intents, separate them. If it's a single intent, return it as is.
+Please split this into separate nodes if it contains multiple distinct requests. If the input contains multiple nodes, separate them. If it's a single intent, return it as is.
 
 Return your response as a JSON array of strings, where each string represents a separate intent chunk.
 
@@ -99,7 +99,6 @@ Your response:"""
 
 def _parse_llm_response(response: str) -> List[str]:
     """Parse the LLM response into the expected format."""
-    logger = Logger(__name__)
     try:
         # Use the new utility to extract JSON array
         parsed = extract_json_array_from_text(response)
@@ -117,3 +116,68 @@ def _parse_llm_response(response: str) -> List[str]:
     except Exception as e:
         logger.error(f"Failed to parse LLM response: {e}")
         return []
+
+
+def create_llm_splitter(
+    llm_config: Union[Dict[str, Any], Any],  # Accepts dict or BaseLLMClient
+    splitting_prompt: Optional[str] = None,
+) -> Callable[[str, bool], Sequence[IntentChunk]]:
+    """
+    Create an LLM-powered splitter function.
+
+    Args:
+        llm_config: LLM configuration dictionary or client instance.
+        splitting_prompt: Optional custom prompt for splitting.
+
+    Returns:
+        Splitter function that can be used with SplitterNode.
+    """
+
+    def splitter_func(user_input: str, debug: bool = False) -> Sequence[IntentChunk]:
+        # Always use the module-level logger
+        client = None
+        if isinstance(llm_config, dict):
+            client = llm_config.get("llm_client")
+        else:
+            client = llm_config
+
+        if not client:
+            if debug:
+                logger.warning(
+                    "No LLM client provided to splitter, falling back to rule-based splitting"
+                )
+            from .rule_splitter import rule_splitter
+
+            return rule_splitter(user_input, debug)
+
+        prompt = splitting_prompt or _create_splitting_prompt(user_input)
+        if debug:
+            logger.info(f"LLM splitter prompt: {prompt}")
+
+        try:
+            response = client.generate(prompt)
+            if debug:
+                logger.info(f"LLM splitter response: {response}")
+            results = _parse_llm_response(response)
+            if debug:
+                logger.info(f"LLM splitter parsed results: {results}")
+            if results:
+                return results
+            else:
+                if debug:
+                    logger.warning(
+                        "LLM splitter returned no results, falling back to rule-based splitting"
+                    )
+                from .rule_splitter import rule_splitter
+
+                return rule_splitter(user_input, debug)
+        except Exception as e:
+            if debug:
+                logger.error(
+                    f"LLM splitter failed: {e}, falling back to rule-based splitting"
+                )
+            from .rule_splitter import rule_splitter
+
+            return rule_splitter(user_input, debug)
+
+    return splitter_func

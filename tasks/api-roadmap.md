@@ -17,7 +17,7 @@
 * [x] **IntentGraphBuilder Class** - Fluent interface for building intent graphs
 * [x] **action() Function** - Simplified action creation with automatic argument extraction
 * [x] **llm_classifier() Function** - Simplified LLM classifier creation with auto-wired descriptions
-* [x] **llm_splitter_node() Function** - Simplified splitter node creation
+* [x] **llm_splitter() Function** - Simplified splitter node creation
 * [x] **rule_splitter_node() Function** - Simplified rule-based splitter creation
 * [x] **Auto-Description Wiring** - Automatic generation of node descriptions for classifiers
 * [x] **Integrated LLM Config** - Seamless LLM configuration integration

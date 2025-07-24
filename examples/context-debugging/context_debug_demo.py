@@ -5,8 +5,9 @@ Demonstrates the new context debugging features in under 150 lines.
 """
 
 import os
-from intent_kit import IntentGraphBuilder, action, llm_classifier
-from intent_kit import trace_context_execution
+import json
+from intent_kit import IntentGraphBuilder
+from intent_kit.context.debug import trace_context_execution
 from intent_kit.context import IntentContext
 from dotenv import load_dotenv
 
@@ -40,33 +41,50 @@ def calculate_action(operation: str, a: float, b: float, context: IntentContext)
     return f"{a} {operation} {b} = {result}"
 
 
-def build_graph():
-    """Build a simple intent graph with context debugging."""
-    actions = [
-        action(
-            name="greet",
-            description="Greet user",
-            action_func=greet_action,
-            param_schema={"name": str},
-            llm_config=LLM_CONFIG,
-            context_inputs={"greeting_count"},
-            context_outputs={"greeting_count", "last_greeted"},
-        ),
-        action(
-            name="calculate",
-            description="Calculate",
-            action_func=calculate_action,
-            param_schema={"operation": str, "a": float, "b": float},
-            llm_config=LLM_CONFIG,
-            context_inputs={"calc_history"},
-            context_outputs={"calc_history"},
-        ),
-    ]
+def main_classifier(user_input: str, children, context=None, **kwargs):
+    """Simple classifier that routes to appropriate child nodes."""
+    # Find child nodes by name
+    greet_node = None
+    calculate_node = None
 
-    classifier = llm_classifier(name="root", children=actions, llm_config=LLM_CONFIG)
+    for child in children:
+        if child.name == "greet_action":
+            greet_node = child
+        elif child.name == "calculate_action":
+            calculate_node = child
+
+    # Simple routing logic
+    if "hello" in user_input.lower() or "hi" in user_input.lower():
+        return greet_node
+    elif any(
+        word in user_input.lower()
+        for word in ["calculate", "plus", "multiply", "times"]
+    ):
+        return calculate_node
+    else:
+        # Default to greet if no clear match
+        return greet_node
+
+
+function_registry = {
+    "greet_action": greet_action,
+    "calculate_action": calculate_action,
+    "main_classifier": main_classifier,
+}
+
+
+def create_intent_graph():
+    """Create and configure the intent graph using JSON."""
+    # Load the graph definition from local JSON (same directory as script)
+    json_path = os.path.join(os.path.dirname(__file__), "context_debug_demo.json")
+    with open(json_path, "r") as f:
+        json_graph = json.load(f)
+
     return (
         IntentGraphBuilder()
-        .root(classifier)
+        .with_json(json_graph)
+        .with_functions(function_registry)
+        .with_default_llm_config(LLM_CONFIG)
         ._debug_context(True)
         ._context_trace(True)
         .build()
@@ -79,7 +97,7 @@ def main():
 
     # Create context and graph
     context = IntentContext("demo_session")
-    graph = build_graph()
+    graph = create_intent_graph()
 
     # Test sequence
     test_inputs = [

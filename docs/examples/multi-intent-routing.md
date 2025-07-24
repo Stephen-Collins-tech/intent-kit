@@ -1,11 +1,11 @@
 # Multi-Intent Routing Example
 
-The following shows how intent-kit can handle _multiple_ intents in a single user utterance using a splitter node.
+The following shows how intent-kit can handle _multiple_ nodes in a single user utterance using a splitter node.
 
 ```python
 from intent_kit import IntentGraphBuilder, action, rule_splitter_node
 
-# Actions for individual intents
+# Actions for individual nodes
 
 def greet(name: str) -> str:
     return f"Hello {name}!"

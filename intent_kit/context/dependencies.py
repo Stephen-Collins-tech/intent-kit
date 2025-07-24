@@ -2,7 +2,7 @@
 Context Dependency Declarations
 
 This module provides utilities for declaring and managing context dependencies
-for intents and actions. This enables dependency graph building and validation.
+for nodes and actions. This enables dependency graph building and validation.
 """
 
 from typing import Set, Dict, Any, Optional, Protocol

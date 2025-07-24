@@ -1,8 +1,7 @@
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 from intent_kit.node.classifiers import ClassifierNode
 from intent_kit.node.actions.action import ActionNode as HandlerNode
 from intent_kit.context import IntentContext
-from intent_kit.node.base import TreeNode
 
 
 def extract_weather_args_llm(
@@ -235,9 +234,7 @@ cancel_handler_node = HandlerNode(
 )
 
 
-def intent_classifier_llm(
-    user_input: str, children: List[TreeNode], context: Optional[Dict[str, Any]] = None
-) -> Optional[TreeNode]:
+def intent_classifier_llm(user_input: str, children, context=None, **kwargs):
     """Classify user intent using LLM."""
     from intent_kit.services.llm_factory import LLMFactory
 
@@ -331,5 +328,5 @@ classifier_node_llm = ClassifierNode(
     name="classifier_node_llm",
     classifier=intent_classifier_llm,
     children=[weather_handler_node, cancel_handler_node],
-    description="Route user intents to appropriate handlers using LLM classification",
+    description="Route user nodes to appropriate handlers using LLM classification",
 )

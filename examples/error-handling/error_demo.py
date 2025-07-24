@@ -6,8 +6,9 @@ This example shows how the new ExecutionError dataclass provides
 rich, structured error information instead of simple strings.
 """
 
-from intent_kit import action
-from intent_kit.node.classifiers import keyword_classifier
+import os
+import json
+from intent_kit import IntentGraphBuilder
 
 
 def extract_args(user_input: str, context=None) -> dict:
@@ -37,31 +38,46 @@ def greet_action(name: str, age: int) -> str:
     return f"Hello {name}, you are {age} years old!"
 
 
+def main_classifier(user_input: str, children, context=None, **kwargs):
+    """Simple classifier that routes to the greet action."""
+    # Find the greet action node
+    greet_node = None
+    for child in children:
+        if child.name == "greet_action":
+            greet_node = child
+            break
+
+    # Always route to greet action for this demo
+    return greet_node
+
+
+function_registry = {
+    "greet_action": greet_action,
+    "main_classifier": main_classifier,
+}
+
+
+def create_intent_graph():
+    """Create and configure the intent graph using JSON."""
+    # Load the graph definition from local JSON (same directory as script)
+    json_path = os.path.join(os.path.dirname(__file__), "error_demo.json")
+    with open(json_path, "r") as f:
+        json_graph = json.load(f)
+
+    return (
+        IntentGraphBuilder()
+        .with_json(json_graph)
+        .with_functions(function_registry)
+        .build()
+    )
+
+
 def main():
     """Demonstrate structured error handling."""
     print("=== Intent Kit Structured Error Demo ===\n")
 
-    # Create intent tree root node using the new API
-    greet_action_node = action(
-        name="Greet",
-        description="Greet someone with their name and age",
-        action_func=greet_action,
-        param_schema={"name": str, "age": int},
-        # No llm_config = uses rule-based extraction
-    )
-
-    # Create a classifier node manually since we need a custom classifier
-    from intent_kit.node.classifiers import ClassifierNode
-
-    root_node = ClassifierNode(
-        name="Root",
-        classifier=keyword_classifier,
-        children=[greet_action_node],
-        description="Demo intent tree",
-    )
-
-    # Set parent reference
-    greet_action_node.parent = root_node
+    # Create intent graph using JSON
+    graph = create_intent_graph()
 
     # Test cases that will trigger different types of errors
     test_cases = [
@@ -76,7 +92,7 @@ def main():
         print(f"Input: {user_input}")
         print("-" * 50)
 
-        result = root_node.execute(user_input=user_input)
+        result = graph.route(user_input=user_input)
 
         if result.error:
             print(f"❌ Error: {result.error}")

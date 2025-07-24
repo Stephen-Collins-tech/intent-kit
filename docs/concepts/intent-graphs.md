@@ -21,7 +21,7 @@ User Input → Root Classifier → Intent Classifier → Action → Output
 
 1. **Classifier Nodes** - Route input to appropriate child nodes
 2. **Action Nodes** - Execute actions and produce outputs
-3. **Splitter Nodes** - Handle multiple intents in single input
+3. **Splitter Nodes** - Handle multiple nodes in single input
 
 ## Building Intent Graphs
 
@@ -54,7 +54,7 @@ main_classifier = llm_classifier(
 )
 
 # Build graph with LLM configuration for chunk classification
-graph = IntentGraphBuilder().root(main_classifier).with_llm_config({
+graph = IntentGraphBuilder().root(main_classifier).with_default_llm_config({
     "provider": "openai",
     "model": "gpt-4"
 }).build()
@@ -67,19 +67,27 @@ from intent_kit import IntentGraphBuilder
 
 json_graph = {
     "root": "main_classifier",
-    "intents": {
+    "nodes": {
         "main_classifier": {
+            "id": "main_classifier",  # Explicit ID (optional - defaults to 'name')
             "type": "llm_classifier",
+            "name": "main_classifier",
+            "description": "Main intent classifier",
             "children": ["greet_action", "weather_action"],
             "llm_config": {"provider": "openai", "model": "gpt-4"}
         },
         "greet_action": {
+            "id": "greet_action",  # Explicit ID
             "type": "action",
+            "name": "greet_action",
+            "description": "Greet the user",
             "function": "greet_function",
             "param_schema": {"name": "str"}
         },
         "weather_action": {
-            "type": "action",
+            "type": "action",  # No explicit ID - defaults to 'name'
+            "name": "weather_action",
+            "description": "Get weather information",
             "function": "weather_function",
             "param_schema": {"city": "str"}
         }
@@ -94,6 +102,12 @@ function_registry = {
 graph = IntentGraphBuilder().with_json(json_graph).with_functions(function_registry).build()
 ```
 
+**Node ID Behavior:**
+- Each node can have an explicit `"id"` field
+- If `"id"` is not provided, it defaults to the `"name"` field
+- At least one of `"id"` or `"name"` must be present
+- The `"id"` is used for internal node references and child relationships
+
 ## Execution Flow
 
 1. **Input Processing** - User input is received
@@ -105,7 +119,7 @@ graph = IntentGraphBuilder().with_json(json_graph).with_functions(function_regis
 
 ## Multi-Intent Routing
 
-Intent graphs can handle multiple intents in a single user input using splitter nodes:
+Intent graphs can handle multiple nodes in a single user input using splitter nodes:
 
 ```python
 from intent_kit import rule_splitter_node
@@ -172,23 +186,7 @@ llm_config = {
 graph = (
     IntentGraphBuilder()
     .root(classifier)
-    .with_llm_config(llm_config)
+    .with_default_llm_config(llm_config)
     .build()
 )
 ```
-
-The `llm_config` is used by the chunk classifier to determine how to process user input:
-- **Atomic chunks** - Single intents that can be handled directly
-- **Composite chunks** - Multiple intents that need to be split
-- **Ambiguous chunks** - Unclear intents that need clarification
-- **Invalid chunks** - Input that should be rejected
-
-## Best Practices
-
-1. **Clear Node Names** - Use descriptive names for all nodes
-2. **Proper Descriptions** - Provide clear descriptions for classifiers
-3. **Parameter Validation** - Define comprehensive parameter schemas
-4. **Error Handling** - Include remediation strategies
-5. **Testing** - Test with various input scenarios
-6. **Documentation** - Document complex graph structures
-7. **LLM Configuration** - Set appropriate LLM config for chunk classification

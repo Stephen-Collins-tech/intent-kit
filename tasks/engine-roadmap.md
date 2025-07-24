@@ -4,7 +4,7 @@
 
 ### 1. Intent Tree & Action Engine
 
-* [x] API for declaring intent trees, named intents, parameters, action registration.
+* [x] API for declaring intent trees, named nodes, parameters, action registration.
 * [x] Parameter typing/schema for each intent.
 * [x] Tree-based intent architecture with classifier and intent nodes.
 * [x] Flexible node system mixing classifier nodes and intent nodes.

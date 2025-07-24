@@ -42,7 +42,7 @@ class IntentGraph:
     """
     The root-level dispatcher for user input.
 
-    The graph contains root nodes that can handle different types of intents.
+    The graph contains root nodes that can handle different types of nodes.
     Input splitting happens in isolation and routes to appropriate root nodes.
     Trees emerge naturally from the parent-child relationships between nodes.
     """
@@ -60,8 +60,8 @@ class IntentGraph:
         Initialize the IntentGraph with root nodes.
 
         Args:
-            root_nodes: List of root nodes that can handle intents
-            splitter: Function to use for splitting intents (default: pass-through splitter)
+            root_nodes: List of root nodes that can handle nodes
+            splitter: Function to use for splitting nodes (default: pass-through splitter)
             visualize: If True, render the final output to an interactive graph HTML file
             llm_config: LLM configuration for chunk classification (optional)
             debug_context: If True, enable context debugging and state tracking
@@ -350,7 +350,196 @@ class IntentGraph:
                 ),
             )
 
-        # Split the input into chunks
+        # If we have root nodes, execute them directly instead of using graph-level splitter
+        if self.root_nodes:
+            children_results = []
+            all_errors = []
+            all_outputs = []
+            all_params = []
+
+            # Execute each root node with the input
+            for root_node in self.root_nodes:
+                try:
+                    # Context debugging: capture state before execution
+                    context_state_before = None
+                    if debug_context_enabled and context:
+                        context_state_before = self._capture_context_state(
+                            context, f"before_{root_node.name}"
+                        )
+
+                    result = root_node.execute(user_input, context=context)
+
+                    if result is None:
+                        error_result = ExecutionResult(
+                            success=False,
+                            params=None,
+                            children_results=[],
+                            node_name=root_node.name,
+                            node_path=[],
+                            node_type=root_node.node_type,
+                            input=user_input,
+                            output=None,
+                            error=ExecutionError(
+                                error_type="NodeExecutionReturnedNone",
+                                message=f"Node '{root_node.name}' execute() returned None instead of ExecutionResult.",
+                                node_name=root_node.name,
+                                node_path=[],
+                            ),
+                        )
+                        children_results.append(error_result)
+                        all_errors.append(
+                            f"Node '{root_node.name}' execute() returned None."
+                        )
+                        if debug:
+                            self.logger.error(
+                                f"Node '{root_node.name}' execute() returned None instead of ExecutionResult."
+                            )
+                        continue
+
+                    # Context debugging: capture state after execution
+                    if debug_context_enabled and context:
+                        context_state_after = self._capture_context_state(
+                            context, f"after_{root_node.name}"
+                        )
+                        self._log_context_changes(
+                            context_state_before,
+                            context_state_after,
+                            root_node.name,
+                            debug,
+                            context_trace_enabled,
+                        )
+
+                    children_results.append(result)
+                    if result.success:
+                        all_outputs.append(result.output)
+                        if result.params:
+                            all_params.append(result.params)
+
+                except Exception as e:
+                    error_message = str(e)
+                    error_type = type(e).__name__
+                    error_result = ExecutionResult(
+                        success=False,
+                        params=None,
+                        children_results=[],
+                        node_name="unknown",
+                        node_path=[],
+                        node_type=NodeType.UNKNOWN,
+                        input=user_input,
+                        output=None,
+                        error=ExecutionError(
+                            error_type=error_type,
+                            message=error_message,
+                            node_name="unknown",
+                            node_path=[],
+                        ),
+                    )
+                    children_results.append(error_result)
+                    all_errors.append(
+                        f"Root node '{root_node.name}' failed: {error_message}"
+                    )
+                    if debug:
+                        self.logger.error(f"Root node '{root_node.name}' failed: {e}")
+
+            # Determine overall success and create aggregated result
+            overall_success = len(all_errors) == 0 and len(children_results) > 0
+
+            # If there's only one successful result and no errors, return it directly
+            if (
+                len(children_results) == 1
+                and len(all_errors) == 0
+                and children_results[0].success
+            ):
+                result = children_results[0]
+                # Add visualization if requested
+                if self.visualize:
+                    try:
+                        html_path = self._render_execution_graph(
+                            children_results, user_input
+                        )
+                        if html_path:
+                            if result.output is None:
+                                result.output = {"visualization_html": html_path}
+                            elif isinstance(result.output, dict):
+                                result.output["visualization_html"] = html_path
+                            else:
+                                result.output = {
+                                    "output": result.output,
+                                    "visualization_html": html_path,
+                                }
+                    except Exception as e:
+                        self.logger.error(f"Visualization failed: {e}")
+                return result
+
+            # Aggregate outputs and params
+            aggregated_output = (
+                all_outputs
+                if len(all_outputs) > 1
+                else (all_outputs[0] if all_outputs else None)
+            )
+            aggregated_params = (
+                all_params
+                if len(all_params) > 1
+                else (all_params[0] if all_params else None)
+            )
+
+            # Ensure params is a dict or None
+            if aggregated_params is not None and not isinstance(
+                aggregated_params, dict
+            ):
+                aggregated_params = {"params": aggregated_params}
+
+            # Create aggregated error if there are any errors
+            aggregated_error = None
+            if all_errors:
+                aggregated_error = ExecutionError(
+                    error_type="AggregatedErrors",
+                    message="; ".join(all_errors),
+                    node_name="intent_graph",
+                    node_path=[],
+                )
+
+            # Create visualization if requested
+            visualization_html = None
+            if self.visualize:
+                try:
+                    html_path = self._render_execution_graph(
+                        children_results, user_input
+                    )
+                    visualization_html = html_path
+                except Exception as e:
+                    self.logger.error(f"Visualization failed: {e}")
+                    visualization_html = None
+
+            # Add visualization to output if available
+            if visualization_html:
+                if aggregated_output is None:
+                    aggregated_output = {"visualization_html": visualization_html}
+                elif isinstance(aggregated_output, dict):
+                    aggregated_output["visualization_html"] = visualization_html
+                else:
+                    aggregated_output = {
+                        "output": aggregated_output,
+                        "visualization_html": visualization_html,
+                    }
+
+            if debug:
+                self.logger.info(f"Final aggregated result: {overall_success}")
+
+            return ExecutionResult(
+                success=overall_success,
+                params=aggregated_params,
+                children_results=children_results,
+                node_name="intent_graph",
+                node_path=[],
+                node_type=NodeType.GRAPH,
+                input=user_input,
+                output=aggregated_output,
+                error=aggregated_error,
+                visualization_html=visualization_html,
+            )
+
+        # Split the input into chunks (fallback for when no root nodes are used)
         try:
             intent_chunks = self._call_splitter(
                 user_input=user_input, debug=debug, **splitter_kwargs
@@ -399,352 +588,17 @@ class IntentGraph:
                 ),
             )
 
-        # Route each chunk to an appropriate root node
-        children_results = []
-        all_errors = []
-        all_outputs = []
-        all_params = []
-
-        # Use a queue to process chunks, with recursion limit
-        chunks_to_process = list(intent_chunks)  # Copy the list
-        processed_chunks: set = set()  # Track processed chunks to avoid infinite loops
-        max_recursion_depth = 10  # Prevent infinite recursion
-
-        while chunks_to_process and len(processed_chunks) < max_recursion_depth:
-            chunk = chunks_to_process.pop(0)
-
-            # Create a unique identifier for this chunk to avoid infinite loops
-            # Use a robust hashing strategy that works for both hashable (e.g. str)
-            # and unhashable (e.g. dict) chunk objects.
-            # Converting to `repr` preserves enough uniqueness while ensuring the
-            # object is hashable.
-            chunk_id = hash(repr(chunk))
-            if chunk_id in processed_chunks:
-                continue  # Skip if we've already processed this exact chunk
-            processed_chunks.add(chunk_id)
-
-            # Handle both string and dict chunks
-            if isinstance(chunk, str):
-                chunk_text = chunk
-            elif isinstance(chunk, dict) and "text" in chunk:
-                chunk_text = chunk["text"]
-            else:
-                chunk_text = str(chunk)
-
-            if debug:
-                self.logger.info(f"Classifying chunk: '{chunk_text}'")
-            classification = classify_intent_chunk(chunk, self.llm_config)
-            action = classification.get("action")
-
-            if action == IntentAction.HANDLE:
-                # Route to root node as before
-                root_node = self._route_chunk_to_root_node(chunk_text, debug)
-                if root_node is None:
-                    error_result = ExecutionResult(
-                        success=False,
-                        params=None,
-                        children_results=[],
-                        node_name="no_root_node",
-                        node_path=[],
-                        node_type=NodeType.UNKNOWN,
-                        input=chunk_text,
-                        output=None,
-                        error=ExecutionError(
-                            error_type="NoRootNodeFound",
-                            message=f"No root node found for chunk: '{chunk_text}'",
-                            node_name="no_root_node",
-                            node_path=[],
-                        ),
-                    )
-                    children_results.append(error_result)
-                    all_errors.append(f"No root node found for chunk: '{chunk_text}'")
-                    if debug:
-                        self.logger.error(
-                            f"No root node found for chunk: '{chunk_text}'"
-                        )
-                    continue
-                try:
-                    # Context debugging: capture state before execution
-                    context_state_before = None
-                    if debug_context_enabled and context:
-                        context_state_before = self._capture_context_state(
-                            context, f"before_{root_node.name}"
-                        )
-
-                    result = root_node.execute(chunk_text, context=context)
-
-                    if result is None:
-                        error_result = ExecutionResult(
-                            success=False,
-                            params=None,
-                            children_results=[],
-                            node_name=root_node.name,
-                            node_path=[],
-                            node_type=root_node.node_type,
-                            input=chunk_text,
-                            output=None,
-                            error=ExecutionError(
-                                error_type="NodeExecutionReturnedNone",
-                                message=f"Node '{root_node.name}' execute() returned None instead of ExecutionResult.",
-                                node_name=root_node.name,
-                                node_path=[],
-                            ),
-                        )
-                        children_results.append(error_result)
-                        all_errors.append(
-                            f"Node '{root_node.name}' execute() returned None."
-                        )
-                        if debug:
-                            self.logger.error(
-                                f"Node '{root_node.name}' execute() returned None instead of ExecutionResult."
-                            )
-                        continue
-
-                    # Context debugging: capture state after execution
-                    if debug_context_enabled and context:
-                        context_state_after = self._capture_context_state(
-                            context, f"after_{root_node.name}"
-                        )
-                        self._log_context_changes(
-                            context_state_before,
-                            context_state_after,
-                            root_node.name,
-                            debug,
-                            context_trace_enabled,
-                        )
-
-                    if debug:
-                        self.logger.info(
-                            f"Root node '{root_node.name}' result: {result}"
-                        )
-                    children_results.append(result)
-                    if result.success and result.output is not None:
-                        all_outputs.append(result.output)
-                    if result.params is not None:
-                        all_params.append(result.params)
-                    if result.error:
-                        all_errors.append(
-                            f"Root node '{root_node.name}': {result.error.message}"
-                        )
-                except Exception as e:
-                    error_message = str(e)
-                    error_type = type(e).__name__
-                    error_result = ExecutionResult(
-                        success=False,
-                        params=None,
-                        children_results=[],
-                        node_name="unknown",
-                        node_path=[],
-                        node_type=NodeType.UNKNOWN,
-                        input=chunk_text,
-                        output=None,
-                        error=ExecutionError(
-                            error_type=error_type,
-                            message=error_message,
-                            node_name="unknown",
-                            node_path=[],
-                        ),
-                    )
-                    children_results.append(error_result)
-                    all_errors.append(
-                        f"Root node '{root_node.name}' failed: {error_message}"
-                    )
-                    if debug:
-                        self.logger.error(f"Root node '{root_node.name}' failed: {e}")
-            elif action == IntentAction.SPLIT:
-                # Recursively split and route
-                if debug:
-                    self.logger.info(f"Recursively splitting chunk: '{chunk_text}'")
-                sub_chunks = self._call_splitter(chunk_text, debug, **splitter_kwargs)
-                # Add sub_chunks to the front of the queue for processing
-                chunks_to_process = sub_chunks + chunks_to_process
-            elif action == IntentAction.CLARIFY:
-                # Stub: Add a result indicating clarification is needed
-                error_result = ExecutionResult(
-                    success=False,
-                    params=None,
-                    children_results=[],
-                    node_name="clarify",
-                    node_path=[],
-                    node_type=NodeType.CLARIFY,
-                    input=chunk_text,
-                    output=None,
-                    error=ExecutionError(
-                        error_type="ClarificationNeeded",
-                        message=f"Clarification needed for chunk: '{chunk_text}'",
-                        node_name="clarify",
-                        node_path=[],
-                    ),
-                )
-                children_results.append(error_result)
-                all_errors.append(f"Clarification needed for chunk: '{chunk_text}'")
-                if debug:
-                    self.logger.warning(
-                        f"Clarification needed for chunk: '{chunk_text}'"
-                    )
-            elif action == IntentAction.REJECT:
-                # Stub: Add a result indicating rejection
-                error_result = ExecutionResult(
-                    success=False,
-                    params=None,
-                    children_results=[],
-                    node_name="reject",
-                    node_path=[],
-                    node_type=NodeType.UNKNOWN,
-                    input=chunk_text,
-                    output=None,
-                    error=ExecutionError(
-                        error_type="RejectedChunk",
-                        message=f"Rejected chunk: '{chunk_text}'",
-                        node_name="reject",
-                        node_path=[],
-                    ),
-                )
-                children_results.append(error_result)
-                all_errors.append(f"Rejected chunk: '{chunk_text}'")
-                if debug:
-                    self.logger.warning(f"Rejected chunk: '{chunk_text}'")
-            else:
-                # Unknown action
-                error_result = ExecutionResult(
-                    success=False,
-                    params=None,
-                    children_results=[],
-                    node_name="unknown_action",
-                    node_path=[],
-                    node_type=NodeType.UNKNOWN,
-                    input=chunk_text,
-                    output=None,
-                    error=ExecutionError(
-                        error_type="UnknownAction",
-                        message=f"Unknown action for chunk: '{chunk_text}'",
-                        node_name="unknown_action",
-                        node_path=[],
-                    ),
-                )
-                children_results.append(error_result)
-                all_errors.append(f"Unknown action for chunk: '{chunk_text}'")
-                if debug:
-                    self.logger.error(f"Unknown action for chunk: '{chunk_text}'")
-
-        # Check if we hit the recursion limit
-        if len(processed_chunks) >= max_recursion_depth:
-            error_result = ExecutionResult(
-                success=False,
-                params=None,
-                children_results=[],
-                node_name="recursion_limit",
-                node_path=[],
-                node_type=NodeType.UNKNOWN,
-                input=user_input,
-                output=None,
-                error=ExecutionError(
-                    error_type="RecursionLimitExceeded",
-                    message=f"Recursion limit exceeded ({max_recursion_depth} chunks processed)",
-                    node_name="recursion_limit",
-                    node_path=[],
-                ),
-            )
-            children_results.append(error_result)
-            all_errors.append(
-                f"Recursion limit exceeded ({max_recursion_depth} chunks processed)"
-            )
-            if debug:
-                self.logger.error(
-                    f"Recursion limit exceeded ({max_recursion_depth} chunks processed)"
-                )
-
-        # Determine overall success and create aggregated result
-        overall_success = len(all_errors) == 0 and len(children_results) > 0
-
-        # If there's only one successful result and no errors, return it directly
-        if (
-            len(children_results) == 1
-            and len(all_errors) == 0
-            and children_results[0].success
-        ):
-            result = children_results[0]
-            # Add visualization if requested
-            if self.visualize:
-                try:
-                    html_path = self._render_execution_graph(
-                        children_results, user_input
-                    )
-                    if html_path:
-                        if result.output is None:
-                            result.output = {"visualization_html": html_path}
-                        elif isinstance(result.output, dict):
-                            result.output["visualization_html"] = html_path
-                        else:
-                            result.output = {
-                                "output": result.output,
-                                "visualization_html": html_path,
-                            }
-                except Exception as e:
-                    self.logger.error(f"Visualization failed: {e}")
-            return result
-
-        # Aggregate outputs and params
-        aggregated_output = (
-            all_outputs
-            if len(all_outputs) > 1
-            else (all_outputs[0] if all_outputs else None)
-        )
-        aggregated_params = (
-            all_params
-            if len(all_params) > 1
-            else (all_params[0] if all_params else None)
-        )
-
-        # Ensure params is a dict or None
-        if aggregated_params is not None and not isinstance(aggregated_params, dict):
-            aggregated_params = {"params": aggregated_params}
-
-        # Create aggregated error if there are any errors
-        aggregated_error = None
-        if all_errors:
-            aggregated_error = ExecutionError(
-                error_type="AggregatedErrors",
-                message="; ".join(all_errors),
-                node_name="intent_graph",
-                node_path=[],
-            )
-
-        # Create visualization if requested
-        visualization_html = None
-        if self.visualize:
-            try:
-                html_path = self._render_execution_graph(children_results, user_input)
-                visualization_html = html_path
-            except Exception as e:
-                self.logger.error(f"Visualization failed: {e}")
-                visualization_html = None
-
-        # Add visualization to output if available
-        if visualization_html:
-            if aggregated_output is None:
-                aggregated_output = {"visualization_html": visualization_html}
-            elif isinstance(aggregated_output, dict):
-                aggregated_output["visualization_html"] = visualization_html
-            else:
-                aggregated_output = {
-                    "output": aggregated_output,
-                    "visualization_html": visualization_html,
-                }
-
-        if debug:
-            self.logger.info(f"Final aggregated result: {overall_success}")
-
+        # For fallback mode, just return the chunks as a simple result
         return ExecutionResult(
-            success=overall_success,
-            params=aggregated_params,
-            children_results=children_results,
+            success=True,
+            params={"chunks": intent_chunks},
+            children_results=[],
             node_name="intent_graph",
             node_path=[],
             node_type=NodeType.GRAPH,
             input=user_input,
-            output=aggregated_output,
-            error=aggregated_error,
+            output=f"Split into {len(intent_chunks)} chunks: {intent_chunks}",
+            error=None,
         )
 
     def _render_execution_graph(

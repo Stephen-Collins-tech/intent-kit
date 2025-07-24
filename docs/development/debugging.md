@@ -112,7 +112,7 @@ classifier = llm_classifier(
 
 result = classifier.classify("Hello Alice")
 print(f"Classification confidence: {result.confidence}")
-print(f"Alternative intents: {result.alternatives}")
+print(f"Alternative nodes: {result.alternatives}")
 ```
 
 ## Visualization Debugging
@@ -223,7 +223,7 @@ class DebugContext(IntentContext):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.debug_log = []
-    
+
     def log(self, message, level="INFO"):
         self.debug_log.append({"message": message, "level": level, "timestamp": time.time()})
 

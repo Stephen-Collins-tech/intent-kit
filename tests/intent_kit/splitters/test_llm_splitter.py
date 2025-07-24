@@ -99,7 +99,7 @@ class TestLLMSplitterFunction(unittest.TestCase):
         prompt = _create_splitting_prompt("test input")
         self.assertIn("test input", prompt)
         self.assertIn("JSON array", prompt)
-        self.assertIn("separate intents", prompt)
+        self.assertIn("separate nodes", prompt)
 
     def test_debug_logging(self):
         """Test debug logging functionality."""

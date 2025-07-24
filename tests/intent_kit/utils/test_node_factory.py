@@ -13,7 +13,7 @@ from intent_kit.utils.node_factory import (
     create_default_classifier,
     action,
     llm_classifier,
-    llm_splitter_node,
+    llm_splitter,
     rule_splitter_node,
     create_intent_graph,
 )
@@ -496,14 +496,15 @@ class TestLLMSplitterNodeFactory:
     def test_llm_splitter_node_basic(self, mock_create_splitter_node):
         """Test basic LLM splitter node factory."""
         child1 = Mock(spec=TreeNode)
+        child1.name = "child1"
         child2 = Mock(spec=TreeNode)
+        child2.name = "child2"
         children = cast(List[TreeNode], [child1, child2])
         llm_config = {"model": "gpt-3.5-turbo", "llm_client": Mock()}
         mock_node = Mock(spec=SplitterNode)
         mock_create_splitter_node.return_value = mock_node
 
-        # result = llm_splitter_node(
-        llm_splitter_node(
+        result = llm_splitter(
             name="split",
             children=children,
             llm_config=llm_config,
@@ -515,6 +516,7 @@ class TestLLMSplitterNodeFactory:
         assert call_args[1]["children"] == children
         # The llm_client should be created from the llm_config
         assert call_args[1]["llm_client"] is not None
+        assert result == mock_node
 
 
 class TestRuleSplitterNodeFactory:

@@ -1,0 +1,50 @@
+{
+  "root": "main_classifier",
+  "nodes": {
+    "main_classifier": {
+      "id": "main_classifier",
+      "type": "classifier",
+      "name": "main_classifier",
+      "description": "Simple classifier",
+      "classifier_function": "main_classifier",
+      "children": [
+        "unreliable_calc",
+        "reliable_calc",
+        "simple_greet"
+      ]
+    },
+    "unreliable_calc": {
+      "id": "unreliable_calc",
+      "type": "action",
+      "name": "unreliable_calc",
+      "description": "Unreliable calculator with retry strategy",
+      "function": "unreliable_calculator",
+      "param_schema": {"operation": "str", "a": "float", "b": "float"},
+      "context_inputs": ["calc_history"],
+      "context_outputs": ["calc_history"],
+      "remediation_strategies": ["retry_on_fail"]
+    },
+    "reliable_calc": {
+      "id": "reliable_calc",
+      "type": "action",
+      "name": "reliable_calc",
+      "description": "Reliable calculator as fallback",
+      "function": "reliable_calculator",
+      "param_schema": {"operation": "str", "a": "float", "b": "float"},
+      "context_inputs": ["calc_history"],
+      "context_outputs": ["calc_history"],
+      "remediation_strategies": ["fallback_to_another_node"]
+    },
+    "simple_greet": {
+      "id": "simple_greet",
+      "type": "action",
+      "name": "simple_greet",
+      "description": "Simple greeter with custom remediation",
+      "function": "simple_greeter",
+      "param_schema": {"name": "str"},
+      "context_inputs": ["greeting_count"],
+      "context_outputs": ["greeting_count"],
+      "remediation_strategies": ["log_and_continue"]
+    }
+  }
+}

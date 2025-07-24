@@ -5,7 +5,7 @@ from intent_kit.node.splitters import SplitterNode
 def split_text_llm(
     user_input: str, debug: bool = False, context: Optional[Dict[str, Any]] = None
 ) -> List[str]:
-    """Split user input into multiple intents using LLM."""
+    """Split user input into multiple nodes using LLM."""
     from intent_kit.services.llm_factory import LLMFactory
 
     # Check for mock mode
@@ -76,7 +76,7 @@ def create_splitter_node_llm():
         name="splitter_node_llm",
         splitter_function=split_text_llm,
         children=[],
-        description="Split complex user inputs into multiple intents using LLM",
+        description="Split complex user inputs into multiple nodes using LLM",
     )
 
 

@@ -91,7 +91,7 @@ content_classifier = chunk_classifier(
 
 ### Splitter Nodes
 
-Splitter nodes handle multiple intents in a single input by splitting the input into parts.
+Splitter nodes handle multiple nodes in a single input by splitting the input into parts.
 
 #### Rule Splitter
 
@@ -116,9 +116,9 @@ multi_splitter = rule_splitter_node(
 Uses LLM for intelligent splitting:
 
 ```python
-from intent_kit import llm_splitter_node
+from intent_kit import llm_splitter
 
-smart_splitter = llm_splitter_node(
+smart_splitter = llm_splitter(
     name="smart_split",
     children=[greet_action, weather_action],
     llm_config={"provider": "openai", "model": "gpt-4"}

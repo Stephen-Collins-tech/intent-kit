@@ -12,11 +12,12 @@ Usage:
 """
 
 import os
+import json
 import random
 from dotenv import load_dotenv
+from intent_kit import IntentGraphBuilder
 from intent_kit.context import IntentContext
 from intent_kit.node.types import ExecutionResult
-from intent_kit import action
 from intent_kit.node.actions import (
     register_remediation_strategy,
 )
@@ -98,12 +99,12 @@ def simple_greeter(name: str, context: IntentContext) -> str:
 
 def create_custom_remediation_strategy():
     """Create a custom remediation strategy that logs and continues."""
-    from intent_kit.node.actions import RemediationStrategy
+    from intent_kit.node.actions.remediation import RemediationStrategy
 
     class LogAndContinueStrategy(RemediationStrategy):
         def __init__(self):
             super().__init__(
-                "log_and_continue", "Log error and return default response"
+                "log_and_continue", "Logs error and returns default response"
             )
 
         def execute(
@@ -114,86 +115,78 @@ def create_custom_remediation_strategy():
             original_error: Optional[ExecutionError] = None,
             **kwargs,
         ) -> Optional[ExecutionResult]:
-            self.logger.warning(
-                f"LogAndContinue: {node_name} failed, continuing with default"
+            print(f"🔧 Custom remediation: Logging error for {node_name}")
+            print(
+                f"   Original error: {original_error.message if original_error else 'None'}"
             )
+            print(f"   User input: {user_input}")
 
+            # Return a default response
             return ExecutionResult(
                 success=True,
                 node_name=node_name,
                 node_path=[node_name],
                 node_type=NodeType.ACTION,
                 input=user_input,
-                output="Default response due to error",
+                output="Hello! (default response from custom remediation)",
                 error=None,
-                params={},
+                params={"remediated": True},
                 children_results=[],
             )
 
     return LogAndContinueStrategy()
 
 
-def create_intent_graph():
-    """Create and configure the intent graph with remediation strategies."""
+def main_classifier(user_input: str, children, context=None, **kwargs):
+    """Simple classifier that routes to appropriate child nodes."""
+    # Find child nodes by name
+    unreliable_calc_node = None
+    simple_greet_node = None
 
-    # Create custom remediation strategy
+    for child in children:
+        if child.name == "unreliable_calc":
+            unreliable_calc_node = child
+        elif child.name == "simple_greet":
+            simple_greet_node = child
+
+    # Simple routing logic
+    if "calculate" in user_input.lower() or any(
+        word in user_input.lower() for word in ["plus", "minus", "times", "divide"]
+    ):
+        return unreliable_calc_node
+    elif "greet" in user_input.lower() or "hello" in user_input.lower():
+        return simple_greet_node
+    else:
+        # Default to unreliable calc if no clear match
+        return unreliable_calc_node
+
+
+function_registry = {
+    "unreliable_calculator": unreliable_calculator,
+    "reliable_calculator": reliable_calculator,
+    "simple_greeter": simple_greeter,
+    "main_classifier": main_classifier,
+}
+
+
+def create_intent_graph():
+    """Create and configure the intent graph using JSON."""
+    # Register custom remediation strategy
     custom_strategy = create_custom_remediation_strategy()
     register_remediation_strategy("log_and_continue", custom_strategy)
 
-    # Create actions with different remediation strategies
-    actions = [
-        # Action with retry strategy
-        action(
-            name="unreliable_calc",
-            description="Unreliable calculator with retry strategy",
-            action_func=unreliable_calculator,
-            param_schema={"operation": str, "a": float, "b": float},
-            llm_config=LLM_CONFIG,
-            context_inputs={"calc_history"},
-            context_outputs={"calc_history"},
-            # Built-in retry strategy
-            remediation_strategies=["retry_on_fail"],
-        ),
-        # Action with fallback strategy
-        action(
-            name="reliable_calc",
-            description="Reliable calculator as fallback",
-            action_func=reliable_calculator,
-            param_schema={"operation": str, "a": float, "b": float},
-            llm_config=LLM_CONFIG,
-            context_inputs={"calc_history"},
-            context_outputs={"calc_history"},
-            # Built-in fallback strategy
-            remediation_strategies=["fallback_to_another_node"],
-        ),
-        # Action with custom remediation strategy
-        action(
-            name="simple_greet",
-            description="Simple greeter with custom remediation",
-            action_func=simple_greeter,
-            param_schema={"name": str},
-            llm_config=LLM_CONFIG,
-            context_inputs={"greeting_count"},
-            context_outputs={"greeting_count"},
-            remediation_strategies=["log_and_continue"],  # Custom strategy
-        ),
-    ]
+    # Load the graph definition from local JSON (same directory as script)
+    json_path = os.path.join(os.path.dirname(__file__), "remediation_demo.json")
+    with open(json_path, "r") as f:
+        json_graph = json.load(f)
 
-    # Create classifier
-    from intent_kit.node.classifiers import ClassifierNode
-
-    def simple_classifier(user_input: str, children, context=None):
-        """Simple classifier that routes to the first child."""
-        return children[0]
-
-    classifier = ClassifierNode(
-        name="root",
-        description="Simple classifier",
-        classifier=simple_classifier,
-        children=actions,
+    return (
+        IntentGraphBuilder()
+        .with_json(json_graph)
+        .with_functions(function_registry)
+        .with_default_llm_config(LLM_CONFIG)
+        .build()
     )
-
-    return classifier
 
 
 def main():
@@ -208,7 +201,7 @@ def main():
     )
 
     # Create the intent graph
-    root_node = create_intent_graph()
+    graph = create_intent_graph()
 
     # Test cases
     test_cases = [
@@ -222,7 +215,7 @@ def main():
         print(f"Input: {user_input}")
 
         try:
-            result: ExecutionResult = root_node.execute(
+            result: ExecutionResult = graph.route(
                 user_input=user_input, context=context
             )
             print(f"Success: {result.success}")

@@ -89,6 +89,9 @@ eval-node = "intent_kit.evals.run_node_eval:main"
 lint = "scripts.lint:main"
 run-evals = "intent_kit.evals.run_all_evals:run_all_evaluations"
 typecheck = "scripts.typecheck:main"
+examples = "scripts.examples:run_all"
+example = "scripts.examples:run_single"
+list-examples = "scripts.examples:list_examples"
 
 [tool.setuptools.packages.find]
 where = ["."]

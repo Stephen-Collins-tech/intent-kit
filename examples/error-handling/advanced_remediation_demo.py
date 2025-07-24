@@ -14,15 +14,17 @@ Usage:
 """
 
 import os
+import json
 import random
 from dotenv import load_dotenv
+from intent_kit import IntentGraphBuilder
 from intent_kit.context import IntentContext
 from intent_kit.node.types import ExecutionResult
-from intent_kit import action
 from intent_kit.node.actions import (
     create_self_reflect_strategy,
     create_consensus_vote_strategy,
     create_alternate_prompt_strategy,
+    register_remediation_strategy,
 )
 
 # --- Setup LLM configs ---
@@ -67,36 +69,66 @@ def analyze_sentiment(review_text: str, context: IntentContext) -> str:
     return random.choice(["positive", "neutral", "negative"])
 
 
-# --- Remediation Actions ---
-actions = [
-    action(
-        name="self_reflect_sentiment",
-        description="Uses self-reflection if it fails on ambiguous reviews.",
-        action_func=analyze_sentiment,
-        param_schema={"review_text": str},
-        remediation_strategies=[
-            create_self_reflect_strategy(LLM_CONFIG_1, max_reflections=1)
-        ],
-    ),
-    action(
-        name="consensus_vote_sentiment",
-        description="Uses consensus voting between two LLMs on conflicting reviews.",
-        action_func=analyze_sentiment,
-        param_schema={"review_text": str},
-        remediation_strategies=[
-            create_consensus_vote_strategy(
-                [LLM_CONFIG_1, LLM_CONFIG_2], vote_threshold=0.5
-            )
-        ],
-    ),
-    action(
-        name="alternate_prompt_sentiment",
-        description="Retries with alternate prompt if ambiguous input causes a failure.",
-        action_func=analyze_sentiment,
-        param_schema={"review_text": str},
-        remediation_strategies=[create_alternate_prompt_strategy(LLM_CONFIG_1)],
-    ),
-]
+def main_classifier(user_input: str, children, context=None, **kwargs):
+    """Simple classifier that routes to appropriate child nodes."""
+    # Find child nodes by name
+    self_reflect_node = None
+    consensus_vote_node = None
+    alternate_prompt_node = None
+
+    for child in children:
+        if child.name == "self_reflect_sentiment":
+            self_reflect_node = child
+        elif child.name == "consensus_vote_sentiment":
+            consensus_vote_node = child
+        elif child.name == "alternate_prompt_sentiment":
+            alternate_prompt_node = child
+
+    # Simple routing logic - for demo purposes, route based on input length
+    if len(user_input) < 50:
+        return self_reflect_node
+    elif len(user_input) < 100:
+        return consensus_vote_node
+    else:
+        return alternate_prompt_node
+
+
+function_registry = {
+    "analyze_sentiment": analyze_sentiment,
+    "main_classifier": main_classifier,
+}
+
+
+def create_intent_graph():
+    """Create and configure the intent graph using JSON."""
+    # Register custom remediation strategies
+    register_remediation_strategy(
+        "self_reflect_strategy",
+        create_self_reflect_strategy(LLM_CONFIG_1, max_reflections=1),
+    )
+    register_remediation_strategy(
+        "consensus_vote_strategy",
+        create_consensus_vote_strategy(
+            [LLM_CONFIG_1, LLM_CONFIG_2], vote_threshold=0.5
+        ),
+    )
+    register_remediation_strategy(
+        "alternate_prompt_strategy", create_alternate_prompt_strategy(LLM_CONFIG_1)
+    )
+
+    # Load the graph definition from local JSON (same directory as script)
+    json_path = os.path.join(
+        os.path.dirname(__file__), "advanced_remediation_demo.json"
+    )
+    with open(json_path, "r") as f:
+        json_graph = json.load(f)
+
+    return (
+        IntentGraphBuilder()
+        .with_json(json_graph)
+        .with_functions(function_registry)
+        .build()
+    )
 
 
 def main():
@@ -107,6 +139,9 @@ def main():
         "This demo shows how self-reflection, consensus voting, and alternate prompts can recover\n"
         "from ambiguous or conflicting results in real-world sentiment analysis tasks.\n"
     )
+
+    # Create the graph
+    graph = create_intent_graph()
 
     # Each case is designed to *require* remediation.
     test_cases = [
@@ -125,13 +160,14 @@ def main():
     ]
 
     for i, (review_text, case_desc) in enumerate(test_cases):
-        a = actions[i]
-        print(f"\n--- Action: {a.name} ---")
+        print(f"\n--- Test Case {i+1} ---")
         print(f"Review: {review_text}")
         print(f"Case: {case_desc}")
 
         try:
-            result: ExecutionResult = a.execute(user_input=review_text, context=context)
+            result: ExecutionResult = graph.route(
+                user_input=review_text, context=context
+            )
             print(f"Success: {result.success}")
             print(f"Output:  {result.output}")
             if result.error:

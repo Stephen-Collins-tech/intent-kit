@@ -1,0 +1,59 @@
+{
+  "root": "main_classifier",
+  "nodes": {
+    "main_classifier": {
+      "id": "main_classifier",
+      "type": "classifier",
+      "name": "main_classifier",
+      "description": "Main intent classifier with remediation",
+      "classifier_function": "main_classifier",
+      "children": [
+        "greet_action",
+        "calculate_action",
+        "weather_action",
+        "help_action"
+      ],
+      "remediation_strategies": ["custom_classifier_fallback"]
+    },
+    "greet_action": {
+      "id": "greet_action",
+      "type": "action",
+      "name": "greet_action",
+      "description": "Greet the user",
+      "function": "greet_action",
+      "param_schema": {"name": "str"},
+      "context_inputs": ["greeting_count"],
+      "context_outputs": ["greeting_count"]
+    },
+    "calculate_action": {
+      "id": "calculate_action",
+      "type": "action",
+      "name": "calculate_action",
+      "description": "Perform calculations",
+      "function": "calculate_action",
+      "param_schema": {"operation": "str", "a": "float", "b": "float"},
+      "context_inputs": ["calc_history"],
+      "context_outputs": ["calc_history"]
+    },
+    "weather_action": {
+      "id": "weather_action",
+      "type": "action",
+      "name": "weather_action",
+      "description": "Get weather information",
+      "function": "weather_action",
+      "param_schema": {"location": "str"},
+      "context_inputs": ["weather_count"],
+      "context_outputs": ["weather_count"]
+    },
+    "help_action": {
+      "id": "help_action",
+      "type": "action",
+      "name": "help_action",
+      "description": "Provide help information",
+      "function": "help_action",
+      "param_schema": {},
+      "context_inputs": ["help_count"],
+      "context_outputs": ["help_count"]
+    }
+  }
+}

@@ -138,7 +138,12 @@ def test_intent_graph_builder_with_llm_config():
     classifier = ClassifierBuilder("root").with_children([greet]).build()
 
     llm_config = {"provider": "openai", "model": "gpt-4"}
-    graph = IntentGraphBuilder().root(classifier).with_llm_config(llm_config).build()
+    graph = (
+        IntentGraphBuilder()
+        .root(classifier)
+        .with_default_llm_config(llm_config)
+        .build()
+    )
 
     assert isinstance(graph, IntentGraph)
     assert graph.llm_config == llm_config

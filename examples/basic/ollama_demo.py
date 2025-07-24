@@ -5,7 +5,9 @@ Ollama Demo
 A minimal demonstration showing how to use IntentGraph with local Ollama models.
 """
 
-from intent_kit import IntentGraphBuilder, action, llm_classifier
+import os
+import json
+from intent_kit import IntentGraphBuilder
 from intent_kit.context import IntentContext
 
 # Ollama LLM configuration
@@ -15,15 +17,13 @@ OLLAMA_CONFIG = {
     "base_url": "http://localhost:11434",
 }
 
-# Configure your intent graph here
 
-
-def _greet_action(name: str, **kwargs) -> str:
+def greet_action(name: str, **kwargs) -> str:
     """Greet the user."""
     return f"Hello {name}! Nice to meet you."
 
 
-def _calculate_action(operation: str, a: float, b: float, **kwargs) -> str:
+def calculate_action(operation: str, a: float, b: float, **kwargs) -> str:
     """Perform a calculation."""
     operation_map = {
         "plus": "+",
@@ -44,12 +44,12 @@ def _calculate_action(operation: str, a: float, b: float, **kwargs) -> str:
         return f"Error: Cannot calculate {a} {operation} {b} - {str(e)}"
 
 
-def _weather_action(location: str, **kwargs) -> str:
+def weather_action(location: str, **kwargs) -> str:
     """Get weather information."""
     return f"Weather in {location}: 72°F, Sunny (simulated)"
 
 
-def _history_action(context: IntentContext) -> str:
+def history_action(context: IntentContext) -> str:
     """Show calculation history."""
     calc_history = context.get("calculation_history", [])
     if not calc_history:
@@ -59,58 +59,34 @@ def _history_action(context: IntentContext) -> str:
     return f"Your last calculation was: {last_calc}"
 
 
+def help_action(**kwargs) -> str:
+    """Get help."""
+    return "I can help with greetings, calculations, weather, and history!"
+
+
+function_registry = {
+    "greet_action": greet_action,
+    "calculate_action": calculate_action,
+    "weather_action": weather_action,
+    "history_action": history_action,
+    "help_action": help_action,
+}
+
+
 def create_intent_graph():
-    """Create and configure the intent graph using Ollama."""
+    """Create and configure the intent graph using JSON."""
+    # Load the graph definition from local JSON (same directory as script)
+    json_path = os.path.join(os.path.dirname(__file__), "ollama_demo.json")
+    with open(json_path, "r") as f:
+        json_graph = json.load(f)
 
-    # Define actions with context support
-    actions = [
-        action(
-            name="greet",
-            description="Greet the user",
-            action_func=_greet_action,
-            param_schema={"name": str},
-            llm_config=OLLAMA_CONFIG,
-        ),
-        action(
-            name="calculate",
-            description="Perform a calculation",
-            action_func=_calculate_action,
-            param_schema={"operation": str, "a": float, "b": float},
-            llm_config=OLLAMA_CONFIG,
-        ),
-        action(
-            name="weather",
-            description="Get weather information",
-            action_func=_weather_action,
-            param_schema={"location": str},
-            llm_config=OLLAMA_CONFIG,
-        ),
-        action(
-            name="history",
-            description="Show calculation history",
-            action_func=_history_action,
-            param_schema={},
-            llm_config=OLLAMA_CONFIG,
-        ),
-        action(
-            name="help",
-            description="Get help",
-            action_func=lambda **kwargs: "I can help with greetings, calculations, weather, and history!",
-            param_schema={},
-            llm_config=OLLAMA_CONFIG,
-        ),
-    ]
-
-    # Create classifier
-    classifier = llm_classifier(
-        name="root",
-        children=actions,
-        llm_config=OLLAMA_CONFIG,
-        description="Main intent classifier",
+    return (
+        IntentGraphBuilder()
+        .with_json(json_graph)
+        .with_functions(function_registry)
+        .with_default_llm_config(OLLAMA_CONFIG)
+        .build()
     )
-
-    # Build and return the graph
-    return IntentGraphBuilder().root(classifier).build()
 
 
 # Test the graph

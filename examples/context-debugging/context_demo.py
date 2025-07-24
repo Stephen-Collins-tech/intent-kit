@@ -6,9 +6,10 @@ A demonstration showing how context can be shared between workflow steps.
 """
 
 import os
+import json
 from datetime import datetime
 from dotenv import load_dotenv
-from intent_kit import IntentGraphBuilder, action, llm_classifier
+from intent_kit import IntentGraphBuilder
 from intent_kit.context import IntentContext
 
 load_dotenv()
@@ -109,83 +110,46 @@ def weather_action(location: str, context: IntentContext) -> str:
 
 def show_calculation_history_action(context: IntentContext) -> str:
     """Show calculation history from context."""
-    calc_history = context.get("calculation_history", [])
-
-    if not calc_history:
+    history = context.get("calculation_history", [])
+    if not history:
         return "No calculations have been performed yet."
 
-    # Get the last calculation
-    last_calc = calc_history[-1]
+    result = "Recent calculations:\n"
+    for i, calc in enumerate(history[-3:], 1):  # Show last 3
+        result += (
+            f"{i}. {calc['a']} {calc['operation']} {calc['b']} = {calc['result']}\n"
+        )
 
-    if last_calc.get("result") is not None:
-        return f"Your last calculation was: {last_calc['a']} {last_calc['operation']} {last_calc['b']} = {last_calc['result']}"
-    else:
-        return f"Your last calculation was: {last_calc['a']} {last_calc['operation']} {last_calc['b']} (result not available)"
+    return result
 
 
-def build_context_aware_tree():
-    """Build an intent tree with context-aware actions using the new API."""
+def help_action(context: IntentContext) -> str:
+    """Get help."""
+    return "I can help you with greetings, calculations, weather, and showing history!"
 
-    # Create actions using the new action() function with context support
-    greet_action_node = action(
-        name="greet",
-        description="Greet the user with context tracking",
-        action_func=greet_action,
-        param_schema={"name": str},
-        llm_config=LLM_CONFIG,
-        context_inputs={"greeting_count", "last_greeted"},
-        context_outputs={"greeting_count", "last_greeted", "last_greeting_time"},
-    )
 
-    calc_action_node = action(
-        name="calculate",
-        description="Perform calculations with history tracking",
-        action_func=calculate_action,
-        param_schema={"operation": str, "a": float, "b": float},
-        llm_config=LLM_CONFIG,
-        context_inputs={"calculation_history"},
-        context_outputs={"calculation_history", "last_calculation"},
-    )
+function_registry = {
+    "greet_action": greet_action,
+    "calculate_action": calculate_action,
+    "weather_action": weather_action,
+    "show_calculation_history_action": show_calculation_history_action,
+    "help_action": help_action,
+}
 
-    weather_action_node = action(
-        name="weather",
-        description="Get weather with caching",
-        action_func=weather_action,
-        param_schema={"location": str},
-        llm_config=LLM_CONFIG,
-        context_inputs={"last_weather"},
-        context_outputs={"last_weather"},
-    )
 
-    history_action_node = action(
-        name="show_calculation_history",
-        description="Show calculation history from context",
-        action_func=show_calculation_history_action,
-        param_schema={},
-        llm_config=LLM_CONFIG,
-        context_inputs={"calculation_history"},
-    )
+def create_intent_graph():
+    """Create and configure the intent graph using JSON."""
+    # Load the graph definition from local JSON (same directory as script)
+    json_path = os.path.join(os.path.dirname(__file__), "context_demo.json")
+    with open(json_path, "r") as f:
+        json_graph = json.load(f)
 
-    help_action_node = action(
-        name="help",
-        description="Get help",
-        action_func=lambda: "I can help you with greetings, calculations, weather, and showing history!",
-        param_schema={},
-        llm_config=LLM_CONFIG,
-    )
-
-    # Create classifier with auto-wired children descriptions
-    return llm_classifier(
-        name="llm_classifier",
-        children=[
-            greet_action_node,
-            calc_action_node,
-            weather_action_node,
-            history_action_node,
-            help_action_node,
-        ],
-        llm_config=LLM_CONFIG,
-        description="LLM-powered intent classifier with context support",
+    return (
+        IntentGraphBuilder()
+        .with_json(json_graph)
+        .with_functions(function_registry)
+        .with_default_llm_config(LLM_CONFIG)
+        .build()
     )
 
 
@@ -198,8 +162,8 @@ def main():
     # Create context for the session
     context = IntentContext(session_id="demo_user_123", debug=True)
 
-    # Create IntentGraph using the new builder pattern
-    graph = IntentGraphBuilder().root(build_context_aware_tree()).build()
+    # Create IntentGraph using the JSON-led pattern
+    graph = create_intent_graph()
 
     # Test sequence showing context persistence
     test_sequence = [

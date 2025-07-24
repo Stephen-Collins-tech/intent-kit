@@ -1,0 +1,23 @@
+{
+  "root": "main_classifier",
+  "nodes": {
+    "main_classifier": {
+      "id": "main_classifier",
+      "type": "classifier",
+      "name": "main_classifier",
+      "description": "Demo intent tree",
+      "classifier_function": "main_classifier",
+      "children": [
+        "greet_action"
+      ]
+    },
+    "greet_action": {
+      "id": "greet_action",
+      "type": "action",
+      "name": "greet_action",
+      "description": "Greet someone with their name and age",
+      "function": "greet_action",
+      "param_schema": {"name": "str", "age": "int"}
+    }
+  }
+}

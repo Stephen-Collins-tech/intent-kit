@@ -90,6 +90,12 @@ def _extract_name_parameter(input_lower: str) -> Dict[str, str]:
         r"greet\s+([a-zA-Z]+)",
         r"hello\s+([a-zA-Z]+\s+[a-zA-Z]+)",
         r"hi\s+([a-zA-Z]+\s+[a-zA-Z]+)",
+        # Handle "Hi Bob, help me with calculations" pattern
+        r"hi\s+([a-zA-Z]+),",
+        r"hello\s+([a-zA-Z]+),",
+        # Handle "Hello Alice, what's 15 plus 7?" pattern
+        r"hello\s+([a-zA-Z]+),\s+what",
+        r"hi\s+([a-zA-Z]+),\s+what",
     ]
 
     for pattern in name_patterns:
@@ -105,12 +111,21 @@ def _extract_location_parameter(input_lower: str) -> Dict[str, str]:
     location_patterns = [
         r"weather\s+in\s+([a-zA-Z\s]+)",
         r"in\s+([a-zA-Z\s]+)",
+        # Handle "Weather in San Francisco and multiply 8 by 3" pattern
+        r"weather\s+in\s+([a-zA-Z\s]+)\s+and",
+        # Handle "weather in New York" pattern
+        r"weather\s+in\s+([a-zA-Z\s]+)(?:\s|$)",
+        # Handle "in New York" pattern
+        r"in\s+([a-zA-Z\s]+)(?:\s|$)",
     ]
 
     for pattern in location_patterns:
         match = re.search(pattern, input_lower)
         if match:
-            return {"location": match.group(1).strip().title()}
+            location = match.group(1).strip()
+            # Clean up the location name
+            if location:
+                return {"location": location.title()}
 
     return {"location": "Unknown"}
 
@@ -118,18 +133,38 @@ def _extract_location_parameter(input_lower: str) -> Dict[str, str]:
 def _extract_calculation_parameters(input_lower: str) -> Dict[str, Any]:
     """Extract calculation parameters from input text."""
     calc_patterns = [
+        # Standard patterns
         r"(\d+(?:\.\d+)?)\s+(plus|add|minus|subtract|times|multiply|divided|divide)\s+(\d+(?:\.\d+)?)",
         r"what's\s+(\d+(?:\.\d+)?)\s+(plus|add|minus|subtract|times|multiply|divided|divide)\s+(\d+(?:\.\d+)?)",
+        # Patterns with "by" (e.g., "multiply 8 by 3")
+        r"(multiply|times)\s+(\d+(?:\.\d+)?)\s+by\s+(\d+(?:\.\d+)?)",
+        r"(divide|divided)\s+(\d+(?:\.\d+)?)\s+by\s+(\d+(?:\.\d+)?)",
+        # Patterns with "and" (e.g., "20 minus 5 and weather")
+        r"(\d+(?:\.\d+)?)\s+(minus|subtract)\s+(\d+(?:\.\d+)?)",
+        # Patterns with "what's" variations
+        r"what's\s+(\d+(?:\.\d+)?)\s+(plus|add|minus|subtract|times|multiply|divided|divide)\s+(\d+(?:\.\d+)?)",
+        r"what\s+is\s+(\d+(?:\.\d+)?)\s+(plus|add|minus|subtract|times|multiply|divided|divide)\s+(\d+(?:\.\d+)?)",
     ]
 
     for pattern in calc_patterns:
         match = re.search(pattern, input_lower)
         if match:
-            return {
-                "a": float(match.group(1)),
-                "operation": match.group(2),
-                "b": float(match.group(3)),
-            }
+            # Handle different group arrangements
+            if len(match.groups()) == 3:
+                if match.group(1) in ["multiply", "times", "divide", "divided"]:
+                    # Pattern like "multiply 8 by 3"
+                    return {
+                        "operation": match.group(1),
+                        "a": float(match.group(2)),
+                        "b": float(match.group(3)),
+                    }
+                else:
+                    # Standard pattern like "8 plus 3"
+                    return {
+                        "a": float(match.group(1)),
+                        "operation": match.group(2),
+                        "b": float(match.group(3)),
+                    }
 
     return {}
 

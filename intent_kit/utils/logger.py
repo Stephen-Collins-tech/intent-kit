@@ -263,12 +263,29 @@ class Logger:
         clear = self.clear_color()
         print(f"{color}[ERROR]{clear} [{self.name}] {message}")
 
-    def debug(self, message):
+    def debug(self, message, colorize_message=True):
         if not self.should_log("debug"):
             return
         color = self.get_color("debug")
         clear = self.clear_color()
-        print(f"{color}[DEBUG]{clear} [{self.name}] {message}")
+
+        if colorize_message and self.supports_color():
+            # Colorize the message content for better readability
+            message_parts = str(message).split(": ", 1)
+            if len(message_parts) > 1:
+                # If message has key-value format, colorize the key and value separately
+                key = message_parts[0]
+                value = message_parts[1]
+                colored_key = self.colorize_field_label(key)
+                colored_value = self.colorize_field_value(value)
+                colored_message = f"{colored_key}: {colored_value}"
+            else:
+                # For simple messages, use a softer color
+                colored_message = self.colorize_field_value(str(message))
+
+            print(f"{color}[DEBUG]{clear} [{self.name}] {colored_message}")
+        else:
+            print(f"{color}[DEBUG]{clear} [{self.name}] {message}")
 
     def warning(self, message):
         if not self.should_log("warning"):
@@ -297,6 +314,87 @@ class Logger:
         color = self.get_color("trace")
         clear = self.clear_color()
         print(f"{color}[TRACE]{clear} [{self.name}] {message}")
+
+    def debug_structured(self, data, title="Debug Data"):
+        """Log structured debug data with enhanced colorization."""
+        if not self.should_log("debug"):
+            return
+        color = self.get_color("debug")
+        clear = self.clear_color()
+
+        if not self.supports_color():
+            print(f"{color}[DEBUG]{clear} [{self.name}] {title}: {data}")
+            return
+
+        # Colorize the title
+        colored_title = self.colorize_section_title(title)
+
+        # Format the data based on its type
+        if isinstance(data, dict):
+            formatted_data = self._format_dict(data)
+        elif isinstance(data, list):
+            formatted_data = self._format_list(data)
+        else:
+            formatted_data = self.colorize_field_value(str(data))
+
+        print(f"{color}[DEBUG]{clear} [{self.name}] {colored_title}: {formatted_data}")
+
+    def _format_dict(self, data, indent=0):
+        """Format dictionary data with colorization."""
+        if not data:
+            return self.colorize_null("{}")
+
+        indent_str = "  " * indent
+        lines = []
+
+        for key, value in data.items():
+            colored_key = self.colorize_field_label(f'"{key}"')
+            if isinstance(value, dict):
+                colored_value = self._format_dict(value, indent + 1)
+            elif isinstance(value, list):
+                colored_value = self._format_list(value, indent + 1)
+            elif isinstance(value, str):
+                colored_value = self.colorize_string(f'"{value}"')
+            elif isinstance(value, (int, float)):
+                colored_value = self.colorize_number(str(value))
+            elif isinstance(value, bool):
+                colored_value = self.colorize_boolean(str(value))
+            elif value is None:
+                colored_value = self.colorize_null("null")
+            else:
+                colored_value = self.colorize_field_value(str(value))
+
+            lines.append(f"{indent_str}{colored_key}: {colored_value}")
+
+        return "{\n" + ",\n".join(lines) + "\n" + indent_str + "}"
+
+    def _format_list(self, data, indent=0):
+        """Format list data with colorization."""
+        if not data:
+            return self.colorize_null("[]")
+
+        indent_str = "  " * indent
+        lines = []
+
+        for item in data:
+            if isinstance(item, dict):
+                colored_item = self._format_dict(item, indent + 1)
+            elif isinstance(item, list):
+                colored_item = self._format_list(item, indent + 1)
+            elif isinstance(item, str):
+                colored_item = self.colorize_string(f'"{item}"')
+            elif isinstance(item, (int, float)):
+                colored_item = self.colorize_number(str(item))
+            elif isinstance(item, bool):
+                colored_item = self.colorize_boolean(str(item))
+            elif item is None:
+                colored_item = self.colorize_null("null")
+            else:
+                colored_item = self.colorize_field_value(str(item))
+
+            lines.append(f"{indent_str}{colored_item}")
+
+        return "[\n" + ",\n".join(lines) + "\n" + indent_str + "]"
 
     def log(self, level, message):
         if not self.should_log(level):

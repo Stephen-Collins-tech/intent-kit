@@ -66,7 +66,7 @@ def help_function() -> str:
 Just tell me what you'd like to do!"""
 
 
-def smart_classifier(user_input: str, children, context=None):
+def smart_classifier(user_input: str, children, context=None, **kwargs):
     """Smart classifier that routes to the most appropriate action."""
     input_lower = user_input.lower()
 
@@ -130,7 +130,7 @@ def main():
     # Define the graph structure in JSON
     json_graph = {
         "root": "main_classifier",
-        "intents": {
+        "nodes": {
             "main_classifier": {
                 "type": "classifier",
                 "name": "main_classifier",
