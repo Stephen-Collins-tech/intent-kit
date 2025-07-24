@@ -4,7 +4,7 @@ Welcome to the Development section of the Intent Kit documentation. Here you'll 
 
 ## Topics
 
-- [Building and Publishing](building-and-publishing.md): How to build and publish the package.
+- [Building](building.md): How to build the package.
 - [Testing](testing.md): Unit tests and integration testing.
 - [Evaluation](evaluation.md): Performance evaluation and benchmarking.
 - [Debugging](debugging.md): Debugging tools and techniques.

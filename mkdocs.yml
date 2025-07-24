@@ -44,7 +44,7 @@ nav:
       - JSON Serialization: configuration/json-serialization.md
   - Development:
       - Overview: development/index.md
-      - Building and Publishing: development/building-and-publishing.md
+      - Building: development/building.md
       - Testing: development/testing.md
       - Evaluation: development/evaluation.md
       - Debugging: development/debugging.md

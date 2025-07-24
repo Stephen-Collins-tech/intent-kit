@@ -297,7 +297,7 @@ All development tasks use [`uv`](https://github.com/astral-sh/uv) for fast, repr
 ### GitHub Actions CI/CD
 
 - **CI:** Lint, typecheck, test, and evaluate using `uv` in GitHub Actions.
-- **Deploy:** On new tags, the package is built and published to PyPI, and documentation is deployed to Cloudflare Pages.
+- **Deploy:** On new tags, the package is built and published to PyPI, and documentation is deployed to Cloudflare Pages. (Publishing is handled by maintainers via CI/CD.)
 
 ### Utility Scripts
 

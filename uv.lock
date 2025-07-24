@@ -622,30 +622,6 @@ all = [
 anthropic = [
     { name = "anthropic" },
 ]
-dev = [
-    { name = "anthropic" },
-    { name = "black", extra = ["jupyter"] },
-    { name = "build" },
-    { name = "coverage" },
-    { name = "google-genai" },
-    { name = "ipykernel" },
-    { name = "mkdocs" },
-    { name = "mkdocs-literate-nav" },
-    { name = "mkdocs-material" },
-    { name = "mkdocstrings", extra = ["python"] },
-    { name = "mypy" },
-    { name = "ollama" },
-    { name = "openai" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "python-dotenv" },
-    { name = "pyyaml" },
-    { name = "ruff" },
-    { name = "tqdm" },
-    { name = "twine" },
-    { name = "types-pyyaml" },
-]
 evals = [
     { name = "pyyaml" },
 ]
@@ -659,40 +635,67 @@ openai = [
     { name = "openai" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "black", extra = ["jupyter"] },
+    { name = "build" },
+    { name = "coverage" },
+    { name = "intentkit-py", extra = ["all"] },
+    { name = "ipykernel" },
+    { name = "mkdocs" },
+    { name = "mkdocs-literate-nav" },
+    { name = "mkdocs-material" },
+    { name = "mkdocstrings", extra = ["python"] },
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "python-dotenv" },
+    { name = "pyyaml" },
+    { name = "ruff" },
+    { name = "tqdm" },
+    { name = "twine" },
+    { name = "types-pyyaml" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.54.0" },
     { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.54.0" },
-    { name = "black", marker = "extra == 'dev'", specifier = ">=24.4.2" },
-    { name = "black", extras = ["jupyter"], marker = "extra == 'dev'", specifier = ">=24.4.2" },
-    { name = "build", marker = "extra == 'dev'", specifier = ">=1.2.1" },
-    { name = "coverage", marker = "extra == 'dev'", specifier = ">=7.0" },
     { name = "google-genai", marker = "extra == 'all'", specifier = ">=0.1.0" },
     { name = "google-genai", marker = "extra == 'google'", specifier = ">=0.1.0" },
-    { name = "intentkit-py", extras = ["all"], marker = "extra == 'dev'", editable = "." },
-    { name = "ipykernel", marker = "extra == 'dev'", specifier = ">=6.0.0" },
-    { name = "mkdocs", marker = "extra == 'dev'", specifier = ">=1.5.0" },
-    { name = "mkdocs-literate-nav", marker = "extra == 'dev'", specifier = ">=0.6.0" },
-    { name = "mkdocs-material", marker = "extra == 'dev'", specifier = ">=9.5.17" },
-    { name = "mkdocstrings", extras = ["python"], marker = "extra == 'dev'", specifier = ">=0.24.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10.0" },
     { name = "ollama", marker = "extra == 'all'", specifier = ">=0.1.0" },
     { name = "ollama", marker = "extra == 'ollama'", specifier = ">=0.1.0" },
     { name = "openai", marker = "extra == 'all'", specifier = ">=1.0.0" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0.0" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.6.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.1" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
-    { name = "python-dotenv", marker = "extra == 'dev'", specifier = ">=1.1.1" },
     { name = "pyyaml", marker = "extra == 'all'", specifier = ">=6.0.2" },
-    { name = "pyyaml", marker = "extra == 'dev'" },
     { name = "pyyaml", marker = "extra == 'evals'", specifier = ">=6.0.2" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.7" },
-    { name = "tqdm", marker = "extra == 'dev'" },
-    { name = "twine", marker = "extra == 'dev'", specifier = ">=5.1.0" },
-    { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12.20250516" },
 ]
-provides-extras = ["all", "anthropic", "dev", "google", "ollama", "openai", "evals"]
+provides-extras = ["all", "anthropic", "google", "ollama", "openai", "evals"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=24.4.2" },
+    { name = "black", extras = ["jupyter"], specifier = ">=24.4.2" },
+    { name = "build", specifier = ">=1.2.1" },
+    { name = "coverage", specifier = ">=7.0" },
+    { name = "intentkit-py", extras = ["all"], editable = "." },
+    { name = "ipykernel", specifier = ">=6.0.0" },
+    { name = "mkdocs", specifier = ">=1.5.0" },
+    { name = "mkdocs-literate-nav", specifier = ">=0.6.0" },
+    { name = "mkdocs-material", specifier = ">=9.5.17" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=0.24.0" },
+    { name = "mypy", specifier = ">=1.10.0" },
+    { name = "pre-commit", specifier = ">=3.6.0" },
+    { name = "pytest", specifier = ">=8.4.1" },
+    { name = "pytest-cov", specifier = ">=5.0" },
+    { name = "python-dotenv", specifier = ">=1.1.1" },
+    { name = "pyyaml" },
+    { name = "ruff", specifier = ">=0.4.7" },
+    { name = "tqdm" },
+    { name = "twine", specifier = ">=5.1.0" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.20250516" },
+]
 
 [[package]]
 name = "ipykernel"
