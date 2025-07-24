@@ -6,6 +6,7 @@ A demonstration showing how to handle multiple nodes in a single user input
 using LLM-powered splitting.
 """
 
+from typing import Callable, Any
 import os
 import json
 from dotenv import load_dotenv
@@ -213,7 +214,7 @@ def main_classifier(user_input: str, children, debug=False, context=None, **kwar
         return help_node
 
 
-function_registry = {
+function_registry: dict[str, Callable[..., Any]] = {
     "greet_action": greet_action,
     "calculate_action": calculate_action,
     "weather_action": weather_action,

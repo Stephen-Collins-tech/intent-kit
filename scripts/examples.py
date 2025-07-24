@@ -152,7 +152,7 @@ def list_examples() -> None:
         return
 
     # Group by directory
-    by_dir = {}
+    by_dir: dict[str, list[Path]] = {}
     for example in examples:
         parent = example.parent.name
         if parent not in by_dir:
