@@ -68,7 +68,7 @@ class RetryOnFailStrategy(RemediationStrategy):
         validated_params: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Optional[ExecutionResult]:
-        """Retry the handler function with the same parameters."""
+        print(f"[DEBUG] Entered RetryOnFailStrategy for node: {node_name}")
         if not handler_func or validated_params is None:
             self.logger.warning(
                 f"RetryOnFailStrategy: Missing action_func or validated_params for {node_name}"
@@ -77,6 +77,9 @@ class RetryOnFailStrategy(RemediationStrategy):
 
         for attempt in range(1, self.max_attempts + 1):
             try:
+                print(
+                    f"[DEBUG] RetryOnFailStrategy: Attempt {attempt}/{self.max_attempts} for {node_name}"
+                )
                 self.logger.info(
                     f"RetryOnFailStrategy: Attempt {attempt}/{self.max_attempts} for {node_name}"
                 )
@@ -87,6 +90,9 @@ class RetryOnFailStrategy(RemediationStrategy):
                 else:
                     output = handler_func(**validated_params)
 
+                print(
+                    f"[DEBUG] RetryOnFailStrategy: Success on attempt {attempt} for {node_name}"
+                )
                 self.logger.info(
                     f"RetryOnFailStrategy: Success on attempt {attempt} for {node_name}"
                 )
@@ -104,6 +110,9 @@ class RetryOnFailStrategy(RemediationStrategy):
                 )
 
             except Exception as e:
+                print(
+                    f"[DEBUG] RetryOnFailStrategy: Attempt {attempt} failed for {node_name}: {type(e).__name__}: {str(e)}"
+                )
                 self.logger.warning(
                     f"RetryOnFailStrategy: Attempt {attempt} failed for {node_name}: {type(e).__name__}: {str(e)}"
                 )
@@ -112,11 +121,15 @@ class RetryOnFailStrategy(RemediationStrategy):
                     delay = self.base_delay * (
                         2 ** (attempt - 1)
                     )  # Exponential backoff
+                    print(f"[DEBUG] RetryOnFailStrategy: Waiting {delay}s before retry")
                     self.logger.info(
                         f"RetryOnFailStrategy: Waiting {delay}s before retry"
                     )
                     time.sleep(delay)
 
+        print(
+            f"[DEBUG] RetryOnFailStrategy: All {self.max_attempts} attempts failed for {node_name}"
+        )
         self.logger.error(
             f"RetryOnFailStrategy: All {self.max_attempts} attempts failed for {node_name}"
         )
@@ -140,7 +153,9 @@ class FallbackToAnotherNodeStrategy(RemediationStrategy):
         validated_params: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Optional[ExecutionResult]:
-        """Execute the fallback handler."""
+        print(
+            f"[DEBUG] Entered FallbackToAnotherNodeStrategy for node: {node_name}, fallback: {self.fallback_name}"
+        )
         try:
             self.logger.info(
                 f"FallbackToAnotherNodeStrategy: Executing {self.fallback_name} for {node_name}"
@@ -161,6 +176,9 @@ class FallbackToAnotherNodeStrategy(RemediationStrategy):
                 else:
                     output = self.fallback_handler(user_input=user_input)
 
+            print(
+                f"[DEBUG] FallbackToAnotherNodeStrategy: Fallback handler {self.fallback_name} executed for node: {node_name}"
+            )
             return ExecutionResult(
                 success=True,
                 node_name=self.fallback_name,
@@ -174,6 +192,9 @@ class FallbackToAnotherNodeStrategy(RemediationStrategy):
             )
 
         except Exception as e:
+            print(
+                f"[DEBUG] FallbackToAnotherNodeStrategy: Fallback {self.fallback_name} failed for {node_name}: {type(e).__name__}: {str(e)}"
+            )
             self.logger.error(
                 f"FallbackToAnotherNodeStrategy: Fallback {self.fallback_name} failed for {node_name}: {type(e).__name__}: {str(e)}"
             )

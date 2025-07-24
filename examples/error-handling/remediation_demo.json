@@ -22,7 +22,7 @@
       "param_schema": {"operation": "str", "a": "float", "b": "float"},
       "context_inputs": ["calc_history"],
       "context_outputs": ["calc_history"],
-      "remediation_strategies": ["retry_on_fail"]
+      "remediation_strategies": ["retry_on_fail", "fallback_to_another_node"]
     },
     "reliable_calc": {
       "id": "reliable_calc",

@@ -10,7 +10,7 @@
       "llm_config": {
         "provider": "openrouter",
         "api_key": "${OPENROUTER_API_KEY}",
-        "model": "meta-llama/llama-4-maverick-17b-128e-instruct"
+        "model": "moonshotai/kimi-k2"
       },
       "children": [
         "main_classifier"

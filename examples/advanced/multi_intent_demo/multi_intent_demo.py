@@ -17,7 +17,7 @@ load_dotenv()
 LLM_CONFIG = {
     "provider": "openrouter",
     "api_key": os.getenv("OPENROUTER_API_KEY"),
-    "model": "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "model": "moonshotai/kimi-k2",
 }
 
 
@@ -33,9 +33,7 @@ def llm_splitter(user_input: str, debug=False, llm_client=None, **kwargs):
         prompt = _create_splitting_prompt(user_input)
 
         # Get LLM response with the correct model
-        response = llm_client.generate(
-            prompt, model="meta-llama/llama-4-maverick-17b-128e-instruct"
-        )
+        response = llm_client.generate(prompt, model="moonshotai/kimi-k2")
 
         # Parse the response to extract chunks
         chunks = _parse_splitting_response(response, user_input)

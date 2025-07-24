@@ -31,7 +31,7 @@ load_dotenv()
 LLM_CONFIG = {
     "provider": "openrouter",
     "api_key": os.getenv("OPENROUTER_API_KEY"),
-    "model": "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "model": "mistralai/devstral-small",
 }
 
 
@@ -174,6 +174,11 @@ def create_intent_graph():
     # Register custom remediation strategy
     custom_strategy = create_custom_remediation_strategy()
     register_remediation_strategy("log_and_continue", custom_strategy)
+
+    # Register fallback strategy for reliable_calc
+    from intent_kit.node.actions.remediation import create_fallback_strategy
+
+    create_fallback_strategy(function_registry["reliable_calculator"], "reliable_calc")
 
     # Load the graph definition from local JSON (same directory as script)
     json_path = os.path.join(os.path.dirname(__file__), "remediation_demo.json")

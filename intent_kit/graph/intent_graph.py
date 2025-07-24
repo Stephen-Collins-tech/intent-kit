@@ -22,20 +22,10 @@ from intent_kit.node import ExecutionResult
 from intent_kit.node import ExecutionError
 from intent_kit.node.enums import NodeType
 from intent_kit.node import TreeNode
-import os
 from intent_kit.node.classifiers import classify_intent_chunk
 from intent_kit.types import IntentAction
 
-# Add imports for visualization
-try:
-    import networkx as nx
-    from pyvis.network import Network  # type: ignore
-
-    VIZ_AVAILABLE = True
-except ImportError:
-    nx = None  # type: ignore
-    Network = None  # type: ignore
-    VIZ_AVAILABLE = False
+# Remove all visualization-related imports, attributes, and methods
 
 
 class IntentGraph:
@@ -55,6 +45,7 @@ class IntentGraph:
         llm_config: Optional[dict] = None,
         debug_context: bool = False,
         context_trace: bool = False,
+        context: Optional[IntentContext] = None,
     ):
         """
         Initialize the IntentGraph with root nodes.
@@ -66,8 +57,10 @@ class IntentGraph:
             llm_config: LLM configuration for chunk classification (optional)
             debug_context: If True, enable context debugging and state tracking
             context_trace: If True, enable detailed context tracing with timestamps
+            context: Optional IntentContext to use as the default for this graph
         """
         self.root_nodes: List[TreeNode] = root_nodes or []
+        self.context = context or IntentContext()
 
         # Default to pass-through splitter if none provided
         if splitter is None:
@@ -305,7 +298,7 @@ class IntentGraph:
 
         Args:
             user_input: The input string to process
-            context: Optional context object for state sharing
+            context: Optional context object for state sharing (defaults to self.context)
             debug: Whether to print debug information
             debug_context: Override graph-level debug_context setting
             context_trace: Override graph-level context_trace setting
@@ -321,6 +314,8 @@ class IntentGraph:
         context_trace_enabled = (
             context_trace if context_trace is not None else self.context_trace
         )
+
+        context = context or self.context  # Use member context if not provided
 
         if debug:
             self.logger.info(f"Processing input: {user_input}")
@@ -452,23 +447,23 @@ class IntentGraph:
             ):
                 result = children_results[0]
                 # Add visualization if requested
-                if self.visualize:
-                    try:
-                        html_path = self._render_execution_graph(
-                            children_results, user_input
-                        )
-                        if html_path:
-                            if result.output is None:
-                                result.output = {"visualization_html": html_path}
-                            elif isinstance(result.output, dict):
-                                result.output["visualization_html"] = html_path
-                            else:
-                                result.output = {
-                                    "output": result.output,
-                                    "visualization_html": html_path,
-                                }
-                    except Exception as e:
-                        self.logger.error(f"Visualization failed: {e}")
+                # if self.visualize:
+                #     try:
+                #         html_path = self._render_execution_graph(
+                #             children_results, user_input
+                #         )
+                #         if html_path:
+                #             if result.output is None:
+                #                 result.output = {"visualization_html": html_path}
+                #             elif isinstance(result.output, dict):
+                #                 result.output["visualization_html"] = html_path
+                #             else:
+                #                 result.output = {
+                #                     "output": result.output,
+                #                     "visualization_html": html_path,
+                #                 }
+                #     except Exception as e:
+                #         self.logger.error(f"Visualization failed: {e}")
                 return result
 
             # Aggregate outputs and params
@@ -500,28 +495,28 @@ class IntentGraph:
                 )
 
             # Create visualization if requested
-            visualization_html = None
-            if self.visualize:
-                try:
-                    html_path = self._render_execution_graph(
-                        children_results, user_input
-                    )
-                    visualization_html = html_path
-                except Exception as e:
-                    self.logger.error(f"Visualization failed: {e}")
-                    visualization_html = None
+            # visualization_html = None
+            # if self.visualize:
+            #     try:
+            #         html_path = self._render_execution_graph(
+            #             children_results, user_input
+            #         )
+            #         visualization_html = html_path
+            #     except Exception as e:
+            #         self.logger.error(f"Visualization failed: {e}")
+            #         visualization_html = None
 
             # Add visualization to output if available
-            if visualization_html:
-                if aggregated_output is None:
-                    aggregated_output = {"visualization_html": visualization_html}
-                elif isinstance(aggregated_output, dict):
-                    aggregated_output["visualization_html"] = visualization_html
-                else:
-                    aggregated_output = {
-                        "output": aggregated_output,
-                        "visualization_html": visualization_html,
-                    }
+            # if visualization_html:
+            #     if aggregated_output is None:
+            #         aggregated_output = {"visualization_html": visualization_html}
+            #     elif isinstance(aggregated_output, dict):
+            #         aggregated_output["visualization_html"] = visualization_html
+            #     else:
+            #         aggregated_output = {
+            #             "output": aggregated_output,
+            #             "visualization_html": visualization_html,
+            #         }
 
             if debug:
                 self.logger.info(f"Final aggregated result: {overall_success}")
@@ -536,7 +531,7 @@ class IntentGraph:
                 input=user_input,
                 output=aggregated_output,
                 error=aggregated_error,
-                visualization_html=visualization_html,
+                # visualization_html=visualization_html,
             )
 
         # Split the input into chunks (fallback for when no root nodes are used)
@@ -601,136 +596,7 @@ class IntentGraph:
             error=None,
         )
 
-    def _render_execution_graph(
-        self, children_results: list[ExecutionResult], user_input: str
-    ) -> str:
-        """
-        Render the execution path as an interactive HTML graph and return the file path.
-        """
-        if not self.visualize:
-            return ""
-
-        if not VIZ_AVAILABLE:
-            raise ImportError(
-                "networkx and pyvis are required for visualization. Please install with: uv pip install 'intent-kit[viz]'"
-            )
-
-        try:
-            # Import here to ensure it's available
-            from pyvis.network import Network
-
-            # Build the graph from the execution path
-            net = Network(height="600px", width="100%", directed=True, notebook=False)
-            net.barnes_hut()
-            execution_paths = []
-
-            # Extract execution paths from all children results
-            for result in children_results:
-                # Add the current result to the path
-                execution_paths.append(
-                    {
-                        "node_name": result.node_name,
-                        "node_type": result.node_type,
-                        "success": result.success,
-                        "input": result.input,
-                        "output": result.output,
-                        "error": result.error,
-                        "params": result.params,
-                    }
-                )
-
-                # Add child results recursively
-                for child_result in result.children_results:
-                    child_paths = self._extract_execution_paths(child_result)
-                    execution_paths.extend(child_paths)
-
-            if not execution_paths:
-                # fallback to errors
-                execution_paths = []
-                for result in children_results:
-                    if result.error:
-                        execution_paths.append(
-                            {
-                                "node_name": result.node_name,
-                                "node_type": "error",
-                                "error": result.error,
-                            }
-                        )
-
-            # Add nodes and edges
-            last_node_id = None
-            for idx, node in enumerate(execution_paths):
-                node_id = f"{node['node_name']}_{idx}"
-                label = f"{node['node_name']}\n{node['node_type']}"
-                if node.get("error"):
-                    label += f"\nERROR: {node['error']}"
-                elif node.get("output"):
-                    label += f"\nOutput: {str(node['output'])[:40]}"
-                # Color coding
-                if node["node_type"] == "error":
-                    color = "#ffcccc"  # red
-                elif node["node_type"] == "classifier":
-                    color = "#99ccff"  # blue
-                elif node["node_type"] == "intent":
-                    color = "#ccffcc"  # green
-                else:
-                    color = "#ccccff"  # fallback
-                net.add_node(node_id, label=label, color=color)
-                if last_node_id is not None:
-                    net.add_edge(last_node_id, node_id)
-                last_node_id = node_id
-            if not execution_paths:
-                net.add_node("no_path", label="No execution path", color="#cccccc")
-
-            # Save to HTML file
-            html_dir = os.path.join(os.getcwd(), "intentkit_graphs")
-            os.makedirs(html_dir, exist_ok=True)
-            html_path = os.path.join(
-                html_dir, f"intent_graph_{abs(hash(user_input)) % 100000}.html"
-            )
-
-            # Generate HTML and write to file manually
-            html_content = net.generate_html()
-            with open(html_path, "w", encoding="utf-8") as f:
-                f.write(html_content)
-
-            return html_path
-        except Exception as e:
-            self.logger.error(f"Failed to render graph: {e}")
-            raise
-
-    def _extract_execution_paths(self, result: ExecutionResult) -> list:
-        """
-        Recursively extract execution paths from an ExecutionResult.
-
-        Args:
-            result: The ExecutionResult to extract paths from
-
-        Returns:
-            List of execution path nodes
-        """
-        paths = []
-
-        # Add current node
-        paths.append(
-            {
-                "node_name": result.node_name,
-                "node_type": result.node_type,
-                "success": result.success,
-                "input": result.input,
-                "output": result.output,
-                "error": result.error,
-                "params": result.params,
-                "node_id": getattr(result, "node_id", None),
-            }
-        )
-
-        # Recursively add children
-        for child_result in result.children_results:
-            child_paths = self._extract_execution_paths(child_result)
-            paths.extend(child_paths)
-
-        return paths
+    # Remove all visualization-related imports, attributes, and methods
 
     def _capture_context_state(
         self, context: IntentContext, label: str

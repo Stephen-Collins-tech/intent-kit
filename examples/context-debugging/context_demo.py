@@ -18,7 +18,7 @@ load_dotenv()
 LLM_CONFIG = {
     "provider": "openrouter",
     "api_key": os.getenv("OPENROUTER_API_KEY"),
-    "model": "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "model": "mistralai/devstral-small",
 }
 
 

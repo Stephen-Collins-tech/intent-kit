@@ -454,61 +454,61 @@ class IntentGraphBuilder(Builder):
         if self._json_graph is not None:
             # Validate JSON graph before building
             self._validate_json_graph()
-            return self._build_from_json(
+            graph = self._build_from_json(
                 self._json_graph, self._function_registry or {}
             )
+        else:
+            if not self._root_nodes:
+                raise ValueError(
+                    "No root nodes set. Call .root() before .build() or use .with_json()"
+                )
 
-        if not self._root_nodes:
-            raise ValueError(
-                "No root nodes set. Call .root() before .build() or use .with_json()"
+            graph = IntentGraph(
+                root_nodes=self._root_nodes,
+                splitter=self._splitter,
+                llm_config=self._llm_config,
+                debug_context=self._debug_context_enabled,
+                context_trace=self._context_trace_enabled,
             )
 
-        graph = IntentGraph(
-            root_nodes=self._root_nodes,
-            splitter=self._splitter,
-            llm_config=self._llm_config,
-            debug_context=self._debug_context_enabled,
-            context_trace=self._context_trace_enabled,
-        )
+            # --- LLM config validation ---
+            def check_llm_config(node):
+                # Check for LLM classifier nodes (by class name or attribute)
+                if hasattr(node, "classifier") and getattr(
+                    node.classifier, "__name__", ""
+                ).startswith("llm_classifier"):
+                    if not (getattr(node, "llm_config", None) or self._llm_config):
+                        raise ValueError(
+                            f"Node '{getattr(node, 'name', repr(node))}' requires an LLM config, but none was provided at node or graph level."
+                        )
+                for child in getattr(node, "children", []):
+                    check_llm_config(child)
 
-        # --- LLM config validation ---
-        def check_llm_config(node):
-            # Check for LLM classifier nodes (by class name or attribute)
-            if hasattr(node, "classifier") and getattr(
-                node.classifier, "__name__", ""
-            ).startswith("llm_classifier"):
-                if not (getattr(node, "llm_config", None) or self._llm_config):
-                    raise ValueError(
-                        f"Node '{getattr(node, 'name', repr(node))}' requires an LLM config, but none was provided at node or graph level."
-                    )
-            for child in getattr(node, "children", []):
-                check_llm_config(child)
+            for root in self._root_nodes:
+                check_llm_config(root)
+            # --- end validation ---
 
-        for root in self._root_nodes:
-            check_llm_config(root)
-        # --- end validation ---
+            # Inject graph-level llm_config into classifier nodes that need it
+            def inject_llm_config(node):
+                if hasattr(node, "classifier") and getattr(
+                    node.classifier, "__name__", ""
+                ).startswith("llm_classifier"):
+                    if not getattr(node, "llm_config", None):
+                        self._logger.debug(
+                            f"DEBUG: Injecting graph-level llm_config into node '{getattr(node, 'name', repr(node))}'"
+                        )
+                        node.llm_config = self._llm_config
+                        if hasattr(node, "classifier"):
+                            setattr(node.classifier, "llm_config", self._llm_config)
+                    else:
+                        self._logger.debug(
+                            f"DEBUG: Node '{getattr(node, 'name', repr(node))}' already has llm_config"
+                        )
+                for child in getattr(node, "children", []):
+                    inject_llm_config(child)
 
-        # Inject graph-level llm_config into classifier nodes that need it
-        def inject_llm_config(node):
-            if hasattr(node, "classifier") and getattr(
-                node.classifier, "__name__", ""
-            ).startswith("llm_classifier"):
-                if not getattr(node, "llm_config", None):
-                    self._logger.debug(
-                        f"DEBUG: Injecting graph-level llm_config into node '{getattr(node, 'name', repr(node))}'"
-                    )
-                    node.llm_config = self._llm_config
-                    if hasattr(node, "classifier"):
-                        setattr(node.classifier, "llm_config", self._llm_config)
-                else:
-                    self._logger.debug(
-                        f"DEBUG: Node '{getattr(node, 'name', repr(node))}' already has llm_config"
-                    )
-            for child in getattr(node, "children", []):
-                inject_llm_config(child)
-
-        for root in self._root_nodes:
-            inject_llm_config(root)
+            for root in self._root_nodes:
+                inject_llm_config(root)
 
         return graph
 

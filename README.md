@@ -220,12 +220,9 @@ pip install intentkit-py
 
 # With specific AI providers
 pip install 'intentkit-py[openai]'      # OpenAI
-pip install 'intentkit-py[anthropic]'    # Anthropic  
+pip install 'intentkit-py[anthropic]'    # Anthropic
 pip install 'intentkit-py[google]'       # Google AI
 pip install 'intentkit-py[ollama]'       # Ollama
-
-# With visualization tools
-pip install 'intentkit-py[viz]'
 
 # Everything (all providers + tools)
 pip install 'intentkit-py[all]'
@@ -258,6 +255,56 @@ intent-kit/
 
 ---
 
+## Development & Contribution
+
+### Pre-commit Hooks & Version Management
+
+This project uses pre-commit hooks to ensure code quality and version consistency:
+
+- **Version Sync:** The version in `pyproject.toml` is automatically synced to `intent_kit/__init__.py` on commit.
+- **Changelog Check:** Commits are blocked if the current version is not present in `CHANGELOG.md`.
+
+To set up pre-commit hooks:
+
+```bash
+uv pip install pre-commit
+uv run pre-commit install
+```
+
+### Build, Test, and Lint
+
+All development tasks use [`uv`](https://github.com/astral-sh/uv) for fast, reproducible Python workflows.
+
+- **Install dependencies:**
+  ```bash
+  uv sync --group dev
+  ```
+- **Run tests:**
+  ```bash
+  uv run pytest
+  ```
+- **Lint:**
+  ```bash
+  uv run lint
+  uv run black --check .
+  uv run typecheck
+  ```
+- **Build package:**
+  ```bash
+  uv build
+  ```
+
+### GitHub Actions CI/CD
+
+- **CI:** Lint, typecheck, test, and evaluate using `uv` in GitHub Actions.
+- **Deploy:** On new tags, the package is built and published to PyPI, and documentation is deployed to Cloudflare Pages.
+
+### Utility Scripts
+
+See [scripts/README.md](scripts/README.md) for documentation on developer scripts, including automated changelog generation with intent-kit and LLMs.
+
+---
+
 ## Contributing
 
 We welcome contributions! Here's how to get started:
@@ -265,8 +312,8 @@ We welcome contributions! Here's how to get started:
 ```bash
 git clone git@github.com:Stephen-Collins-tech/intent-kit.git
 cd intent-kit
-pip install -e ".[dev]"
-pytest tests/
+uv sync --group dev
+uv run pytest
 ```
 
 See our [Contributing Guide](https://github.com/Stephen-Collins-tech/intent-kit/blob/main/CONTRIBUTING.md) for more details.
