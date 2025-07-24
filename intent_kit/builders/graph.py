@@ -7,6 +7,7 @@ with a more readable and type-safe approach.
 
 from typing import List, Dict, Any, Optional, Callable, Union
 from intent_kit.node import TreeNode
+from intent_kit.node.enums import NodeType, ClassifierType, SplitterType
 from intent_kit.graph import IntentGraph
 from .base import Builder
 from intent_kit.services.yaml_service import yaml_service
@@ -217,30 +218,42 @@ class IntentGraphBuilder(Builder):
             node_type = node_spec["type"]
 
             # Type-specific validation
-            if node_type == "action":
-                if "function" not in node_spec:
-                    errors.append(f"Action node '{node_id}' missing 'function' field")
+            match node_type:
+                case NodeType.ACTION.value:
+                    if "function" not in node_spec:
+                        errors.append(
+                            f"Action node '{node_id}' missing 'function' field"
+                        )
 
-            elif node_type == "llm_classifier":
-                if "llm_config" not in node_spec:
-                    errors.append(
-                        f"LLM classifier node '{node_id}' missing 'llm_config' field"
+                case NodeType.CLASSIFIER.value:
+                    classifier_type = node_spec.get(
+                        "classifier_type", ClassifierType.RULE.value
                     )
+                    if classifier_type == ClassifierType.LLM.value:
+                        if "llm_config" not in node_spec:
+                            errors.append(
+                                f"LLM classifier node '{node_id}' missing 'llm_config' field"
+                            )
+                    elif classifier_type == ClassifierType.RULE.value:
+                        if "classifier_function" not in node_spec:
+                            errors.append(
+                                f"Rule classifier node '{node_id}' missing 'classifier_function' field"
+                            )
 
-            elif node_type == "classifier":
-                if "classifier_function" not in node_spec:
-                    errors.append(
-                        f"Classifier node '{node_id}' missing 'classifier_function' field"
+                case NodeType.SPLITTER.value:
+                    splitter_type = node_spec.get(
+                        "splitter_type", SplitterType.FUNCTION.value
                     )
+                    if splitter_type == SplitterType.FUNCTION.value:
+                        if "splitter_function" not in node_spec:
+                            errors.append(
+                                f"Function splitter node '{node_id}' missing 'splitter_function' field"
+                            )
 
-            elif node_type == "splitter":
-                if "splitter_function" not in node_spec:
+                case _:
                     errors.append(
-                        f"Splitter node '{node_id}' missing 'splitter_function' field"
+                        f"Unknown node type '{node_type}' for node '{node_id}'"
                     )
-
-            else:
-                errors.append(f"Unknown node type '{node_type}' for node '{node_id}'")
 
             # Validate children references
             if "children" in node_spec:
@@ -331,39 +344,47 @@ class IntentGraphBuilder(Builder):
             node_type = node_spec["type"]
 
             # Type-specific validation
-            if node_type == "action":
-                if "function" not in node_spec:
+            match node_type:
+                case NodeType.ACTION.value:
+                    if "function" not in node_spec:
+                        validation_results["errors"].append(
+                            f"Action node '{node_id}' missing 'function' field"
+                        )
+                        validation_results["valid"] = False
+
+                case NodeType.CLASSIFIER.value:
+                    classifier_type = node_spec.get(
+                        "classifier_type", ClassifierType.RULE.value
+                    )
+                    if classifier_type == ClassifierType.LLM.value:
+                        if "llm_config" not in node_spec:
+                            validation_results["errors"].append(
+                                f"LLM classifier node '{node_id}' missing 'llm_config' field"
+                            )
+                            validation_results["valid"] = False
+                    elif classifier_type == ClassifierType.RULE.value:
+                        if "classifier_function" not in node_spec:
+                            validation_results["errors"].append(
+                                f"Rule classifier node '{node_id}' missing 'classifier_function' field"
+                            )
+                            validation_results["valid"] = False
+
+                case NodeType.SPLITTER.value:
+                    splitter_type = node_spec.get(
+                        "splitter_type", SplitterType.FUNCTION.value
+                    )
+                    if splitter_type == SplitterType.FUNCTION.value:
+                        if "splitter_function" not in node_spec:
+                            validation_results["errors"].append(
+                                f"Function splitter node '{node_id}' missing 'splitter_function' field"
+                            )
+                            validation_results["valid"] = False
+
+                case _:
                     validation_results["errors"].append(
-                        f"Action node '{node_id}' missing 'function' field"
+                        f"Unknown node type '{node_type}' for node '{node_id}'"
                     )
                     validation_results["valid"] = False
-
-            elif node_type == "llm_classifier":
-                if "llm_config" not in node_spec:
-                    validation_results["errors"].append(
-                        f"LLM classifier node '{node_id}' missing 'llm_config' field"
-                    )
-                    validation_results["valid"] = False
-
-            elif node_type == "classifier":
-                if "classifier_function" not in node_spec:
-                    validation_results["errors"].append(
-                        f"Classifier node '{node_id}' missing 'classifier_function' field"
-                    )
-                    validation_results["valid"] = False
-
-            elif node_type == "splitter":
-                if "splitter_function" not in node_spec:
-                    validation_results["errors"].append(
-                        f"Splitter node '{node_id}' missing 'splitter_function' field"
-                    )
-                    validation_results["valid"] = False
-
-            else:
-                validation_results["errors"].append(
-                    f"Unknown node type '{node_type}' for node '{node_id}'"
-                )
-                validation_results["valid"] = False
 
             # Validate children references
             if "children" in node_spec:
@@ -608,24 +629,25 @@ class IntentGraphBuilder(Builder):
         name = node_spec.get("name", node_id)
         description = node_spec.get("description", "")
 
-        if node_type == "action":
-            return self._create_action_node(
-                node_id, name, description, node_spec, function_registry
-            )
-        elif node_type == "llm_classifier":
-            return self._create_llm_classifier_node(
-                node_id, name, description, node_spec, function_registry
-            )
-        elif node_type == "classifier":
-            return self._create_classifier_node(
-                node_id, name, description, node_spec, function_registry
-            )
-        elif node_type == "splitter":
-            return self._create_splitter_node(
-                node_id, name, description, node_spec, function_registry
-            )
-        else:
+        # Dispatch table for node type to creation method
+        dispatch = {
+            NodeType.ACTION.value: self._create_action_node,
+            NodeType.CLASSIFIER.value: lambda *args, **kwargs: (
+                self._create_llm_classifier_node(*args, **kwargs)
+                if node_spec.get("classifier_type", ClassifierType.RULE.value)
+                == ClassifierType.LLM.value
+                else self._create_classifier_node(*args, **kwargs)
+            ),
+            NodeType.SPLITTER.value: self._create_splitter_node,
+        }
+
+        if node_type not in dispatch:
             raise ValueError(f"Unknown node type '{node_type}' for node '{node_id}'")
+
+        node_creator = dispatch[node_type]
+        if not callable(node_creator):
+            raise TypeError(f"Node creator for type '{node_type}' is not callable")
+        return node_creator(node_id, name, description, node_spec, function_registry)
 
     def _create_action_node(
         self,

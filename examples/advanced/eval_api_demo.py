@@ -172,6 +172,11 @@ def demo_error_handling():
     return result
 
 
+def run_evaluation(task):
+    # Dummy evaluation function for timing demo
+    return {"success": True}
+
+
 def main():
     """Run all demos."""
     import os
@@ -207,4 +212,24 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from intent_kit.utils.perf_util import PerfUtil
+
+    with PerfUtil("eval_api_demo.py run time") as perf:
+        eval_tasks = ["Task 1", "Task 2", "Task 3"]
+        timings = []
+        successes = []
+        for task in eval_tasks:
+            with PerfUtil.collect(f"Eval: {str(task)}", timings) as input_perf:
+                try:
+                    result = run_evaluation(task)
+                    success = result.get("success", True)
+                except Exception:
+                    success = False
+                successes.append(success)
+    print(perf.format())
+    print("\nTiming Summary:")
+    print(f"  {'Label':<40} | {'Elapsed (sec)':>12} | {'Success':>7}")
+    print("  " + "-" * 65)
+    for (label, elapsed), success in zip(timings, successes):
+        elapsed_str = f"{elapsed:12.4f}" if elapsed is not None else "     N/A   "
+        print(f"  {label[:40]:<40} | {elapsed_str} | {str(success):>7}")

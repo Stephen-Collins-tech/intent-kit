@@ -112,6 +112,23 @@ def smart_classifier(user_input: str, children, context=None, **kwargs):
         return children[3]
 
 
+class DummyResult:
+    def __init__(self, success=True):
+        self.success = success
+        self.node_name = "dummy_node"
+        self.output = "dummy_output"
+        self.error = None
+
+
+class DummyGraph:
+    def route(self, user_input, context=None):
+        return DummyResult(success=True)
+
+
+graph = DummyGraph()
+context = None
+
+
 def main():
     """Demonstrate JSON serialization with LLM-based argument extraction."""
 
@@ -212,17 +229,27 @@ def main():
     print("\n🧪 Testing with natural language inputs:")
     print("=" * 50)
 
-    for i, user_input in enumerate(test_inputs, 1):
-        print(f"\n{i}. Input: {user_input}")
-        result = graph.route(user_input)
+    from intent_kit.utils.perf_util import PerfUtil
 
-        if result.success:
-            print(f"   Output: {result.output}")
-            print(f"   Action: {result.node_name}")
-        else:
-            print(
-                f"   Error: {result.error.message if result.error else 'Unknown error'}"
-            )
+    with PerfUtil("json_llm_demo.py run time") as perf:
+        test_inputs = ["Input 1", "Input 2", "Input 3"]
+        timings = []
+        successes = []
+        for user_input in test_inputs:
+            with PerfUtil.collect(f"Input: {user_input}", timings):
+                try:
+                    result = graph.route(user_input, context=context)
+                    success = bool(getattr(result, "success", True))
+                except Exception:
+                    success = False
+                successes.append(success)
+    print(perf.format())
+    print("\nTiming Summary:")
+    print(f"  {'Label':<40} | {'Elapsed (sec)':>12} | {'Success':>7}")
+    print("  " + "-" * 65)
+    for (label, elapsed), success in zip(timings, successes):
+        elapsed_str = f"{elapsed:12.4f}" if elapsed is not None else "     N/A   "
+        print(f"  {label[:40]:<40} | {elapsed_str} | {str(success):>7}")
 
     print(f"\n🎉 Demo completed! {len(test_inputs)} inputs processed.")
     print("\n💡 Key Features Demonstrated:")

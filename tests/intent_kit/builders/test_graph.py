@@ -164,7 +164,9 @@ class TestIntentGraphBuilder:
     def test_build_with_json_validation_llm_classifier_missing_config(self):
         builder = IntentGraphBuilder()
         builder._json_graph = {
-            "nodes": {"test": {"type": "llm_classifier", "name": "test"}},
+            "nodes": {
+                "test": {"type": "classifier", "classifier_type": "llm", "name": "test"}
+            },
             "root": "test",
         }
         with pytest.raises(
@@ -176,24 +178,36 @@ class TestIntentGraphBuilder:
     def test_build_with_json_validation_classifier_missing_function(self):
         builder = IntentGraphBuilder()
         builder._json_graph = {
-            "nodes": {"test": {"type": "classifier", "name": "test"}},
+            "nodes": {
+                "test": {
+                    "type": "classifier",
+                    "classifier_type": "rule",
+                    "name": "test",
+                }
+            },
             "root": "test",
         }
         with pytest.raises(
             ValueError,
-            match="Classifier node 'test' missing 'classifier_function' field",
+            match="Rule classifier node 'test' missing 'classifier_function' field",
         ):
             builder._validate_json_graph()
 
     def test_build_with_json_validation_splitter_missing_function(self):
         builder = IntentGraphBuilder()
         builder._json_graph = {
-            "nodes": {"test": {"type": "splitter", "name": "test"}},
+            "nodes": {
+                "test": {
+                    "type": "splitter",
+                    "splitter_type": "function",
+                    "name": "test",
+                }
+            },
             "root": "test",
         }
         with pytest.raises(
             ValueError,
-            match="Splitter node 'test' missing 'splitter_function' field",
+            match="Function splitter node 'test' missing 'splitter_function' field",
         ):
             builder._validate_json_graph()
 

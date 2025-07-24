@@ -11,6 +11,7 @@ import os
 import json
 from dotenv import load_dotenv
 from intent_kit import IntentGraphBuilder
+from intent_kit.context import IntentContext
 
 load_dotenv()
 
@@ -222,40 +223,51 @@ function_registry: dict[str, Callable[..., Any]] = {
 }
 
 if __name__ == "__main__":
-    from intent_kit.context import IntentContext
+    from intent_kit.utils.perf_util import PerfUtil
 
-    # Load the graph definition from local JSON (same directory as script)
-    json_path = os.path.join(os.path.dirname(__file__), "multi_intent_demo.json")
-    with open(json_path, "r") as f:
-        json_graph = json.load(f)
+    with PerfUtil("multi_intent_demo.py run time") as perf:
+        # Load the graph definition from local JSON (same directory as script)
+        json_path = os.path.join(os.path.dirname(__file__), "multi_intent_demo.json")
+        with open(json_path, "r") as f:
+            json_graph = json.load(f)
 
-    graph = (
-        IntentGraphBuilder()
-        .with_json(json_graph)
-        .with_functions(function_registry)
-        .with_default_llm_config(LLM_CONFIG)
-        .build()
-    )
+        graph = (
+            IntentGraphBuilder()
+            .with_json(json_graph)
+            .with_functions(function_registry)
+            .with_default_llm_config(LLM_CONFIG)
+            .build()
+        )
 
-    # Debug: Print the root nodes
-    print(f"Graph root nodes: {[node.name for node in graph.root_nodes]}")
-    print(f"Graph splitter: {graph.splitter}")
+        # Debug: Print the root nodes
+        print(f"Graph root nodes: {[node.name for node in graph.root_nodes]}")
+        print(f"Graph splitter: {graph.splitter}")
 
-    context = IntentContext(session_id="multi_intent_demo")
+        context = IntentContext(session_id="multi_intent_demo")
 
-    test_inputs = [
-        "Hello Alice, what's 15 plus 7?",
-        "Weather in San Francisco and multiply 8 by 3",
-        "Hi Bob, help me with calculations",
-        "What's 20 minus 5 and weather in New York",
-    ]
-
-    for user_input in test_inputs:
-        print(f"\nInput: {user_input}")
-        result = graph.route(user_input, context=context, debug=True)
-        print(result)
-        if result.success:
-            print(f"Intent: {result.node_name}")
-            print(f"Output: {result.output}")
-        else:
-            print(f"Error: {result.error}")
+        test_inputs = [
+            "Hello Alice, what's 15 plus 7?",
+            "Weather in San Francisco and multiply 8 by 3",
+            "Hi Bob, help me with calculations",
+            "What's 20 minus 5 and weather in New York",
+        ]
+        timings = []
+        successes = []
+        for user_input in test_inputs:
+            with PerfUtil.collect(f"Input: {user_input}", timings) as input_perf:
+                print(f"\nInput: {user_input}")
+                result = graph.route(user_input, context=context)
+                success = bool(getattr(result, "success", True))
+                if success:
+                    print(f"Intent: {getattr(result, 'node_name', 'N/A')}")
+                    print(f"Output: {getattr(result, 'output', 'N/A')}")
+                else:
+                    print(f"Error: {getattr(result, 'error', 'N/A')}")
+                successes.append(success)
+    print(perf.format())
+    print("\nTiming Summary:")
+    print(f"  {'Label':<40} | {'Elapsed (sec)':>12} | {'Success':>7}")
+    print("  " + "-" * 65)
+    for (label, elapsed), success in zip(timings, successes):
+        elapsed_str = f"{elapsed:12.4f}" if elapsed is not None else "     N/A   "
+        print(f"  {label[:40]:<40} | {elapsed_str} | {str(success):>7}")

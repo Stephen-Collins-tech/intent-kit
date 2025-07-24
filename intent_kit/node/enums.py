@@ -12,7 +12,7 @@ class NodeType(Enum):
     UNKNOWN = "unknown"
 
     # Specialized node types
-    ACTION = "action"  # New preferred name
+    ACTION = "action"
     CLASSIFIER = "classifier"
     SPLITTER = "splitter"
     CLARIFY = "clarify"
@@ -20,3 +20,20 @@ class NodeType(Enum):
 
     # Special types for execution results
     UNHANDLED_CHUNK = "unhandled_chunk"
+
+
+class ClassifierType(Enum):
+    """Enumeration of classifier implementation types."""
+
+    RULE = "rule"
+    LLM = "llm"
+    KEYWORD = "keyword"
+    CHUNK = "chunk"
+
+
+class SplitterType(Enum):
+    """Enumeration of splitter implementation types."""
+
+    RULE = "rule"
+    LLM = "llm"
+    FUNCTION = "function"

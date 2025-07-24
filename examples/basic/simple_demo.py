@@ -72,23 +72,39 @@ def create_intent_graph():
 
 if __name__ == "__main__":
     from intent_kit.context import IntentContext
+    from intent_kit.utils.perf_util import PerfUtil
 
-    graph = create_intent_graph()
-    context = IntentContext(session_id="simple_demo")
+    with PerfUtil("simple_demo.py run time") as perf:
+        graph = create_intent_graph()
+        context = IntentContext(session_id="simple_demo")
 
-    test_inputs = [
-        "Hello, my name is Alice",
-        "What's 15 plus 7?",
-        "Weather in San Francisco",
-        "Help me",
-        "Multiply 8 and 3",
-    ]
+        test_inputs = [
+            "Hello, my name is Alice",
+            "What's 15 plus 7?",
+            "Weather in San Francisco",
+            "Help me",
+            "Multiply 8 and 3",
+        ]
 
-    for user_input in test_inputs:
-        print(f"\nInput: {user_input}")
-        result = graph.route(user_input, context=context)
-        if result.success:
-            print(f"Intent: {result.node_name}")
-            print(f"Output: {result.output}")
-        else:
-            print(f"Error: {result.error}")
+        timings = []
+        successes = []
+        for user_input in test_inputs:
+            with PerfUtil.collect(f"Input: {user_input}", timings) as perf:
+                print(f"\nInput: {user_input}")
+                result = graph.route(user_input, context=context)
+                success = bool(result.success)
+                if result.success:
+                    print(f"Intent: {result.node_name}")
+                    print(f"Output: {result.output}")
+                else:
+                    print(f"Error: {result.error}")
+                successes.append(success)
+
+    print(perf.format())
+    # Print table with success column
+    print("\nTiming Summary:")
+    print(f"  {'Label':<40} | {'Elapsed (sec)':>12} | {'Success':>7}")
+    print("  " + "-" * 65)
+    for (label, elapsed), success in zip(timings, successes):
+        elapsed_str = f"{elapsed:12.4f}" if elapsed is not None else "     N/A   "
+        print(f"  {label[:40]:<40} | {elapsed_str} | {str(success):>7}")

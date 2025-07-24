@@ -237,4 +237,33 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from intent_kit.utils.perf_util import PerfUtil
+
+    with PerfUtil("remediation_demo.py run time") as perf:
+        graph = create_intent_graph()
+        context = IntentContext()  # Changed from create_context() to IntentContext()
+        test_inputs = [
+            "Calculate 5 plus 3",
+            "Calculate 10 times 2",
+            "Greet Alice",
+        ]
+        timings = []
+        successes = []
+        for user_input in test_inputs:
+            with PerfUtil.collect(f"Input: {user_input}", timings) as input_perf:
+                print(f"\nInput: {user_input}")
+                result = graph.route(user_input, context=context)
+                success = bool(getattr(result, "success", True))
+                if success:
+                    print(f"Intent: {getattr(result, 'node_name', 'N/A')}")
+                    print(f"Output: {getattr(result, 'output', 'N/A')}")
+                else:
+                    print(f"Error: {getattr(result, 'error', 'N/A')}")
+                successes.append(success)
+    print(perf.format())
+    print("\nTiming Summary:")
+    print(f"  {'Label':<40} | {'Elapsed (sec)':>12} | {'Success':>7}")
+    print("  " + "-" * 65)
+    for (label, elapsed), success in zip(timings, successes):
+        elapsed_str = f"{elapsed:12.4f}" if elapsed is not None else "     N/A   "
+        print(f"  {label[:40]:<40} | {elapsed_str} | {str(success):>7}")

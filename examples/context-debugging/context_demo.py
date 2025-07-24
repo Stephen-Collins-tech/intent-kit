@@ -11,6 +11,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from intent_kit import IntentGraphBuilder
 from intent_kit.context import IntentContext
+from intent_kit.utils.perf_util import PerfUtil
 
 load_dotenv()
 
@@ -45,13 +46,17 @@ def calculate_action(operation: str, a: float, b: float, context: IntentContext)
     operation_map = {
         "plus": "+",
         "add": "+",
+        "addition": "+",
         "minus": "-",
         "subtract": "-",
+        "subtraction": "-",
         "times": "*",
         "multiply": "*",
         "multiplied": "*",
+        "multiplication": "*",
         "divided": "/",
         "divide": "/",
+        "division": "/",
         "over": "/",
     }
 
@@ -166,7 +171,7 @@ def main():
     graph = create_intent_graph()
 
     # Test sequence showing context persistence
-    test_sequence = [
+    test_inputs = [
         "Hello, my name is Alice",
         "What's 15 plus 7?",
         "Weather in San Francisco",
@@ -176,62 +181,27 @@ def main():
         "What was my last calculation?",  # Should show context access
     ]
 
-    for i, user_input in enumerate(test_sequence, 1):
-        print(f"\n--- Step {i} ---")
-        print(f"Input: {user_input}")
-
-        try:
-            # Route with context
-            result = graph.route(user_input, context=context, debug=True)
-
+    timings = []
+    successes = []
+    for user_input in test_inputs:
+        with PerfUtil.collect(f"Input: {user_input}", timings) as perf:
+            print(f"\nInput: {user_input}")
+            result = graph.route(user_input, context=context)
+            success = bool(result.success)
             if result.success:
-                print(f"  Intent: {result.node_name}")
-                print(f"  Params: {result.params}")
-                print(f"  Output: {result.output}")
-
-                # Show execution path if available
-                if result.children_results:
-                    print("  Execution Path:")
-                    for i, child_result in enumerate(result.children_results):
-                        path_str = ".".join(child_result.node_path)
-                        print(
-                            f"    {i+1}. {child_result.node_name} ({child_result.node_type}) - Path: {path_str}"
-                        )
-                        if child_result.params:
-                            print(f"       Params: {child_result.params}")
-                        if child_result.output:
-                            print(f"       Output: {child_result.output}")
-                        if child_result.error:
-                            print(f"       Error: {child_result.error}")
-
-                # Show context state after execution
-                print("  Context state:")
-                print(f"    Greeting count: {context.get('greeting_count', 0)}")
-                print(f"    Last greeted: {context.get('last_greeted', 'None')}")
-                print(
-                    f"    Calc history: {len(context.get('calculation_history', []))} entries"
-                )
-                print(
-                    f"    Last weather: {context.get('last_weather', {}).get('location', 'None')}"
-                )
+                print(f"Intent: {result.node_name}")
+                print(f"Output: {result.output}")
             else:
-                print(f"  Error: {result.error}")
-
-            # Show context errors from result
-            if result.error:
-                print(f"  Context errors in result: {result.error.message}")
-
-            # Show any errors from context (for backward compatibility)
-            errors = context.get_errors()
-            if errors:
-                print(f"  Context errors: {len(errors)} total")
-                for error in errors[-2:]:  # Show last 2 errors
-                    print(
-                        f"    [{error.timestamp.strftime('%H:%M:%S')}] {error.node_name}: {error.error_message}"
-                    )
-
-        except Exception as e:
-            print(f"  Error: {e}")
+                print(f"Error: {result.error}")
+            successes.append(success)
+    print(perf.format())
+    # Print table with success column
+    print("\nTiming Summary:")
+    print(f"  {'Label':<40} | {'Elapsed (sec)':>12} | {'Success':>7}")
+    print("  " + "-" * 65)
+    for (label, elapsed), success in zip(timings, successes):
+        elapsed_str = f"{elapsed:12.4f}" if elapsed is not None else "     N/A   "
+        print(f"  {label[:40]:<40} | {elapsed_str} | {str(success):>7}")
 
     # Show final context state
     print("\n--- Final Context State ---")
