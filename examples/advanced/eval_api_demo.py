@@ -14,7 +14,7 @@ from intent_kit.evals import (
     EvalTestCase,
     Dataset,
 )
-from intent_kit.evals.sample_nodes.classifier_node_llm import classifier_node_llm
+from intent_kit.node_library.classifier_node_llm import classifier_node_llm
 
 load_dotenv()
 

@@ -55,10 +55,9 @@ evals = [
 ]
 
 [project.scripts]
-eval-api-demo = "examples.eval_api_demo:main"
 eval-node = "intent_kit.evals.run_node_eval:main"
-lint = "scripts.lint:main"
 run-evals = "intent_kit.evals.run_all_evals:run_all_evaluations"
+lint = "scripts.lint:main"
 typecheck = "scripts.typecheck:main"
 examples = "scripts.examples:run_all"
 example = "scripts.examples:run_single"

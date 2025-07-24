@@ -12,6 +12,8 @@ from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
 from intent_kit.services.yaml_service import yaml_service
+from intent_kit.context import IntentContext
+from intent_kit.utils.perf_util import PerfUtil
 
 
 @dataclass
@@ -52,6 +54,7 @@ class EvalTestResult:
     passed: bool
     context: Optional[Dict[str, Any]]
     error: Optional[str] = None
+    elapsed_time: Optional[float] = None  # Time in seconds
 
     def __post_init__(self):
         if self.context is None:
@@ -253,52 +256,80 @@ def run_eval(
     node: Any,
     comparator: Optional[Callable[[Any, Any], bool]] = None,
     fail_fast: bool = False,
+    context_factory: Optional[Callable[[], IntentContext]] = None,
+    extra_kwargs: Optional[dict] = None,
 ) -> EvalResult:
+    """
+    Evaluate a node or graph against a dataset of test cases.
+    Supports .route, .execute, or callable nodes. Handles flexible context and result extraction.
+    Records timing for each test case using PerfUtil.
+    """
     if comparator is None:
 
         def default_comparator(expected, actual):
             return expected == actual
 
         comparator = default_comparator
+    if extra_kwargs is None:
+        extra_kwargs = {}
+
     results = []
     for test_case in dataset.test_cases:
         try:
-            if callable(node):
-                actual = node(test_case.input, context=test_case.context)
-            elif hasattr(node, "execute"):
-                from intent_kit.context import IntentContext
-
+            # Context: allow factory or default
+            context = context_factory() if context_factory else None
+            if context is None:
                 context = IntentContext()
-                if test_case.context:
-                    for key, value in test_case.context.items():
-                        context.set(key, value, modified_by="eval")
-                result = node.execute(test_case.input, context)
-                actual = result.output if result.success else None
-                if not result.success and result.error:
-                    raise Exception(result.error.message)
-            else:
-                raise ValueError("Node must be callable or have an .execute() method")
-            passed = comparator(test_case.expected, actual)
-            result = EvalTestResult(
+            if test_case.context:
+                for key, value in test_case.context.items():
+                    context.set(key, value, modified_by="eval")
+
+            with PerfUtil(f"Eval: {test_case.input}") as perf:
+                # Node execution: support .route, .execute, or callable
+                if hasattr(node, "route"):
+                    result = node.route(
+                        test_case.input, context=context, **extra_kwargs
+                    )
+                elif hasattr(node, "execute"):
+                    result = node.execute(test_case.input, context, **extra_kwargs)
+                elif callable(node):
+                    result = node(test_case.input, context=context, **extra_kwargs)
+                else:
+                    raise ValueError(
+                        "Node must be callable or have .execute/.route method"
+                    )
+
+            # Result extraction: support new result types
+            output = getattr(result, "output", result)
+            success = getattr(result, "success", output == test_case.expected)
+            error = getattr(result, "error", None)
+            if not success and error and hasattr(error, "message"):
+                error = error.message
+
+            passed = comparator(test_case.expected, output)
+            eval_result = EvalTestResult(
                 input=test_case.input,
                 expected=test_case.expected,
-                actual=actual,
+                actual=output,
                 passed=passed,
                 context=test_case.context,
+                error=str(error) if error and not passed else None,
+                elapsed_time=perf.elapsed,
             )
         except Exception as e:
-            result = EvalTestResult(
+            eval_result = EvalTestResult(
                 input=test_case.input,
                 expected=test_case.expected,
                 actual=None,
                 passed=False,
                 context=test_case.context,
                 error=str(e),
+                elapsed_time=None,
             )
             if fail_fast:
-                results.append(result)
+                results.append(eval_result)
                 return EvalResult(results, dataset.name)
-        results.append(result)
+        results.append(eval_result)
     return EvalResult(results, dataset.name)
 
 
@@ -307,9 +338,14 @@ def run_eval_from_path(
     node: Any,
     comparator: Optional[Callable[[Any, Any], bool]] = None,
     fail_fast: bool = False,
+    context_factory: Optional[Callable[[], "IntentContext"]] = None,
+    extra_kwargs: Optional[dict] = None,
 ) -> EvalResult:
+    """
+    Load a dataset from path and evaluate a node/graph using run_eval.
+    """
     dataset = load_dataset(dataset_path)
-    return run_eval(dataset, node, comparator, fail_fast)
+    return run_eval(dataset, node, comparator, fail_fast, context_factory, extra_kwargs)
 
 
 def run_eval_from_module(
@@ -318,12 +354,17 @@ def run_eval_from_module(
     node_name: str,
     comparator: Optional[Callable[[Any, Any], bool]] = None,
     fail_fast: bool = False,
+    context_factory: Optional[Callable[[], "IntentContext"]] = None,
+    extra_kwargs: Optional[dict] = None,
 ) -> EvalResult:
+    """
+    Load a dataset and node from module, then evaluate using run_eval.
+    """
     dataset = load_dataset(dataset_path)
     node = get_node_from_module(module_name, node_name)
     if node is None:
         raise ValueError(f"Failed to load node {node_name} from {module_name}")
-    return run_eval(dataset, node, comparator, fail_fast)
+    return run_eval(dataset, node, comparator, fail_fast, context_factory, extra_kwargs)
 
 
 # Control what gets imported when using "from intent_kit.evals import *"
