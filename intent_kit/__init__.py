@@ -19,7 +19,7 @@ from .context import IntentContext
 # For advanced node helpers (llm_classifier, llm_splitter, etc.),
 # import directly from intent_kit.utils.node_factory in your code.
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "IntentGraphBuilder",

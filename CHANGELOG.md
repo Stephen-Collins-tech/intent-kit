@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.4.0] - 2025-07-25
+
+### Added
+- Enhanced LLM config handling with environment variable support and improved code organization
+- PerfUtil utility class for performance monitoring
+- NodeType enum for better type safety
+- Comprehensive test suite for ActionNode with various scenarios
+- Pre-commit configuration with version sync and changelog check scripts
+- CodeCov components for test coverage reporting
+
+### Changed
+- Updated examples to use new model configurations
+- Enhanced development coverage script with additional tests
+- Improved code organization by refactoring out of evals node_library
+- Updated documentation and configuration files
+
+### Removed
+- Unused dependencies from project configuration
+
 ## [v0.3.0] - 2025-07-18
 
 ### Added
