@@ -33,10 +33,12 @@ ENV/
 
 # Testing
 .coverage
+coverage.feature.xml
 htmlcov/
 .pytest_cache/
 .tox/
 reports/
+diff_coverage.*
 
 # Documentation
 site/

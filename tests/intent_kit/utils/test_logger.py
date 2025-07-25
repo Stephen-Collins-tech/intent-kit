@@ -167,6 +167,31 @@ class TestColorManager:
         result = self.color_manager.supports_color()
         assert isinstance(result, bool)
 
+    @patch("sys.stdout")
+    @patch("os.environ")
+    def test_supports_color_environment_variables(self, mock_environ, mock_stdout):
+        """Test supports_color with different environment configurations."""
+        # Mock stdout to be a terminal
+        mock_stdout.isatty.return_value = True
+
+        # Test with NO_COLOR set
+        mock_environ.get.side_effect = lambda key, default=None: (
+            "1" if key == "NO_COLOR" else default
+        )
+        assert not self.color_manager.supports_color()
+
+        # Test with TERM=dumb
+        mock_environ.get.side_effect = lambda key, default=None: (
+            "dumb" if key == "TERM" else default
+        )
+        assert not self.color_manager.supports_color()
+
+        # Test with normal terminal
+        mock_environ.get.side_effect = lambda key, default=None: (
+            "xterm" if key == "TERM" else None
+        )
+        assert self.color_manager.supports_color()
+
 
 class TestLogger:
     """Test Logger class."""
@@ -302,3 +327,208 @@ class TestLogger:
             calls = mock_print.call_args_list
             assert "logger1" in calls[0][0][0]
             assert "logger2" in calls[1][0][0]
+
+    def test_individual_log_methods(self):
+        """Test individual log methods (info, error, warning, etc.)."""
+        # Use trace level logger to ensure all methods will be called
+        logger = Logger("test", "trace")
+
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            # Test info method
+            logger.info("info message")
+            call_args = mock_print.call_args[0][0]
+            assert "[INFO]" in call_args
+            assert "info message" in call_args
+
+            # Test error method
+            logger.error("error message")
+            call_args = mock_print.call_args[0][0]
+            assert "[ERROR]" in call_args
+            assert "error message" in call_args
+
+            # Test warning method
+            logger.warning("warning message")
+            call_args = mock_print.call_args[0][0]
+            assert "[WARNING]" in call_args
+            assert "warning message" in call_args
+
+            # Test critical method
+            logger.critical("critical message")
+            call_args = mock_print.call_args[0][0]
+            assert "[CRITICAL]" in call_args
+            assert "critical message" in call_args
+
+            # Test fatal method
+            logger.fatal("fatal message")
+            call_args = mock_print.call_args[0][0]
+            assert "[FATAL]" in call_args
+            assert "fatal message" in call_args
+
+            # Test trace method
+            logger.trace("trace message")
+            call_args = mock_print.call_args[0][0]
+            assert "[TRACE]" in call_args
+            assert "trace message" in call_args
+
+    def test_debug_method_with_colorize(self):
+        """Test debug method with colorize_message parameter."""
+        # Use debug level logger to ensure debug method will be called
+        logger = Logger("test", "debug")
+
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            # Test with colorize_message=True (default)
+            logger.debug("key: value")
+            call_args = mock_print.call_args[0][0]
+            assert "[DEBUG]" in call_args
+            assert "key: value" in call_args
+
+            # Test with colorize_message=False
+            logger.debug("simple message", colorize_message=False)
+            call_args = mock_print.call_args[0][0]
+            assert "[DEBUG]" in call_args
+            assert "simple message" in call_args
+
+    def test_debug_structured_method(self):
+        """Test debug_structured method with different data types."""
+        # Use debug level logger to ensure debug_structured method will be called
+        logger = Logger("test", "debug")
+
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            # Test with dictionary
+            test_dict = {"key": "value", "number": 42}
+            logger.debug_structured(test_dict, "Test Dict")
+            call_args = mock_print.call_args[0][0]
+            assert "[DEBUG]" in call_args
+            assert "Test Dict" in call_args
+
+            # Test with list
+            test_list = [1, 2, 3, "string"]
+            logger.debug_structured(test_list, "Test List")
+            call_args = mock_print.call_args[0][0]
+            assert "[DEBUG]" in call_args
+            assert "Test List" in call_args
+
+            # Test with string
+            logger.debug_structured("simple string", "Test String")
+            call_args = mock_print.call_args[0][0]
+            assert "[DEBUG]" in call_args
+            assert "Test String" in call_args
+
+    def test_format_dict_method(self):
+        """Test _format_dict method with various data types."""
+        test_data = {
+            "string": "value",
+            "number": 42,
+            "boolean": True,
+            "null": None,
+            "nested": {"inner": "value"},
+            "list": [1, 2, 3],
+        }
+
+        result = self.logger._format_dict(test_data)
+        assert "string" in result
+        assert "value" in result
+        assert "42" in result
+        assert "True" in result
+        assert "null" in result
+        assert "nested" in result
+        assert "inner" in result
+
+    def test_format_list_method(self):
+        """Test _format_list method with various data types."""
+        test_data = ["string", 42, True, None, {"key": "value"}, [1, 2, 3]]
+
+        result = self.logger._format_list(test_data)
+        assert "string" in result
+        assert "42" in result
+        assert "True" in result
+        assert "null" in result
+        assert "key" in result
+        assert "value" in result
+
+    def test_format_empty_containers(self):
+        """Test formatting of empty dictionaries and lists."""
+        # Test empty dict
+        result_dict = self.logger._format_dict({})
+        assert "{}" in result_dict
+
+        # Test empty list
+        result_list = self.logger._format_list([])
+        assert "[]" in result_list
+
+    def test_debug_structured_without_color_support(self):
+        """Test debug_structured method when color is not supported."""
+        # Use debug level logger to ensure debug_structured method will be called
+        logger = Logger("test", "debug")
+
+        with patch.object(logger, "supports_color", return_value=False):
+            with patch("intent_kit.utils.logger.print") as mock_print:
+                test_data = {"key": "value"}
+                logger.debug_structured(test_data, "Test")
+                call_args = mock_print.call_args[0][0]
+                assert "[DEBUG]" in call_args
+                assert "Test" in call_args
+                assert "{'key': 'value'}" in call_args
+
+    def test_log_method_level_filtering(self):
+        """Test that individual log methods respect level filtering."""
+        logger = Logger("test", "warning")
+
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            # These should not log due to level filtering
+            logger.info("info message")
+            logger.debug("debug message")
+            logger.trace("trace message")
+
+            mock_print.assert_not_called()
+
+            # These should log
+            logger.warning("warning message")
+            logger.error("error message")
+            logger.critical("critical message")
+            logger.fatal("fatal message")
+
+            assert mock_print.call_count == 4
+
+    def test_logger_with_off_level(self):
+        """Test logger with 'off' level - should not log anything."""
+        logger = Logger("test", "off")
+
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            logger.info("info message")
+            logger.error("error message")
+            logger.debug("debug message")
+
+            mock_print.assert_not_called()
+
+    def test_color_manager_integration(self):
+        """Test that logger properly uses color_manager."""
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            self.logger.info("test message")
+            call_args = mock_print.call_args[0][0]
+
+            # Should contain color codes
+            assert "\033[" in call_args
+            assert "\033[0m" in call_args  # color reset
+
+    def test_logger_edge_cases(self):
+        """Test logger with edge cases."""
+        # Test with empty message
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            self.logger.info("")
+            call_args = mock_print.call_args[0][0]
+            assert "[INFO]" in call_args
+
+        # Test with None message
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            self.logger.info(None)
+            call_args = mock_print.call_args[0][0]
+            assert "[INFO]" in call_args
+            assert "None" in call_args
+
+        # Test with non-string message
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            self.logger.info(123)
+            call_args = mock_print.call_args[0][0]
+            assert "[INFO]" in call_args
+            assert "123" in call_args
