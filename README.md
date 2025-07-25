@@ -5,18 +5,21 @@
 <h1 align="center">Intent Kit</h1>
 <p align="center">Build intelligent workflows that understand what users want</p>
 
-<p align="center">
-  <a href="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml">
+<p align="center" >
+  <a style="text-decoration: none;" href="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml">
     <img src="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg" alt="CI"/>
   </a>
-  <a href="https://codecov.io/gh/Stephen-Collins-tech/intent-kit">
+  <a style="text-decoration: none;" href="https://codecov.io/gh/Stephen-Collins-tech/intent-kit">
     <img src="https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg" alt="Coverage Status"/>
   </a>
-  <a href="https://docs.intentkit.io">
+  <a style="text-decoration: none;" href="https://docs.intentkit.io">
     <img src="https://img.shields.io/badge/docs-online-blue" alt="Documentation"/>
   </a>
-  <a href="https://pypi.org/project/intentkit-py">
+  <a style="text-decoration: none;" href="https://pypi.org/project/intentkit-py">
     <img src="https://img.shields.io/pypi/v/intentkit-py" alt="PyPI"/>
+  </a>
+  <a style="text-decoration: none;" href="https://pypi.org/project/intentkit-py">
+    <img src="https://img.shields.io/pypi/dm/intentkit-py" alt="PyPI Downloads"/>
   </a>
 </p>
 
@@ -38,19 +41,19 @@ The best part? You stay in complete control. You define exactly what your app ca
 
 ## Why Intent Kit?
 
-### 🎯 **You're in Control**
+### **You're in Control**
 Define every possible action upfront. No surprises, no unexpected behavior.
 
-### 🚀 **Works with Any AI**
+### **Works with Any AI**
 Use OpenAI, Anthropic, Google, Ollama, or even simple rules. Mix and match as needed.
 
-### 🔧 **Easy to Build**
+### **Easy to Build**
 Simple, clear API that feels natural to use. No complex abstractions to learn.
 
-### 🧪 **Testable & Reliable**
+### **Testable & Reliable**
 Built-in testing tools let you verify your workflows work correctly before deploying.
 
-### 📊 **See What's Happening**
+### **See What's Happening**
 Visualize your workflows and track exactly how decisions are made.
 
 ---
@@ -75,7 +78,7 @@ pip install 'intentkit-py[all]'        # All providers
 ```python
 from intent_kit import IntentGraphBuilder, action, llm_classifier
 
-# Define what your app can do
+# Define actions your app can take
 greet = action(
     name="greet",
     description="Greet the user by name",
@@ -83,38 +86,17 @@ greet = action(
     param_schema={"name": str}
 )
 
-weather = action(
-    name="weather",
-    description="Get weather for a location",
-    action_func=lambda city: f"Weather in {city}: 72°F, Sunny",
-    param_schema={"city": str}
-)
-
-# Create a classifier to understand user requests
+# Create a classifier to understand requests
 classifier = llm_classifier(
     name="main",
-    children=[greet, weather],
+    children=[greet],
     llm_config={"provider": "openai", "model": "gpt-3.5-turbo"}
 )
 
-# Build your workflow
+# Build and test your workflow
 graph = IntentGraphBuilder().root(classifier).build()
-
-# Test it!
 result = graph.route("Hello Alice")
 print(result.output)  # → "Hello Alice!"
-```
-
-### 3. Try More Examples
-
-```python
-# Get weather
-result = graph.route("What's the weather in San Francisco?")
-print(result.output)  # → "Weather in San Francisco: 72°F, Sunny"
-
-# Handle multiple requests
-result = graph.route("Greet Bob and check weather in NYC")
-print(result.output)  # → Handles both requests!
 ```
 
 ---
@@ -168,28 +150,28 @@ This means you can deploy with confidence, knowing your AI workflows work reliab
 
 ## Key Features
 
-### 🧠 **Smart Understanding**
+### **Smart Understanding**
 - Works with any AI model (OpenAI, Anthropic, Google, Ollama)
 - Extracts parameters automatically (names, dates, preferences)
 - Handles complex, multi-step requests
 
-### 🔄 **Multi-Step Workflows**
+### **Multi-Step Workflows**
 - Chain actions together
 - Handle "do X and Y" requests
 - Remember context across conversations
 
-### 🎨 **Visualization**
+### **Visualization**
 - See your workflows as interactive diagrams
 - Track how decisions are made
 - Debug complex flows easily
 
-### 🛠️ **Developer Friendly**
+### **Developer Friendly**
 - Simple, clear API
 - Comprehensive error handling
 - Built-in debugging tools
 - JSON configuration support
 
-### 🧪 **Testing & Evaluation**
+### **Testing & Evaluation**
 - Test against real datasets
 - Measure accuracy and performance
 - Catch regressions automatically
@@ -198,16 +180,16 @@ This means you can deploy with confidence, knowing your AI workflows work reliab
 
 ## Common Use Cases
 
-### 🤖 **Chatbots & Virtual Assistants**
+### **Chatbots & Virtual Assistants**
 Build intelligent bots that understand natural language and take appropriate actions.
 
-### 🔧 **Task Automation**
+### **Task Automation**
 Automate complex workflows that require understanding user intent.
 
-### 📊 **Data Processing**
+### **Data Processing**
 Route and process information based on what users are asking for.
 
-### 🎯 **Decision Systems**
+### **Decision Systems**
 Create systems that make smart decisions based on user requests.
 
 ---
@@ -237,86 +219,55 @@ pip install 'intentkit-py[dev]'
 
 ```
 intent-kit/
-├── intent_kit/        # Main library code
-├── examples/          # Working examples
-├── docs/             # Documentation
-├── tests/            # Test suite
-└── pyproject.toml    # Project configuration
+├── intent_kit/           # Main library code
+├── examples/             # Working examples
+├── docs/                 # Documentation
+├── tests/                # Test suite
+├── scripts/              # Development utilities
+├── tasks/                # Project roadmap and tasks
+├── assets/               # Project assets (logo, etc.)
+└── pyproject.toml        # Project configuration
 ```
 
 ---
 
 ## Getting Help
 
-- 📚 **[Full Documentation](https://docs.intentkit.io)** - Guides, API reference, and examples
-- 🚀 **[Quickstart Guide](https://docs.intentkit.io/quickstart/)** - Get up and running fast
-- 💡 **[Examples](https://docs.intentkit.io/examples/)** - See how others use Intent Kit
-- 🐛 **[GitHub Issues](https://github.com/Stephen-Collins-tech/intent-kit/issues)** - Report bugs or ask questions
+- **[Full Documentation](https://docs.intentkit.io)** - Guides, API reference, and examples
+- **[Quickstart Guide](https://docs.intentkit.io/quickstart/)** - Get up and running fast
+- **[Examples](https://docs.intentkit.io/examples/)** - See how others use Intent Kit
+- **[GitHub Issues](https://github.com/Stephen-Collins-tech/intent-kit/issues)** - Report bugs or ask questions
 
 ---
 
 ## Development & Contribution
 
-### Pre-commit Hooks & Version Management
-
-This project uses pre-commit hooks to ensure code quality and version consistency:
-
-- **Version Sync:** The version in `pyproject.toml` is automatically synced to `intent_kit/__init__.py` on commit.
-- **Changelog Check:** Commits are blocked if the current version is not present in `CHANGELOG.md`.
-
-To set up pre-commit hooks:
-
-```bash
-uv pip install pre-commit
-uv run pre-commit install
-```
-
-### Build, Test, and Lint
-
-All development tasks use [`uv`](https://github.com/astral-sh/uv) for fast, reproducible Python workflows.
-
-- **Install dependencies:**
-  ```bash
-  uv sync --group dev
-  ```
-- **Run tests:**
-  ```bash
-  uv run pytest
-  ```
-- **Lint:**
-  ```bash
-  uv run lint
-  uv run black --check .
-  uv run typecheck
-  ```
-- **Build package:**
-  ```bash
-  uv build
-  ```
-
-### GitHub Actions CI/CD
-
-- **CI:** Lint, typecheck, test, and evaluate using `uv` in GitHub Actions.
-- **Deploy:** On new tags, the package is built and published to PyPI, and documentation is deployed to Cloudflare Pages. (Publishing is handled by maintainers via CI/CD.)
-
-### Utility Scripts
-
-See [scripts/README.md](scripts/README.md) for documentation on developer scripts, including automated changelog generation with intent-kit and LLMs.
-
----
-
-## Contributing
-
-We welcome contributions! Here's how to get started:
+### Setup
 
 ```bash
 git clone git@github.com:Stephen-Collins-tech/intent-kit.git
 cd intent-kit
 uv sync --group dev
-uv run pytest
+uv run pre-commit install
 ```
 
-See our [Contributing Guide](https://github.com/Stephen-Collins-tech/intent-kit/blob/main/CONTRIBUTING.md) for more details.
+### Development Commands
+
+```bash
+uv run pytest          # Run tests
+uv run lint            # Lint code
+uv run black --check . # Format check
+uv run typecheck       # Type checking
+uv build               # Build package
+```
+
+This project uses [`uv`](https://github.com/astral-sh/uv) for fast, reproducible Python workflows and pre-commit hooks for code quality.
+
+---
+
+## Contributing
+
+We welcome contributions! See our [GitHub Issues](https://github.com/Stephen-Collins-tech/intent-kit/issues) for discussions and our [Development section](#development--contribution) for setup instructions.
 
 ---
 
