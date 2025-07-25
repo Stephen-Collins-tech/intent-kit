@@ -227,22 +227,6 @@ class TestOllamaClient:
         assert result == mock_response
         mock_client.pull.assert_called_once_with("llama2")
 
-    @patch("ollama.Client")
-    def test_generate_text_alias(self, mock_client_class):
-        """Test generate_text alias method."""
-        mock_client = Mock()
-        mock_client_class.return_value = mock_client
-        mock_response = {"response": "Test response"}
-        mock_client.generate.return_value = mock_response
-
-        client = OllamaClient()
-        result = client.generate_text("Test prompt", model="llama2")
-
-        assert result == "Test response"
-        mock_client.generate.assert_called_once_with(
-            model="llama2", prompt="Test prompt"
-        )
-
     def test_is_available_with_ollama(self):
         """Test is_available when ollama is installed."""
         with patch("ollama.Client"):

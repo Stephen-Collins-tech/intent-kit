@@ -59,6 +59,3 @@ class OpenRouterClient(BaseLLMClient):
             return ""
         content = response.choices[0].message.content
         return str(content) if content else ""
-
-    def generate_text(self, prompt: str, model: Optional[str] = None) -> str:
-        return self.generate(prompt, model)

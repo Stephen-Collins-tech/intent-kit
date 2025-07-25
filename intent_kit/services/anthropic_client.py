@@ -51,7 +51,3 @@ class AnthropicClient(BaseLLMClient):
         if not response.content:
             return ""
         return str(response.content[0].text) if response.content else ""
-
-    # Keep generate_text as an alias for backward compatibility
-    def generate_text(self, prompt: str, model: Optional[str] = None) -> str:
-        return self.generate(prompt, model)

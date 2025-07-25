@@ -45,9 +45,6 @@ class OllamaClient(BaseLLMClient):
         result = response.get("response", "")
         return result if result is not None else ""
 
-    def generate_text(self, prompt: str, model: Optional[str] = None) -> str:
-        return self.generate(prompt, model)
-
     def generate_stream(self, prompt: str, model: str = "llama2"):
         """Generate text using Ollama model with streaming."""
         self._ensure_imported()

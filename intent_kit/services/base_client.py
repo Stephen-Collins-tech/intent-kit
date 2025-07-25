@@ -45,19 +45,6 @@ class BaseLLMClient(ABC):
         """
         pass
 
-    def generate_text(self, prompt: str, model: Optional[str] = None) -> str:
-        """
-        Alias for generate method (backward compatibility).
-
-        Args:
-            prompt: The text prompt to send to the model
-            model: The model name to use (optional, uses default if not provided)
-
-        Returns:
-            Generated text response
-        """
-        return self.generate(prompt, model)
-
     @classmethod
     def is_available(cls) -> bool:
         """

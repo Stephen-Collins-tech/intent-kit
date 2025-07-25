@@ -153,28 +153,6 @@ class TestAnthropicClient:
             with pytest.raises(Exception, match="API Error"):
                 client.generate("Test prompt")
 
-    def test_generate_text_alias(self):
-        """Test generate_text alias method."""
-        with patch.object(AnthropicClient, "get_client") as mock_get_client:
-            mock_client = Mock()
-            mock_response = Mock()
-            mock_content = Mock()
-            mock_content.text = "Generated response"
-            mock_response.content = [mock_content]
-            mock_client.messages.create.return_value = mock_response
-            mock_get_client.return_value = mock_client
-
-            client = AnthropicClient("test_api_key")
-            result = client.generate_text(
-                "Test prompt", model="claude-3-haiku-20240307"
-            )
-            assert result == "Generated response"
-            mock_client.messages.create.assert_called_once_with(
-                model="claude-3-haiku-20240307",
-                max_tokens=1000,
-                messages=[{"role": "user", "content": "Test prompt"}],
-            )
-
     def test_generate_with_client_recreation(self):
         """Test generate when client needs to be recreated."""
         mock_anthropic = Mock()

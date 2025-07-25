@@ -171,29 +171,6 @@ class TestOpenAIClient:
             with pytest.raises(Exception, match="API Error"):
                 client.generate("Test prompt")
 
-    def test_generate_text_alias(self):
-        """Test generate_text alias method."""
-        with patch.object(OpenAIClient, "get_client") as mock_get_client:
-            mock_client = Mock()
-            mock_response = Mock()
-            mock_choice = Mock()
-            mock_message = Mock()
-            mock_message.content = "Generated response"
-            mock_choice.message = mock_message
-            mock_response.choices = [mock_choice]
-            mock_client.chat.completions.create.return_value = mock_response
-            mock_get_client.return_value = mock_client
-
-            client = OpenAIClient("test_api_key")
-            result = client.generate_text("Test prompt", model="gpt-3.5-turbo")
-
-            assert result == "Generated response"
-            mock_client.chat.completions.create.assert_called_once_with(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": "Test prompt"}],
-                max_tokens=1000,
-            )
-
     def test_generate_with_client_recreation(self):
         """Test generate when client needs to be recreated."""
         with patch.object(OpenAIClient, "get_client") as mock_get_client:

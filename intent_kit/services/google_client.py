@@ -71,7 +71,7 @@ class GoogleClient(BaseLLMClient):
                 config=generate_content_config,
             )
 
-            logger.debug(f"Google generate_text response: {response.text}")
+            logger.debug(f"Google generate response: {response.text}")
             return str(response.text) if response.text else ""
 
         except Exception as e:
