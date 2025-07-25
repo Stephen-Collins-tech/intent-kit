@@ -125,7 +125,7 @@ class DocManager:
                         },
                         "multi_intent_routing.md": {
                             "title": "Multi-Intent Routing",
-                            "description": "Handling multiple intents",
+                            "description": "Handling multiple nodes",
                             "status": "pending",
                         },
                         "context_workflows.md": {

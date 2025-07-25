@@ -16,11 +16,29 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
+      - id: typecheck
+        name: typecheck
+        entry: uv run typecheck
+        language: system
+        types: [python]
+        pass_filenames: false
       - id: pytest
         name: pytest
         entry: uv run pytest
         language: system
         types: [python]
+        pass_filenames: false
+      - id: sync-version
+        name: Sync version between pyproject.toml and __init__.py
+        entry: uv run scripts/sync_version.py
+        language: system
+        files: pyproject.toml
+        pass_filenames: false
+      - id: check-changelog
+        name: Check version exists in changelog
+        entry: uv run scripts/check_changelog.py
+        language: system
+        files: pyproject.toml
         pass_filenames: false
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0

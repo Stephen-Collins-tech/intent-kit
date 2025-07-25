@@ -5,13 +5,12 @@ This module provides factory functions for creating different types of nodes
 with consistent patterns and common functionality.
 """
 
-from typing import Any, Callable, List, Optional, Dict, Type, Set, Union, Sequence
+from typing import Any, Callable, List, Optional, Dict, Type, Set, Union
 from intent_kit.node import TreeNode
 from intent_kit.node.classifiers import ClassifierNode
 from intent_kit.node.actions import ActionNode, RemediationStrategy
-from intent_kit.node.splitters import SplitterNode, rule_splitter, llm_splitter
+from intent_kit.node.splitters import SplitterNode, rule_splitter, create_llm_splitter
 from intent_kit.utils.logger import Logger
-from intent_kit.types import IntentChunk
 from intent_kit.graph import IntentGraph
 from intent_kit.services.base_client import BaseLLMClient
 
@@ -132,7 +131,7 @@ def create_splitter_node(
     Args:
         name: Name of the splitter node
         description: Description of the splitter
-        splitter_func: Function to split intents
+        splitter_func: Function to split nodes
         children: List of child nodes to route to
         llm_client: Optional LLM client for LLM-based splitting
 
@@ -239,7 +238,7 @@ def llm_classifier(
     *,
     name: str,
     children: List[TreeNode],
-    llm_config: LLMConfig,
+    llm_config: Optional[LLMConfig] = None,
     classification_prompt: Optional[str] = None,
     description: str = "",
     remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
@@ -249,7 +248,7 @@ def llm_classifier(
     Args:
         name: Name of the classifier node
         children: List of child nodes to classify between
-        llm_config: LLM configuration or client instance for classification
+        llm_config: (Optional) LLM configuration or client instance for classification. If not provided, the graph-level default will be used if available.
         classification_prompt: Optional custom classification prompt
         description: Optional description of the classifier
 
@@ -260,7 +259,7 @@ def llm_classifier(
         >>> classifier = llm_classifier(
         ...     name="root",
         ...     children=[greet_action, calc_action, weather_action],
-        ...     llm_config=LLM_CONFIG
+        ...     # llm_config=LLM_CONFIG  # Optional if using graph-level default
         ... )
     """
     if not children:
@@ -294,46 +293,60 @@ def llm_classifier(
     )
 
 
-def llm_splitter_node(
+def llm_splitter(
     *,
     name: str,
     children: List[TreeNode],
-    llm_config: Dict[str, Any],
+    llm_config: Optional[LLMConfig] = None,
     description: str = "",
 ) -> TreeNode:
-    """Create an LLM-powered splitter node for multi-intent handling.
+    """Create an LLM-powered splitter node for multi-intent handling with auto-wired children.
 
     Args:
         name: Name of the splitter node
         children: List of child nodes to route to
-        llm_config: LLM configuration for splitting
+        llm_config: (Optional) LLM configuration or client instance for splitting. If not provided, the graph-level default will be used if available.
         description: Optional description of the splitter
 
     Returns:
         Configured SplitterNode with LLM-powered splitting
 
     Example:
-        >>> splitter = llm_splitter_node(
+        >>> splitter = llm_splitter(
         ...     name="multi_intent_splitter",
         ...     children=[classifier_node],
-        ...     llm_config=LLM_CONFIG
+        ...     # llm_config=LLM_CONFIG  # Optional if using graph-level default
         ... )
     """
+    if not children:
+        raise ValueError("llm_splitter requires at least one child node")
 
-    # Create a wrapper function that provides the LLM client to llm_splitter
-    def llm_splitter_wrapper(
-        user_input: str, debug: bool = False
-    ) -> Sequence[IntentChunk]:
-        # Extract LLM client from config
-        llm_client = llm_config.get("llm_client")
-        return llm_splitter(user_input, debug, llm_client)
+    # Optionally, collect children descriptions for debugging or prompt context (not used directly here)
+    node_descriptions = []
+    for child in children:
+        if hasattr(child, "description") and child.description:
+            node_descriptions.append(f"{child.name}: {child.description}")
+        else:
+            node_descriptions.append(child.name)
+            logger.warning(
+                f"Child node '{child.name}' has no description, using name as fallback"
+            )
+
+    # Use the provided llm_config or raise if not set (let the splitter handle graph-level fallback if needed)
+    splitter_func = create_llm_splitter(llm_config)
 
     return create_splitter_node(
         name=name,
         description=description,
-        splitter_func=llm_splitter_wrapper,
+        splitter_func=splitter_func,
         children=children,
-        llm_client=llm_config.get("llm_client"),
+        llm_client=(
+            getattr(llm_config, "llm_client", None)
+            if hasattr(llm_config, "llm_client")
+            else (
+                llm_config.get("llm_client") if isinstance(llm_config, dict) else None
+            )
+        ),
     )
 
 
@@ -384,9 +397,4 @@ __all__ = [
     "create_classifier_node",
     "create_splitter_node",
     "create_default_classifier",
-    "action",
-    "llm_classifier",
-    "llm_splitter_node",
-    "rule_splitter_node",
-    "create_intent_graph",
 ]

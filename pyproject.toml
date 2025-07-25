@@ -34,15 +34,43 @@ Repository = "https://github.com/Stephen-Collins-tech/intent-kit"
 all = [
     "anthropic>=0.54.0",
     "google-genai>=0.1.0",
-    "networkx>=3.5",
     "ollama>=0.1.0",
     "openai>=1.0.0",
-    "pyvis>=0.3.2",
     "pyyaml>=6.0.2",
 ]
 anthropic = [
     "anthropic>=0.54.0",
 ]
+google = [
+    "google-genai>=0.1.0",
+]
+ollama = [
+    "ollama>=0.1.0",
+]
+openai = [
+    "openai>=1.0.0",
+]
+evals = [
+    "pyyaml>=6.0.2",
+]
+
+[project.scripts]
+eval-node = "intent_kit.evals.run_node_eval:main"
+run-evals = "intent_kit.evals.run_all_evals:run_all_evaluations"
+lint = "scripts.lint:main"
+typecheck = "scripts.typecheck:main"
+examples = "scripts.examples:run_all"
+example = "scripts.examples:run_single"
+list-examples = "scripts.examples:list_examples"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["intent_kit*", "scripts*"]
+
+[tool.uv.sources]
+intentkit-py = { workspace = true }
+
+[dependency-groups]
 dev = [
     "black[jupyter]>=24.4.2",
     "black>=24.4.2",
@@ -63,36 +91,5 @@ dev = [
     "ruff>=0.4.7",
     "tqdm",
     "twine>=5.1.0",
-    "types-networkx>=3.5.0.20250701",
     "types-pyyaml>=6.0.12.20250516",
 ]
-google = [
-    "google-genai>=0.1.0",
-]
-ollama = [
-    "ollama>=0.1.0",
-]
-openai = [
-    "openai>=1.0.0",
-]
-viz = [
-    "networkx>=3.5",
-    "pyvis>=0.3.2",
-]
-evals = [
-    "pyyaml>=6.0.2",
-]
-
-[project.scripts]
-eval-api-demo = "examples.eval_api_demo:main"
-eval-node = "intent_kit.evals.run_node_eval:main"
-lint = "scripts.lint:main"
-run-evals = "intent_kit.evals.run_all_evals:run_all_evaluations"
-typecheck = "scripts.typecheck:main"
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["intent_kit*", "scripts*"]
-
-[tool.uv.sources]
-intentkit-py = { workspace = true }

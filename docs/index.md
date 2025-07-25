@@ -18,7 +18,7 @@ Get up and running in minutes with our [Quickstart Guide](quickstart.md).
 - [Multi-Intent Routing](examples/multi-intent-routing.md) - Handling complex requests
 
 ### Development
-- [Building and Publishing](development/building-and-publishing.md) - How to build and publish the package
+- [Building](development/building.md) - How to build the package
 - [Testing](development/testing.md) - Unit tests and integration testing
 - [Evaluation](development/evaluation.md) - Performance evaluation and benchmarking
 - [Debugging](development/debugging.md) - Debugging tools and techniques
@@ -64,6 +64,6 @@ Create systems that make smart decisions based on user requests.
 ## 📖 Learn More
 
 - **[Quickstart Guide](quickstart.md)** - Get up and running fast
-- **[Examples](examples/)** - See working examples
-- **[Core Concepts](concepts/)** - Understand the fundamentals
-- **[Development](development/)** - Testing, debugging, and deployment
+- **[Examples](examples/index.md)** - See working examples
+- **[Core Concepts](concepts/index.md)** - Understand the fundamentals
+- **[Development](development/index.md)** - Testing, debugging, and deployment

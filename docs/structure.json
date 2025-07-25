@@ -89,7 +89,7 @@
         },
         "multi_intent_routing.md": {
           "title": "Multi-Intent Routing",
-          "description": "Handling multiple intents",
+          "description": "Handling multiple nodes",
           "status": "pending"
         },
         "context_workflows.md": {
@@ -103,9 +103,9 @@
       "title": "Development",
       "description": "Development and testing guides",
       "files": {
-        "building-and-publishing.md": {
-          "title": "Building and Publishing",
-          "description": "How to build and publish the package",
+        "building.md": {
+          "title": "Building",
+          "description": "How to build the package",
           "status": "complete"
         },
         "testing.md": {

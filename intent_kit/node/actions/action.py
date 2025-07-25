@@ -131,6 +131,9 @@ class ActionNode(TreeNode):
                     children_results=[],
                 )
         try:
+            self.logger.debug(
+                f"Validating types for intent '{self.name}' (Path: {'.'.join(self.get_path())})"
+            )
             validated_params = self._validate_types(extracted_params)
         except Exception as e:
             self.logger.error(

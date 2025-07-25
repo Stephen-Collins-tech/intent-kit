@@ -425,13 +425,9 @@ def main():
 
         # Determine module name based on node name
         if "llm" in node_name:
-            module_name = (
-                f"intent_kit.evals.sample_nodes.{node_name.split('_')[0]}_node_llm"
-            )
+            module_name = f"intent_kit.node_library.{node_name.split('_')[0]}_node_llm"
         else:
-            module_name = (
-                f"intent_kit.evals.sample_nodes.{node_name.split('_')[0]}_node"
-            )
+            module_name = f"intent_kit.node_library.{node_name.split('_')[0]}_node"
 
         # Load node
         node = get_node_from_module(module_name, node_name)

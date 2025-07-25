@@ -65,13 +65,13 @@ print(result.output)  # → "Hello Sarah!"
 
 ## Next Steps
 
-- Check out the [Examples](examples/) to see more complex workflows
+- Check out the [Examples](examples/index.md) to see more complex workflows
 - Learn about [Intent Graphs](concepts/intent-graphs.md) to understand the architecture
 - Read about [Nodes and Actions](concepts/nodes-and-actions.md) to build more features
-- Explore the [Development](development/) guides for testing and debugging
+- Explore the [Development](development/index.md) guides for testing and debugging
 
 ## Need Help?
 
 - 📚 **[Full Documentation](https://docs.intentkit.io)** - Complete guides and API reference
-- 💡 **[Examples](examples/)** - Working examples to learn from
+- 💡 **[Examples](examples/index.md)** - Working examples to learn from
 - 🐛 **[GitHub Issues](https://github.com/Stephen-Collins-tech/intent-kit/issues)** - Ask questions or report bugs

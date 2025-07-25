@@ -18,13 +18,15 @@ LLMConfig = Union[Dict[str, Any], BaseLLMClient]
 
 
 def create_llm_classifier(
-    llm_config: LLMConfig, classification_prompt: str, node_descriptions: List[str]
+    llm_config: Optional[LLMConfig],
+    classification_prompt: str,
+    node_descriptions: List[str],
 ) -> Callable[[str, List["TreeNode"], Optional[Dict[str, Any]]], Optional["TreeNode"]]:
     """
     Create an LLM-powered classifier function.
 
     Args:
-        llm_config: LLM configuration or client instance
+        llm_config: (Optional) LLM configuration or client instance. If None, the builder or graph should inject a default.
         classification_prompt: Prompt template for classification
         node_descriptions: List of descriptions for each child node
 
@@ -48,6 +50,11 @@ def create_llm_classifier(
         Returns:
             Selected child node or None if no match
         """
+        logger.debug(f"LLM classifier input: {user_input}")
+        if llm_config is None:
+            raise ValueError(
+                "No llm_config provided to LLM classifier. Please set a default on the graph or provide one at the node level."
+            )
         try:
             # Build context information for the prompt
             context_info = ""
@@ -88,7 +95,7 @@ def create_llm_classifier(
 
             # Parse the response to get the selected node name
             selected_node_name = response.strip()
-
+            logger.debug(f"LLM raw output: {response}")
             logger.debug(f"LLM classifier selected node: {selected_node_name}")
 
             # Find the child node with the matching name

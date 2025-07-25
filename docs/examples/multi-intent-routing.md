@@ -1,11 +1,11 @@
 # Multi-Intent Routing Example
 
-The following shows how intent-kit can handle _multiple_ intents in a single user utterance using a splitter node.
+The following shows how intent-kit can handle _multiple_ nodes in a single user utterance using a splitter node.
 
 ```python
-from intent_kit import IntentGraphBuilder, handler, rule_splitter_node
+from intent_kit import IntentGraphBuilder, action, rule_splitter_node
 
-# Handlers for individual intents
+# Actions for individual nodes
 
 def greet(name: str) -> str:
     return f"Hello {name}!"
@@ -13,24 +13,24 @@ def greet(name: str) -> str:
 def weather(city: str) -> str:
     return f"The weather in {city} is sunny."
 
-hello = handler(
+hello_action = action(
     name="greet",
     description="Greet the user",
-    handler_func=greet,
+    action_func=greet,
     param_schema={"name": str},
 )
 
-weather_h = handler(
+weather_action = action(
     name="weather",
     description="Get weather information",
-    handler_func=weather,
+    action_func=weather,
     param_schema={"city": str},
 )
 
-# Splitter routes parts of the sentence to different handlers
+# Splitter routes parts of the sentence to different actions
 splitter = rule_splitter_node(
     name="multi_split",
-    children=[hello, weather_h],
+    children=[hello_action, weather_action],
 )
 
 graph = IntentGraphBuilder().root(splitter).build()
@@ -39,7 +39,7 @@ result = graph.route("Hello Alice and what's the weather in Paris?")
 print(result.output)
 ```
 
-The `rule_splitter_node` looks for keywords ("hello", "weather", etc.) and breaks the user input into sub-phrases routed to the appropriate handlers. The final `result.output` aggregates the outputs from each intent, e.g.:
+The `rule_splitter_node` looks for keywords ("hello", "weather", etc.) and breaks the user input into sub-phrases routed to the appropriate actions. The final `result.output` aggregates the outputs from each intent, e.g.:
 
 ```
 {

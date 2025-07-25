@@ -8,6 +8,7 @@ from intent_kit.node.splitters import (
     llm_splitter,
     _create_splitting_prompt,
     _parse_llm_response,
+    create_llm_splitter,
 )
 
 
@@ -99,7 +100,7 @@ class TestLLMSplitterFunction(unittest.TestCase):
         prompt = _create_splitting_prompt("test input")
         self.assertIn("test input", prompt)
         self.assertIn("JSON array", prompt)
-        self.assertIn("separate intents", prompt)
+        self.assertIn("separate nodes", prompt)
 
     def test_debug_logging(self):
         """Test debug logging functionality."""
@@ -169,6 +170,155 @@ class TestLLMSplitterFunction(unittest.TestCase):
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], "cancel flight")
         self.assertEqual(result[1], "update email")
+
+
+class TestCreateLLMSplitter(unittest.TestCase):
+    """Test cases for the create_llm_splitter function."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.mock_llm_client = Mock()
+
+    def test_create_llm_splitter_with_dict_config(self):
+        """Test creating splitter with dictionary config containing LLM client."""
+        config = {"llm_client": self.mock_llm_client}
+        self.mock_llm_client.generate.return_value = '["chunk1", "chunk2"]'
+
+        splitter_func = create_llm_splitter(llm_config=config)
+        result = splitter_func("input", False)
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], "chunk1")
+        self.assertEqual(result[1], "chunk2")
+
+    def test_create_llm_splitter_with_client_instance(self):
+        """Test creating splitter with direct client instance."""
+        self.mock_llm_client.generate.return_value = '["single chunk"]'
+
+        splitter_func = create_llm_splitter(llm_config=self.mock_llm_client)
+        result = splitter_func("input", False)
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], "single chunk")
+
+    def test_create_llm_splitter_with_custom_prompt(self):
+        """Test creating splitter with custom splitting prompt."""
+        config = {"llm_client": self.mock_llm_client}
+        custom_prompt = "Custom prompt: {input}"
+        self.mock_llm_client.generate.return_value = '["custom result"]'
+
+        splitter_func = create_llm_splitter(
+            llm_config=config, splitting_prompt=custom_prompt
+        )
+        result = splitter_func("input", False)
+
+        # Verify custom prompt was used
+        call_args = self.mock_llm_client.generate.call_args[0][0]
+        self.assertIn("Custom prompt: {input}", call_args)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], "custom result")
+
+    def test_create_llm_splitter_fallback_no_client_in_dict(self):
+        """Test fallback when dict config has no llm_client."""
+        config = {"other_key": "value"}
+
+        splitter_func = create_llm_splitter(llm_config=config)
+        result = splitter_func("travel help and account support", False)
+
+        # Should fallback to rule-based splitting
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], "travel help")
+        self.assertEqual(result[1], "account support")
+
+    def test_create_llm_splitter_fallback_none_client(self):
+        """Test fallback when client is None."""
+        splitter_func = create_llm_splitter(llm_config=None)
+        result = splitter_func("travel help and account support", False)
+
+        # Should fallback to rule-based splitting
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], "travel help")
+        self.assertEqual(result[1], "account support")
+
+    def test_create_llm_splitter_fallback_exception(self):
+        """Test fallback when LLM client raises exception."""
+        self.mock_llm_client.generate.side_effect = Exception("LLM error")
+        config = {"llm_client": self.mock_llm_client}
+
+        splitter_func = create_llm_splitter(llm_config=config)
+        result = splitter_func("travel help and account support", False)
+
+        # Should fallback to rule-based splitting
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], "travel help")
+        self.assertEqual(result[1], "account support")
+
+    def test_create_llm_splitter_fallback_invalid_response(self):
+        """Test fallback when LLM returns invalid response."""
+        self.mock_llm_client.generate.return_value = "invalid response"
+        config = {"llm_client": self.mock_llm_client}
+
+        splitter_func = create_llm_splitter(llm_config=config)
+        result = splitter_func("travel help and account support", False)
+
+        # Should fallback to rule-based splitting
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], "travel help")
+        self.assertEqual(result[1], "account support")
+
+    def test_create_llm_splitter_debug_logging(self):
+        """Test debug logging in created splitter function."""
+        config = {"llm_client": self.mock_llm_client}
+        self.mock_llm_client.generate.return_value = '["debug test"]'
+
+        splitter_func = create_llm_splitter(llm_config=config)
+        result = splitter_func("input", True)
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], "debug test")
+
+    def test_create_llm_splitter_function_signature(self):
+        """Test that created splitter function has correct signature."""
+        config = {"llm_client": self.mock_llm_client}
+
+        splitter_func = create_llm_splitter(llm_config=config)
+
+        # Check that function accepts expected parameters
+        import inspect
+
+        sig = inspect.signature(splitter_func)
+        params = list(sig.parameters.keys())
+
+        self.assertIn("user_input", params)
+        self.assertIn("debug", params)
+        self.assertEqual(len(params), 2)  # Only user_input and debug
+
+    def test_create_llm_splitter_uses_default_prompt_when_none_provided(self):
+        """Test that default prompt is used when no custom prompt provided."""
+        config = {"llm_client": self.mock_llm_client}
+        self.mock_llm_client.generate.return_value = '["default prompt result"]'
+
+        splitter_func = create_llm_splitter(llm_config=config)
+        result = splitter_func("input", False)
+
+        # Verify default prompt was used
+        call_args = self.mock_llm_client.generate.call_args[0][0]
+        self.assertIn("input", call_args)
+        self.assertIn("JSON array", call_args)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], "default prompt result")
+
+    def test_create_llm_splitter_empty_dict_config(self):
+        """Test creating splitter with empty dictionary config."""
+        config = {}
+
+        splitter_func = create_llm_splitter(llm_config=config)
+        result = splitter_func("travel help and account support", False)
+
+        # Should fallback to rule-based splitting
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], "travel help")
+        self.assertEqual(result[1], "account support")
 
 
 def test_parse_llm_response_valid_json():

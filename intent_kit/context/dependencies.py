@@ -2,7 +2,7 @@
 Context Dependency Declarations
 
 This module provides utilities for declaring and managing context dependencies
-for intents and actions. This enables dependency graph building and validation.
+for nodes and actions. This enables dependency graph building and validation.
 """
 
 from typing import Set, Dict, Any, Optional, Protocol
@@ -132,12 +132,13 @@ def analyze_action_dependencies(action: Any) -> Optional[ContextDependencies]:
     Returns:
         ContextDependencies if analysis is possible, None otherwise
     """
-    if not callable(action):
-        return None
-
-    # Check if action has explicit dependencies
+    # Check if action has explicit dependencies first
     if hasattr(action, "context_dependencies"):
         return action.context_dependencies
+
+    # For function-based analysis, the action must be callable
+    if not callable(action):
+        return None
 
     # Check if action has dependency annotations
     if hasattr(action, "__annotations__"):

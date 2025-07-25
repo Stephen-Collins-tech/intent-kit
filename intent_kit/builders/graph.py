@@ -7,9 +7,13 @@ with a more readable and type-safe approach.
 
 from typing import List, Dict, Any, Optional, Callable, Union
 from intent_kit.node import TreeNode
+from intent_kit.node.enums import NodeType, ClassifierType, SplitterType
 from intent_kit.graph import IntentGraph
 from .base import Builder
 from intent_kit.services.yaml_service import yaml_service
+from intent_kit.services.llm_factory import LLMFactory
+from intent_kit.utils.logger import Logger
+import os
 
 
 class IntentGraphBuilder(Builder):
@@ -24,6 +28,8 @@ class IntentGraphBuilder(Builder):
         self._context_trace_enabled = False
         self._json_graph: Optional[Dict[str, Any]] = None
         self._function_registry: Optional[Dict[str, Callable]] = None
+        self._llm_config: Optional[Dict[str, Any]] = None
+        self._logger = Logger("graph_builder")
 
     def root(self, node: TreeNode) -> "IntentGraphBuilder":
         """Set the root node for the intent graph.
@@ -37,11 +43,11 @@ class IntentGraphBuilder(Builder):
         self._root_nodes = [node]
         return self
 
-    def splitter(self, splitter_func) -> "IntentGraphBuilder":
+    def splitter(self, splitter_func: Callable[..., Any]) -> "IntentGraphBuilder":
         """Set a custom splitter function for the intent graph.
 
         Args:
-            splitter_func: Function to use for splitting intents
+            splitter_func: Function to use for splitting nodes
 
         Returns:
             Self for method chaining
@@ -102,14 +108,180 @@ class IntentGraphBuilder(Builder):
         self._json_graph = json_graph
         return self
 
+    def with_default_llm_config(
+        self, llm_config: Dict[str, Any]
+    ) -> "IntentGraphBuilder":
+        """Set the default LLM configuration for the entire graph.
+
+        Args:
+            llm_config: Dictionary containing LLM configuration parameters.
+
+        Returns:
+            Self for method chaining
+        """
+        self._llm_config = self._process_llm_config(llm_config)
+        return self
+
+    def _process_llm_config(
+        self, llm_config: Optional[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
+        """Process LLM config with environment variable substitution.
+
+        Args:
+            llm_config: Raw LLM configuration dictionary
+
+        Returns:
+            Processed LLM configuration with environment variables resolved
+        """
+        if not llm_config:
+            return llm_config
+
+        processed_config = {}
+        supported_providers = {"openai", "anthropic", "google", "openrouter", "ollama"}
+
+        for key, value in llm_config.items():
+            if (
+                isinstance(value, str)
+                and value.startswith("${")
+                and value.endswith("}")
+            ):
+                env_var = value[2:-1]  # Remove ${ and }
+                env_value = os.getenv(env_var)
+                if env_value:
+                    processed_config[key] = env_value
+                    self._logger.debug(
+                        f"Resolved environment variable {env_var} for key {key}"
+                    )
+                else:
+                    self._logger.warning(
+                        f"Environment variable {env_var} not found for key {key}"
+                    )
+                    processed_config[key] = value  # Keep original value
+            else:
+                processed_config[key] = value
+
+        # Validate that we have required fields for supported providers
+        provider = processed_config.get("provider", "").lower()
+        if provider in supported_providers:
+            if provider != "ollama" and not processed_config.get("api_key"):
+                self._logger.warning(
+                    f"Provider {provider} requires api_key but none found in config"
+                )
+
+        return processed_config
+
+    def _validate_json_graph(self) -> None:
+        """Validate the JSON graph specification internally.
+
+        Raises:
+            ValueError: If validation fails
+        """
+        if self._json_graph is None:
+            raise ValueError(
+                "No JSON graph set. Call .with_json() or .with_yaml() first"
+            )
+
+        errors = []
+
+        # Basic structure validation
+        if "root" not in self._json_graph:
+            errors.append("Missing 'root' field")
+
+        if "nodes" not in self._json_graph:
+            errors.append("Missing 'nodes' field")
+
+        if errors:
+            raise ValueError(f"Graph validation failed: {'; '.join(errors)}")
+
+        nodes = self._json_graph["nodes"]
+        root_id = self._json_graph["root"]
+
+        # Validate root node exists
+        if root_id not in nodes:
+            errors.append(f"Root node '{root_id}' not found in nodes")
+
+        # Validate each node
+        for node_spec in nodes.values():
+            # Check required fields
+            if "id" not in node_spec and "name" not in node_spec:
+                errors.append(
+                    f"Node missing required 'id' or 'name' field: {node_spec}"
+                )
+                continue
+
+            node_id = node_spec.get("id", node_spec.get("name"))
+
+            if "type" not in node_spec:
+                errors.append(f"Node '{node_id}' missing 'type' field")
+                continue
+
+            node_type = node_spec["type"]
+
+            # Type-specific validation
+            match node_type:
+                case NodeType.ACTION.value:
+                    if "function" not in node_spec:
+                        errors.append(
+                            f"Action node '{node_id}' missing 'function' field"
+                        )
+
+                case NodeType.CLASSIFIER.value:
+                    classifier_type = node_spec.get(
+                        "classifier_type", ClassifierType.RULE.value
+                    )
+                    if classifier_type == ClassifierType.LLM.value:
+                        if "llm_config" not in node_spec:
+                            errors.append(
+                                f"LLM classifier node '{node_id}' missing 'llm_config' field"
+                            )
+                    elif classifier_type == ClassifierType.RULE.value:
+                        if "classifier_function" not in node_spec:
+                            errors.append(
+                                f"Rule classifier node '{node_id}' missing 'classifier_function' field"
+                            )
+
+                case NodeType.SPLITTER.value:
+                    splitter_type = node_spec.get(
+                        "splitter_type", SplitterType.FUNCTION.value
+                    )
+                    if splitter_type == SplitterType.FUNCTION.value:
+                        if "splitter_function" not in node_spec:
+                            errors.append(
+                                f"Function splitter node '{node_id}' missing 'splitter_function' field"
+                            )
+
+                case _:
+                    errors.append(
+                        f"Unknown node type '{node_type}' for node '{node_id}'"
+                    )
+
+            # Validate children references
+            if "children" in node_spec:
+                for child_id in node_spec["children"]:
+                    if child_id not in nodes:
+                        errors.append(
+                            f"Child node '{child_id}' not found for node '{node_id}'"
+                        )
+
+        # Check for cycles (simple cycle detection)
+        cycles = self._detect_cycles(nodes)
+        if cycles:
+            errors.append(f"Cycles detected in graph: {cycles}")
+
+        if errors:
+            raise ValueError(f"Graph validation failed: {'; '.join(errors)}")
+
     def validate_json_graph(self) -> Dict[str, Any]:
-        """Validate the JSON graph specification.
+        """Validate the JSON graph specification and return detailed results.
+
+        This method provides detailed validation information without raising exceptions
+        for validation failures. Use this for debugging and validation reporting.
 
         Returns:
             Dictionary containing validation results and statistics
 
         Raises:
-            ValueError: If validation fails
+            ValueError: If no JSON graph is set
         """
         if self._json_graph is None:
             raise ValueError(
@@ -126,119 +298,122 @@ class IntentGraphBuilder(Builder):
             "unreachable_nodes": [],
         }
 
-        try:
-            # Basic structure validation
-            if "root" not in self._json_graph:
-                validation_results["errors"].append("Missing 'root' field")
-                validation_results["valid"] = False
+        nodes = self._json_graph["nodes"]
+        root_id = self._json_graph["root"]
 
-            if "intents" not in self._json_graph:
-                validation_results["errors"].append("Missing 'intents' field")
-                validation_results["valid"] = False
+        # Basic structure validation
+        if "root" not in self._json_graph:
+            validation_results["errors"].append("Missing 'root' field")
+            validation_results["valid"] = False
 
-            if not validation_results["valid"]:
-                return validation_results
+        if "nodes" not in self._json_graph:
+            validation_results["errors"].append("Missing 'nodes' field")
+            validation_results["valid"] = False
 
-            intents = self._json_graph["intents"]
-            root_id = self._json_graph["root"]
+        if not validation_results["valid"]:
+            return validation_results
 
-            # Validate root node exists
-            if root_id not in intents:
+        # Validate root node exists
+        if root_id not in nodes:
+            validation_results["errors"].append(
+                f"Root node '{root_id}' not found in nodes"
+            )
+            validation_results["valid"] = False
+
+        # Validate each node
+        for node_spec in nodes.values():
+            validation_results["node_count"] += 1
+
+            # Check required fields
+            if "id" not in node_spec and "name" not in node_spec:
                 validation_results["errors"].append(
-                    f"Root node '{root_id}' not found in intents"
+                    f"Node missing required 'id' or 'name' field: {node_spec}"
                 )
                 validation_results["valid"] = False
+                continue
 
-            # Validate each node
-            for node_id, node_spec in intents.items():
-                validation_results["node_count"] += 1
+            node_id = node_spec.get("id", node_spec.get("name"))
 
-                # Check required fields
-                if "type" not in node_spec:
-                    validation_results["errors"].append(
-                        f"Node '{node_id}' missing 'type' field"
-                    )
-                    validation_results["valid"] = False
-                    continue
+            if "type" not in node_spec:
+                validation_results["errors"].append(
+                    f"Node '{node_id}' missing 'type' field"
+                )
+                validation_results["valid"] = False
+                continue
 
-                node_type = node_spec["type"]
+            node_type = node_spec["type"]
 
-                # Type-specific validation
-                if node_type == "action":
+            # Type-specific validation
+            match node_type:
+                case NodeType.ACTION.value:
                     if "function" not in node_spec:
                         validation_results["errors"].append(
                             f"Action node '{node_id}' missing 'function' field"
                         )
                         validation_results["valid"] = False
 
-                elif node_type == "llm_classifier":
-                    if "llm_config" not in node_spec:
-                        validation_results["errors"].append(
-                            f"LLM classifier node '{node_id}' missing 'llm_config' field"
-                        )
-                        validation_results["valid"] = False
+                case NodeType.CLASSIFIER.value:
+                    classifier_type = node_spec.get(
+                        "classifier_type", ClassifierType.RULE.value
+                    )
+                    if classifier_type == ClassifierType.LLM.value:
+                        if "llm_config" not in node_spec:
+                            validation_results["errors"].append(
+                                f"LLM classifier node '{node_id}' missing 'llm_config' field"
+                            )
+                            validation_results["valid"] = False
+                    elif classifier_type == ClassifierType.RULE.value:
+                        if "classifier_function" not in node_spec:
+                            validation_results["errors"].append(
+                                f"Rule classifier node '{node_id}' missing 'classifier_function' field"
+                            )
+                            validation_results["valid"] = False
 
-                elif node_type == "classifier":
-                    if "classifier_function" not in node_spec:
-                        validation_results["errors"].append(
-                            f"Classifier node '{node_id}' missing 'classifier_function' field"
-                        )
-                        validation_results["valid"] = False
+                case NodeType.SPLITTER.value:
+                    splitter_type = node_spec.get(
+                        "splitter_type", SplitterType.FUNCTION.value
+                    )
+                    if splitter_type == SplitterType.FUNCTION.value:
+                        if "splitter_function" not in node_spec:
+                            validation_results["errors"].append(
+                                f"Function splitter node '{node_id}' missing 'splitter_function' field"
+                            )
+                            validation_results["valid"] = False
 
-                elif node_type == "splitter":
-                    if "splitter_function" not in node_spec:
-                        validation_results["errors"].append(
-                            f"Splitter node '{node_id}' missing 'splitter_function' field"
-                        )
-                        validation_results["valid"] = False
-
-                else:
+                case _:
                     validation_results["errors"].append(
                         f"Unknown node type '{node_type}' for node '{node_id}'"
                     )
                     validation_results["valid"] = False
 
-                # Validate children references
-                if "children" in node_spec:
-                    for child_id in node_spec["children"]:
-                        validation_results["edge_count"] += 1
-                        if child_id not in intents:
-                            validation_results["errors"].append(
-                                f"Child node '{child_id}' not found for node '{node_id}'"
-                            )
-                            validation_results["valid"] = False
+            # Validate children references
+            if "children" in node_spec:
+                for child_id in node_spec["children"]:
+                    validation_results["edge_count"] += 1
+                    if child_id not in nodes:
+                        validation_results["errors"].append(
+                            f"Child node '{child_id}' not found for node '{node_id}'"
+                        )
+                        validation_results["valid"] = False
 
-            # Check for cycles (simple cycle detection)
-            if validation_results["valid"]:
-                cycles = self._detect_cycles(intents)
-                if cycles:
-                    validation_results["cycles_detected"] = True
-                    validation_results["errors"].append(
-                        f"Cycles detected in graph: {cycles}"
-                    )
-                    validation_results["valid"] = False
-
-            # Check for unreachable nodes
-            if validation_results["valid"]:
-                unreachable = self._find_unreachable_nodes(intents, root_id)
-                if unreachable:
-                    validation_results["unreachable_nodes"] = unreachable
-                    validation_results["warnings"].append(
-                        f"Unreachable nodes found: {unreachable}"
-                    )
-
-        except Exception as e:
-            validation_results["errors"].append(f"Validation error: {e}")
+        # Check for cycles (simple cycle detection)
+        cycles = self._detect_cycles(nodes)
+        if cycles:
+            validation_results["cycles_detected"] = True
+            validation_results["errors"].append(f"Cycles detected in graph: {cycles}")
             validation_results["valid"] = False
 
-        if not validation_results["valid"]:
-            raise ValueError(
-                f"Graph validation failed: {'; '.join(validation_results['errors'])}"
+        # Check for unreachable nodes
+        unreachable = self._find_unreachable_nodes(nodes, root_id)
+        if unreachable:
+            validation_results["unreachable_nodes"] = unreachable
+            validation_results["warnings"].append(
+                f"Unreachable nodes found: {unreachable}"
             )
 
         return validation_results
 
-    def _detect_cycles(self, intents: Dict[str, Any]) -> List[List[str]]:
+    def _detect_cycles(self, nodes: Dict[str, Any]) -> List[List[str]]:
         """Detect cycles in the graph using DFS."""
         cycles = []
         visited = set()
@@ -258,21 +433,19 @@ class IntentGraphBuilder(Builder):
             rec_stack.add(node_id)
             path.append(node_id)
 
-            if node_id in intents and "children" in intents[node_id]:
-                for child_id in intents[node_id]["children"]:
+            if node_id in nodes and "children" in nodes[node_id]:
+                for child_id in nodes[node_id]["children"]:
                     dfs(child_id, path.copy())
 
             rec_stack.remove(node_id)
 
-        for node_id in intents:
+        for node_id in nodes:
             if node_id not in visited:
                 dfs(node_id, [])
 
         return cycles
 
-    def _find_unreachable_nodes(
-        self, intents: Dict[str, Any], root_id: str
-    ) -> List[str]:
+    def _find_unreachable_nodes(self, nodes: Dict[str, Any], root_id: str) -> List[str]:
         """Find nodes that are not reachable from the root."""
         reachable = set()
 
@@ -281,13 +454,13 @@ class IntentGraphBuilder(Builder):
                 return
             reachable.add(node_id)
 
-            if node_id in intents and "children" in intents[node_id]:
-                for child_id in intents[node_id]["children"]:
+            if node_id in nodes and "children" in nodes[node_id]:
+                for child_id in nodes[node_id]["children"]:
                     mark_reachable(child_id)
 
         mark_reachable(root_id)
 
-        unreachable = [node_id for node_id in intents if node_id not in reachable]
+        unreachable = [node_id for node_id in nodes if node_id not in reachable]
         return unreachable
 
     def build(self) -> IntentGraph:
@@ -300,21 +473,63 @@ class IntentGraphBuilder(Builder):
             ValueError: If no root nodes have been set and no JSON graph provided
         """
         if self._json_graph is not None:
-            return self._build_from_json(
+            # Validate JSON graph before building
+            self._validate_json_graph()
+            graph = self._build_from_json(
                 self._json_graph, self._function_registry or {}
             )
+        else:
+            if not self._root_nodes:
+                raise ValueError(
+                    "No root nodes set. Call .root() before .build() or use .with_json()"
+                )
 
-        if not self._root_nodes:
-            raise ValueError(
-                "No root nodes set. Call .root() before .build() or use .with_json()"
+            graph = IntentGraph(
+                root_nodes=self._root_nodes,
+                splitter=self._splitter,
+                llm_config=self._llm_config,
+                debug_context=self._debug_context_enabled,
+                context_trace=self._context_trace_enabled,
             )
 
-        graph = IntentGraph(
-            root_nodes=self._root_nodes,
-            splitter=self._splitter,
-            debug_context=self._debug_context_enabled,
-            context_trace=self._context_trace_enabled,
-        )
+            # --- LLM config validation ---
+            def check_llm_config(node):
+                # Check for LLM classifier nodes (by class name or attribute)
+                if hasattr(node, "classifier") and getattr(
+                    node.classifier, "__name__", ""
+                ).startswith("llm_classifier"):
+                    if not (getattr(node, "llm_config", None) or self._llm_config):
+                        raise ValueError(
+                            f"Node '{getattr(node, 'name', repr(node))}' requires an LLM config, but none was provided at node or graph level."
+                        )
+                for child in getattr(node, "children", []):
+                    check_llm_config(child)
+
+            for root in self._root_nodes:
+                check_llm_config(root)
+            # --- end validation ---
+
+            # Inject graph-level llm_config into classifier nodes that need it
+            def inject_llm_config(node):
+                if hasattr(node, "classifier") and getattr(
+                    node.classifier, "__name__", ""
+                ).startswith("llm_classifier"):
+                    if not getattr(node, "llm_config", None):
+                        self._logger.debug(
+                            f"DEBUG: Injecting graph-level llm_config into node '{getattr(node, 'name', repr(node))}'"
+                        )
+                        node.llm_config = self._llm_config
+                        if hasattr(node, "classifier"):
+                            setattr(node.classifier, "llm_config", self._llm_config)
+                    else:
+                        self._logger.debug(
+                            f"DEBUG: Node '{getattr(node, 'name', repr(node))}' already has llm_config"
+                        )
+                for child in getattr(node, "children", []):
+                    inject_llm_config(child)
+
+            for root in self._root_nodes:
+                inject_llm_config(root)
 
         return graph
 
@@ -337,24 +552,34 @@ class IntentGraphBuilder(Builder):
         if "root" not in graph_spec:
             raise ValueError("JSON graph specification must contain a 'root' field")
 
-        if "intents" not in graph_spec:
-            raise ValueError("JSON graph specification must contain an 'intents' field")
+        if "nodes" not in graph_spec:
+            raise ValueError("JSON graph specification must contain an 'nodes' field")
 
         # Create all nodes first, mapping IDs to nodes
         node_map: Dict[str, TreeNode] = {}
 
-        for node_id, node_spec in graph_spec["intents"].items():
+        for node_spec in graph_spec["nodes"].values():
+            # Default id to name if not provided
+            if "id" not in node_spec:
+                if "name" not in node_spec:
+                    raise ValueError(
+                        f"Node missing required 'id' or 'name' field: {node_spec}"
+                    )
+                node_spec["id"] = node_spec["name"]
+
+            node_id = node_spec["id"]
             node = self._create_node_from_spec(node_id, node_spec, function_registry)
             node_map[node_id] = node
 
         # Set up parent-child relationships
-        for node_id, node_spec in graph_spec["intents"].items():
+        for node_spec in graph_spec["nodes"].values():
+            node_id = node_spec.get("id", node_spec.get("name"))
             if "children" in node_spec:
                 children = []
                 for child_id in node_spec["children"]:
                     if child_id not in node_map:
                         raise ValueError(
-                            f"Child node '{child_id}' not found in intents for node '{node_id}'"
+                            f"Child node '{child_id}' not found in nodes for node '{node_id}'"
                         )
                     children.append(node_map[child_id])
                 node_map[node_id].children = children
@@ -365,12 +590,13 @@ class IntentGraphBuilder(Builder):
         # Get root node
         root_id = graph_spec["root"]
         if root_id not in node_map:
-            raise ValueError(f"Root node '{root_id}' not found in intents")
+            raise ValueError(f"Root node '{root_id}' not found in nodes")
 
         # Create IntentGraph
         graph = IntentGraph(
             root_nodes=[node_map[root_id]],
             splitter=self._splitter,
+            llm_config=self._llm_config,  # Already processed by _process_llm_config
             debug_context=self._debug_context_enabled,
             context_trace=self._context_trace_enabled,
         )
@@ -403,24 +629,25 @@ class IntentGraphBuilder(Builder):
         name = node_spec.get("name", node_id)
         description = node_spec.get("description", "")
 
-        if node_type == "action":
-            return self._create_action_node(
-                node_id, name, description, node_spec, function_registry
-            )
-        elif node_type == "llm_classifier":
-            return self._create_llm_classifier_node(
-                node_id, name, description, node_spec, function_registry
-            )
-        elif node_type == "classifier":
-            return self._create_classifier_node(
-                node_id, name, description, node_spec, function_registry
-            )
-        elif node_type == "splitter":
-            return self._create_splitter_node(
-                node_id, name, description, node_spec, function_registry
-            )
-        else:
+        # Dispatch table for node type to creation method
+        dispatch = {
+            NodeType.ACTION.value: self._create_action_node,
+            NodeType.CLASSIFIER.value: lambda *args, **kwargs: (
+                self._create_llm_classifier_node(*args, **kwargs)
+                if node_spec.get("classifier_type", ClassifierType.RULE.value)
+                == ClassifierType.LLM.value
+                else self._create_classifier_node(*args, **kwargs)
+            ),
+            NodeType.SPLITTER.value: self._create_splitter_node,
+        }
+
+        if node_type not in dispatch:
             raise ValueError(f"Unknown node type '{node_type}' for node '{node_id}'")
+
+        node_creator = dispatch[node_type]
+        if not callable(node_creator):
+            raise TypeError(f"Node creator for type '{node_type}' is not callable")
+        return node_creator(node_id, name, description, node_spec, function_registry)
 
     def _create_action_node(
         self,
@@ -447,17 +674,17 @@ class IntentGraphBuilder(Builder):
 
         # Parse parameter schema from string types to Python types
         from intent_kit.utils.param_extraction import parse_param_schema
-        from intent_kit.utils.logger import Logger
 
-        logger = Logger("graph_builder")
-
-        logger.debug(
+        self._logger.debug(
             f"Creating action node '{node_id}' with raw param_schema: {param_schema_raw}"
         )
         param_schema = parse_param_schema(param_schema_raw)
-        logger.debug(f"Parsed param_schema: {param_schema}")
+        self._logger.debug(f"Parsed param_schema: {param_schema}")
 
-        llm_config = node_spec.get("llm_config")
+        raw_llm_config = node_spec.get("llm_config", self._llm_config)
+        llm_config = (
+            self._process_llm_config(raw_llm_config) if raw_llm_config else None
+        )
         context_inputs = set(node_spec.get("context_inputs", []))
         context_outputs = set(node_spec.get("context_outputs", []))
         remediation_strategies = node_spec.get("remediation_strategies", [])
@@ -483,12 +710,15 @@ class IntentGraphBuilder(Builder):
     ) -> TreeNode:
         """Create an LLM ClassifierNode from specification."""
 
-        if "llm_config" not in node_spec:
+        raw_llm_config = node_spec.get("llm_config", self._llm_config)
+        llm_config = (
+            self._process_llm_config(raw_llm_config) if raw_llm_config else None
+        )
+        if not llm_config:
             raise ValueError(
-                f"LLM classifier node '{node_id}' must have an 'llm_config' field"
+                f"LLM classifier node '{node_id}' must have an 'llm_config' field or a default must be set on the graph."
             )
 
-        llm_config = node_spec["llm_config"]
         classification_prompt = node_spec.get("classification_prompt")
         remediation_strategies = node_spec.get("remediation_strategies", [])
 
@@ -538,14 +768,29 @@ class IntentGraphBuilder(Builder):
 
         classifier_func = function_registry[classifier_function_name]
         remediation_strategies = node_spec.get("remediation_strategies", [])
-
-        return ClassifierNode(
+        raw_llm_config = node_spec.get("llm_config", self._llm_config)
+        llm_config = (
+            self._process_llm_config(raw_llm_config) if raw_llm_config else None
+        )
+        llm_client = None
+        if llm_config:
+            try:
+                llm_client = LLMFactory.create_client(llm_config)
+            except Exception as e:
+                self._logger.debug(
+                    f"Failed to create LLM client for classifier node '{node_id}': {e}"
+                )
+                pass
+        node = ClassifierNode(
             name=name,
             description=description,
             classifier=classifier_func,
             children=[],  # Will be set later
             remediation_strategies=remediation_strategies,
         )
+        if llm_client and hasattr(node, "llm_client"):
+            node.llm_client = llm_client
+        return node
 
     def _create_splitter_node(
         self,
@@ -570,8 +815,20 @@ class IntentGraphBuilder(Builder):
             )
 
         splitter_func = function_registry[splitter_function_name]
-        llm_client = node_spec.get("llm_client")
-
+        raw_llm_config = node_spec.get("llm_config", self._llm_config)
+        llm_config = (
+            self._process_llm_config(raw_llm_config) if raw_llm_config else None
+        )
+        llm_client = None
+        if llm_config:
+            try:
+                llm_client = LLMFactory.create_client(llm_config)
+                self._logger.debug(f"Created LLM client for splitter node '{node_id}'")
+            except Exception as e:
+                self._logger.debug(
+                    f"Failed to create LLM client for splitter node '{node_id}': {e}"
+                )
+                pass
         return SplitterNode(
             name=name,
             description=description,

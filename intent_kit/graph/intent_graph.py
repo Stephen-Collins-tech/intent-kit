@@ -22,27 +22,17 @@ from intent_kit.node import ExecutionResult
 from intent_kit.node import ExecutionError
 from intent_kit.node.enums import NodeType
 from intent_kit.node import TreeNode
-import os
 from intent_kit.node.classifiers import classify_intent_chunk
 from intent_kit.types import IntentAction
 
-# Add imports for visualization
-try:
-    import networkx as nx
-    from pyvis.network import Network  # type: ignore
-
-    VIZ_AVAILABLE = True
-except ImportError:
-    nx = None  # type: ignore
-    Network = None  # type: ignore
-    VIZ_AVAILABLE = False
+# Remove all visualization-related imports, attributes, and methods
 
 
 class IntentGraph:
     """
     The root-level dispatcher for user input.
 
-    The graph contains root nodes that can handle different types of intents.
+    The graph contains root nodes that can handle different types of nodes.
     Input splitting happens in isolation and routes to appropriate root nodes.
     Trees emerge naturally from the parent-child relationships between nodes.
     """
@@ -55,19 +45,22 @@ class IntentGraph:
         llm_config: Optional[dict] = None,
         debug_context: bool = False,
         context_trace: bool = False,
+        context: Optional[IntentContext] = None,
     ):
         """
         Initialize the IntentGraph with root nodes.
 
         Args:
-            root_nodes: List of root nodes that can handle intents
-            splitter: Function to use for splitting intents (default: pass-through splitter)
+            root_nodes: List of root nodes that can handle nodes
+            splitter: Function to use for splitting nodes (default: pass-through splitter)
             visualize: If True, render the final output to an interactive graph HTML file
             llm_config: LLM configuration for chunk classification (optional)
             debug_context: If True, enable context debugging and state tracking
             context_trace: If True, enable detailed context tracing with timestamps
+            context: Optional IntentContext to use as the default for this graph
         """
         self.root_nodes: List[TreeNode] = root_nodes or []
+        self.context = context or IntentContext()
 
         # Default to pass-through splitter if none provided
         if splitter is None:
@@ -298,14 +291,14 @@ class IntentGraph:
         debug: bool = False,
         debug_context: Optional[bool] = None,
         context_trace: Optional[bool] = None,
-        **splitter_kwargs,
+        **splitter_kwargs: Any,
     ) -> ExecutionResult:
         """
         Route user input through the graph with optional context support.
 
         Args:
             user_input: The input string to process
-            context: Optional context object for state sharing
+            context: Optional context object for state sharing (defaults to self.context)
             debug: Whether to print debug information
             debug_context: Override graph-level debug_context setting
             context_trace: Override graph-level context_trace setting
@@ -321,6 +314,8 @@ class IntentGraph:
         context_trace_enabled = (
             context_trace if context_trace is not None else self.context_trace
         )
+
+        context = context or self.context  # Use member context if not provided
 
         if debug:
             self.logger.info(f"Processing input: {user_input}")
@@ -350,7 +345,196 @@ class IntentGraph:
                 ),
             )
 
-        # Split the input into chunks
+        # If we have root nodes, execute them directly instead of using graph-level splitter
+        if self.root_nodes:
+            children_results = []
+            all_errors = []
+            all_outputs = []
+            all_params = []
+
+            # Execute each root node with the input
+            for root_node in self.root_nodes:
+                try:
+                    # Context debugging: capture state before execution
+                    context_state_before = None
+                    if debug_context_enabled and context:
+                        context_state_before = self._capture_context_state(
+                            context, f"before_{root_node.name}"
+                        )
+
+                    result = root_node.execute(user_input, context=context)
+
+                    if result is None:
+                        error_result = ExecutionResult(
+                            success=False,
+                            params=None,
+                            children_results=[],
+                            node_name=root_node.name,
+                            node_path=[],
+                            node_type=root_node.node_type,
+                            input=user_input,
+                            output=None,
+                            error=ExecutionError(
+                                error_type="NodeExecutionReturnedNone",
+                                message=f"Node '{root_node.name}' execute() returned None instead of ExecutionResult.",
+                                node_name=root_node.name,
+                                node_path=[],
+                            ),
+                        )
+                        children_results.append(error_result)
+                        all_errors.append(
+                            f"Node '{root_node.name}' execute() returned None."
+                        )
+                        if debug:
+                            self.logger.error(
+                                f"Node '{root_node.name}' execute() returned None instead of ExecutionResult."
+                            )
+                        continue
+
+                    # Context debugging: capture state after execution
+                    if debug_context_enabled and context:
+                        context_state_after = self._capture_context_state(
+                            context, f"after_{root_node.name}"
+                        )
+                        self._log_context_changes(
+                            context_state_before,
+                            context_state_after,
+                            root_node.name,
+                            debug,
+                            context_trace_enabled,
+                        )
+
+                    children_results.append(result)
+                    if result.success:
+                        all_outputs.append(result.output)
+                        if result.params:
+                            all_params.append(result.params)
+
+                except Exception as e:
+                    error_message = str(e)
+                    error_type = type(e).__name__
+                    error_result = ExecutionResult(
+                        success=False,
+                        params=None,
+                        children_results=[],
+                        node_name="unknown",
+                        node_path=[],
+                        node_type=NodeType.UNKNOWN,
+                        input=user_input,
+                        output=None,
+                        error=ExecutionError(
+                            error_type=error_type,
+                            message=error_message,
+                            node_name="unknown",
+                            node_path=[],
+                        ),
+                    )
+                    children_results.append(error_result)
+                    all_errors.append(
+                        f"Root node '{root_node.name}' failed: {error_message}"
+                    )
+                    if debug:
+                        self.logger.error(f"Root node '{root_node.name}' failed: {e}")
+
+            # Determine overall success and create aggregated result
+            overall_success = len(all_errors) == 0 and len(children_results) > 0
+
+            # If there's only one successful result and no errors, return it directly
+            if (
+                len(children_results) == 1
+                and len(all_errors) == 0
+                and children_results[0].success
+            ):
+                result = children_results[0]
+                # Add visualization if requested
+                # if self.visualize:
+                #     try:
+                #         html_path = self._render_execution_graph(
+                #             children_results, user_input
+                #         )
+                #         if html_path:
+                #             if result.output is None:
+                #                 result.output = {"visualization_html": html_path}
+                #             elif isinstance(result.output, dict):
+                #                 result.output["visualization_html"] = html_path
+                #             else:
+                #                 result.output = {
+                #                     "output": result.output,
+                #                     "visualization_html": html_path,
+                #                 }
+                #     except Exception as e:
+                #         self.logger.error(f"Visualization failed: {e}")
+                return result
+
+            # Aggregate outputs and params
+            aggregated_output = (
+                all_outputs
+                if len(all_outputs) > 1
+                else (all_outputs[0] if all_outputs else None)
+            )
+            aggregated_params = (
+                all_params
+                if len(all_params) > 1
+                else (all_params[0] if all_params else None)
+            )
+
+            # Ensure params is a dict or None
+            if aggregated_params is not None and not isinstance(
+                aggregated_params, dict
+            ):
+                aggregated_params = {"params": aggregated_params}
+
+            # Create aggregated error if there are any errors
+            aggregated_error = None
+            if all_errors:
+                aggregated_error = ExecutionError(
+                    error_type="AggregatedErrors",
+                    message="; ".join(all_errors),
+                    node_name="intent_graph",
+                    node_path=[],
+                )
+
+            # Create visualization if requested
+            # visualization_html = None
+            # if self.visualize:
+            #     try:
+            #         html_path = self._render_execution_graph(
+            #             children_results, user_input
+            #         )
+            #         visualization_html = html_path
+            #     except Exception as e:
+            #         self.logger.error(f"Visualization failed: {e}")
+            #         visualization_html = None
+
+            # Add visualization to output if available
+            # if visualization_html:
+            #     if aggregated_output is None:
+            #         aggregated_output = {"visualization_html": visualization_html}
+            #     elif isinstance(aggregated_output, dict):
+            #         aggregated_output["visualization_html"] = visualization_html
+            #     else:
+            #         aggregated_output = {
+            #             "output": aggregated_output,
+            #             "visualization_html": visualization_html,
+            #         }
+
+            if debug:
+                self.logger.info(f"Final aggregated result: {overall_success}")
+
+            return ExecutionResult(
+                success=overall_success,
+                params=aggregated_params,
+                children_results=children_results,
+                node_name="intent_graph",
+                node_path=[],
+                node_type=NodeType.GRAPH,
+                input=user_input,
+                output=aggregated_output,
+                error=aggregated_error,
+                # visualization_html=visualization_html,
+            )
+
+        # Split the input into chunks (fallback for when no root nodes are used)
         try:
             intent_chunks = self._call_splitter(
                 user_input=user_input, debug=debug, **splitter_kwargs
@@ -399,484 +583,20 @@ class IntentGraph:
                 ),
             )
 
-        # Route each chunk to an appropriate root node
-        children_results = []
-        all_errors = []
-        all_outputs = []
-        all_params = []
-
-        # Use a queue to process chunks, with recursion limit
-        chunks_to_process = list(intent_chunks)  # Copy the list
-        processed_chunks: set = set()  # Track processed chunks to avoid infinite loops
-        max_recursion_depth = 10  # Prevent infinite recursion
-
-        while chunks_to_process and len(processed_chunks) < max_recursion_depth:
-            chunk = chunks_to_process.pop(0)
-
-            # Create a unique identifier for this chunk to avoid infinite loops
-            # Use a robust hashing strategy that works for both hashable (e.g. str)
-            # and unhashable (e.g. dict) chunk objects.
-            # Converting to `repr` preserves enough uniqueness while ensuring the
-            # object is hashable.
-            chunk_id = hash(repr(chunk))
-            if chunk_id in processed_chunks:
-                continue  # Skip if we've already processed this exact chunk
-            processed_chunks.add(chunk_id)
-
-            # Handle both string and dict chunks
-            if isinstance(chunk, str):
-                chunk_text = chunk
-            elif isinstance(chunk, dict) and "text" in chunk:
-                chunk_text = chunk["text"]
-            else:
-                chunk_text = str(chunk)
-
-            if debug:
-                self.logger.info(f"Classifying chunk: '{chunk_text}'")
-            classification = classify_intent_chunk(chunk, self.llm_config)
-            action = classification.get("action")
-
-            if action == IntentAction.HANDLE:
-                # Route to root node as before
-                root_node = self._route_chunk_to_root_node(chunk_text, debug)
-                if root_node is None:
-                    error_result = ExecutionResult(
-                        success=False,
-                        params=None,
-                        children_results=[],
-                        node_name="no_root_node",
-                        node_path=[],
-                        node_type=NodeType.UNKNOWN,
-                        input=chunk_text,
-                        output=None,
-                        error=ExecutionError(
-                            error_type="NoRootNodeFound",
-                            message=f"No root node found for chunk: '{chunk_text}'",
-                            node_name="no_root_node",
-                            node_path=[],
-                        ),
-                    )
-                    children_results.append(error_result)
-                    all_errors.append(f"No root node found for chunk: '{chunk_text}'")
-                    if debug:
-                        self.logger.error(
-                            f"No root node found for chunk: '{chunk_text}'"
-                        )
-                    continue
-                try:
-                    # Context debugging: capture state before execution
-                    context_state_before = None
-                    if debug_context_enabled and context:
-                        context_state_before = self._capture_context_state(
-                            context, f"before_{root_node.name}"
-                        )
-
-                    result = root_node.execute(chunk_text, context=context)
-
-                    if result is None:
-                        error_result = ExecutionResult(
-                            success=False,
-                            params=None,
-                            children_results=[],
-                            node_name=root_node.name,
-                            node_path=[],
-                            node_type=root_node.node_type,
-                            input=chunk_text,
-                            output=None,
-                            error=ExecutionError(
-                                error_type="NodeExecutionReturnedNone",
-                                message=f"Node '{root_node.name}' execute() returned None instead of ExecutionResult.",
-                                node_name=root_node.name,
-                                node_path=[],
-                            ),
-                        )
-                        children_results.append(error_result)
-                        all_errors.append(
-                            f"Node '{root_node.name}' execute() returned None."
-                        )
-                        if debug:
-                            self.logger.error(
-                                f"Node '{root_node.name}' execute() returned None instead of ExecutionResult."
-                            )
-                        continue
-
-                    # Context debugging: capture state after execution
-                    if debug_context_enabled and context:
-                        context_state_after = self._capture_context_state(
-                            context, f"after_{root_node.name}"
-                        )
-                        self._log_context_changes(
-                            context_state_before,
-                            context_state_after,
-                            root_node.name,
-                            debug,
-                            context_trace_enabled,
-                        )
-
-                    if debug:
-                        self.logger.info(
-                            f"Root node '{root_node.name}' result: {result}"
-                        )
-                    children_results.append(result)
-                    if result.success and result.output is not None:
-                        all_outputs.append(result.output)
-                    if result.params is not None:
-                        all_params.append(result.params)
-                    if result.error:
-                        all_errors.append(
-                            f"Root node '{root_node.name}': {result.error.message}"
-                        )
-                except Exception as e:
-                    error_message = str(e)
-                    error_type = type(e).__name__
-                    error_result = ExecutionResult(
-                        success=False,
-                        params=None,
-                        children_results=[],
-                        node_name="unknown",
-                        node_path=[],
-                        node_type=NodeType.UNKNOWN,
-                        input=chunk_text,
-                        output=None,
-                        error=ExecutionError(
-                            error_type=error_type,
-                            message=error_message,
-                            node_name="unknown",
-                            node_path=[],
-                        ),
-                    )
-                    children_results.append(error_result)
-                    all_errors.append(
-                        f"Root node '{root_node.name}' failed: {error_message}"
-                    )
-                    if debug:
-                        self.logger.error(f"Root node '{root_node.name}' failed: {e}")
-            elif action == IntentAction.SPLIT:
-                # Recursively split and route
-                if debug:
-                    self.logger.info(f"Recursively splitting chunk: '{chunk_text}'")
-                sub_chunks = self._call_splitter(chunk_text, debug, **splitter_kwargs)
-                # Add sub_chunks to the front of the queue for processing
-                chunks_to_process = sub_chunks + chunks_to_process
-            elif action == IntentAction.CLARIFY:
-                # Stub: Add a result indicating clarification is needed
-                error_result = ExecutionResult(
-                    success=False,
-                    params=None,
-                    children_results=[],
-                    node_name="clarify",
-                    node_path=[],
-                    node_type=NodeType.CLARIFY,
-                    input=chunk_text,
-                    output=None,
-                    error=ExecutionError(
-                        error_type="ClarificationNeeded",
-                        message=f"Clarification needed for chunk: '{chunk_text}'",
-                        node_name="clarify",
-                        node_path=[],
-                    ),
-                )
-                children_results.append(error_result)
-                all_errors.append(f"Clarification needed for chunk: '{chunk_text}'")
-                if debug:
-                    self.logger.warning(
-                        f"Clarification needed for chunk: '{chunk_text}'"
-                    )
-            elif action == IntentAction.REJECT:
-                # Stub: Add a result indicating rejection
-                error_result = ExecutionResult(
-                    success=False,
-                    params=None,
-                    children_results=[],
-                    node_name="reject",
-                    node_path=[],
-                    node_type=NodeType.UNKNOWN,
-                    input=chunk_text,
-                    output=None,
-                    error=ExecutionError(
-                        error_type="RejectedChunk",
-                        message=f"Rejected chunk: '{chunk_text}'",
-                        node_name="reject",
-                        node_path=[],
-                    ),
-                )
-                children_results.append(error_result)
-                all_errors.append(f"Rejected chunk: '{chunk_text}'")
-                if debug:
-                    self.logger.warning(f"Rejected chunk: '{chunk_text}'")
-            else:
-                # Unknown action
-                error_result = ExecutionResult(
-                    success=False,
-                    params=None,
-                    children_results=[],
-                    node_name="unknown_action",
-                    node_path=[],
-                    node_type=NodeType.UNKNOWN,
-                    input=chunk_text,
-                    output=None,
-                    error=ExecutionError(
-                        error_type="UnknownAction",
-                        message=f"Unknown action for chunk: '{chunk_text}'",
-                        node_name="unknown_action",
-                        node_path=[],
-                    ),
-                )
-                children_results.append(error_result)
-                all_errors.append(f"Unknown action for chunk: '{chunk_text}'")
-                if debug:
-                    self.logger.error(f"Unknown action for chunk: '{chunk_text}'")
-
-        # Check if we hit the recursion limit
-        if len(processed_chunks) >= max_recursion_depth:
-            error_result = ExecutionResult(
-                success=False,
-                params=None,
-                children_results=[],
-                node_name="recursion_limit",
-                node_path=[],
-                node_type=NodeType.UNKNOWN,
-                input=user_input,
-                output=None,
-                error=ExecutionError(
-                    error_type="RecursionLimitExceeded",
-                    message=f"Recursion limit exceeded ({max_recursion_depth} chunks processed)",
-                    node_name="recursion_limit",
-                    node_path=[],
-                ),
-            )
-            children_results.append(error_result)
-            all_errors.append(
-                f"Recursion limit exceeded ({max_recursion_depth} chunks processed)"
-            )
-            if debug:
-                self.logger.error(
-                    f"Recursion limit exceeded ({max_recursion_depth} chunks processed)"
-                )
-
-        # Determine overall success and create aggregated result
-        overall_success = len(all_errors) == 0 and len(children_results) > 0
-
-        # If there's only one successful result and no errors, return it directly
-        if (
-            len(children_results) == 1
-            and len(all_errors) == 0
-            and children_results[0].success
-        ):
-            result = children_results[0]
-            # Add visualization if requested
-            if self.visualize:
-                try:
-                    html_path = self._render_execution_graph(
-                        children_results, user_input
-                    )
-                    if html_path:
-                        if result.output is None:
-                            result.output = {"visualization_html": html_path}
-                        elif isinstance(result.output, dict):
-                            result.output["visualization_html"] = html_path
-                        else:
-                            result.output = {
-                                "output": result.output,
-                                "visualization_html": html_path,
-                            }
-                except Exception as e:
-                    self.logger.error(f"Visualization failed: {e}")
-            return result
-
-        # Aggregate outputs and params
-        aggregated_output = (
-            all_outputs
-            if len(all_outputs) > 1
-            else (all_outputs[0] if all_outputs else None)
-        )
-        aggregated_params = (
-            all_params
-            if len(all_params) > 1
-            else (all_params[0] if all_params else None)
-        )
-
-        # Ensure params is a dict or None
-        if aggregated_params is not None and not isinstance(aggregated_params, dict):
-            aggregated_params = {"params": aggregated_params}
-
-        # Create aggregated error if there are any errors
-        aggregated_error = None
-        if all_errors:
-            aggregated_error = ExecutionError(
-                error_type="AggregatedErrors",
-                message="; ".join(all_errors),
-                node_name="intent_graph",
-                node_path=[],
-            )
-
-        # Create visualization if requested
-        visualization_html = None
-        if self.visualize:
-            try:
-                html_path = self._render_execution_graph(children_results, user_input)
-                visualization_html = html_path
-            except Exception as e:
-                self.logger.error(f"Visualization failed: {e}")
-                visualization_html = None
-
-        # Add visualization to output if available
-        if visualization_html:
-            if aggregated_output is None:
-                aggregated_output = {"visualization_html": visualization_html}
-            elif isinstance(aggregated_output, dict):
-                aggregated_output["visualization_html"] = visualization_html
-            else:
-                aggregated_output = {
-                    "output": aggregated_output,
-                    "visualization_html": visualization_html,
-                }
-
-        if debug:
-            self.logger.info(f"Final aggregated result: {overall_success}")
-
+        # For fallback mode, just return the chunks as a simple result
         return ExecutionResult(
-            success=overall_success,
-            params=aggregated_params,
-            children_results=children_results,
+            success=True,
+            params={"chunks": intent_chunks},
+            children_results=[],
             node_name="intent_graph",
             node_path=[],
             node_type=NodeType.GRAPH,
             input=user_input,
-            output=aggregated_output,
-            error=aggregated_error,
+            output=f"Split into {len(intent_chunks)} chunks: {intent_chunks}",
+            error=None,
         )
 
-    def _render_execution_graph(
-        self, children_results: list[ExecutionResult], user_input: str
-    ) -> str:
-        """
-        Render the execution path as an interactive HTML graph and return the file path.
-        """
-        if not self.visualize:
-            return ""
-
-        if not VIZ_AVAILABLE:
-            raise ImportError(
-                "networkx and pyvis are required for visualization. Please install with: uv pip install 'intent-kit[viz]'"
-            )
-
-        try:
-            # Import here to ensure it's available
-            from pyvis.network import Network
-
-            # Build the graph from the execution path
-            net = Network(height="600px", width="100%", directed=True, notebook=False)
-            net.barnes_hut()
-            execution_paths = []
-
-            # Extract execution paths from all children results
-            for result in children_results:
-                # Add the current result to the path
-                execution_paths.append(
-                    {
-                        "node_name": result.node_name,
-                        "node_type": result.node_type,
-                        "success": result.success,
-                        "input": result.input,
-                        "output": result.output,
-                        "error": result.error,
-                        "params": result.params,
-                    }
-                )
-
-                # Add child results recursively
-                for child_result in result.children_results:
-                    child_paths = self._extract_execution_paths(child_result)
-                    execution_paths.extend(child_paths)
-
-            if not execution_paths:
-                # fallback to errors
-                execution_paths = []
-                for result in children_results:
-                    if result.error:
-                        execution_paths.append(
-                            {
-                                "node_name": result.node_name,
-                                "node_type": "error",
-                                "error": result.error,
-                            }
-                        )
-
-            # Add nodes and edges
-            last_node_id = None
-            for idx, node in enumerate(execution_paths):
-                node_id = f"{node['node_name']}_{idx}"
-                label = f"{node['node_name']}\n{node['node_type']}"
-                if node.get("error"):
-                    label += f"\nERROR: {node['error']}"
-                elif node.get("output"):
-                    label += f"\nOutput: {str(node['output'])[:40]}"
-                # Color coding
-                if node["node_type"] == "error":
-                    color = "#ffcccc"  # red
-                elif node["node_type"] == "classifier":
-                    color = "#99ccff"  # blue
-                elif node["node_type"] == "intent":
-                    color = "#ccffcc"  # green
-                else:
-                    color = "#ccccff"  # fallback
-                net.add_node(node_id, label=label, color=color)
-                if last_node_id is not None:
-                    net.add_edge(last_node_id, node_id)
-                last_node_id = node_id
-            if not execution_paths:
-                net.add_node("no_path", label="No execution path", color="#cccccc")
-
-            # Save to HTML file
-            html_dir = os.path.join(os.getcwd(), "intentkit_graphs")
-            os.makedirs(html_dir, exist_ok=True)
-            html_path = os.path.join(
-                html_dir, f"intent_graph_{abs(hash(user_input)) % 100000}.html"
-            )
-
-            # Generate HTML and write to file manually
-            html_content = net.generate_html()
-            with open(html_path, "w", encoding="utf-8") as f:
-                f.write(html_content)
-
-            return html_path
-        except Exception as e:
-            self.logger.error(f"Failed to render graph: {e}")
-            raise
-
-    def _extract_execution_paths(self, result: ExecutionResult) -> list:
-        """
-        Recursively extract execution paths from an ExecutionResult.
-
-        Args:
-            result: The ExecutionResult to extract paths from
-
-        Returns:
-            List of execution path nodes
-        """
-        paths = []
-
-        # Add current node
-        paths.append(
-            {
-                "node_name": result.node_name,
-                "node_type": result.node_type,
-                "success": result.success,
-                "input": result.input,
-                "output": result.output,
-                "error": result.error,
-                "params": result.params,
-                "node_id": getattr(result, "node_id", None),
-            }
-        )
-
-        # Recursively add children
-        for child_result in result.children_results:
-            child_paths = self._extract_execution_paths(child_result)
-            paths.extend(child_paths)
-
-        return paths
+    # Remove all visualization-related imports, attributes, and methods
 
     def _capture_context_state(
         self, context: IntentContext, label: str

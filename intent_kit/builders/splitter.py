@@ -30,7 +30,7 @@ class SplitterBuilder(Builder):
         """Set the splitter function.
 
         Args:
-            splitter_func: Function to split intents
+            splitter_func: Function to split nodes
 
         Returns:
             Self for method chaining

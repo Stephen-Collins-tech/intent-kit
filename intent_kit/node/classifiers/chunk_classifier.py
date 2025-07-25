@@ -46,17 +46,21 @@ def classify_intent_chunk(
 
     # If no LLM config provided, use fallback logic
     if not llm_config:
+        logger.warning("No LLM config provided, using fallback for: {chunk_text}")
         return _fallback_classify(chunk_text)
 
     try:
         # Create LLM prompt for classification
         prompt = _create_classification_prompt(chunk_text)
+        logger.debug(f"LLM Prompt for chunk classification: {prompt}")
 
         # Get LLM response
         response = LLMFactory.generate_with_config(llm_config, prompt)
+        logger.debug(f"LLM Response for chunk classification: {response}")
 
         # Parse the response
         result = _parse_classification_response(response, chunk_text)
+        logger.debug(f"LLM Parsed Response for chunk classification: {result}")
 
         if result:
             return result
@@ -79,7 +83,7 @@ def _create_classification_prompt(chunk_text: str) -> str:
     return f"""You are an intent chunk classifier. Given a chunk of user input, determine if it should be:
 
 1. HANDLED as a single intent (atomic)
-2. SPLIT into multiple intents (composite)
+2. SPLIT into multiple nodes (composite)
 3. CLARIFIED with the user (ambiguous)
 4. REJECTED as invalid
 
@@ -96,7 +100,7 @@ Return your response as a JSON object with this exact format:
 
 Examples:
 - "Book a flight to NYC" → {{"classification": "Atomic", "intent_type": "BookFlightIntent", "action": "handle", "confidence": 0.95, "reason": "Single clear booking intent"}}
-- "Cancel my flight and update my email" → {{"classification": "Composite", "intent_type": null, "action": "split", "confidence": 0.9, "reason": "Two distinct intents separated by conjunction"}}
+- "Cancel my flight and update my email" → {{"classification": "Composite", "intent_type": null, "action": "split", "confidence": 0.9, "reason": "Two distinct nodes separated by conjunction"}}
 - "Book something" → {{"classification": "Ambiguous", "intent_type": null, "action": "clarify", "confidence": 0.4, "reason": "Insufficient details to determine what to book"}}
 - "" → {{"classification": "Invalid", "intent_type": null, "action": "reject", "confidence": 0.0, "reason": "Empty input"}}
 
@@ -197,7 +201,7 @@ def _fallback_classify(chunk_text: str) -> ClassifierOutput:
             "metadata": {"confidence": 0.4, "reason": "Too short to classify"},
         }
 
-    # Check for single conjunctions that likely indicate multiple intents
+    # Check for single conjunctions that likely indicate multiple nodes
     single_conjunctions = [r"\band\b", r"\bplus\b", r"\balso\b"]
     for pattern in single_conjunctions:
         if re.search(pattern, chunk_text, re.IGNORECASE):

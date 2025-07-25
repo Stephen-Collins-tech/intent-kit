@@ -5,6 +5,8 @@ repo_url: https://github.com/Stephen-Collins-tech/intent-kit
 
 theme:
   name: material
+  features:
+    - content.code.copy
 
 plugins:
   - search
@@ -16,20 +18,34 @@ markdown_extensions:
   - codehilite
   - toc:
       permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
 
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Core Concepts:
+      - Overview: concepts/index.md
       - Intent Graphs: concepts/intent-graphs.md
       - Nodes and Actions: concepts/nodes-and-actions.md
   - API Reference:
-      - api-reference.md
+      - API Reference: api/api-reference.md
   - Examples:
+      - Overview: examples/index.md
       - Calculator Bot: examples/calculator-bot.md
       - Context-Aware Chatbot: examples/context-aware-chatbot.md
       - Multi-Intent Routing: examples/multi-intent-routing.md
+  - Configuration:
+      - JSON Serialization: configuration/json-serialization.md
   - Development:
+      - Overview: development/index.md
+      - Building: development/building.md
       - Testing: development/testing.md
       - Evaluation: development/evaluation.md
       - Debugging: development/debugging.md
+      - Documentation Management: development/documentation-management.md

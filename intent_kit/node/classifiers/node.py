@@ -14,6 +14,7 @@ from ..base import TreeNode
 from ..enums import NodeType
 from ..types import ExecutionResult, ExecutionError
 from intent_kit.context import IntentContext
+import inspect
 
 
 class ClassifierNode(TreeNode):
@@ -22,19 +23,19 @@ class ClassifierNode(TreeNode):
     def __init__(
         self,
         name: Optional[str],
-        classifier: Callable[
-            [str, List["TreeNode"], Optional[Dict[str, Any]]], Optional["TreeNode"]
-        ],
+        classifier: Callable[..., Optional["TreeNode"]],
         children: List["TreeNode"],
         description: str = "",
         parent: Optional["TreeNode"] = None,
         remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
+        llm_client=None,
     ):
         super().__init__(
             name=name, description=description, children=children, parent=parent
         )
         self.classifier = classifier
         self.remediation_strategies = remediation_strategies or []
+        self.llm_client = llm_client  # For framework injection
 
     @property
     def node_type(self) -> NodeType:
@@ -45,8 +46,16 @@ class ClassifierNode(TreeNode):
         self, user_input: str, context: Optional[IntentContext] = None
     ) -> ExecutionResult:
         context_dict: Dict[str, Any] = {}
-        # If context is needed, populate context_dict here in the future
-        chosen = self.classifier(user_input, self.children, context_dict)
+        # Use only self.llm_client (should be injected by builder/graph)
+        classifier_params = inspect.signature(self.classifier).parameters
+        if "llm_client" in classifier_params or any(
+            p.kind == inspect.Parameter.VAR_KEYWORD for p in classifier_params.values()
+        ):
+            chosen = self.classifier(
+                user_input, self.children, context_dict, llm_client=self.llm_client
+            )
+        else:
+            chosen = self.classifier(user_input, self.children, context_dict)
         if not chosen:
             self.logger.error(
                 f"Classifier at '{self.name}' (Path: {'.'.join(self.get_path())}) could not route input."
