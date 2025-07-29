@@ -8,6 +8,8 @@ from intent_kit.node.classifiers.llm_classifier import (
 from intent_kit.services.base_client import BaseLLMClient
 from intent_kit.node.base import TreeNode
 from typing import List, cast
+from intent_kit.types import LLMResponse
+from intent_kit.node.types import ExecutionResult
 
 
 class DummyChild(TreeNode):
@@ -24,7 +26,16 @@ class DummyLLMClient(BaseLLMClient):
         self._response = response
 
     def generate(self, prompt, model=None):
-        return self._response
+        # Return an LLMResponse object instead of a string
+        return LLMResponse(
+            output=self._response,
+            model=model or "dummy-model",
+            input_tokens=10,
+            output_tokens=5,
+            cost=0.0,
+            provider="dummy",
+            duration=0.1,
+        )
 
     def _initialize_client(self, **kwargs):
         return self
@@ -46,7 +57,10 @@ def test_create_llm_classifier_exact_match():
     node_descs = ["weather: Weather handler", "cancel: Cancel handler"]
     classifier = create_llm_classifier(llm_config, prompt, node_descs)
     result = classifier("What's the weather?", cast(List[TreeNode], children), None)
-    assert result is children[0]
+    # Now expect an ExecutionResult with chosen_child parameter
+    assert isinstance(result, ExecutionResult)
+    assert result.success
+    assert result.params and result.params.get("chosen_child") == "weather"
 
 
 def test_create_llm_classifier_partial_match():
@@ -56,7 +70,10 @@ def test_create_llm_classifier_partial_match():
     node_descs = ["weather: Weather handler", "cancel: Cancel handler"]
     classifier = create_llm_classifier(llm_config, prompt, node_descs)
     result = classifier("Cancel my booking", cast(List[TreeNode], children), None)
-    assert result is children[1]
+    # Now expect an ExecutionResult with chosen_child parameter
+    assert isinstance(result, ExecutionResult)
+    assert result.success
+    assert result.params and result.params.get("chosen_child") == "cancel"
 
 
 def test_create_llm_classifier_no_match():
@@ -66,7 +83,9 @@ def test_create_llm_classifier_no_match():
     node_descs = ["weather: Weather handler", "cancel: Cancel handler"]
     classifier = create_llm_classifier(llm_config, prompt, node_descs)
     result = classifier("Unrelated input", cast(List[TreeNode], children), None)
-    assert result is None
+    # Now expect an ExecutionResult that indicates no match
+    assert isinstance(result, ExecutionResult)
+    assert not result.success
 
 
 def test_create_llm_classifier_error():
@@ -96,7 +115,10 @@ def test_create_llm_classifier_error():
     node_descs = ["weather: Weather handler", "cancel: Cancel handler"]
     classifier = create_llm_classifier(llm_config, prompt, node_descs)
     result = classifier("What's the weather?", cast(List[TreeNode], children), None)
-    assert result is None
+    # Now expect an ExecutionResult with error
+    assert isinstance(result, ExecutionResult)
+    assert not result.success
+    assert result.error is not None
 
 
 def test_create_llm_arg_extractor_basic():
@@ -105,8 +127,12 @@ def test_create_llm_arg_extractor_basic():
     param_schema = {"destination": str, "date": str}
     extractor = create_llm_arg_extractor(llm_config, prompt, param_schema)
     result = extractor("Book a flight to Paris tomorrow", None)
-    assert result["destination"] == "Paris"
-    assert result["date"] == "tomorrow"
+    # Now expect an ExecutionResult
+    assert isinstance(result, ExecutionResult)
+    assert result.success
+    assert result.params is not None
+    assert result.params["destination"] == "Paris"
+    assert result.params["date"] == "tomorrow"
 
 
 def test_create_llm_arg_extractor_missing_param():
@@ -115,8 +141,12 @@ def test_create_llm_arg_extractor_missing_param():
     param_schema = {"destination": str, "date": str}
     extractor = create_llm_arg_extractor(llm_config, prompt, param_schema)
     result = extractor("Book a flight to Paris", None)
-    assert result["destination"] == "Paris"
-    assert "date" not in result
+    # Now expect an ExecutionResult
+    assert isinstance(result, ExecutionResult)
+    assert result.success
+    assert result.params is not None
+    assert result.params["destination"] == "Paris"
+    assert "date" not in result.params
 
 
 def test_create_llm_arg_extractor_error():

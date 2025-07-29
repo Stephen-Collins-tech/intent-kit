@@ -9,6 +9,8 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from intent_kit.services.base_client import BaseLLMClient
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
+from intent_kit.node.types import ExecutionResult, ExecutionError
+from intent_kit.node.enums import NodeType
 from ..base import TreeNode
 
 logger = Logger(__name__)
@@ -21,7 +23,7 @@ def create_llm_classifier(
     llm_config: Optional[LLMConfig],
     classification_prompt: str,
     node_descriptions: List[str],
-) -> Callable[[str, List["TreeNode"], Optional[Dict[str, Any]]], Optional["TreeNode"]]:
+) -> Callable[[str, List["TreeNode"], Optional[Dict[str, Any]]], "ExecutionResult"]:
     """
     Create an LLM-powered classifier function.
 
@@ -31,14 +33,14 @@ def create_llm_classifier(
         node_descriptions: List of descriptions for each child node
 
     Returns:
-        Classifier function that can be used with ClassifierNode
+        Classifier function that returns an ExecutionResult with chosen_child parameter
     """
 
     def llm_classifier(
         user_input: str,
         children: List["TreeNode"],
         context: Optional[Dict[str, Any]] = None,
-    ) -> Optional["TreeNode"]:
+    ) -> ExecutionResult:
         """
         LLM-powered classifier that determines which child node to execute.
 
@@ -48,13 +50,27 @@ def create_llm_classifier(
             context: Optional context information to include in the prompt
 
         Returns:
-            Selected child node or None if no match
+            ExecutionResult with chosen_child parameter indicating which child to execute
         """
         logger.debug(f"LLM classifier input: {user_input}")
         if llm_config is None:
-            raise ValueError(
-                "No llm_config provided to LLM classifier. Please set a default on the graph or provide one at the node level."
+            return ExecutionResult(
+                success=False,
+                node_name="llm_classifier",
+                node_path=[],
+                node_type=NodeType.CLASSIFIER,
+                input=user_input,
+                output=None,
+                error=ExecutionError(
+                    error_type="ValueError",
+                    message="No llm_config provided to LLM classifier. Please set a default on the graph or provide one at the node level.",
+                    node_name="llm_classifier",
+                    node_path=[],
+                ),
+                params=None,
+                children_results=[],
             )
+
         try:
             # Build context information for the prompt
             context_info = ""
@@ -94,37 +110,114 @@ def create_llm_classifier(
                 response = llm_config.generate(prompt)
 
             # Parse the response to get the selected node name
-            selected_node_name = response.strip()
+            selected_node_name = response.output.strip()
             logger.debug(f"LLM raw output: {response}")
             logger.debug(f"LLM classifier selected node: {selected_node_name}")
+            logger.debug(f"LLM classifier children: {children}")
 
             # Find the child node with the matching name
+            chosen_child = None
             for child in children:
+                logger.debug(f"LLM classifier child in for loop: {child.name}")
                 if child.name == selected_node_name:
-                    return child
+                    logger.debug(
+                        f"LLM classifier child in for loop found: {child.name}"
+                    )
+                    chosen_child = child
+                    break
 
             # If no exact match, try partial matching
-            for child in children:
-                if (
-                    selected_node_name.lower() in child.name.lower()
-                    or child.name.lower() in selected_node_name.lower()
-                ):
-                    return child
+            if not chosen_child:
+                for child in children:
+                    if (
+                        selected_node_name.lower() in child.name.lower()
+                        or child.name.lower() in selected_node_name.lower()
+                    ):
+                        chosen_child = child
+                        break
 
-            # If still no match, return None
-            logger.warning(f"No child node found matching '{selected_node_name}'")
-            return None
+            # Create result with chosen child information
+            available_children = [child.name for child in children]
+            params = {
+                "available_children": available_children,
+                "chosen_child": chosen_child.name if chosen_child else None,
+            }
+            logger.debug(f"LLM classifier params: {params}")
+            logger.debug(f"LLM classifier response: {response}")
+            logger.debug(f"LLM classifier chosen child: {chosen_child}")
+
+            if chosen_child:
+                logger.debug(f"RETURNING LLM classifier chosen child: {chosen_child}")
+                logger.debug(
+                    f"RETURNING LLM classifier chosen child.name: {chosen_child.name}"
+                )
+                logger.debug(
+                    f"RETURNING LLM classifier chosen response.output: {response.output}"
+                )
+                logger.debug(
+                    f"RETURNING LLM classifier chosen response.output_tokens: {response.output_tokens}"
+                )
+                logger.debug(
+                    f"RETURNING LLM classifier chosen response.input_tokens: {response.input_tokens}"
+                )
+                return ExecutionResult(
+                    success=True,
+                    node_name="llm_classifier",
+                    node_path=[],
+                    node_type=NodeType.CLASSIFIER,
+                    input=user_input,
+                    input_tokens=response.input_tokens,
+                    output_tokens=response.output_tokens,
+                    output=chosen_child.name.strip().replace("\n", ""),
+                    error=None,
+                    params=params,
+                    children_results=[],
+                )
+            else:
+                # If still no match, return error result
+                logger.warning(f"No child node found matching '{selected_node_name}'")
+                return ExecutionResult(
+                    success=False,
+                    node_name="llm_classifier",
+                    node_path=[],
+                    node_type=NodeType.CLASSIFIER,
+                    input=user_input,
+                    output=None,
+                    error=ExecutionError(
+                        error_type="NoMatchFound",
+                        message=f"No child node found matching '{selected_node_name}'",
+                        node_name="llm_classifier",
+                        node_path=[],
+                    ),
+                    params=params,
+                    children_results=[],
+                )
 
         except Exception as e:
             logger.error(f"LLM classification failed: {e}")
-            return None
+            return ExecutionResult(
+                success=False,
+                node_name="llm_classifier",
+                node_path=[],
+                node_type=NodeType.CLASSIFIER,
+                input=user_input,
+                output=None,
+                error=ExecutionError(
+                    error_type=type(e).__name__,
+                    message=str(e),
+                    node_name="llm_classifier",
+                    node_path=[],
+                ),
+                params=None,
+                children_results=[],
+            )
 
     return llm_classifier
 
 
 def create_llm_arg_extractor(
     llm_config: LLMConfig, extraction_prompt: str, param_schema: Dict[str, Any]
-) -> Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]]:
+) -> Callable[[str, Optional[Dict[str, Any]]], Union[Dict[str, Any], ExecutionResult]]:
     """
     Create an LLM-powered argument extractor function.
 
@@ -139,7 +232,7 @@ def create_llm_arg_extractor(
 
     def llm_arg_extractor(
         user_input: str, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    ) -> Union[Dict[str, Any], ExecutionResult]:
         """
         LLM-powered argument extractor that extracts parameters from user input.
 
@@ -148,7 +241,7 @@ def create_llm_arg_extractor(
             context: Optional context information to include in the prompt
 
         Returns:
-            Dictionary of extracted parameters
+            Dictionary of extracted parameters or ExecutionResult with token info
         """
         try:
             # Build context information for the prompt
@@ -201,7 +294,7 @@ def create_llm_arg_extractor(
             extracted_params = {}
 
             # Simple parsing: look for "param_name: value" patterns
-            lines = response.strip().split("\n")
+            lines = response.output.strip().split("\n")
             for line in lines:
                 line = line.strip()
                 if ":" in line:
@@ -213,7 +306,25 @@ def create_llm_arg_extractor(
                             extracted_params[param_name] = param_value
 
             logger.debug(f"Extracted parameters: {extracted_params}")
-            return extracted_params
+
+            # Return ExecutionResult with token information
+            return ExecutionResult(
+                success=True,
+                node_name="llm_arg_extractor",
+                node_path=[],
+                node_type=NodeType.ACTION,  # This is used in action context
+                input=user_input,
+                output=extracted_params,
+                error=None,
+                params=extracted_params,
+                children_results=[],
+                input_tokens=response.input_tokens,
+                output_tokens=response.output_tokens,
+                cost=response.cost,
+                provider=response.provider,
+                model=response.model,
+                duration=response.duration,
+            )
 
         except Exception as e:
             logger.error(f"LLM argument extraction failed: {e}")

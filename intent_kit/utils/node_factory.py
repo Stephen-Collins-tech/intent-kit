@@ -9,7 +9,7 @@ from typing import Any, Callable, List, Optional, Dict, Type, Set, Union
 from intent_kit.node import TreeNode
 from intent_kit.node.classifiers import ClassifierNode
 from intent_kit.node.actions import ActionNode, RemediationStrategy
-from intent_kit.node.splitters import SplitterNode, rule_splitter, create_llm_splitter
+
 from intent_kit.utils.logger import Logger
 from intent_kit.graph import IntentGraph
 from intent_kit.services.base_client import BaseLLMClient
@@ -116,40 +116,6 @@ def create_classifier_node(
     set_parent_relationships(classifier_node, children)
 
     return classifier_node
-
-
-def create_splitter_node(
-    *,
-    name: str,
-    description: str,
-    splitter_func: Callable,
-    children: List[TreeNode],
-    llm_client: Optional[Any] = None,
-) -> SplitterNode:
-    """Create a splitter node with the given configuration.
-
-    Args:
-        name: Name of the splitter node
-        description: Description of the splitter
-        splitter_func: Function to split nodes
-        children: List of child nodes to route to
-        llm_client: Optional LLM client for LLM-based splitting
-
-    Returns:
-        Configured SplitterNode
-    """
-    splitter_node = SplitterNode(
-        name=name,
-        splitter_function=splitter_func,
-        children=children,
-        description=description,
-        llm_client=llm_client,
-    )
-
-    # Set parent relationships
-    set_parent_relationships(splitter_node, children)
-
-    return splitter_node
 
 
 def create_default_classifier() -> Callable:
@@ -293,90 +259,6 @@ def llm_classifier(
     )
 
 
-def llm_splitter(
-    *,
-    name: str,
-    children: List[TreeNode],
-    llm_config: Optional[LLMConfig] = None,
-    description: str = "",
-) -> TreeNode:
-    """Create an LLM-powered splitter node for multi-intent handling with auto-wired children.
-
-    Args:
-        name: Name of the splitter node
-        children: List of child nodes to route to
-        llm_config: (Optional) LLM configuration or client instance for splitting. If not provided, the graph-level default will be used if available.
-        description: Optional description of the splitter
-
-    Returns:
-        Configured SplitterNode with LLM-powered splitting
-
-    Example:
-        >>> splitter = llm_splitter(
-        ...     name="multi_intent_splitter",
-        ...     children=[classifier_node],
-        ...     # llm_config=LLM_CONFIG  # Optional if using graph-level default
-        ... )
-    """
-    if not children:
-        raise ValueError("llm_splitter requires at least one child node")
-
-    # Optionally, collect children descriptions for debugging or prompt context (not used directly here)
-    node_descriptions = []
-    for child in children:
-        if hasattr(child, "description") and child.description:
-            node_descriptions.append(f"{child.name}: {child.description}")
-        else:
-            node_descriptions.append(child.name)
-            logger.warning(
-                f"Child node '{child.name}' has no description, using name as fallback"
-            )
-
-    # Use the provided llm_config or raise if not set (let the splitter handle graph-level fallback if needed)
-    splitter_func = create_llm_splitter(llm_config)
-
-    return create_splitter_node(
-        name=name,
-        description=description,
-        splitter_func=splitter_func,
-        children=children,
-        llm_client=(
-            getattr(llm_config, "llm_client", None)
-            if hasattr(llm_config, "llm_client")
-            else (
-                llm_config.get("llm_client") if isinstance(llm_config, dict) else None
-            )
-        ),
-    )
-
-
-def rule_splitter_node(
-    *, name: str, children: List[TreeNode], description: str = ""
-) -> TreeNode:
-    """Create a rule-based splitter node for multi-intent handling.
-
-    Args:
-        name: Name of the splitter node
-        children: List of child nodes to route to
-        description: Optional description of the splitter
-
-    Returns:
-        Configured SplitterNode with rule-based splitting
-
-    Example:
-        >>> splitter = rule_splitter_node(
-        ...     name="rule_based_splitter",
-        ...     children=[classifier_node],
-        ... )
-    """
-    return create_splitter_node(
-        name=name,
-        description=description,
-        splitter_func=rule_splitter,
-        children=children,
-    )
-
-
 def create_intent_graph(root_node: TreeNode) -> "IntentGraph":
     """Create an IntentGraph with the given root node.
 
@@ -395,6 +277,5 @@ __all__ = [
     "set_parent_relationships",
     "create_action_node",
     "create_classifier_node",
-    "create_splitter_node",
     "create_default_classifier",
 ]

@@ -7,12 +7,18 @@ with a more readable and type-safe approach.
 
 from typing import List, Dict, Any, Optional, Callable, Union
 from intent_kit.node import TreeNode
-from intent_kit.node.enums import NodeType, ClassifierType, SplitterType
+from intent_kit.node.enums import NodeType, ClassifierType
 from intent_kit.graph import IntentGraph
 from .base import Builder
 from intent_kit.services.yaml_service import yaml_service
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
+
+from intent_kit.node.classifiers import ClassifierNode
+from intent_kit.node.classifiers import (
+    create_llm_classifier,
+    get_default_classification_prompt,
+)
 import os
 
 
@@ -23,7 +29,6 @@ class IntentGraphBuilder(Builder):
         """Initialize the graph builder."""
         super().__init__("intent_graph")
         self._root_nodes: List[TreeNode] = []
-        self._splitter = None
         self._debug_context_enabled = False
         self._context_trace_enabled = False
         self._json_graph: Optional[Dict[str, Any]] = None
@@ -41,18 +46,6 @@ class IntentGraphBuilder(Builder):
             Self for method chaining
         """
         self._root_nodes = [node]
-        return self
-
-    def splitter(self, splitter_func: Callable[..., Any]) -> "IntentGraphBuilder":
-        """Set a custom splitter function for the intent graph.
-
-        Args:
-            splitter_func: Function to use for splitting nodes
-
-        Returns:
-            Self for method chaining
-        """
-        self._splitter = splitter_func
         return self
 
     def with_json(self, json_graph: Dict[str, Any]) -> "IntentGraphBuilder":
@@ -100,7 +93,8 @@ class IntentGraphBuilder(Builder):
                 with open(yaml_input, "r") as f:
                     json_graph = yaml_service.safe_load(f)
             except Exception as e:
-                raise ValueError(f"Failed to load YAML file '{yaml_input}': {e}")
+                raise ValueError(
+                    f"Failed to load YAML file '{yaml_input}': {e}")
         else:
             # Treat as dict
             json_graph = yaml_input
@@ -137,7 +131,8 @@ class IntentGraphBuilder(Builder):
             return llm_config
 
         processed_config = {}
-        supported_providers = {"openai", "anthropic", "google", "openrouter", "ollama"}
+        supported_providers = {"openai", "anthropic",
+                               "google", "openrouter", "ollama"}
 
         for key, value in llm_config.items():
             if (
@@ -238,16 +233,6 @@ class IntentGraphBuilder(Builder):
                         if "classifier_function" not in node_spec:
                             errors.append(
                                 f"Rule classifier node '{node_id}' missing 'classifier_function' field"
-                            )
-
-                case NodeType.SPLITTER.value:
-                    splitter_type = node_spec.get(
-                        "splitter_type", SplitterType.FUNCTION.value
-                    )
-                    if splitter_type == SplitterType.FUNCTION.value:
-                        if "splitter_function" not in node_spec:
-                            errors.append(
-                                f"Function splitter node '{node_id}' missing 'splitter_function' field"
                             )
 
                 case _:
@@ -369,17 +354,6 @@ class IntentGraphBuilder(Builder):
                             )
                             validation_results["valid"] = False
 
-                case NodeType.SPLITTER.value:
-                    splitter_type = node_spec.get(
-                        "splitter_type", SplitterType.FUNCTION.value
-                    )
-                    if splitter_type == SplitterType.FUNCTION.value:
-                        if "splitter_function" not in node_spec:
-                            validation_results["errors"].append(
-                                f"Function splitter node '{node_id}' missing 'splitter_function' field"
-                            )
-                            validation_results["valid"] = False
-
                 case _:
                     validation_results["errors"].append(
                         f"Unknown node type '{node_type}' for node '{node_id}'"
@@ -400,7 +374,8 @@ class IntentGraphBuilder(Builder):
         cycles = self._detect_cycles(nodes)
         if cycles:
             validation_results["cycles_detected"] = True
-            validation_results["errors"].append(f"Cycles detected in graph: {cycles}")
+            validation_results["errors"].append(
+                f"Cycles detected in graph: {cycles}")
             validation_results["valid"] = False
 
         # Check for unreachable nodes
@@ -460,7 +435,8 @@ class IntentGraphBuilder(Builder):
 
         mark_reachable(root_id)
 
-        unreachable = [node_id for node_id in nodes if node_id not in reachable]
+        unreachable = [
+            node_id for node_id in nodes if node_id not in reachable]
         return unreachable
 
     def build(self) -> IntentGraph:
@@ -486,7 +462,6 @@ class IntentGraphBuilder(Builder):
 
             graph = IntentGraph(
                 root_nodes=self._root_nodes,
-                splitter=self._splitter,
                 llm_config=self._llm_config,
                 debug_context=self._debug_context_enabled,
                 context_trace=self._context_trace_enabled,
@@ -514,13 +489,17 @@ class IntentGraphBuilder(Builder):
                 if hasattr(node, "classifier") and getattr(
                     node.classifier, "__name__", ""
                 ).startswith("llm_classifier"):
+                    self._logger.debug(
+                        f"DEBUG: Injecting graph-level llm_config into node BEFORE ATTRIBUTE CHECK '{getattr(node, 'name', repr(node))}'"
+                    )
                     if not getattr(node, "llm_config", None):
                         self._logger.debug(
                             f"DEBUG: Injecting graph-level llm_config into node '{getattr(node, 'name', repr(node))}'"
                         )
                         node.llm_config = self._llm_config
                         if hasattr(node, "classifier"):
-                            setattr(node.classifier, "llm_config", self._llm_config)
+                            setattr(node.classifier, "llm_config",
+                                    self._llm_config)
                     else:
                         self._logger.debug(
                             f"DEBUG: Node '{getattr(node, 'name', repr(node))}' already has llm_config"
@@ -550,10 +529,12 @@ class IntentGraphBuilder(Builder):
         """
         # Validate required fields
         if "root" not in graph_spec:
-            raise ValueError("JSON graph specification must contain a 'root' field")
+            raise ValueError(
+                "JSON graph specification must contain a 'root' field")
 
         if "nodes" not in graph_spec:
-            raise ValueError("JSON graph specification must contain an 'nodes' field")
+            raise ValueError(
+                "JSON graph specification must contain an 'nodes' field")
 
         # Create all nodes first, mapping IDs to nodes
         node_map: Dict[str, TreeNode] = {}
@@ -568,7 +549,8 @@ class IntentGraphBuilder(Builder):
                 node_spec["id"] = node_spec["name"]
 
             node_id = node_spec["id"]
-            node = self._create_node_from_spec(node_id, node_spec, function_registry)
+            node = self._create_node_from_spec(
+                node_id, node_spec, function_registry)
             node_map[node_id] = node
 
         # Set up parent-child relationships
@@ -595,7 +577,6 @@ class IntentGraphBuilder(Builder):
         # Create IntentGraph
         graph = IntentGraph(
             root_nodes=[node_map[root_id]],
-            splitter=self._splitter,
             llm_config=self._llm_config,  # Already processed by _process_llm_config
             debug_context=self._debug_context_enabled,
             context_trace=self._context_trace_enabled,
@@ -628,6 +609,13 @@ class IntentGraphBuilder(Builder):
         node_type = node_spec["type"]
         name = node_spec.get("name", node_id)
         description = node_spec.get("description", "")
+        node_type = node_spec.get("type", NodeType.UNKNOWN)
+        classifier_type = node_spec.get("classifier_type", ClassifierType.RULE)
+        self._logger.debug(
+            f"DEBUG: Creating node '{name}' of type '{node_type}'")
+        self._logger.debug(
+            f"DEBUG: Creating node '{name}' of classifier_type '{classifier_type}'"
+        )
 
         # Dispatch table for node type to creation method
         dispatch = {
@@ -638,15 +626,18 @@ class IntentGraphBuilder(Builder):
                 == ClassifierType.LLM.value
                 else self._create_classifier_node(*args, **kwargs)
             ),
-            NodeType.SPLITTER.value: self._create_splitter_node,
         }
 
         if node_type not in dispatch:
-            raise ValueError(f"Unknown node type '{node_type}' for node '{node_id}'")
+            raise ValueError(
+                f"Unknown node type '{node_type}' for node '{node_id}'")
 
+        self._logger.debug(
+            f"DEBUG: Creating node '{name}' of type '{node_type}'")
         node_creator = dispatch[node_type]
         if not callable(node_creator):
-            raise TypeError(f"Node creator for type '{node_type}' is not callable")
+            raise TypeError(
+                f"Node creator for type '{node_type}' is not callable")
         return node_creator(node_id, name, description, node_spec, function_registry)
 
     def _create_action_node(
@@ -661,7 +652,8 @@ class IntentGraphBuilder(Builder):
         from intent_kit.utils.node_factory import action
 
         if "function" not in node_spec:
-            raise ValueError(f"Action node '{node_id}' must have a 'function' field")
+            raise ValueError(
+                f"Action node '{node_id}' must have a 'function' field")
 
         function_name = node_spec["function"]
         if function_name not in function_registry:
@@ -683,7 +675,8 @@ class IntentGraphBuilder(Builder):
 
         raw_llm_config = node_spec.get("llm_config", self._llm_config)
         llm_config = (
-            self._process_llm_config(raw_llm_config) if raw_llm_config else None
+            self._process_llm_config(
+                raw_llm_config) if raw_llm_config else None
         )
         context_inputs = set(node_spec.get("context_inputs", []))
         context_outputs = set(node_spec.get("context_outputs", []))
@@ -712,7 +705,8 @@ class IntentGraphBuilder(Builder):
 
         raw_llm_config = node_spec.get("llm_config", self._llm_config)
         llm_config = (
-            self._process_llm_config(raw_llm_config) if raw_llm_config else None
+            self._process_llm_config(
+                raw_llm_config) if raw_llm_config else None
         )
         if not llm_config:
             raise ValueError(
@@ -724,17 +718,13 @@ class IntentGraphBuilder(Builder):
 
         # Create a temporary node for now - children will be set later
         # We'll need to create a placeholder and update it after all nodes are created
-        from intent_kit.node.classifiers import ClassifierNode
-        from intent_kit.node.classifiers import (
-            create_llm_classifier,
-            get_default_classification_prompt,
-        )
 
         if not classification_prompt:
             classification_prompt = get_default_classification_prompt()
 
         # Create a placeholder classifier function
-        classifier_func = create_llm_classifier(llm_config, classification_prompt, [])
+        classifier_func = create_llm_classifier(
+            llm_config, classification_prompt, [])
 
         return ClassifierNode(
             name=name,
@@ -753,7 +743,6 @@ class IntentGraphBuilder(Builder):
         function_registry: Dict[str, Callable],
     ) -> TreeNode:
         """Create a ClassifierNode from specification."""
-        from intent_kit.node.classifiers import ClassifierNode
 
         if "classifier_function" not in node_spec:
             raise ValueError(
@@ -770,7 +759,8 @@ class IntentGraphBuilder(Builder):
         remediation_strategies = node_spec.get("remediation_strategies", [])
         raw_llm_config = node_spec.get("llm_config", self._llm_config)
         llm_config = (
-            self._process_llm_config(raw_llm_config) if raw_llm_config else None
+            self._process_llm_config(
+                raw_llm_config) if raw_llm_config else None
         )
         llm_client = None
         if llm_config:
@@ -792,52 +782,8 @@ class IntentGraphBuilder(Builder):
             node.llm_client = llm_client
         return node
 
-    def _create_splitter_node(
-        self,
-        node_id: str,
-        name: str,
-        description: str,
-        node_spec: Dict[str, Any],
-        function_registry: Dict[str, Callable],
-    ) -> TreeNode:
-        """Create a SplitterNode from specification."""
-        from intent_kit.node.splitters import SplitterNode
-
-        if "splitter_function" not in node_spec:
-            raise ValueError(
-                f"Splitter node '{node_id}' must have a 'splitter_function' field"
-            )
-
-        splitter_function_name = node_spec["splitter_function"]
-        if splitter_function_name not in function_registry:
-            raise ValueError(
-                f"Splitter function '{splitter_function_name}' not found in function registry for node '{node_id}'"
-            )
-
-        splitter_func = function_registry[splitter_function_name]
-        raw_llm_config = node_spec.get("llm_config", self._llm_config)
-        llm_config = (
-            self._process_llm_config(raw_llm_config) if raw_llm_config else None
-        )
-        llm_client = None
-        if llm_config:
-            try:
-                llm_client = LLMFactory.create_client(llm_config)
-                self._logger.debug(f"Created LLM client for splitter node '{node_id}'")
-            except Exception as e:
-                self._logger.debug(
-                    f"Failed to create LLM client for splitter node '{node_id}': {e}"
-                )
-                pass
-        return SplitterNode(
-            name=name,
-            description=description,
-            splitter_function=splitter_func,
-            children=[],  # Will be set later
-            llm_client=llm_client,
-        )
-
     # Internal debug methods (for development use only)
+
     def _debug_context(self, enabled: bool = True) -> "IntentGraphBuilder":
         """Enable context debugging for the intent graph.
 

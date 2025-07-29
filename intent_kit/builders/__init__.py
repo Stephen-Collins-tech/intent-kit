@@ -8,13 +8,12 @@ type-safe creation of intent graph nodes.
 from .base import Builder
 from .action import ActionBuilder
 from .classifier import ClassifierBuilder
-from .splitter import SplitterBuilder
+
 from .graph import IntentGraphBuilder
 
 __all__ = [
     "Builder",
     "ActionBuilder",
     "ClassifierBuilder",
-    "SplitterBuilder",
     "IntentGraphBuilder",
 ]

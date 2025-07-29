@@ -4,7 +4,6 @@ Simple test script to verify the validation functionality.
 """
 
 from intent_kit.utils.node_factory import action
-from intent_kit.utils.node_factory import rule_splitter_node
 from intent_kit.node.classifiers import ClassifierNode
 from intent_kit.graph import IntentGraph
 from intent_kit.graph.validation import GraphValidationError
@@ -33,16 +32,9 @@ def test_valid_graph():
     # Set parent reference
     greet_node.parent = classifier_node
 
-    # Create splitter node that routes to classifier (VALID)
-    splitter_node = rule_splitter_node(
-        name="main_splitter",
-        children=[classifier_node],  # Routes to classifier - VALID
-        description="Split multi-intent inputs",
-    )
-
     # Create graph and validate
     graph = IntentGraph()
-    graph.add_root_node(splitter_node, validate=True)
+    graph.add_root_node(classifier_node, validate=True)
 
     print("✓ Valid graph test passed!")
 
@@ -59,19 +51,17 @@ def test_invalid_graph():
         param_schema={"name": str},
     )
 
-    # Create splitter node that routes directly to intent nodes (INVALID)
-    splitter_node = rule_splitter_node(
-        name="invalid_splitter",
-        children=[greet_node],  # Routes directly to intent - INVALID
-        description="Invalid splitter",
-    )
-
     # Create graph and try to validate
     graph = IntentGraph()
 
     try:
-        graph.add_root_node(splitter_node, validate=True)
+        graph.add_root_node(greet_node, validate=True)
         print("✗ Invalid graph test failed - should have raised an error")
+    except ValueError as e:
+        if "must be a classifier node" in str(e):
+            print(f"✓ Invalid graph test passed - caught error: {e}")
+        else:
+            print(f"✗ Unexpected error: {e}")
     except GraphValidationError as e:
         print(f"✓ Invalid graph test passed - caught error: {e.message}")
         print(f"  Node: {e.node_name}")

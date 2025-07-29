@@ -12,7 +12,7 @@ This library provides:
 from .node import TreeNode, NodeType
 from .node.classifiers import ClassifierNode
 from .node.actions import ActionNode
-from .node.splitters import SplitterNode
+
 from .builders.graph import IntentGraphBuilder
 from .context import IntentContext
 
@@ -27,6 +27,5 @@ __all__ = [
     "NodeType",
     "ClassifierNode",
     "ActionNode",
-    "SplitterNode",
     "IntentContext",
 ]

@@ -11,6 +11,7 @@ from intent_kit.services.openrouter_client import OpenRouterClient
 from intent_kit.services.ollama_client import OllamaClient
 from intent_kit.utils.logger import Logger
 from intent_kit.services.base_client import BaseLLMClient
+from intent_kit.types import LLMResponse
 
 logger = Logger("llm_factory")
 
@@ -51,7 +52,7 @@ class LLMFactory:
             raise ValueError(f"Unsupported LLM provider: {provider}")
 
     @staticmethod
-    def generate_with_config(llm_config, prompt: str) -> str:
+    def generate_with_config(llm_config, prompt: str) -> LLMResponse:
         """
         Generate text using the specified LLM configuration or client instance.
         """

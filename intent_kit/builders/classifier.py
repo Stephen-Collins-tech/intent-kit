@@ -14,6 +14,7 @@ from intent_kit.utils.node_factory import (
     create_default_classifier,
 )
 from .base import Builder
+from intent_kit.utils.logger import Logger
 
 
 class ClassifierBuilder(Builder):
@@ -26,6 +27,7 @@ class ClassifierBuilder(Builder):
             name: Name of the classifier node
         """
         super().__init__(name)
+        self.logger = Logger(__name__)
         self.classifier_func: Optional[Callable] = None
         self.children: List[TreeNode] = []
         self.remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = (
@@ -91,8 +93,20 @@ class ClassifierBuilder(Builder):
         Raises:
             ValueError: If required fields are missing
         """
+        self.logger.debug(
+            f"ClassifierBuilder .build method call children: {self.children}"
+        )
+        self.logger.debug(
+            f"ClassifierBuilder .build method call classifier_func: {self.classifier_func}"
+        )
+        self.logger.debug(
+            f"ClassifierBuilder .build method call remediation_strategies: {self.remediation_strategies}"
+        )
         # Validate required fields using base class method
         self._validate_required_field("children", self.children, "with_children")
+        self._validate_required_field(
+            "classifier_func", self.classifier_func, "with_classifier"
+        )
 
         # Use default classifier if none provided
         if not self.classifier_func:

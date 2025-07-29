@@ -6,6 +6,7 @@ This module provides a base class for all LLM client implementations.
 
 from abc import ABC, abstractmethod
 from typing import Optional, Any
+from intent_kit.types import LLMResponse
 
 
 class BaseLLMClient(ABC):
@@ -32,7 +33,7 @@ class BaseLLMClient(ABC):
         pass
 
     @abstractmethod
-    def generate(self, prompt: str, model: Optional[str] = None) -> str:
+    def generate(self, prompt: str, model: Optional[str] = None) -> LLMResponse:
         """
         Generate text using the LLM model.
 
@@ -41,7 +42,7 @@ class BaseLLMClient(ABC):
             model: The model name to use (optional, uses default if not provided)
 
         Returns:
-            Generated text response
+            LLMResponse containing the generated text, token usage, and cost
         """
         pass
 

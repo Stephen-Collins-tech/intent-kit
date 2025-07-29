@@ -23,7 +23,7 @@ class ClassifierNode(TreeNode):
     def __init__(
         self,
         name: Optional[str],
-        classifier: Callable[..., Optional["TreeNode"]],
+        classifier: Callable[..., ExecutionResult],
         children: List["TreeNode"],
         description: str = "",
         parent: Optional["TreeNode"] = None,
@@ -51,12 +51,14 @@ class ClassifierNode(TreeNode):
         if "llm_client" in classifier_params or any(
             p.kind == inspect.Parameter.VAR_KEYWORD for p in classifier_params.values()
         ):
-            chosen = self.classifier(
+            classifier_result = self.classifier(
                 user_input, self.children, context_dict, llm_client=self.llm_client
             )
         else:
-            chosen = self.classifier(user_input, self.children, context_dict)
-        if not chosen:
+            classifier_result = self.classifier(user_input, self.children, context_dict)
+
+        # Handle the case where classifier returns None (legacy behavior)
+        if classifier_result is None:
             self.logger.error(
                 f"Classifier at '{self.name}' (Path: {'.'.join(self.get_path())}) could not route input."
             )
@@ -87,24 +89,76 @@ class ClassifierNode(TreeNode):
                 error=error,
                 params=None,
                 children_results=[],
+                # No token information available for None result
+                input_tokens=0,
+                output_tokens=0,
+                cost=0.0,
+                duration=0.0,
             )
-        self.logger.debug(
-            f"Classifier at '{self.name}' routed input to '{chosen.name}'."
+
+        # Handle ExecutionResult from classifier
+        if not classifier_result.success:
+            self.logger.error(
+                f"Classifier at '{self.name}' (Path: {'.'.join(self.get_path())}) failed: {classifier_result.error}"
+            )
+
+            # Try remediation strategies
+            remediation_result = self._execute_remediation_strategies(
+                user_input=user_input,
+                context=context,
+                original_error=classifier_result.error,
+            )
+
+            if remediation_result:
+                return remediation_result
+
+            # If no remediation succeeded, return the classifier error
+            return ExecutionResult(
+                success=False,
+                node_name=self.name,
+                node_path=self.get_path(),
+                node_type=NodeType.CLASSIFIER,
+                input=user_input,
+                output=None,
+                error=classifier_result.error,
+                params=classifier_result.params,
+                children_results=[],
+                # Preserve token information from the failed classifier result
+                input_tokens=getattr(classifier_result, "input_tokens", None),
+                output_tokens=getattr(classifier_result, "output_tokens", None),
+                cost=getattr(classifier_result, "cost", None),
+                provider=getattr(classifier_result, "provider", None),
+                model=getattr(classifier_result, "model", None),
+                duration=getattr(classifier_result, "duration", None),
+            )
+
+        # Classifier succeeded - return the result with our node info
+        chosen_child = (
+            classifier_result.params.get("chosen_child", "unknown")
+            if classifier_result.params
+            else "unknown"
         )
-        child_result = chosen.execute(user_input, context)
+        self.logger.debug(
+            f"Classifier at '{self.name}' completed successfully with chosen child: {chosen_child}"
+        )
+
         return ExecutionResult(
             success=True,
             node_name=self.name,
             node_path=self.get_path(),
             node_type=NodeType.CLASSIFIER,
             input=user_input,
-            output=child_result.output,  # Return the child's actual output
+            output=classifier_result.output,
             error=None,
-            params={
-                "chosen_child": chosen.name,
-                "available_children": [child.name for child in self.children],
-            },
-            children_results=[child_result],
+            params=classifier_result.params,
+            children_results=[],  # Children will be handled by traverse method
+            # Preserve token information from the classifier result
+            input_tokens=getattr(classifier_result, "input_tokens", None),
+            output_tokens=getattr(classifier_result, "output_tokens", None),
+            cost=getattr(classifier_result, "cost", None),
+            provider=getattr(classifier_result, "provider", None),
+            model=getattr(classifier_result, "model", None),
+            duration=getattr(classifier_result, "duration", None),
         )
 
     def _execute_remediation_strategies(

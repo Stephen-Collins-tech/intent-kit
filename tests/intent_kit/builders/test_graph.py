@@ -16,7 +16,6 @@ class TestIntentGraphBuilder:
         """Test IntentGraphBuilder initialization."""
         builder = IntentGraphBuilder()
         assert builder._root_nodes == []
-        assert builder._splitter is None
         assert builder._debug_context_enabled is False
         assert builder._context_trace_enabled is False
         assert builder._json_graph is None
@@ -32,16 +31,6 @@ class TestIntentGraphBuilder:
 
         assert result is builder
         assert builder._root_nodes == [mock_node]
-
-    def test_splitter(self):
-        """Test setting splitter function."""
-        builder = IntentGraphBuilder()
-        mock_splitter = MagicMock()
-
-        result = builder.splitter(mock_splitter)
-
-        assert result is builder
-        assert builder._splitter == mock_splitter
 
     def test_with_json(self):
         """Test setting JSON graph."""
@@ -297,24 +286,6 @@ class TestIntentGraphBuilder:
         with pytest.raises(
             ValueError,
             match="Rule classifier node 'test' missing 'classifier_function' field",
-        ):
-            builder._validate_json_graph()
-
-    def test_build_with_json_validation_splitter_missing_function(self):
-        builder = IntentGraphBuilder()
-        builder._json_graph = {
-            "nodes": {
-                "test": {
-                    "type": "splitter",
-                    "splitter_type": "function",
-                    "name": "test",
-                }
-            },
-            "root": "test",
-        }
-        with pytest.raises(
-            ValueError,
-            match="Function splitter node 'test' missing 'splitter_function' field",
         ):
             builder._validate_json_graph()
 
@@ -728,22 +699,6 @@ class TestIntentGraphBuilder:
         assert node.name == "test_llm_classifier"
         assert node.description == "Test LLM classifier"
 
-    def test_create_node_from_spec_splitter(self):
-        """Test creating splitter node from specification."""
-        builder = IntentGraphBuilder()
-        node_spec = {
-            "type": "splitter",
-            "name": "test_splitter",
-            "description": "Test splitter",
-            "splitter_function": "test_splitter_func",
-            "llm_config": {"provider": "openai"},
-        }
-        function_registry = {"test_splitter_func": lambda x: x}
-
-        node = builder._create_node_from_spec("test_id", node_spec, function_registry)
-        assert node.name == "test_splitter"
-        assert node.description == "Test splitter"
-
     def test_create_node_from_spec_missing_type(self):
         """Test creating node with missing type."""
         builder = IntentGraphBuilder()
@@ -852,45 +807,6 @@ class TestIntentGraphBuilder:
                 "test_id",
                 "test_classifier",
                 "Test classifier",
-                node_spec,
-                function_registry,
-            )
-
-    def test_create_splitter_node_missing_function(self):
-        """Test creating splitter node with missing function."""
-        builder = IntentGraphBuilder()
-        node_spec = {
-            "type": "splitter",
-            "name": "test_splitter",
-            "description": "Test splitter",
-        }
-        function_registry = {}
-
-        with pytest.raises(ValueError, match="must have a 'splitter_function' field"):
-            builder._create_splitter_node(
-                "test_id",
-                "test_splitter",
-                "Test splitter",
-                node_spec,
-                function_registry,
-            )
-
-    def test_create_splitter_node_function_not_found(self):
-        """Test creating splitter node with function not in registry."""
-        builder = IntentGraphBuilder()
-        node_spec = {
-            "type": "splitter",
-            "name": "test_splitter",
-            "description": "Test splitter",
-            "splitter_function": "missing_func",
-        }
-        function_registry = {}
-
-        with pytest.raises(ValueError, match="not found in function registry"):
-            builder._create_splitter_node(
-                "test_id",
-                "test_splitter",
-                "Test splitter",
                 node_spec,
                 function_registry,
             )
@@ -1070,21 +986,3 @@ class TestIntentGraphBuilder:
         assert isinstance(result, IntentGraph)
         # Should use JSON graph, not the root node
         assert result.root_nodes[0].name == "test"
-
-    def test_build_with_json_and_splitter(self):
-        """Test building from JSON with custom splitter."""
-        builder = IntentGraphBuilder()
-        mock_splitter = MagicMock()
-        builder.splitter(mock_splitter)
-
-        builder._json_graph = {
-            "root": "test",
-            "nodes": {
-                "test": {"type": "action", "name": "test", "function": "test_func"}
-            },
-        }
-        builder._function_registry = {"test_func": MagicMock()}
-
-        result = builder.build()
-        assert isinstance(result, IntentGraph)
-        assert result.splitter == mock_splitter

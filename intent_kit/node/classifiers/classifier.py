@@ -23,7 +23,7 @@ class ClassifierNode(TreeNode):
         self,
         name: Optional[str],
         classifier: Callable[
-            [str, List["TreeNode"], Optional[Dict[str, Any]]], Optional["TreeNode"]
+            [str, List["TreeNode"], Optional[Dict[str, Any]]], "ExecutionResult"
         ],
         children: List["TreeNode"],
         description: str = "",
@@ -46,8 +46,8 @@ class ClassifierNode(TreeNode):
     ) -> ExecutionResult:
         context_dict: Dict[str, Any] = {}
         # If context is needed, populate context_dict here in the future
-        chosen = self.classifier(user_input, self.children, context_dict)
-        if not chosen:
+        classifier_result = self.classifier(user_input, self.children, context_dict)
+        if not classifier_result:
             self.logger.error(
                 f"Classifier at '{self.name}' (Path: {'.'.join(self.get_path())}) could not route input."
             )
@@ -63,8 +63,14 @@ class ClassifierNode(TreeNode):
             remediation_result = self._execute_remediation_strategies(
                 user_input=user_input, context=context, original_error=error
             )
+            self.logger.debug(
+                f"ClassifierNode .execute method call remediation_result: {remediation_result}"
+            )
 
             if remediation_result:
+                self.logger.warning(
+                    f"ClassifierNode .execute method call remediation_result: {remediation_result}"
+                )
                 return remediation_result
 
             # If no remediation succeeded, return the original error
@@ -79,23 +85,25 @@ class ClassifierNode(TreeNode):
                 params=None,
                 children_results=[],
             )
-        self.logger.debug(
-            f"Classifier at '{self.name}' routed input to '{chosen.name}'."
-        )
-        child_result = chosen.execute(user_input, context)
         return ExecutionResult(
             success=True,
             node_name=self.name,
             node_path=self.get_path(),
+            input_tokens=classifier_result.input_tokens,
+            output_tokens=classifier_result.output_tokens,
+            duration=classifier_result.duration,
             node_type=NodeType.CLASSIFIER,
             input=user_input,
-            output=child_result.output,  # Return the child's actual output
+            output=classifier_result.output,  # Return the child's actual output
             error=None,
             params={
-                "chosen_child": chosen.name,
+                "chosen_child": str(classifier_result.output)
+                .strip()
+                .replace('"', "")
+                .replace("'", "")
+                .replace("\n", ""),
                 "available_children": [child.name for child in self.children],
             },
-            children_results=[child_result],
         )
 
     def _execute_remediation_strategies(

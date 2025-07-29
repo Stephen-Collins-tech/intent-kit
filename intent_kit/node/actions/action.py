@@ -25,7 +25,9 @@ class ActionNode(TreeNode):
         name: Optional[str],
         param_schema: Dict[str, Type],
         action: Callable[..., Any],
-        arg_extractor: Callable[[str, Optional[Dict[str, Any]]], Dict[str, Any]],
+        arg_extractor: Callable[
+            [str, Optional[Dict[str, Any]]], Union[Dict[str, Any], ExecutionResult]
+        ],
         context_inputs: Optional[Set[str]] = None,
         context_outputs: Optional[Set[str]] = None,
         input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
@@ -59,6 +61,12 @@ class ActionNode(TreeNode):
     def execute(
         self, user_input: str, context: Optional[IntentContext] = None
     ) -> ExecutionResult:
+        # Track token usage across the entire execution
+        total_input_tokens = 0
+        total_output_tokens = 0
+        total_cost = 0.0
+        total_duration = 0.0
+
         try:
             context_dict: Optional[Dict[str, Any]] = None
             if context:
@@ -67,7 +75,31 @@ class ActionNode(TreeNode):
                     for key in self.context_inputs
                     if context.has(key)
                 }
+
+            # Extract parameters - this might involve LLM calls
             extracted_params = self.arg_extractor(user_input, context_dict or {})
+            self.logger.debug(f"ActionNode extracted_params: {extracted_params}")
+
+            # If the arg_extractor returned an ExecutionResult (LLM-based), extract token info
+            if isinstance(extracted_params, ExecutionResult):
+                total_input_tokens += getattr(extracted_params, "input_tokens", 0) or 0
+                total_output_tokens += (
+                    getattr(extracted_params, "output_tokens", 0) or 0
+                )
+                total_cost += getattr(extracted_params, "cost", 0.0) or 0.0
+                total_duration += getattr(extracted_params, "duration", 0.0) or 0.0
+
+                # Extract the actual parameters from the result
+                if extracted_params.params:
+                    extracted_params = extracted_params.params
+                elif extracted_params.output:
+                    extracted_params = extracted_params.output
+                else:
+                    extracted_params = {}
+            elif not isinstance(extracted_params, dict):
+                # If it's not a dict or ExecutionResult, convert to dict
+                extracted_params = {}
+
         except Exception as e:
             self.logger.error(
                 f"Argument extraction failed for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
@@ -87,6 +119,10 @@ class ActionNode(TreeNode):
                 ),
                 params=None,
                 children_results=[],
+                input_tokens=total_input_tokens,
+                output_tokens=total_output_tokens,
+                cost=total_cost,
+                duration=total_duration,
             )
         if self.input_validator:
             try:
@@ -109,6 +145,10 @@ class ActionNode(TreeNode):
                         ),
                         params=extracted_params,
                         children_results=[],
+                        input_tokens=total_input_tokens,
+                        output_tokens=total_output_tokens,
+                        cost=total_cost,
+                        duration=total_duration,
                     )
             except Exception as e:
                 self.logger.error(
@@ -129,6 +169,10 @@ class ActionNode(TreeNode):
                     ),
                     params=extracted_params,
                     children_results=[],
+                    input_tokens=total_input_tokens,
+                    output_tokens=total_output_tokens,
+                    cost=total_cost,
+                    duration=total_duration,
                 )
         try:
             self.logger.debug(
@@ -154,7 +198,12 @@ class ActionNode(TreeNode):
                 ),
                 params=extracted_params,
                 children_results=[],
+                input_tokens=total_input_tokens,
+                output_tokens=total_output_tokens,
+                cost=total_cost,
+                duration=total_duration,
             )
+        self.logger.debug(f"ActionNode validated_params: {validated_params}")
         try:
             if context is not None:
                 output = self.action(**validated_params, context=context)
@@ -181,8 +230,28 @@ class ActionNode(TreeNode):
             )
 
             if remediation_result:
-                return remediation_result
+                # Aggregate tokens from remediation if it succeeded
+                if isinstance(remediation_result, ExecutionResult):
+                    total_input_tokens += (
+                        getattr(remediation_result, "input_tokens", 0) or 0
+                    )
+                    total_output_tokens += (
+                        getattr(remediation_result, "output_tokens", 0) or 0
+                    )
+                    total_cost += getattr(remediation_result, "cost", 0.0) or 0.0
+                    total_duration += (
+                        getattr(remediation_result, "duration", 0.0) or 0.0
+                    )
 
+                    # Update the remediation result with aggregated tokens
+                    remediation_result.input_tokens = total_input_tokens
+                    remediation_result.output_tokens = total_output_tokens
+                    remediation_result.cost = total_cost
+                    remediation_result.duration = total_duration
+
+                    return remediation_result
+
+            self.logger.debug(f"ActionNode remediation_result: {remediation_result}")
             # If no remediation succeeded, return the original error
             return ExecutionResult(
                 success=False,
@@ -194,7 +263,12 @@ class ActionNode(TreeNode):
                 error=error,
                 params=validated_params,
                 children_results=[],
+                input_tokens=total_input_tokens,
+                output_tokens=total_output_tokens,
+                cost=total_cost,
+                duration=total_duration,
             )
+        self.logger.debug(f"ActionNode output: {output}")
         if self.output_validator:
             try:
                 if not self.output_validator(output):
@@ -216,6 +290,10 @@ class ActionNode(TreeNode):
                         ),
                         params=validated_params,
                         children_results=[],
+                        input_tokens=total_input_tokens,
+                        output_tokens=total_output_tokens,
+                        cost=total_cost,
+                        duration=total_duration,
                     )
             except Exception as e:
                 self.logger.error(
@@ -236,6 +314,10 @@ class ActionNode(TreeNode):
                     ),
                     params=validated_params,
                     children_results=[],
+                    input_tokens=total_input_tokens,
+                    output_tokens=total_output_tokens,
+                    cost=total_cost,
+                    duration=total_duration,
                 )
 
         # Update context with outputs
@@ -246,6 +328,7 @@ class ActionNode(TreeNode):
                 elif isinstance(output, dict) and key in output:
                     context.set(key, output[key], self.name)
 
+        self.logger.debug(f"Final ActionNode returning ExecutionResult: {output}")
         return ExecutionResult(
             success=True,
             node_name=self.name,
@@ -256,6 +339,10 @@ class ActionNode(TreeNode):
             error=None,
             params=validated_params,
             children_results=[],
+            input_tokens=total_input_tokens,
+            output_tokens=total_output_tokens,
+            cost=total_cost,
+            duration=total_duration,
         )
 
     def _execute_remediation_strategies(

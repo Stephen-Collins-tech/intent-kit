@@ -9,18 +9,14 @@ from intent_kit.utils.node_factory import (
     set_parent_relationships,
     create_action_node,
     create_classifier_node,
-    create_splitter_node,
     create_default_classifier,
     action,
     llm_classifier,
-    llm_splitter,
-    rule_splitter_node,
     create_intent_graph,
 )
 from intent_kit.node import TreeNode
 from intent_kit.node.actions import ActionNode
 from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.node.splitters import SplitterNode
 from intent_kit.graph import IntentGraph
 from intent_kit.node.actions.remediation import RemediationStrategy
 
@@ -207,57 +203,6 @@ class TestCreateClassifierNode:
         )
 
         assert node.remediation_strategies == remediation_strategies
-
-
-class TestCreateSplitterNode:
-    """Test splitter node creation."""
-
-    def test_create_splitter_node_basic(self):
-        """Test creating basic splitter node."""
-
-        def splitter_func(user_input: str, debug: bool = False):
-            return []
-
-        child1 = Mock(spec=TreeNode)
-        child2 = Mock(spec=TreeNode)
-        children = cast(List[TreeNode], [child1, child2])
-
-        node = create_splitter_node(
-            name="split",
-            description="Split input into multiple chunks",
-            splitter_func=splitter_func,
-            children=children,
-        )
-
-        assert isinstance(node, SplitterNode)
-        assert node.name == "split"
-        assert node.description == "Split input into multiple chunks"
-        assert node.splitter_function == splitter_func
-        assert node.children == children
-
-        # Check parent relationships
-        assert child1.parent == node
-        assert child2.parent == node
-
-    def test_create_splitter_node_with_llm_client(self):
-        """Test creating splitter node with LLM client."""
-
-        def splitter_func(user_input: str, debug: bool = False):
-            return []
-
-        child1 = Mock(spec=TreeNode)
-        children = cast(List[TreeNode], [child1])
-        llm_client = Mock()
-
-        node = create_splitter_node(
-            name="split",
-            description="Split input into multiple chunks",
-            splitter_func=splitter_func,
-            children=children,
-            llm_client=llm_client,
-        )
-
-        assert node.llm_client == llm_client
 
 
 class TestCreateDefaultClassifier:
@@ -486,61 +431,6 @@ class TestLLMClassifierFactory:
         mock_create_llm_classifier.assert_called_once_with(
             llm_config, classification_prompt, ["child1"]
         )
-        assert result == mock_node
-
-
-class TestLLMSplitterNodeFactory:
-    """Test LLM splitter node factory function."""
-
-    @patch("intent_kit.utils.node_factory.create_splitter_node")
-    def test_llm_splitter_node_basic(self, mock_create_splitter_node):
-        """Test basic LLM splitter node factory."""
-        child1 = Mock(spec=TreeNode)
-        child1.name = "child1"
-        child2 = Mock(spec=TreeNode)
-        child2.name = "child2"
-        children = cast(List[TreeNode], [child1, child2])
-        llm_config = {"model": "gpt-3.5-turbo", "llm_client": Mock()}
-        mock_node = Mock(spec=SplitterNode)
-        mock_create_splitter_node.return_value = mock_node
-
-        result = llm_splitter(
-            name="split",
-            children=children,
-            llm_config=llm_config,
-        )
-
-        mock_create_splitter_node.assert_called_once()
-        call_args = mock_create_splitter_node.call_args
-        assert call_args[1]["name"] == "split"
-        assert call_args[1]["children"] == children
-        # The llm_client should be created from the llm_config
-        assert call_args[1]["llm_client"] is not None
-        assert result == mock_node
-
-
-class TestRuleSplitterNodeFactory:
-    """Test rule splitter node factory function."""
-
-    @patch("intent_kit.utils.node_factory.create_splitter_node")
-    def test_rule_splitter_node_basic(self, mock_create_splitter_node):
-        """Test basic rule splitter node factory."""
-        child1 = Mock(spec=TreeNode)
-        child2 = Mock(spec=TreeNode)
-        children = cast(List[TreeNode], [child1, child2])
-        mock_node = Mock(spec=SplitterNode)
-        mock_create_splitter_node.return_value = mock_node
-
-        result = rule_splitter_node(
-            name="split",
-            children=children,
-        )
-
-        mock_create_splitter_node.assert_called_once()
-        call_args = mock_create_splitter_node.call_args
-        assert call_args[1]["name"] == "split"
-        assert call_args[1]["children"] == children
-        assert call_args[1]["splitter_func"] is not None
         assert result == mock_node
 
 

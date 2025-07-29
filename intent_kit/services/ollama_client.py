@@ -1,9 +1,12 @@
-# Ollama client wrapper for intent-kit
-# Requires: pip install ollama
+"""
+Ollama client wrapper for intent-kit
+"""
 
 from intent_kit.utils.logger import Logger
 from intent_kit.services.base_client import BaseLLMClient
 from typing import Optional
+from intent_kit.types import LLMResponse
+from intent_kit.utils.perf_util import PerfUtil
 
 logger = Logger("ollama_service")
 
@@ -33,17 +36,34 @@ class OllamaClient(BaseLLMClient):
         if self._client is None:
             self._client = self.get_client()
 
-    def generate(self, prompt: str, model: Optional[str] = None) -> str:
+    def generate(self, prompt: str, model: Optional[str] = None) -> LLMResponse:
         """Generate text using Ollama's LLM model."""
         self._ensure_imported()
         assert self._client is not None  # Type assertion for linter
         model = model or "llama2"
+        perf_util = PerfUtil("ollama_generate")
+        perf_util.start()
         response = self._client.generate(
             model=model,
             prompt=prompt,
         )
         result = response.get("response", "")
-        return result if result is not None else ""
+        if response.get("usage"):
+            input_tokens = response.get("usage").get("prompt_eval_count", 0)
+            output_tokens = response.get("usage").get("prompt_eval_count", 0)
+        else:
+            input_tokens = 0
+            output_tokens = 0
+        duration = perf_util.stop()
+        return LLMResponse(
+            output=result if result is not None else "",
+            model=model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost=0.0,  # ollama is free...
+            provider="ollama",
+            duration=duration,
+        )
 
     def generate_stream(self, prompt: str, model: str = "llama2"):
         """Generate text using Ollama model with streaming."""

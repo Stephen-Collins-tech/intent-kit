@@ -14,10 +14,8 @@ class TestNodeType:
             "UNKNOWN": "unknown",
             "ACTION": "action",
             "CLASSIFIER": "classifier",
-            "SPLITTER": "splitter",
             "CLARIFY": "clarify",
             "GRAPH": "graph",
-            "UNHANDLED_CHUNK": "unhandled_chunk",
         }
 
         for name, value in expected_values.items():
@@ -46,10 +44,6 @@ class TestNodeType:
         """Test the CLASSIFIER node type."""
         assert NodeType.CLASSIFIER.value == "classifier"
 
-    def test_splitter_node_type(self):
-        """Test the SPLITTER node type."""
-        assert NodeType.SPLITTER.value == "splitter"
-
     def test_clarify_node_type(self):
         """Test the CLARIFY node type."""
         assert NodeType.CLARIFY.value == "clarify"
@@ -58,14 +52,10 @@ class TestNodeType:
         """Test the GRAPH node type."""
         assert NodeType.GRAPH.value == "graph"
 
-    def test_unhandled_chunk_node_type(self):
-        """Test the UNHANDLED_CHUNK node type."""
-        assert NodeType.UNHANDLED_CHUNK.value == "unhandled_chunk"
-
     def test_enum_iteration(self):
         """Test that the enum can be iterated over."""
         node_types = list(NodeType)
-        assert len(node_types) == 7  # Total number of enum values
+        assert len(node_types) == 5  # Total number of enum values
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -82,26 +72,22 @@ class TestNodeType:
         """Test accessing enum values."""
         assert NodeType.ACTION.value == "action"
         assert NodeType.CLASSIFIER.value == "classifier"
-        assert NodeType.SPLITTER.value == "splitter"
 
     def test_enum_name_access(self):
         """Test accessing enum names."""
         assert NodeType.ACTION.name == "ACTION"
         assert NodeType.CLASSIFIER.name == "CLASSIFIER"
-        assert NodeType.SPLITTER.name == "SPLITTER"
 
     def test_enum_membership(self):
         """Test enum membership operations."""
         assert NodeType.ACTION in NodeType
         assert NodeType.CLASSIFIER in NodeType
-        assert NodeType.SPLITTER in NodeType
 
     def test_enum_value_membership(self):
         """Test checking if a value belongs to the enum."""
         valid_values = [node_type.value for node_type in NodeType]
         assert "action" in valid_values
         assert "classifier" in valid_values
-        assert "splitter" in valid_values
         assert "invalid_type" not in valid_values
 
     def test_enum_from_value(self):
@@ -123,4 +109,3 @@ class TestNodeType:
         source = inspect.getsource(NodeType)
         assert "# Base node types" in source
         assert "# Specialized node types" in source
-        assert "# Special types for execution results" in source

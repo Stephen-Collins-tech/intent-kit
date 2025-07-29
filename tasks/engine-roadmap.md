@@ -9,11 +9,11 @@
 * [x] Tree-based intent architecture with classifier and intent nodes.
 * [x] Flexible node system mixing classifier nodes and intent nodes.
 
-### 2. IntentGraph Multi-Intent Routing
+### 2. IntentGraph Single Intent Routing
 
 * [x] **IntentGraph Data Structure** - Root-level dispatcher for user input
-* [x] **Function-Based Intent Splitting** - Rule-based and LLM-based splitters
-* [x] **Multi-Tree Dispatch** - Route to multiple intent trees
+* [x] **Single Intent Architecture** - Root classifiers route to action nodes
+* [x] **Classifier-Only Root Nodes** - All root nodes must be classifiers
 * [x] **Orchestration and Aggregation** - Consistent result format
 * [x] **Fallbacks and Error Handling** - Comprehensive error management
 * [x] **Logging and Debugging** - Integrated with logger system
@@ -68,6 +68,7 @@
 
 ## Future Enhancements (Engine)
 
+- [ ] **Multi-Intent Support** - Context dependencies and multi-intent handling
 - [ ] **Multi-Tenant Support** - Multi-tenant architecture
 - [ ] **Audit Logging** - Comprehensive audit logging
 - [ ] **Security Features** - Security and compliance features

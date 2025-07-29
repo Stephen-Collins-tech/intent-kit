@@ -79,11 +79,11 @@ if __name__ == "__main__":
         context = IntentContext(session_id="simple_demo")
 
         test_inputs = [
-            "Hello, my name is Alice",
+            # "Hello, my name is Alice",
             "What's 15 plus 7?",
-            "Weather in San Francisco",
-            "Help me",
-            "Multiply 8 and 3",
+            # "Weather in San Francisco",
+            # "Help me",
+            # "Multiply 8 and 3",
         ]
 
         timings: list[tuple[str, float]] = []
