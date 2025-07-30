@@ -1,26 +1,20 @@
-<p align="center">
-  <img src="assets/logo.png" alt="Intent Kit Logo" height="100" style="border-radius: 16px;"/>
-</p>
+<div align="center">
+  <img src="https://raw.githubusercontent.com/Stephen-Collins-tech/intent-kit/main/assets/logo.png" alt="Intent Kit Logo" height="100" style="border-radius: 16px;"/>
+</div>
 
 <h1 align="center">Intent Kit</h1>
-<p align="center">Build intelligent workflows that understand what users want</p>
+<p align="center">Build reliable, auditable AI applications that understand user intent and take intelligent actions</p>
 
-<p align="center" >
-  <a style="text-decoration: none;" href="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml">
-    <img src="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg" alt="CI"/>
-  </a>
-  <a style="text-decoration: none;" href="https://codecov.io/gh/Stephen-Collins-tech/intent-kit">
-    <img src="https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg" alt="Coverage Status"/>
-  </a>
-  <a style="text-decoration: none;" href="https://docs.intentkit.io">
-    <img src="https://img.shields.io/badge/docs-online-blue" alt="Documentation"/>
-  </a>
-  <a style="text-decoration: none;" href="https://pypi.org/project/intentkit-py">
-    <img src="https://img.shields.io/pypi/v/intentkit-py" alt="PyPI"/>
-  </a>
-  <a style="text-decoration: none;" href="https://pypi.org/project/intentkit-py">
-    <img src="https://img.shields.io/pypi/dm/intentkit-py" alt="PyPI Downloads"/>
-  </a>
+<div align="center" >
+  <img src="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg" alt="CI"/>
+  <img src="https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg" alt="Coverage Status"/>
+  <img src="https://img.shields.io/pypi/v/intentkit-py" alt="PyPI"/>
+  <img src="https://img.shields.io/pypi/dm/intentkit-py" alt="PyPI Downloads"/>
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"/>
+</div>
+
+<p align="center">
+  <a href="https://docs.intentkit.io">Docs</a>
 </p>
 
 ---
@@ -41,8 +35,11 @@ The best part? You stay in complete control. You define exactly what your app ca
 
 ## Why Intent Kit?
 
+### **Reliable & Auditable**
+Every decision is traceable. Test your workflows thoroughly and deploy with confidence knowing exactly how your AI will behave.
+
 ### **You're in Control**
-Define every possible action upfront. No surprises, no unexpected behavior.
+Define every possible action upfront. No black boxes, no unexpected behavior, no surprises.
 
 ### **Works with Any AI**
 Use OpenAI, Anthropic, Google, Ollama, or even simple rules. Mix and match as needed.
@@ -50,11 +47,8 @@ Use OpenAI, Anthropic, Google, Ollama, or even simple rules. Mix and match as ne
 ### **Easy to Build**
 Simple, clear API that feels natural to use. No complex abstractions to learn.
 
-### **Testable & Reliable**
-Built-in testing tools let you verify your workflows work correctly before deploying.
-
 ### **See What's Happening**
-Visualize your workflows and track exactly how decisions are made.
+Track exactly how decisions are made and debug with full transparency.
 
 ---
 
@@ -118,9 +112,9 @@ The magic happens when a user sends a message:
 
 ---
 
-## Real-World Testing
+## Reliable & Auditable AI
 
-Most AI frameworks are black boxes that are hard to test. Intent Kit is different.
+Most AI frameworks are black boxes that are hard to test and debug. Intent Kit is different - every decision is traceable and testable.
 
 ### Test Your Workflows Like Real Software
 
@@ -137,18 +131,26 @@ print(f"Accuracy: {result.accuracy():.1%}")
 result.save_report("test_results.md")
 ```
 
-### What You Can Test
+### What You Can Test & Audit
 
 - **Accuracy** - Does your workflow understand requests correctly?
 - **Performance** - How fast does it respond?
 - **Edge Cases** - What happens with unusual inputs?
 - **Regressions** - Catch when changes break existing functionality
+- **Decision Paths** - Trace exactly how each decision was made
+- **Bias Detection** - Identify potential biases in your workflows
 
-This means you can deploy with confidence, knowing your AI workflows work reliably.
+This means you can deploy with confidence, knowing your AI workflows work reliably and can be audited when needed.
 
 ---
 
 ## Key Features
+
+### **Reliable & Auditable**
+- Every decision is traceable and testable
+- Comprehensive testing framework
+- Full transparency into AI decision-making
+- Bias detection and mitigation tools
 
 ### **Smart Understanding**
 - Works with any AI model (OpenAI, Anthropic, Google, Ollama)
@@ -160,10 +162,10 @@ This means you can deploy with confidence, knowing your AI workflows work reliab
 - Handle "do X and Y" requests
 - Remember context across conversations
 
-### **Visualization**
-- See your workflows as interactive diagrams
+### **Debugging & Transparency**
 - Track how decisions are made
-- Debug complex flows easily
+- Debug complex flows with full transparency
+- Audit decision paths when needed
 
 ### **Developer Friendly**
 - Simple, clear API
@@ -175,6 +177,7 @@ This means you can deploy with confidence, knowing your AI workflows work reliab
 - Test against real datasets
 - Measure accuracy and performance
 - Catch regressions automatically
+- Validate reliability before deployment
 
 ---
 
