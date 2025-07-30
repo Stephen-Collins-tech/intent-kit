@@ -9,9 +9,9 @@ This library provides:
 - Interactive visualization of execution paths
 """
 
-from .node import TreeNode, NodeType
-from .node.classifiers import ClassifierNode
-from .node.actions import ActionNode
+from .nodes import TreeNode, NodeType
+from .nodes.classifiers import ClassifierNode
+from .nodes.actions import ActionNode
 
 from .builders.graph import IntentGraphBuilder
 from .context import IntentContext

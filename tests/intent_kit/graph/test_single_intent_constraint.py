@@ -4,7 +4,7 @@ Tests for single intent architecture constraints.
 
 import pytest
 from intent_kit.graph.intent_graph import IntentGraph
-from intent_kit.node.enums import NodeType
+from intent_kit.nodes.enums import NodeType
 from intent_kit.utils.node_factory import action, llm_classifier
 
 
@@ -110,4 +110,5 @@ class TestSingleIntentConstraint:
         # This should work
         graph = IntentGraph(root_nodes=[classifier1, classifier2])
         assert len(graph.root_nodes) == 2
-        assert all(node.node_type == NodeType.CLASSIFIER for node in graph.root_nodes)
+        assert all(node.node_type ==
+                   NodeType.CLASSIFIER for node in graph.root_nodes)

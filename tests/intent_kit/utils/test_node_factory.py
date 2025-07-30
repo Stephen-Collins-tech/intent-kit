@@ -14,11 +14,11 @@ from intent_kit.utils.node_factory import (
     llm_classifier,
     create_intent_graph,
 )
-from intent_kit.node import TreeNode
-from intent_kit.node.actions import ActionNode
-from intent_kit.node.classifiers import ClassifierNode
+from intent_kit.nodes import TreeNode
+from intent_kit.nodes.actions import ActionNode
+from intent_kit.nodes.classifiers import ClassifierNode
 from intent_kit.graph import IntentGraph
-from intent_kit.node.actions.remediation import RemediationStrategy
+from intent_kit.nodes.actions.remediation import RemediationStrategy
 
 
 class TestSetParentRelationships:

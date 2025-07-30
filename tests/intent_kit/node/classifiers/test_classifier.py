@@ -3,11 +3,11 @@ Tests for classifier node module.
 """
 
 from unittest.mock import patch, MagicMock
-from intent_kit.node.classifiers.classifier import ClassifierNode
-from intent_kit.node.enums import NodeType
-from intent_kit.node.types import ExecutionResult
+from intent_kit.nodes.classifiers.classifier import ClassifierNode
+from intent_kit.nodes.enums import NodeType
+from intent_kit.nodes.types import ExecutionResult
 from intent_kit.context import IntentContext
-from intent_kit.node.actions.remediation import RemediationStrategy
+from intent_kit.nodes.actions.remediation import RemediationStrategy
 
 
 class TestClassifierNode:

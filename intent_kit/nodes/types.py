@@ -4,7 +4,7 @@ Data classes and types for the node system.
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-from intent_kit.node.enums import NodeType
+from intent_kit.nodes.enums import NodeType
 from intent_kit.types import InputTokens, Cost, Provider, TotalTokens, Duration
 
 

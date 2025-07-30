@@ -9,8 +9,8 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from intent_kit.services.base_client import BaseLLMClient
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
-from intent_kit.node.types import ExecutionResult, ExecutionError
-from intent_kit.node.enums import NodeType
+from intent_kit.nodes.types import ExecutionResult, ExecutionError
+from intent_kit.nodes.enums import NodeType
 from ..base import TreeNode
 
 logger = Logger(__name__)
@@ -147,7 +147,8 @@ def create_llm_classifier(
             logger.debug(f"LLM classifier chosen child: {chosen_child}")
 
             if chosen_child:
-                logger.debug(f"RETURNING LLM classifier chosen child: {chosen_child}")
+                logger.debug(
+                    f"RETURNING LLM classifier chosen child: {chosen_child}")
                 logger.debug(
                     f"RETURNING LLM classifier chosen child.name: {chosen_child.name}"
                 )
@@ -175,7 +176,8 @@ def create_llm_classifier(
                 )
             else:
                 # If still no match, return error result
-                logger.warning(f"No child node found matching '{selected_node_name}'")
+                logger.warning(
+                    f"No child node found matching '{selected_node_name}'")
                 return ExecutionResult(
                     success=False,
                     node_name="llm_classifier",

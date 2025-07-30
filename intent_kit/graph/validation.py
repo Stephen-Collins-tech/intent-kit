@@ -6,8 +6,8 @@ and graph structure in intent graphs.
 """
 
 from typing import List, Dict, Any, Optional
-from intent_kit.node import TreeNode
-from intent_kit.node.enums import NodeType
+from intent_kit.nodes import TreeNode
+from intent_kit.nodes.enums import NodeType
 from intent_kit.utils.logger import Logger
 
 

@@ -37,7 +37,8 @@ def run_all_evaluations():
         action="store_true",
         help="Also generate individual reports for each dataset",
     )
-    parser.add_argument("--quiet", action="store_true", help="Suppress output messages")
+    parser.add_argument("--quiet", action="store_true",
+                        help="Suppress output messages")
     parser.add_argument("--llm-config", help="Path to LLM configuration file")
     parser.add_argument(
         "--mock", action="store_true", help="Run in mock mode without real API calls"
@@ -66,7 +67,8 @@ def run_all_evaluations():
     if not args.quiet:
         mode = "MOCK" if args.mock else "LIVE"
         print(f"Running all evaluations in {mode} mode...")
-    results = run_all_evaluations_internal(args.llm_config, mock_mode=args.mock)
+    results = run_all_evaluations_internal(
+        args.llm_config, mock_mode=args.mock)
 
     if not args.quiet:
         print("Generating comprehensive report...")
@@ -84,7 +86,8 @@ def run_all_evaluations():
     ):
         dst.write(src.read())
     if not args.quiet:
-        print(f"Comprehensive report archived as: {date_comprehensive_report_path}")
+        print(
+            f"Comprehensive report archived as: {date_comprehensive_report_path}")
 
     if args.individual:
         if not args.quiet:
@@ -196,7 +199,8 @@ def generate_comprehensive_report(
     overall_accuracy = total_passed / total_tests if total_tests > 0 else 0.0
 
     # Count statuses
-    passed_datasets = sum(1 for r in results if r["accuracy"] >= 0.8)  # 80% threshold
+    passed_datasets = sum(
+        1 for r in results if r["accuracy"] >= 0.8)  # 80% threshold
     failed_datasets = total_datasets - passed_datasets
 
     # Add mock mode indicator

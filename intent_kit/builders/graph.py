@@ -6,16 +6,16 @@ with a more readable and type-safe approach.
 """
 
 from typing import List, Dict, Any, Optional, Callable, Union
-from intent_kit.node import TreeNode
-from intent_kit.node.enums import NodeType, ClassifierType
+from intent_kit.nodes import TreeNode
+from intent_kit.nodes.enums import NodeType, ClassifierType
 from intent_kit.graph import IntentGraph
 from .base import Builder
 from intent_kit.services.yaml_service import yaml_service
 from intent_kit.services.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
 
-from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.node.classifiers import (
+from intent_kit.nodes.classifiers import ClassifierNode
+from intent_kit.nodes.classifiers import (
     create_llm_classifier,
     get_default_classification_prompt,
 )

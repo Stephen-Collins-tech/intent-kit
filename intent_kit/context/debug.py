@@ -11,7 +11,7 @@ from datetime import datetime
 import json
 from . import IntentContext
 from .dependencies import ContextDependencies, analyze_action_dependencies
-from intent_kit.node import TreeNode
+from intent_kit.nodes import TreeNode
 from intent_kit.utils.logger import Logger
 from . import ContextHistoryEntry
 
@@ -371,7 +371,8 @@ def _format_console_trace(trace_data: Dict[str, Any]) -> str:
                 if isinstance(item, dict):
                     lines.append(
                         logger.colorize_key_value(
-                            f"    [{i}]", dict(item), "field_label", "field_value"
+                            f"    [{i}]", dict(
+                                item), "field_label", "field_value"
                         )
                     )
                 else:

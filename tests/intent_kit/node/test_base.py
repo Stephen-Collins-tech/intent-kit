@@ -5,9 +5,9 @@ Tests for node base classes.
 import pytest
 from typing import Optional
 
-from intent_kit.node.base import Node, TreeNode
-from intent_kit.node.enums import NodeType
-from intent_kit.node.types import ExecutionResult
+from intent_kit.nodes.base import Node, TreeNode
+from intent_kit.nodes.enums import NodeType
+from intent_kit.nodes.types import ExecutionResult
 from intent_kit.context import IntentContext
 
 
@@ -122,7 +122,8 @@ class TestTreeNode:
         """Test initialization with children."""
         child1 = ConcreteTreeNode(description="Child 1")
         child2 = ConcreteTreeNode(description="Child 2")
-        parent = ConcreteTreeNode(description="Parent", children=[child1, child2])
+        parent = ConcreteTreeNode(
+            description="Parent", children=[child1, child2])
 
         assert len(parent.children) == 2
         assert child1.parent == parent

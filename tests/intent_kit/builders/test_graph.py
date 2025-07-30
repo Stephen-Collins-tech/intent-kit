@@ -5,7 +5,7 @@ Tests for graph builder module.
 import pytest
 from unittest.mock import patch, MagicMock, mock_open
 from intent_kit.builders.graph import IntentGraphBuilder
-from intent_kit.node import TreeNode
+from intent_kit.nodes import TreeNode
 from intent_kit.graph import IntentGraph
 
 
@@ -238,7 +238,8 @@ class TestIntentGraphBuilder:
 
     def test_build_with_json_validation_missing_type(self):
         builder = IntentGraphBuilder()
-        builder._json_graph = {"nodes": {"test": {"name": "test"}}, "root": "test"}
+        builder._json_graph = {
+            "nodes": {"test": {"name": "test"}}, "root": "test"}
         with pytest.raises(
             ValueError,
             match="Node 'test' missing 'type' field",
@@ -519,13 +520,15 @@ class TestIntentGraphBuilder:
         mock_node.children = []
 
         builder.root(mock_node)
-        builder.with_default_llm_config({"provider": "openai", "api_key": "test"})
+        builder.with_default_llm_config(
+            {"provider": "openai", "api_key": "test"})
 
         result = builder.build()
 
         assert isinstance(result, IntentGraph)
         # Should have injected LLM config into the node
-        assert mock_node.llm_config == {"provider": "openai", "api_key": "test"}
+        assert mock_node.llm_config == {
+            "provider": "openai", "api_key": "test"}
 
     def test_build_with_llm_config_validation_failure(self):
         """Test building graph with LLM config validation failure."""
@@ -575,7 +578,8 @@ class TestIntentGraphBuilder:
         cycles = builder._detect_cycles(nodes)
 
         assert len(cycles) > 0
-        assert any("A" in cycle and "B" in cycle and "C" in cycle for cycle in cycles)
+        assert any(
+            "A" in cycle and "B" in cycle and "C" in cycle for cycle in cycles)
 
     def test_detect_cycles_no_cycles(self):
         """Test cycle detection in graph without cycles."""
@@ -660,7 +664,8 @@ class TestIntentGraphBuilder:
         }
         function_registry = {"test_func": lambda x: x}
 
-        node = builder._create_node_from_spec("test_id", node_spec, function_registry)
+        node = builder._create_node_from_spec(
+            "test_id", node_spec, function_registry)
         assert node.name == "test_action"
         assert node.description == "Test action"
 
@@ -677,7 +682,8 @@ class TestIntentGraphBuilder:
         }
         function_registry = {"test_classifier_func": lambda x: x}
 
-        node = builder._create_node_from_spec("test_id", node_spec, function_registry)
+        node = builder._create_node_from_spec(
+            "test_id", node_spec, function_registry)
         assert node.name == "test_classifier"
         assert node.description == "Test classifier"
 
@@ -695,7 +701,8 @@ class TestIntentGraphBuilder:
         }
         function_registry = {}
 
-        node = builder._create_node_from_spec("test_id", node_spec, function_registry)
+        node = builder._create_node_from_spec(
+            "test_id", node_spec, function_registry)
         assert node.name == "test_llm_classifier"
         assert node.description == "Test LLM classifier"
 
@@ -706,7 +713,8 @@ class TestIntentGraphBuilder:
         function_registry = {}
 
         with pytest.raises(ValueError, match="must have a 'type' field"):
-            builder._create_node_from_spec("test_id", node_spec, function_registry)
+            builder._create_node_from_spec(
+                "test_id", node_spec, function_registry)
 
     def test_create_node_from_spec_unknown_type(self):
         """Test creating node with unknown type."""
@@ -719,7 +727,8 @@ class TestIntentGraphBuilder:
         function_registry = {}
 
         with pytest.raises(ValueError, match="Unknown node type"):
-            builder._create_node_from_spec("test_id", node_spec, function_registry)
+            builder._create_node_from_spec(
+                "test_id", node_spec, function_registry)
 
     def test_create_action_node_missing_function(self):
         """Test creating action node with missing function."""
@@ -928,7 +937,8 @@ class TestIntentGraphBuilder:
     def test_build_from_json_with_llm_config(self):
         """Test building from JSON with LLM config."""
         builder = IntentGraphBuilder()
-        builder.with_default_llm_config({"provider": "openai", "api_key": "test"})
+        builder.with_default_llm_config(
+            {"provider": "openai", "api_key": "test"})
 
         graph_spec = {
             "root": "test",

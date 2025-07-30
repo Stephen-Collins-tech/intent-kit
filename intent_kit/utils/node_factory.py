@@ -6,16 +6,16 @@ with consistent patterns and common functionality.
 """
 
 from typing import Any, Callable, List, Optional, Dict, Type, Set, Union
-from intent_kit.node import TreeNode
-from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.node.actions import ActionNode, RemediationStrategy
+from intent_kit.nodes import TreeNode
+from intent_kit.nodes.classifiers import ClassifierNode
+from intent_kit.nodes.actions import ActionNode, RemediationStrategy
 
 from intent_kit.utils.logger import Logger
 from intent_kit.graph import IntentGraph
 from intent_kit.services.base_client import BaseLLMClient
 
 # LLM classifier imports
-from intent_kit.node.classifiers import (
+from intent_kit.nodes.classifiers import (
     create_llm_classifier,
     get_default_classification_prompt,
 )
@@ -51,7 +51,8 @@ def create_action_node(
     context_outputs: Optional[Set[str]] = None,
     input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
     output_validator: Optional[Callable[[Any], bool]] = None,
-    remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
+    remediation_strategies: Optional[List[Union[str,
+                                                RemediationStrategy]]] = None,
 ) -> ActionNode:
     """Create an action node with the given configuration.
 
@@ -90,7 +91,8 @@ def create_classifier_node(
     description: str,
     classifier_func: Callable,
     children: List[TreeNode],
-    remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
+    remediation_strategies: Optional[List[Union[str,
+                                                RemediationStrategy]]] = None,
 ) -> ClassifierNode:
     """Create a classifier node with the given configuration.
 
@@ -148,7 +150,8 @@ def action(
     context_outputs: Optional[Set[str]] = None,
     input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
     output_validator: Optional[Callable[[Any], bool]] = None,
-    remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
+    remediation_strategies: Optional[List[Union[str,
+                                                RemediationStrategy]]] = None,
 ) -> TreeNode:
     """Create an action node with automatic argument extraction.
 
@@ -207,7 +210,8 @@ def llm_classifier(
     llm_config: Optional[LLMConfig] = None,
     classification_prompt: Optional[str] = None,
     description: str = "",
-    remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
+    remediation_strategies: Optional[List[Union[str,
+                                                RemediationStrategy]]] = None,
 ) -> TreeNode:
     """Create an LLM-powered classifier node with auto-wired children descriptions.
 

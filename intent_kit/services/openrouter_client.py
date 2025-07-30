@@ -28,10 +28,15 @@ class OpenRouterClient(BaseLLMClient):
             return openai.OpenAI(
                 api_key=self.api_key, base_url="https://openrouter.ai/api/v1"
             )
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "OpenAI package not installed. Install with: pip install openai"
-            )
+            ) from e
+        except Exception as e:
+            # pylint: disable=broad-exception-raised
+            raise Exception(
+                "Error initializing OpenRouter client. Please check your API key and try again."
+            ) from e
 
     def _ensure_imported(self):
         """Ensure the OpenAI package is imported."""
@@ -78,6 +83,7 @@ class OpenRouterClient(BaseLLMClient):
             input_tokens = 0
             output_tokens = 0
         duration = perf_util.stop()
+        logger.info(f"OpenRouter duration: {duration}")
         return LLMResponse(
             output=content,
             model=model,

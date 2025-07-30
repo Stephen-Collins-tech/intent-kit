@@ -2,8 +2,8 @@
 Tests for node types and data structures.
 """
 
-from intent_kit.node.types import ExecutionError, ExecutionResult
-from intent_kit.node.enums import NodeType
+from intent_kit.nodes.types import ExecutionError, ExecutionResult
+from intent_kit.nodes.enums import NodeType
 
 
 class TestExecutionError:

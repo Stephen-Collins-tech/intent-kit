@@ -2,14 +2,14 @@
 Test token collection during traversal.
 """
 
-from intent_kit.node.classifiers.llm_classifier import (
+from intent_kit.nodes.classifiers.llm_classifier import (
     create_llm_classifier,
     create_llm_arg_extractor,
 )
-from intent_kit.node.actions.action import ActionNode
+from intent_kit.nodes.actions.action import ActionNode
 from intent_kit.context import IntentContext
 from intent_kit.services.base_client import BaseLLMClient
-from intent_kit.node.classifiers.classifier import ClassifierNode
+from intent_kit.nodes.classifiers.classifier import ClassifierNode
 
 
 class DummyLLMClient(BaseLLMClient):
@@ -107,7 +107,8 @@ class TestTokenCollection:
 
         # Create LLM-based argument extractor
         arg_extractor = create_llm_arg_extractor(
-            action_llm, "Extract: {user_input}", {"destination": str, "date": str}
+            action_llm, "Extract: {user_input}", {
+                "destination": str, "date": str}
         )
 
         # Create action node with LLM-based argument extraction

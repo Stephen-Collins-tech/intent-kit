@@ -4,8 +4,8 @@ from intent_kit.builders import (
     ClassifierBuilder,
     IntentGraphBuilder,
 )
-from intent_kit.node.actions import ActionNode
-from intent_kit.node.classifiers import ClassifierNode
+from intent_kit.nodes.actions import ActionNode
+from intent_kit.nodes.classifiers import ClassifierNode
 from intent_kit.graph import IntentGraph
 
 

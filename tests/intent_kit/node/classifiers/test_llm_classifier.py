@@ -1,15 +1,15 @@
 import pytest
-from intent_kit.node.classifiers.llm_classifier import (
+from intent_kit.nodes.classifiers.llm_classifier import (
     create_llm_classifier,
     create_llm_arg_extractor,
     get_default_classification_prompt,
     get_default_extraction_prompt,
 )
 from intent_kit.services.base_client import BaseLLMClient
-from intent_kit.node.base import TreeNode
+from intent_kit.nodes.base import TreeNode
 from typing import List, cast
 from intent_kit.types import LLMResponse
-from intent_kit.node.types import ExecutionResult
+from intent_kit.nodes.types import ExecutionResult
 
 
 class DummyChild(TreeNode):
@@ -56,7 +56,8 @@ def test_create_llm_classifier_exact_match():
     prompt = "{user_input}\n{node_descriptions}\n{context_info}\n"
     node_descs = ["weather: Weather handler", "cancel: Cancel handler"]
     classifier = create_llm_classifier(llm_config, prompt, node_descs)
-    result = classifier("What's the weather?", cast(List[TreeNode], children), None)
+    result = classifier("What's the weather?", cast(
+        List[TreeNode], children), None)
     # Now expect an ExecutionResult with chosen_child parameter
     assert isinstance(result, ExecutionResult)
     assert result.success
@@ -69,7 +70,8 @@ def test_create_llm_classifier_partial_match():
     prompt = "{user_input}\n{node_descriptions}\n{context_info}\n"
     node_descs = ["weather: Weather handler", "cancel: Cancel handler"]
     classifier = create_llm_classifier(llm_config, prompt, node_descs)
-    result = classifier("Cancel my booking", cast(List[TreeNode], children), None)
+    result = classifier("Cancel my booking", cast(
+        List[TreeNode], children), None)
     # Now expect an ExecutionResult with chosen_child parameter
     assert isinstance(result, ExecutionResult)
     assert result.success
@@ -82,7 +84,8 @@ def test_create_llm_classifier_no_match():
     prompt = "{user_input}\n{node_descriptions}\n{context_info}\n"
     node_descs = ["weather: Weather handler", "cancel: Cancel handler"]
     classifier = create_llm_classifier(llm_config, prompt, node_descs)
-    result = classifier("Unrelated input", cast(List[TreeNode], children), None)
+    result = classifier("Unrelated input", cast(
+        List[TreeNode], children), None)
     # Now expect an ExecutionResult that indicates no match
     assert isinstance(result, ExecutionResult)
     assert not result.success
@@ -114,7 +117,8 @@ def test_create_llm_classifier_error():
     prompt = "{user_input}\n{node_descriptions}\n{context_info}\n"
     node_descs = ["weather: Weather handler", "cancel: Cancel handler"]
     classifier = create_llm_classifier(llm_config, prompt, node_descs)
-    result = classifier("What's the weather?", cast(List[TreeNode], children), None)
+    result = classifier("What's the weather?", cast(
+        List[TreeNode], children), None)
     # Now expect an ExecutionResult with error
     assert isinstance(result, ExecutionResult)
     assert not result.success

@@ -27,7 +27,8 @@ class ClassifierNode(TreeNode):
         children: List["TreeNode"],
         description: str = "",
         parent: Optional["TreeNode"] = None,
-        remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
+        remediation_strategies: Optional[List[Union[str,
+                                                    RemediationStrategy]]] = None,
         llm_client=None,
     ):
         super().__init__(
@@ -48,6 +49,9 @@ class ClassifierNode(TreeNode):
         context_dict: Dict[str, Any] = {}
         # Use only self.llm_client (should be injected by builder/graph)
         classifier_params = inspect.signature(self.classifier).parameters
+        self.logger.debug(
+            f"classifier_params: {classifier_params}"
+        )
         if "llm_client" in classifier_params or any(
             p.kind == inspect.Parameter.VAR_KEYWORD for p in classifier_params.values()
         ):
@@ -55,7 +59,8 @@ class ClassifierNode(TreeNode):
                 user_input, self.children, context_dict, llm_client=self.llm_client
             )
         else:
-            classifier_result = self.classifier(user_input, self.children, context_dict)
+            classifier_result = self.classifier(
+                user_input, self.children, context_dict)
 
         # Handle the case where classifier returns None (legacy behavior)
         if classifier_result is None:
@@ -125,7 +130,8 @@ class ClassifierNode(TreeNode):
                 children_results=[],
                 # Preserve token information from the failed classifier result
                 input_tokens=getattr(classifier_result, "input_tokens", None),
-                output_tokens=getattr(classifier_result, "output_tokens", None),
+                output_tokens=getattr(
+                    classifier_result, "output_tokens", None),
                 cost=getattr(classifier_result, "cost", None),
                 provider=getattr(classifier_result, "provider", None),
                 model=getattr(classifier_result, "model", None),
@@ -141,6 +147,11 @@ class ClassifierNode(TreeNode):
         self.logger.debug(
             f"Classifier at '{self.name}' completed successfully with chosen child: {chosen_child}"
         )
+
+        self.logger.debug(
+            f"Classifier at '{self.name}' completed successfully with chosen child: {chosen_child} and params: {classifier_result.params}"
+        )
+        self.logger.debug(f"classifier_result: {classifier_result}")
 
         return ExecutionResult(
             success=True,

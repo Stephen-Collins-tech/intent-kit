@@ -4,8 +4,8 @@ Tests for ActionNode functionality.
 
 from typing import Dict, Any, Optional
 
-from intent_kit.node.actions import ActionNode
-from intent_kit.node.enums import NodeType
+from intent_kit.nodes.actions import ActionNode
+from intent_kit.nodes.enums import NodeType
 from intent_kit.context import IntentContext
 
 
@@ -69,7 +69,8 @@ class TestActionNode:
         )
 
         # Act
-        result = action_node.execute("Hello, my name is Bob and I am 25 years old")
+        result = action_node.execute(
+            "Hello, my name is Bob and I am 25 years old")
 
         # Assert
         assert result.success is True
@@ -106,11 +107,13 @@ class TestActionNode:
         )
 
         # Act
-        result = action_node.execute("Create user Charlie, age 30, active true")
+        result = action_node.execute(
+            "Create user Charlie, age 30, active true")
 
         # Assert
         assert result.success is True
-        assert result.params == {"name": "Charlie", "age": 30, "is_active": True}
+        assert result.params == {
+            "name": "Charlie", "age": 30, "is_active": True}
         assert result.output == "User Charlie (age: 30, active: True)"
 
     def test_action_node_error_handling(self):

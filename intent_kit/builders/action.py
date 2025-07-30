@@ -6,8 +6,8 @@ with a more readable and type-safe approach.
 """
 
 from typing import Any, Callable, Dict, Type, Set, List, Optional, Union
-from intent_kit.node.actions import ActionNode
-from intent_kit.node.actions import RemediationStrategy
+from intent_kit.nodes.actions import ActionNode
+from intent_kit.nodes.actions import RemediationStrategy
 from intent_kit.utils.param_extraction import create_arg_extractor
 from intent_kit.utils.node_factory import create_action_node
 from .base import Builder

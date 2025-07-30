@@ -75,7 +75,8 @@ def create_rule_based_extractor(
 
         # Extract calculation parameters
         if "operation" in param_schema and "a" in param_schema and "b" in param_schema:
-            extracted_params.update(_extract_calculation_parameters(input_lower))
+            extracted_params.update(
+                _extract_calculation_parameters(input_lower))
 
         return extracted_params
 
@@ -189,7 +190,7 @@ def create_arg_extractor(
     if llm_config and param_schema:
         # Use LLM-based extraction
         logger.debug(f"Creating LLM-based extractor for node '{node_name}'")
-        from intent_kit.node.classifiers import (
+        from intent_kit.nodes.classifiers import (
             create_llm_arg_extractor,
             get_default_extraction_prompt,
         )

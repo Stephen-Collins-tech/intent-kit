@@ -17,10 +17,10 @@ from intent_kit.graph.validation import (
 )
 
 # from intent_kit.graph.aggregation import aggregate_results, create_error_dict, create_no_intent_error, create_no_tree_error
-from intent_kit.node import ExecutionResult
-from intent_kit.node import ExecutionError
-from intent_kit.node.enums import NodeType
-from intent_kit.node import TreeNode
+from intent_kit.nodes import ExecutionResult
+from intent_kit.nodes import ExecutionError
+from intent_kit.nodes.enums import NodeType
+from intent_kit.nodes import TreeNode
 
 
 # Remove all visualization-related imports, attributes, and methods
@@ -106,7 +106,8 @@ class IntentGraph:
         if validate:
             try:
                 self.validate_graph()
-                self.logger.info("Graph validation passed after adding root node")
+                self.logger.info(
+                    "Graph validation passed after adding root node")
             except GraphValidationError as e:
                 self.logger.error(
                     f"Graph validation failed after adding root node: {e.message}"
@@ -126,7 +127,8 @@ class IntentGraph:
             self.root_nodes.remove(root_node)
             self.logger.info(f"Removed root node: {root_node.name}")
         else:
-            self.logger.warning(f"Root node '{root_node.name}' not found for removal")
+            self.logger.warning(
+                f"Root node '{root_node.name}' not found for removal")
 
     def list_root_nodes(self) -> List[str]:
         """
@@ -334,7 +336,8 @@ class IntentGraph:
             if len(results) == 1:
                 return results[0]
 
-            self.logger.debug(f"IntentGraph .route method call results: {results}")
+            self.logger.debug(
+                f"IntentGraph .route method call results: {results}")
             # Aggregate multiple results
             successful_results = [r for r in results if r.success]
             failed_results = [r for r in results if not r.success]
@@ -342,12 +345,15 @@ class IntentGraph:
             self.logger.info(f"Failed results: {failed_results}")
 
             # Determine overall success
-            overall_success = len(failed_results) == 0 and len(successful_results) > 0
+            overall_success = len(failed_results) == 0 and len(
+                successful_results) > 0
 
             # Aggregate outputs
-            outputs = [r.output for r in successful_results if r.output is not None]
+            outputs = [
+                r.output for r in successful_results if r.output is not None]
             aggregated_output = (
-                outputs if len(outputs) > 1 else (outputs[0] if outputs else None)
+                outputs if len(outputs) > 1 else (
+                    outputs[0] if outputs else None)
             )
 
             # Aggregate params
@@ -377,8 +383,10 @@ class IntentGraph:
             return ExecutionResult(
                 success=overall_success,
                 params=aggregated_params,
-                input_tokens=sum(r.input_tokens for r in results if r.input_tokens),
-                output_tokens=sum(r.output_tokens for r in results if r.output_tokens),
+                input_tokens=sum(
+                    r.input_tokens for r in results if r.input_tokens),
+                output_tokens=sum(
+                    r.output_tokens for r in results if r.output_tokens),
                 children_results=results,
                 node_name="intent_graph",
                 node_path=[],
@@ -440,7 +448,8 @@ class IntentGraph:
                         "modified_by": field.modified_by,
                         "value": field.value,
                     }
-                    state["fields"][key] = {"value": value, "metadata": metadata}
+                    state["fields"][key] = {
+                        "value": value, "metadata": metadata}
                     # Also add the key directly to the state for backward compatibility
                     state[key] = value
 
@@ -489,7 +498,8 @@ class IntentGraph:
 
         # Detailed context tracing
         if context_trace:
-            self._log_detailed_context_trace(state_before, state_after, node_name)
+            self._log_detailed_context_trace(
+                state_before, state_after, node_name)
 
     def _log_detailed_context_trace(
         self, state_before: Dict[str, Any], state_after: Dict[str, Any], node_name: str
@@ -514,7 +524,8 @@ class IntentGraph:
                 else None
             )
             value_after = (
-                fields_after.get(key, {}).get("value") if key in fields_after else None
+                fields_after.get(key, {}).get(
+                    "value") if key in fields_after else None
             )
 
             if value_before != value_after:

@@ -7,10 +7,10 @@ from unittest.mock import Mock, patch
 from typing import List, Optional
 
 from intent_kit.graph.intent_graph import IntentGraph
-from intent_kit.node import TreeNode
-from intent_kit.node.enums import NodeType
+from intent_kit.nodes import TreeNode
+from intent_kit.nodes.enums import NodeType
 from intent_kit.context import IntentContext
-from intent_kit.node import ExecutionResult
+from intent_kit.nodes import ExecutionResult
 from intent_kit.graph.validation import GraphValidationError
 
 
@@ -125,7 +125,8 @@ class TestIntentGraphNodeManagement:
         with patch(
             "intent_kit.graph.intent_graph.validate_graph_structure"
         ) as mock_validate:
-            mock_validate.side_effect = GraphValidationError("Validation failed")
+            mock_validate.side_effect = GraphValidationError(
+                "Validation failed")
 
             with pytest.raises(GraphValidationError):
                 graph.add_root_node(root_node)
@@ -372,7 +373,8 @@ class TestIntentGraphContextTracking:
         state_after = {"key1": "new_value", "key2": "added"}
 
         # Should not raise an exception
-        graph._log_detailed_context_trace(state_before, state_after, "test_node")
+        graph._log_detailed_context_trace(
+            state_before, state_after, "test_node")
 
 
 class TestIntentGraphIntegration:

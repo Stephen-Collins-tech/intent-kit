@@ -17,12 +17,12 @@ import random
 from dotenv import load_dotenv
 from intent_kit import IntentGraphBuilder
 from intent_kit.context import IntentContext
-from intent_kit.node.types import ExecutionResult
-from intent_kit.node.actions import (
+from intent_kit.nodes.types import ExecutionResult
+from intent_kit.nodes.actions import (
     register_remediation_strategy,
 )
-from intent_kit.node.types import ExecutionError
-from intent_kit.node.enums import NodeType
+from intent_kit.nodes.types import ExecutionError
+from intent_kit.nodes.enums import NodeType
 from typing import Optional
 
 
@@ -99,7 +99,7 @@ def simple_greeter(name: str, context: IntentContext) -> str:
 
 def create_custom_remediation_strategy():
     """Create a custom remediation strategy that logs and continues."""
-    from intent_kit.node.actions.remediation import RemediationStrategy
+    from intent_kit.nodes.actions.remediation import RemediationStrategy
 
     class LogAndContinueStrategy(RemediationStrategy):
         def __init__(self):
@@ -176,12 +176,14 @@ def create_intent_graph():
     register_remediation_strategy("log_and_continue", custom_strategy)
 
     # Register fallback strategy for reliable_calc
-    from intent_kit.node.actions.remediation import create_fallback_strategy
+    from intent_kit.nodes.actions.remediation import create_fallback_strategy
 
-    create_fallback_strategy(function_registry["reliable_calculator"], "reliable_calc")
+    create_fallback_strategy(
+        function_registry["reliable_calculator"], "reliable_calc")
 
     # Load the graph definition from local JSON (same directory as script)
-    json_path = os.path.join(os.path.dirname(__file__), "remediation_demo.json")
+    json_path = os.path.join(os.path.dirname(
+        __file__), "remediation_demo.json")
     with open(json_path, "r") as f:
         json_graph = json.load(f)
 

@@ -2,7 +2,7 @@
 Tests for node enums.
 """
 
-from intent_kit.node.enums import NodeType
+from intent_kit.nodes.enums import NodeType
 
 
 class TestNodeType:
@@ -93,7 +93,8 @@ class TestNodeType:
     def test_enum_from_value(self):
         """Test creating enum from value."""
         # This is a common pattern for enums
-        action_node = next((nt for nt in NodeType if nt.value == "action"), None)
+        action_node = next(
+            (nt for nt in NodeType if nt.value == "action"), None)
         assert action_node == NodeType.ACTION
 
     def test_enum_documentation(self):
