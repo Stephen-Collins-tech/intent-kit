@@ -6,10 +6,12 @@ ensuring consistent patterns and common functionality.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, TypeVar, Generic, Optional, Dict, Callable
+
+T = TypeVar("T")
 
 
-class Builder(ABC):
+class BaseBuilder(ABC, Generic[T]):
     """Base class for all node builders.
 
     This class provides common functionality and enforces consistent patterns
@@ -25,7 +27,7 @@ class Builder(ABC):
         self.name = name
         self.description = ""
 
-    def with_description(self, description: str) -> "Builder":
+    def with_description(self, description: str) -> "BaseBuilder[T]":
         """Set the description for the node.
 
         Args:
@@ -38,7 +40,7 @@ class Builder(ABC):
         return self
 
     @abstractmethod
-    def build(self) -> Any:
+    def build(self) -> T:
         """Build and return the node instance.
 
         Returns:
@@ -62,7 +64,7 @@ class Builder(ABC):
         Raises:
             ValueError: If the field is not set
         """
-        if not field_value:
+        if field_value is None:
             raise ValueError(
                 f"{field_name} must be set. Call .{method_name}() before .build()"
             )

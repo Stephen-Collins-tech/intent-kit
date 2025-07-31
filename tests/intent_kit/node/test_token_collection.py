@@ -6,10 +6,10 @@ from intent_kit.nodes.classifiers.llm_classifier import (
     create_llm_classifier,
     create_llm_arg_extractor,
 )
-from intent_kit.nodes.actions.action import ActionNode
+from intent_kit.nodes.actions.node import ActionNode
 from intent_kit.context import IntentContext
 from intent_kit.services.base_client import BaseLLMClient
-from intent_kit.nodes.classifiers.classifier import ClassifierNode
+from intent_kit.nodes.classifiers.node import ClassifierNode
 
 
 class DummyLLMClient(BaseLLMClient):

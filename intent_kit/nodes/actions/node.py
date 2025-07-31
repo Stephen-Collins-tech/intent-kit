@@ -6,7 +6,7 @@ an executable action with argument extraction and validation.
 """
 
 from typing import Any, Callable, Dict, Optional, Set, Type, List, Union
-from ..base import TreeNode
+from ..base_node import TreeNode
 from ..enums import NodeType
 from ..types import ExecutionResult, ExecutionError
 from intent_kit.context import IntentContext
@@ -34,7 +34,8 @@ class ActionNode(TreeNode):
         output_validator: Optional[Callable[[Any], bool]] = None,
         description: str = "",
         parent: Optional["TreeNode"] = None,
-        remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
+        remediation_strategies: Optional[List[Union[str,
+                                                    RemediationStrategy]]] = None,
     ):
         super().__init__(name=name, description=description, children=[], parent=parent)
         self.param_schema = param_schema
@@ -77,17 +78,21 @@ class ActionNode(TreeNode):
                 }
 
             # Extract parameters - this might involve LLM calls
-            extracted_params = self.arg_extractor(user_input, context_dict or {})
-            self.logger.debug(f"ActionNode extracted_params: {extracted_params}")
+            extracted_params = self.arg_extractor(
+                user_input, context_dict or {})
+            self.logger.debug(
+                f"ActionNode extracted_params: {extracted_params}")
 
             # If the arg_extractor returned an ExecutionResult (LLM-based), extract token info
             if isinstance(extracted_params, ExecutionResult):
-                total_input_tokens += getattr(extracted_params, "input_tokens", 0) or 0
+                total_input_tokens += getattr(extracted_params,
+                                              "input_tokens", 0) or 0
                 total_output_tokens += (
                     getattr(extracted_params, "output_tokens", 0) or 0
                 )
                 total_cost += getattr(extracted_params, "cost", 0.0) or 0.0
-                total_duration += getattr(extracted_params, "duration", 0.0) or 0.0
+                total_duration += getattr(extracted_params,
+                                          "duration", 0.0) or 0.0
 
                 # Extract the actual parameters from the result
                 if extracted_params.params:
@@ -238,7 +243,8 @@ class ActionNode(TreeNode):
                     total_output_tokens += (
                         getattr(remediation_result, "output_tokens", 0) or 0
                     )
-                    total_cost += getattr(remediation_result, "cost", 0.0) or 0.0
+                    total_cost += getattr(remediation_result,
+                                          "cost", 0.0) or 0.0
                     total_duration += (
                         getattr(remediation_result, "duration", 0.0) or 0.0
                     )
@@ -251,7 +257,8 @@ class ActionNode(TreeNode):
 
                     return remediation_result
 
-            self.logger.debug(f"ActionNode remediation_result: {remediation_result}")
+            self.logger.debug(
+                f"ActionNode remediation_result: {remediation_result}")
             # If no remediation succeeded, return the original error
             return ExecutionResult(
                 success=False,
@@ -328,7 +335,8 @@ class ActionNode(TreeNode):
                 elif isinstance(output, dict) and key in output:
                     context.set(key, output[key], self.name)
 
-        self.logger.debug(f"Final ActionNode returning ExecutionResult: {output}")
+        self.logger.debug(
+            f"Final ActionNode returning ExecutionResult: {output}")
         return ExecutionResult(
             success=True,
             node_name=self.name,

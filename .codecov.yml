@@ -4,8 +4,7 @@ component_management:
       name: Core Engine
       paths:
         - intent_kit/graph/**
-        - intent_kit/node/**
-        - intent_kit/builders/**
+        - intent_kit/nodes/**
     - component_id: llm_services
       name: LLM Services
       paths:

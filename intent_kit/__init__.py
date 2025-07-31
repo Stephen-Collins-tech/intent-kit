@@ -13,7 +13,7 @@ from .nodes import TreeNode, NodeType
 from .nodes.classifiers import ClassifierNode
 from .nodes.actions import ActionNode
 
-from .builders.graph import IntentGraphBuilder
+from .graph.builder import IntentGraphBuilder
 from .context import IntentContext
 
 # For advanced node helpers (llm_classifier, llm_splitter, etc.),

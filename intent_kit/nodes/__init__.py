@@ -6,7 +6,7 @@ This package contains all node types organized into subpackages:
 - actions: Action node implementations
 """
 
-from .base import Node, TreeNode
+from .base_node import Node, TreeNode
 from .enums import NodeType
 from .types import ExecutionResult, ExecutionError
 

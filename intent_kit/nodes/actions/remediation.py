@@ -121,7 +121,8 @@ class RetryOnFailStrategy(RemediationStrategy):
                     delay = self.base_delay * (
                         2 ** (attempt - 1)
                     )  # Exponential backoff
-                    print(f"[DEBUG] RetryOnFailStrategy: Waiting {delay}s before retry")
+                    print(
+                        f"[DEBUG] RetryOnFailStrategy: Waiting {delay}s before retry")
                     self.logger.info(
                         f"RetryOnFailStrategy: Waiting {delay}s before retry"
                     )
@@ -140,7 +141,8 @@ class FallbackToAnotherNodeStrategy(RemediationStrategy):
     """Fallback to a specified alternative handler."""
 
     def __init__(self, fallback_handler: Callable, fallback_name: str = "fallback"):
-        super().__init__("fallback_to_another_node", f"Fallback to {fallback_name}")
+        super().__init__("fallback_to_another_node",
+                         f"Fallback to {fallback_name}")
         self.fallback_handler = fallback_handler
         self.fallback_name = fallback_name
 
@@ -164,7 +166,8 @@ class FallbackToAnotherNodeStrategy(RemediationStrategy):
             # Use the same parameters if possible, otherwise use minimal params
             if validated_params is not None:
                 if context is not None:
-                    output = self.fallback_handler(**validated_params, context=context)
+                    output = self.fallback_handler(
+                        **validated_params, context=context)
                 else:
                     output = self.fallback_handler(**validated_params)
             else:
@@ -263,7 +266,8 @@ Provide your analysis in JSON format:
                 reflection_response = llm_client.generate(reflection_prompt)
 
                 try:
-                    reflection_data = extract_json_from_text(reflection_response) or {}
+                    reflection_data = extract_json_from_text(
+                        reflection_response.output) or {}
                     self.logger.info(
                         f"SelfReflectStrategy: LLM reflection for {node_name}: {reflection_data.get('analysis', 'No analysis')}"
                     )
@@ -274,7 +278,8 @@ Provide your analysis in JSON format:
                     )
 
                     if context is not None:
-                        output = handler_func(**modified_params, context=context)
+                        output = handler_func(
+                            **modified_params, context=context)
                     else:
                         output = handler_func(**modified_params)
 
@@ -300,7 +305,8 @@ Provide your analysis in JSON format:
                     )
                     # Try with original parameters as fallback
                     if context is not None:
-                        output = handler_func(**validated_params, context=context)
+                        output = handler_func(
+                            **validated_params, context=context)
                     else:
                         output = handler_func(**validated_params)
 
@@ -396,7 +402,8 @@ Common parameter modifications:
                 vote_response = llm_client.generate(voting_prompt)
 
                 try:
-                    vote_data = extract_json_from_text(vote_response) or {}
+                    vote_data = extract_json_from_text(
+                        vote_response.output) or {}
 
                     # Ensure modified_params is properly structured
                     modified_params = vote_data.get("modified_params", {})
@@ -422,7 +429,8 @@ Common parameter modifications:
                                     if new_value == "abs(x)":
                                         final_params[key] = abs(original_value)
                                     elif new_value == "max(0, x)":
-                                        final_params[key] = max(0, original_value)
+                                        final_params[key] = max(
+                                            0, original_value)
                                     else:
                                         # Keep original value if conversion fails
                                         final_params[key] = original_value
@@ -681,7 +689,8 @@ def create_retry_strategy(
     max_attempts: int = 3, base_delay: float = 1.0
 ) -> RemediationStrategy:
     """Create a retry strategy with specified parameters."""
-    strategy = RetryOnFailStrategy(max_attempts=max_attempts, base_delay=base_delay)
+    strategy = RetryOnFailStrategy(
+        max_attempts=max_attempts, base_delay=base_delay)
     register_remediation_strategy("retry_on_fail", strategy)
     return strategy
 

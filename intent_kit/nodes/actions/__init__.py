@@ -2,7 +2,7 @@
 Action node implementations.
 """
 
-from .action import ActionNode
+from .node import ActionNode
 from .remediation import (
     RemediationStrategy,
     RetryOnFailStrategy,
