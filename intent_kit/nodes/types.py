@@ -140,7 +140,7 @@ class ExecutionResult:
             "cost": self.cost,
             "provider": self.provider if self.provider else None,
             "model": self.model,
-            "error": self.error.to_dict() if self.error else None,
+            "error": self.error.to_dict() if self.error is not None else None,
             "params": self.params,
             "children_results": [child.to_json() for child in self.children_results],
             "duration": self.duration,

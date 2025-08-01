@@ -4,7 +4,7 @@ Tests for graph builder module.
 
 import pytest
 from unittest.mock import patch, MagicMock, mock_open
-from intent_kit.builders.graph import IntentGraphBuilder
+from intent_kit.graph.builder import IntentGraphBuilder
 from intent_kit.nodes import TreeNode
 from intent_kit.graph import IntentGraph
 
@@ -238,8 +238,7 @@ class TestIntentGraphBuilder:
 
     def test_build_with_json_validation_missing_type(self):
         builder = IntentGraphBuilder()
-        builder._json_graph = {
-            "nodes": {"test": {"name": "test"}}, "root": "test"}
+        builder._json_graph = {"nodes": {"test": {"name": "test"}}, "root": "test"}
         with pytest.raises(
             ValueError,
             match="Node 'test' missing 'type' field",
@@ -421,6 +420,7 @@ class TestIntentGraphBuilder:
         """Test building graph with root nodes."""
         builder = IntentGraphBuilder()
         mock_node = MagicMock(spec=TreeNode)
+        mock_node.name = "test_node"
         builder.root(mock_node)
 
         result = builder.build()
@@ -464,7 +464,7 @@ class TestIntentGraphBuilder:
         }
 
         with pytest.raises(
-            ValueError, match="Function 'test_func' not found in function registry"
+            ValueError, match="Function registry required for JSON-based construction"
         ):
             builder.build()
 
@@ -518,17 +518,16 @@ class TestIntentGraphBuilder:
         mock_node.classifier = mock_classifier
         mock_node.llm_config = None
         mock_node.children = []
+        mock_node.name = "test_node"
 
         builder.root(mock_node)
-        builder.with_default_llm_config(
-            {"provider": "openai", "api_key": "test"})
+        builder.with_default_llm_config({"provider": "openai", "api_key": "test"})
 
         result = builder.build()
 
         assert isinstance(result, IntentGraph)
-        # Should have injected LLM config into the node
-        assert mock_node.llm_config == {
-            "provider": "openai", "api_key": "test"}
+        # The LLM config should be passed to the IntentGraph, not injected into nodes
+        assert result.llm_config == {"provider": "openai", "api_key": "test"}
 
     def test_build_with_llm_config_validation_failure(self):
         """Test building graph with LLM config validation failure."""
@@ -543,10 +542,11 @@ class TestIntentGraphBuilder:
         mock_node.name = "test_node"
 
         builder.root(mock_node)
-        # No default LLM config set
+        # No default LLM config set - this should not raise an error anymore
+        # since we allow any node type as root
 
-        with pytest.raises(ValueError, match="requires an LLM config"):
-            builder.build()
+        result = builder.build()
+        assert isinstance(result, IntentGraph)
 
     def test_debug_context(self):
         """Test enabling debug context."""
@@ -578,8 +578,7 @@ class TestIntentGraphBuilder:
         cycles = builder._detect_cycles(nodes)
 
         assert len(cycles) > 0
-        assert any(
-            "A" in cycle and "B" in cycle and "C" in cycle for cycle in cycles)
+        assert any("A" in cycle and "B" in cycle and "C" in cycle for cycle in cycles)
 
     def test_detect_cycles_no_cycles(self):
         """Test cycle detection in graph without cycles."""
@@ -664,8 +663,7 @@ class TestIntentGraphBuilder:
         }
         function_registry = {"test_func": lambda x: x}
 
-        node = builder._create_node_from_spec(
-            "test_id", node_spec, function_registry)
+        node = builder._create_node_from_spec("test_id", node_spec, function_registry)
         assert node.name == "test_action"
         assert node.description == "Test action"
 
@@ -682,8 +680,7 @@ class TestIntentGraphBuilder:
         }
         function_registry = {"test_classifier_func": lambda x: x}
 
-        node = builder._create_node_from_spec(
-            "test_id", node_spec, function_registry)
+        node = builder._create_node_from_spec("test_id", node_spec, function_registry)
         assert node.name == "test_classifier"
         assert node.description == "Test classifier"
 
@@ -701,8 +698,7 @@ class TestIntentGraphBuilder:
         }
         function_registry = {}
 
-        node = builder._create_node_from_spec(
-            "test_id", node_spec, function_registry)
+        node = builder._create_node_from_spec("test_id", node_spec, function_registry)
         assert node.name == "test_llm_classifier"
         assert node.description == "Test LLM classifier"
 
@@ -713,8 +709,7 @@ class TestIntentGraphBuilder:
         function_registry = {}
 
         with pytest.raises(ValueError, match="must have a 'type' field"):
-            builder._create_node_from_spec(
-                "test_id", node_spec, function_registry)
+            builder._create_node_from_spec("test_id", node_spec, function_registry)
 
     def test_create_node_from_spec_unknown_type(self):
         """Test creating node with unknown type."""
@@ -727,8 +722,7 @@ class TestIntentGraphBuilder:
         function_registry = {}
 
         with pytest.raises(ValueError, match="Unknown node type"):
-            builder._create_node_from_spec(
-                "test_id", node_spec, function_registry)
+            builder._create_node_from_spec("test_id", node_spec, function_registry)
 
     def test_create_action_node_missing_function(self):
         """Test creating action node with missing function."""
@@ -937,8 +931,7 @@ class TestIntentGraphBuilder:
     def test_build_from_json_with_llm_config(self):
         """Test building from JSON with LLM config."""
         builder = IntentGraphBuilder()
-        builder.with_default_llm_config(
-            {"provider": "openai", "api_key": "test"})
+        builder.with_default_llm_config({"provider": "openai", "api_key": "test"})
 
         graph_spec = {
             "root": "test",
@@ -948,7 +941,9 @@ class TestIntentGraphBuilder:
         }
         function_registry = {"test_func": lambda x: x}
 
-        graph = builder._build_from_json(graph_spec, function_registry)
+        graph = builder._build_from_json(
+            graph_spec, function_registry, {"provider": "openai", "api_key": "test"}
+        )
         assert isinstance(graph, IntentGraph)
         assert graph.llm_config == {"provider": "openai", "api_key": "test"}
 

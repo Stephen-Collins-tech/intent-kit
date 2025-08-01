@@ -7,7 +7,7 @@ intent graphs from various specifications (JSON, YAML, etc.).
 
 from typing import List, Dict, Any, Optional, Callable, Union
 from intent_kit.nodes import TreeNode
-from intent_kit.nodes.enums import NodeType, ClassifierType
+from intent_kit.nodes.enums import NodeType
 from intent_kit.graph import IntentGraph
 from intent_kit.services.yaml_service import yaml_service
 from intent_kit.utils.logger import Logger
@@ -30,8 +30,7 @@ class JsonParser:
                 with open(yaml_input, "r") as f:
                     return yaml_service.safe_load(f)
             except Exception as e:
-                raise ValueError(
-                    f"Failed to load YAML file '{yaml_input}': {e}")
+                raise ValueError(f"Failed to load YAML file '{yaml_input}': {e}")
         else:
             # Treat as dict
             return yaml_input
@@ -43,9 +42,16 @@ class LLMConfigProcessor:
     def __init__(self):
         self.logger = Logger("llm_config_processor")
         self.supported_providers = {
-            "openai", "anthropic", "google", "openrouter", "ollama"}
+            "openai",
+            "anthropic",
+            "google",
+            "openrouter",
+            "ollama",
+        }
 
-    def process_config(self, llm_config: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def process_config(
+        self, llm_config: Optional[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
         """Process LLM config with environment variable substitution."""
         if not llm_config:
             return llm_config
@@ -63,10 +69,12 @@ class LLMConfigProcessor:
                 if env_value:
                     processed_config[key] = env_value
                     self.logger.debug(
-                        f"Resolved environment variable {env_var} for key {key}")
+                        f"Resolved environment variable {env_var} for key {key}"
+                    )
                 else:
                     self.logger.warning(
-                        f"Environment variable {env_var} not found for key {key}")
+                        f"Environment variable {env_var} not found for key {key}"
+                    )
                     processed_config[key] = value  # Keep original value
             else:
                 processed_config[key] = value
@@ -76,7 +84,8 @@ class LLMConfigProcessor:
         if provider in self.supported_providers:
             if provider != "ollama" and not processed_config.get("api_key"):
                 self.logger.warning(
-                    f"Provider {provider} requires api_key but none found in config")
+                    f"Provider {provider} requires api_key but none found in config"
+                )
 
         return processed_config
 
@@ -95,8 +104,7 @@ class GraphValidator:
     def validate_node_spec(self, node_id: str, node_spec: Dict[str, Any]) -> None:
         """Validate individual node specification."""
         if "id" not in node_spec and "name" not in node_spec:
-            raise ValueError(
-                f"Node missing required 'id' or 'name' field: {node_spec}")
+            raise ValueError(f"Node missing required 'id' or 'name' field: {node_spec}")
 
         if "type" not in node_spec:
             raise ValueError(f"Node '{node_id}' must have a 'type' field")
@@ -114,7 +122,8 @@ class GraphValidator:
                 for child_id in node_spec["children"]:
                     if child_id not in nodes:
                         raise ValueError(
-                            f"Child node '{child_id}' not found for node '{node_id}'")
+                            f"Child node '{child_id}' not found for node '{node_id}'"
+                        )
 
     def detect_cycles(self, nodes: Dict[str, Any]) -> List[List[str]]:
         """Detect cycles in the graph using DFS."""
@@ -163,15 +172,18 @@ class GraphValidator:
 
         mark_reachable(root_id)
 
-        unreachable = [
-            node_id for node_id in nodes if node_id not in reachable]
+        unreachable = [node_id for node_id in nodes if node_id not in reachable]
         return unreachable
 
 
 class NodeFactory:
     """Creates node builders from specifications."""
 
-    def __init__(self, function_registry: Dict[str, Callable], default_llm_config: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        function_registry: Dict[str, Callable],
+        default_llm_config: Optional[Dict[str, Any]] = None,
+    ):
         self.function_registry = function_registry
         self.default_llm_config = default_llm_config
         self.llm_processor = LLMConfigProcessor()
@@ -181,35 +193,40 @@ class NodeFactory:
         node_type = node_spec.get("type")
 
         # Use node-specific LLM config if available, otherwise use default
-        raw_node_llm_config = node_spec.get(
-            "llm_config", self.default_llm_config)
+        raw_node_llm_config = node_spec.get("llm_config", self.default_llm_config)
 
         # Debug: print the raw LLM config
         self.llm_processor.logger.debug(
-            f"Raw LLM config for {node_id}: {raw_node_llm_config}")
+            f"Raw LLM config for {node_id}: {raw_node_llm_config}"
+        )
 
         # Process the LLM config to handle environment variable substitution
-        node_llm_config = self.llm_processor.process_config(
-            raw_node_llm_config)
+        node_llm_config = self.llm_processor.process_config(raw_node_llm_config)
 
         # Debug: print the processed LLM config
         self.llm_processor.logger.debug(
-            f"Processed LLM config for {node_id}: {node_llm_config}")
+            f"Processed LLM config for {node_id}: {node_llm_config}"
+        )
 
         if node_type == NodeType.ACTION.value:
-            return ActionBuilder.from_json(node_spec, self.function_registry, node_llm_config)
+            return ActionBuilder.from_json(
+                node_spec, self.function_registry, node_llm_config
+            )
         elif node_type == NodeType.CLASSIFIER.value:
-            return ClassifierBuilder.from_json(node_spec, self.function_registry, node_llm_config)
+            return ClassifierBuilder.from_json(
+                node_spec, self.function_registry, node_llm_config
+            )
         else:
-            raise ValueError(
-                f"Unknown node type '{node_type}' for node '{node_id}'")
+            raise ValueError(f"Unknown node type '{node_type}' for node '{node_id}'")
 
 
 class RelationshipBuilder:
     """Builds parent-child relationships between nodes."""
 
     @staticmethod
-    def build_relationships(graph_spec: Dict[str, Any], node_map: Dict[str, TreeNode]) -> None:
+    def build_relationships(
+        graph_spec: Dict[str, Any], node_map: Dict[str, TreeNode]
+    ) -> None:
         """Set up parent-child relationships for all nodes."""
         for node_id, node_spec in graph_spec["nodes"].items():
             if "children" in node_spec:
@@ -217,7 +234,8 @@ class RelationshipBuilder:
                 for child_id in node_spec["children"]:
                     if child_id not in node_map:
                         raise ValueError(
-                            f"Child node '{child_id}' not found for node '{node_id}'")
+                            f"Child node '{child_id}' not found for node '{node_id}'"
+                        )
                     children.append(node_map[child_id])
                 node_map[node_id].children = children
                 # Set parent relationships
@@ -228,12 +246,21 @@ class RelationshipBuilder:
 class GraphConstructor:
     """Constructs graphs from JSON specifications."""
 
-    def __init__(self, validator: GraphValidator, node_factory: NodeFactory, relationship_builder: RelationshipBuilder):
+    def __init__(
+        self,
+        validator: GraphValidator,
+        node_factory: NodeFactory,
+        relationship_builder: RelationshipBuilder,
+    ):
         self.validator = validator
         self.node_factory = node_factory
         self.relationship_builder = relationship_builder
 
-    def construct_from_json(self, graph_spec: Dict[str, Any], default_llm_config: Optional[Dict[str, Any]] = None) -> IntentGraph:
+    def construct_from_json(
+        self,
+        graph_spec: Dict[str, Any],
+        default_llm_config: Optional[Dict[str, Any]] = None,
+    ) -> IntentGraph:
         """Construct an IntentGraph from JSON specification."""
         # Validate graph specification
         self.validator.validate_graph_spec(graph_spec)
@@ -267,7 +294,8 @@ class GraphConstructor:
                 for child_id in node_spec["children"]:
                     if child_id not in node_map:
                         raise ValueError(
-                            f"Child node '{child_id}' not found for node '{node_id}'")
+                            f"Child node '{child_id}' not found for node '{node_id}'"
+                        )
                     children.append(node_map[child_id])
                 node_map[node_id].children = children
                 # Set parent relationships

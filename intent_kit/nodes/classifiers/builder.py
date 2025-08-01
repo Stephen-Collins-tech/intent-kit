@@ -11,8 +11,6 @@ from intent_kit.nodes import TreeNode
 from intent_kit.nodes.classifiers.node import ClassifierNode
 from intent_kit.services.ai.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
-from intent_kit.nodes.types import ExecutionResult, ExecutionError
-from intent_kit.nodes.enums import NodeType
 from intent_kit.nodes.actions.remediation import RemediationStrategy
 
 """
@@ -132,32 +130,20 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
                 "classification_prompt", get_default_classification_prompt()
             )
 
-            # Create LLM classifier function directly
+            # Create LLM classifier function that returns both node and response info
             def llm_classifier(
                 user_input: str,
                 children: List[TreeNode],
                 context: Optional[Dict[str, Any]] = None,
-            ) -> ExecutionResult:
+            ) -> tuple[Optional[TreeNode], Optional[Dict[str, Any]]]:
 
                 logger = Logger(__name__)  # Added missing import
                 logger.debug(f"LLM classifier input: {user_input}")
                 if llm_config is None:
-                    return ExecutionResult(
-                        success=False,
-                        node_name="llm_classifier",
-                        node_path=[],
-                        node_type=NodeType.CLASSIFIER,
-                        input=user_input,
-                        output=None,
-                        error=ExecutionError(
-                            error_type="ValueError",
-                            message="No llm_config provided to LLM classifier. Please set a default on the graph or provide one at the node level.",
-                            node_name="llm_classifier",
-                            node_path=[],
-                        ),
-                        params=None,
-                        children_results=[],
+                    logger.error(
+                        "No llm_config provided to LLM classifier. Please set a default on the graph or provide one at the node level."
                     )
+                    return None, None
 
                 try:
                     # Build the classification prompt with available children
@@ -254,78 +240,22 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
                         # Return first child as fallback
                         chosen_child = children[0] if children else None
 
-                    # Execute the chosen child
-                    if chosen_child:
-                        # Convert context dict to IntentContext if needed
-                        intent_context = None
-                        if context is not None:
-                            from intent_kit.context import IntentContext
+                    # Return both the chosen child and LLM response info
+                    response_info = (
+                        {
+                            "cost": response.cost,
+                            "input_tokens": response.input_tokens,
+                            "output_tokens": response.output_tokens,
+                        }
+                        if chosen_child
+                        else None
+                    )
 
-                            intent_context = IntentContext()
-                            for key, value in context.items():
-                                intent_context.set(key, value)
-                        result = chosen_child.execute(user_input, intent_context)
-
-                        # Add LLM cost to the result
-                        if hasattr(result, "cost") and result.cost is not None:
-                            result.cost += response.cost
-                        else:
-                            result.cost = response.cost
-
-                        # Add LLM token information
-                        if (
-                            hasattr(result, "input_tokens")
-                            and result.input_tokens is not None
-                        ):
-                            result.input_tokens += response.input_tokens
-                        else:
-                            result.input_tokens = response.input_tokens
-
-                        if (
-                            hasattr(result, "output_tokens")
-                            and result.output_tokens is not None
-                        ):
-                            result.output_tokens += response.output_tokens
-                        else:
-                            result.output_tokens = response.output_tokens
-
-                        return result
-                    else:
-                        return ExecutionResult(
-                            success=False,
-                            node_name="llm_classifier",
-                            node_path=[],
-                            node_type=NodeType.CLASSIFIER,
-                            input=user_input,
-                            output=None,
-                            error=ExecutionError(
-                                error_type="ValueError",
-                                message=f"No matching child found for '{selected_node_name}'",
-                                node_name="llm_classifier",
-                                node_path=[],
-                            ),
-                            params=None,
-                            children_results=[],
-                        )
+                    return chosen_child, response_info
 
                 except Exception as e:
                     logger.error(f"LLM classifier error: {e}")
-                    return ExecutionResult(
-                        success=False,
-                        node_name="llm_classifier",
-                        node_path=[],
-                        node_type=NodeType.CLASSIFIER,
-                        input=user_input,
-                        output=None,
-                        error=ExecutionError(
-                            error_type="Exception",
-                            message=str(e),
-                            node_name="llm_classifier",
-                            node_path=[],
-                        ),
-                        params=None,
-                        children_results=[],
-                    )
+                    return None, None
 
             classifier_func = llm_classifier
         else:

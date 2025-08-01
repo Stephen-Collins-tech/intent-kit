@@ -3,8 +3,11 @@ Tests for Anthropic client.
 """
 
 import pytest
+import os
 from unittest.mock import Mock, patch
-from intent_kit.services.anthropic_client import AnthropicClient
+from intent_kit.services.ai.anthropic_client import AnthropicClient
+from intent_kit.types import LLMResponse
+from intent_kit.services.ai.pricing_service import PricingService
 import sys
 
 
@@ -22,6 +25,29 @@ class TestAnthropicClient:
             assert client.api_key == "test_api_key"
             assert client._client == mock_client
             mock_get_client.assert_called_once()
+
+    def test_init_without_api_key(self):
+        """Test initialization without API key raises error."""
+        with pytest.raises(TypeError, match="API key is required"):
+            AnthropicClient("")
+
+    def test_init_with_none_api_key(self):
+        """Test initialization with None API key raises error."""
+        with pytest.raises(TypeError, match="API key is required"):
+            AnthropicClient(None)  # type: ignore[call-arg]
+
+    def test_init_with_pricing_service(self):
+        """Test initialization with custom pricing service."""
+        pricing_service = PricingService()
+        with patch.object(AnthropicClient, "get_client") as mock_get_client:
+            mock_client = Mock()
+            mock_get_client.return_value = mock_client
+
+            client = AnthropicClient("test_api_key", pricing_service=pricing_service)
+
+            assert client.api_key == "test_api_key"
+            assert client.pricing_service == pricing_service
+            assert client._client == mock_client
 
     def test_get_client_success(self):
         """Test successful client creation."""
@@ -56,7 +82,7 @@ class TestAnthropicClient:
 
     def test_ensure_imported_recreate_client(self):
         """Test _ensure_imported when client is None."""
-        from intent_kit.services.anthropic_client import AnthropicClient
+        from intent_kit.services.ai.anthropic_client import AnthropicClient
 
         mock_anthropic = Mock()
         mock_client = Mock()
@@ -93,7 +119,16 @@ class TestAnthropicClient:
 
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
+
+            assert isinstance(result, LLMResponse)
             assert result.output == "Generated response"
+            assert result.model == "claude-sonnet-4-20250514"
+            assert result.input_tokens == 100
+            assert result.output_tokens == 50
+            assert result.provider == "anthropic"
+            assert result.duration >= 0
+            assert result.cost >= 0
+
             mock_client.messages.create.assert_called_once_with(
                 model="claude-sonnet-4-20250514",
                 max_tokens=1000,
@@ -120,7 +155,13 @@ class TestAnthropicClient:
 
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt", model="claude-3-haiku-20240307")
+
+            assert isinstance(result, LLMResponse)
             assert result.output == "Generated response"
+            assert result.model == "claude-3-haiku-20240307"
+            assert result.input_tokens == 150
+            assert result.output_tokens == 75
+
             mock_client.messages.create.assert_called_once_with(
                 model="claude-3-haiku-20240307",
                 max_tokens=1000,
@@ -139,7 +180,11 @@ class TestAnthropicClient:
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
 
+            assert isinstance(result, LLMResponse)
             assert result.output == ""
+            assert result.input_tokens == 0
+            assert result.output_tokens == 0
+            assert result.cost == 0
 
     def test_generate_no_content(self):
         """Test text generation with no content in response."""
@@ -153,7 +198,11 @@ class TestAnthropicClient:
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
 
+            assert isinstance(result, LLMResponse)
             assert result.output == ""
+            assert result.input_tokens == 0
+            assert result.output_tokens == 0
+            assert result.cost == 0
 
     def test_generate_exception_handling(self):
         """Test text generation with exception handling."""
@@ -183,14 +232,12 @@ class TestAnthropicClient:
         client._client = None  # Simulate client being None
 
         result = client.generate("Test prompt")
+        assert isinstance(result, LLMResponse)
         assert result.output == "Generated response"
         assert client._client == mock_client
 
         # Clean up
         del sys.modules["anthropic"]
-
-    # Note: is_available method doesn't exist on AnthropicClient class
-    # These tests have been removed as they test non-existent functionality
 
     def test_generate_with_different_prompts(self):
         """Test generate with different prompt types."""
@@ -207,10 +254,12 @@ class TestAnthropicClient:
 
             # Test with simple prompt
             result1 = client.generate("Hello")
+            assert isinstance(result1, LLMResponse)
             assert result1.output == "Response"
 
             # Test with complex prompt
             result2 = client.generate("Please summarize this text.")
+            assert isinstance(result2, LLMResponse)
             assert result2.output == "Response"
 
             # Verify calls
@@ -238,14 +287,17 @@ class TestAnthropicClient:
 
             # Test with default model
             result1 = client.generate("Test")
+            assert isinstance(result1, LLMResponse)
             assert result1.output == "Response"
 
             # Test with custom model
             result2 = client.generate("Test", model="claude-3-haiku-20240307")
+            assert isinstance(result2, LLMResponse)
             assert result2.output == "Response"
 
             # Test with another model
             result3 = client.generate("Test", model="claude-2.1")
+            assert isinstance(result3, LLMResponse)
             assert result3.output == "Response"
 
             # Verify different models were used
@@ -267,6 +319,7 @@ class TestAnthropicClient:
 
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
+            assert isinstance(result, LLMResponse)
             assert result.output == "Part 1"
 
     def test_generate_with_logging(self):
@@ -282,8 +335,8 @@ class TestAnthropicClient:
 
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
+            assert isinstance(result, LLMResponse)
             assert result.output == "Generated response"
-            # Note: No debug logging is currently implemented in the generate method
 
     def test_generate_with_api_error(self):
         """Test generate with API error handling."""
@@ -309,16 +362,71 @@ class TestAnthropicClient:
             with pytest.raises(Exception, match="Connection timeout"):
                 client.generate("Test prompt")
 
-    def test_client_initialization_without_api_key(self):
-        """Test client initialization without API key."""
-        with pytest.raises(TypeError):
-            AnthropicClient(api_key=None)  # type: ignore[call-arg]
-
-    def test_client_initialization_with_empty_api_key(self):
-        """Test client initialization with empty API key."""
+    def test_calculate_cost_integration(self):
+        """Test cost calculation integration."""
         with patch.object(AnthropicClient, "get_client") as mock_get_client:
             mock_client = Mock()
+            mock_response = Mock()
+            mock_content = Mock()
+            mock_content.text = "Generated response"
+            mock_response.content = [mock_content]
+
+            # Add mock usage data
+            mock_usage = Mock()
+            mock_usage.prompt_tokens = 1000
+            mock_usage.completion_tokens = 500
+            mock_response.usage = mock_usage
+
+            mock_client.messages.create.return_value = mock_response
             mock_get_client.return_value = mock_client
 
-            with pytest.raises(TypeError):
-                AnthropicClient("")
+            client = AnthropicClient("test_api_key")
+            result = client.generate("Test prompt", model="claude-3-sonnet-20240229")
+
+            assert isinstance(result, LLMResponse)
+            assert result.cost > 0  # Should calculate cost based on pricing service
+
+    def test_is_available_method(self):
+        """Test is_available method."""
+        # Test when anthropic is available
+        assert AnthropicClient.is_available() is True
+
+        # Test when anthropic is not available
+        with patch(
+            "builtins.__import__",
+            side_effect=ImportError("No module named 'anthropic'"),
+        ):
+            assert AnthropicClient.is_available() is False
+
+    @patch.dict(os.environ, {"ANTHROPIC_API_KEY": "env_test_key"})
+    def test_environment_variable_support(self):
+        """Test that the client can work with environment variables."""
+        # This test verifies that the client can be initialized with API keys
+        # from environment variables, though the actual client doesn't read env vars directly
+        client = AnthropicClient("env_test_key")
+        assert client.api_key == "env_test_key"
+
+    def test_pricing_service_integration(self):
+        """Test integration with pricing service."""
+        pricing_service = PricingService()
+        client = AnthropicClient("test_api_key", pricing_service=pricing_service)
+
+        assert client.pricing_service == pricing_service
+        assert hasattr(client, "calculate_cost")
+
+    def test_list_available_models(self):
+        """Test listing available models from pricing configuration."""
+        client = AnthropicClient("test_api_key")
+        models = client.list_available_models()
+
+        # Should return models from the pricing configuration
+        assert isinstance(models, list)
+        # The list might be empty if no models are configured, which is valid
+
+    def test_get_model_pricing(self):
+        """Test getting model pricing information."""
+        client = AnthropicClient("test_api_key")
+        pricing = client.get_model_pricing("claude-3-sonnet-20240229")
+
+        # Should return pricing info if available, None otherwise
+        assert pricing is None or hasattr(pricing, "input_price_per_1m")

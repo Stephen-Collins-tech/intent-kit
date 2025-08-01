@@ -115,11 +115,15 @@ class PricingService(BasePricingService):
         """Get pricing information for a specific model."""
         # Check custom pricing first
         if model_name in self.pricing_config.custom_pricing:
-            return self.pricing_config.custom_pricing[model_name]
+            pricing = self.pricing_config.custom_pricing[model_name]
+            if pricing.provider == provider:
+                return pricing
 
         # Check default pricing
         if model_name in self.pricing_config.default_pricing:
-            return self.pricing_config.default_pricing[model_name]
+            pricing = self.pricing_config.default_pricing[model_name]
+            if pricing.provider == provider:
+                return pricing
 
         return None
 

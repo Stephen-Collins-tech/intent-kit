@@ -122,8 +122,7 @@ class TestTreeNode:
         """Test initialization with children."""
         child1 = ConcreteTreeNode(description="Child 1")
         child2 = ConcreteTreeNode(description="Child 2")
-        parent = ConcreteTreeNode(
-            description="Parent", children=[child1, child2])
+        parent = ConcreteTreeNode(description="Parent", children=[child1, child2])
 
         assert len(parent.children) == 2
         assert child1.parent == parent

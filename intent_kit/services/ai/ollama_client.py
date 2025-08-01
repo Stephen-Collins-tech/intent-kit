@@ -55,7 +55,7 @@ class OllamaClient(BaseLLMClient):
         result = response.get("response", "")
         if response.get("usage"):
             input_tokens = response.get("usage").get("prompt_eval_count", 0)
-            output_tokens = response.get("usage").get("prompt_eval_count", 0)
+            output_tokens = response.get("usage").get("eval_count", 0)
         else:
             input_tokens = 0
             output_tokens = 0

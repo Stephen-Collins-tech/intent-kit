@@ -111,7 +111,7 @@ class BaseLLMClient(ABC):
 
     def list_available_models(self) -> list[str]:
         """Get a list of all available models from this provider's configuration."""
-        models = []
+        models: list[str] = []
         for provider in self.pricing_config.providers.values():
             models.extend(provider.models.keys())
         return models

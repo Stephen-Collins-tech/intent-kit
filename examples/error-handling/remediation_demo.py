@@ -178,12 +178,10 @@ def create_intent_graph():
     # Register fallback strategy for reliable_calc
     from intent_kit.nodes.actions.remediation import create_fallback_strategy
 
-    create_fallback_strategy(
-        function_registry["reliable_calculator"], "reliable_calc")
+    create_fallback_strategy(function_registry["reliable_calculator"], "reliable_calc")
 
     # Load the graph definition from local JSON (same directory as script)
-    json_path = os.path.join(os.path.dirname(
-        __file__), "remediation_demo.json")
+    json_path = os.path.join(os.path.dirname(__file__), "remediation_demo.json")
     with open(json_path, "r") as f:
         json_graph = json.load(f)
 

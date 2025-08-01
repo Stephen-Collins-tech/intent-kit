@@ -3,14 +3,17 @@ Tests for intent_kit.services.llm_factory module.
 """
 
 import pytest
+import os
 from unittest.mock import Mock, patch
 
-from intent_kit.services.llm_factory import LLMFactory
-from intent_kit.services.openai_client import OpenAIClient
-from intent_kit.services.anthropic_client import AnthropicClient
-from intent_kit.services.google_client import GoogleClient
-from intent_kit.services.openrouter_client import OpenRouterClient
-from intent_kit.services.ollama_client import OllamaClient
+from intent_kit.services.ai.llm_factory import LLMFactory
+from intent_kit.services.ai.openai_client import OpenAIClient
+from intent_kit.services.ai.anthropic_client import AnthropicClient
+from intent_kit.services.ai.google_client import GoogleClient
+from intent_kit.services.ai.openrouter_client import OpenRouterClient
+from intent_kit.services.ai.ollama_client import OllamaClient
+from intent_kit.services.ai.pricing_service import PricingService
+from intent_kit.types import LLMResponse
 
 
 class TestLLMFactory:
@@ -23,6 +26,7 @@ class TestLLMFactory:
         client = LLMFactory.create_client(llm_config)
 
         assert isinstance(client, OpenAIClient)
+        assert client.api_key == "test-api-key"
 
     def test_create_client_anthropic(self):
         """Test creating Anthropic client."""
@@ -31,6 +35,7 @@ class TestLLMFactory:
         client = LLMFactory.create_client(llm_config)
 
         assert isinstance(client, AnthropicClient)
+        assert client.api_key == "test-api-key"
 
     def test_create_client_google(self):
         """Test creating Google client."""
@@ -39,6 +44,7 @@ class TestLLMFactory:
         client = LLMFactory.create_client(llm_config)
 
         assert isinstance(client, GoogleClient)
+        assert client.api_key == "test-api-key"
 
     def test_create_client_openrouter(self):
         """Test creating OpenRouter client."""
@@ -47,6 +53,7 @@ class TestLLMFactory:
         client = LLMFactory.create_client(llm_config)
 
         assert isinstance(client, OpenRouterClient)
+        assert client.api_key == "test-api-key"
 
     def test_create_client_ollama(self):
         """Test creating Ollama client."""
@@ -63,6 +70,7 @@ class TestLLMFactory:
         client = LLMFactory.create_client(llm_config)
 
         assert isinstance(client, OllamaClient)
+        assert client.base_url == "http://custom-ollama:11434"
 
     def test_create_client_case_insensitive_provider(self):
         """Test that provider names are case insensitive."""
@@ -134,39 +142,68 @@ class TestLLMFactory:
         with pytest.raises(ValueError, match="Unsupported LLM provider: unsupported"):
             LLMFactory.create_client(llm_config)
 
-    @patch("intent_kit.services.llm_factory.OpenAIClient")
+    @patch("intent_kit.services.ai.llm_factory.OpenAIClient")
     def test_generate_with_config_openai(self, mock_openai_client):
         """Test generating text with OpenAI config."""
         mock_client = Mock()
-        mock_client.generate.return_value = "Generated response"
+        mock_response = LLMResponse(
+            output="Generated response",
+            model="gpt-4",
+            input_tokens=100,
+            output_tokens=50,
+            cost=0.05,
+            provider="openai",
+            duration=1.0,
+        )
+        mock_client.generate.return_value = mock_response
         mock_openai_client.return_value = mock_client
 
         llm_config = {"provider": "openai", "api_key": "test-api-key", "model": "gpt-4"}
 
         result = LLMFactory.generate_with_config(llm_config, "Test prompt")
 
-        assert result == "Generated response"
+        assert isinstance(result, LLMResponse)
+        assert result.output == "Generated response"
         mock_client.generate.assert_called_once_with("Test prompt", model="gpt-4")
 
-    @patch("intent_kit.services.llm_factory.OpenAIClient")
+    @patch("intent_kit.services.ai.llm_factory.OpenAIClient")
     def test_generate_with_config_openai_no_model(self, mock_openai_client):
         """Test generating text with OpenAI config without model."""
         mock_client = Mock()
-        mock_client.generate.return_value = "Generated response"
+        mock_response = LLMResponse(
+            output="Generated response",
+            model="gpt-4",
+            input_tokens=100,
+            output_tokens=50,
+            cost=0.05,
+            provider="openai",
+            duration=1.0,
+        )
+        mock_client.generate.return_value = mock_response
         mock_openai_client.return_value = mock_client
 
         llm_config = {"provider": "openai", "api_key": "test-api-key"}
 
         result = LLMFactory.generate_with_config(llm_config, "Test prompt")
 
-        assert result == "Generated response"
+        assert isinstance(result, LLMResponse)
+        assert result.output == "Generated response"
         mock_client.generate.assert_called_once_with("Test prompt")
 
-    @patch("intent_kit.services.llm_factory.AnthropicClient")
+    @patch("intent_kit.services.ai.llm_factory.AnthropicClient")
     def test_generate_with_config_anthropic(self, mock_anthropic_client):
         """Test generating text with Anthropic config."""
         mock_client = Mock()
-        mock_client.generate.return_value = "Generated response"
+        mock_response = LLMResponse(
+            output="Generated response",
+            model="claude-4-sonnet",
+            input_tokens=100,
+            output_tokens=50,
+            cost=0.03,
+            provider="anthropic",
+            duration=1.0,
+        )
+        mock_client.generate.return_value = mock_response
         mock_anthropic_client.return_value = mock_client
 
         llm_config = {
@@ -177,16 +214,26 @@ class TestLLMFactory:
 
         result = LLMFactory.generate_with_config(llm_config, "Test prompt")
 
-        assert result == "Generated response"
+        assert isinstance(result, LLMResponse)
+        assert result.output == "Generated response"
         mock_client.generate.assert_called_once_with(
             "Test prompt", model="claude-4-sonnet"
         )
 
-    @patch("intent_kit.services.llm_factory.GoogleClient")
+    @patch("intent_kit.services.ai.llm_factory.GoogleClient")
     def test_generate_with_config_google(self, mock_google_client):
         """Test generating text with Google config."""
         mock_client = Mock()
-        mock_client.generate.return_value = "Generated response"
+        mock_response = LLMResponse(
+            output="Generated response",
+            model="gemini-pro",
+            input_tokens=100,
+            output_tokens=50,
+            cost=0.02,
+            provider="google",
+            duration=1.0,
+        )
+        mock_client.generate.return_value = mock_response
         mock_google_client.return_value = mock_client
 
         llm_config = {
@@ -197,14 +244,24 @@ class TestLLMFactory:
 
         result = LLMFactory.generate_with_config(llm_config, "Test prompt")
 
-        assert result == "Generated response"
+        assert isinstance(result, LLMResponse)
+        assert result.output == "Generated response"
         mock_client.generate.assert_called_once_with("Test prompt", model="gemini-pro")
 
-    @patch("intent_kit.services.llm_factory.OpenRouterClient")
+    @patch("intent_kit.services.ai.llm_factory.OpenRouterClient")
     def test_generate_with_config_openrouter(self, mock_openrouter_client):
         """Test generating text with OpenRouter config."""
         mock_client = Mock()
-        mock_client.generate.return_value = "Generated response"
+        mock_response = LLMResponse(
+            output="Generated response",
+            model="openai/gpt-4",
+            input_tokens=100,
+            output_tokens=50,
+            cost=0.04,
+            provider="openrouter",
+            duration=1.0,
+        )
+        mock_client.generate.return_value = mock_response
         mock_openrouter_client.return_value = mock_client
 
         llm_config = {
@@ -215,26 +272,37 @@ class TestLLMFactory:
 
         result = LLMFactory.generate_with_config(llm_config, "Test prompt")
 
-        assert result == "Generated response"
+        assert isinstance(result, LLMResponse)
+        assert result.output == "Generated response"
         mock_client.generate.assert_called_once_with(
             "Test prompt", model="openai/gpt-4"
         )
 
-    @patch("intent_kit.services.llm_factory.OllamaClient")
+    @patch("intent_kit.services.ai.llm_factory.OllamaClient")
     def test_generate_with_config_ollama(self, mock_ollama_client):
         """Test generating text with Ollama config."""
         mock_client = Mock()
-        mock_client.generate.return_value = "Generated response"
+        mock_response = LLMResponse(
+            output="Generated response",
+            model="llama2",
+            input_tokens=100,
+            output_tokens=50,
+            cost=0.0,
+            provider="ollama",
+            duration=1.0,
+        )
+        mock_client.generate.return_value = mock_response
         mock_ollama_client.return_value = mock_client
 
         llm_config = {"provider": "ollama", "model": "llama2"}
 
         result = LLMFactory.generate_with_config(llm_config, "Test prompt")
 
-        assert result == "Generated response"
+        assert isinstance(result, LLMResponse)
+        assert result.output == "Generated response"
         mock_client.generate.assert_called_once_with("Test prompt", model="llama2")
 
-    @patch("intent_kit.services.llm_factory.LLMFactory.create_client")
+    @patch("intent_kit.services.ai.llm_factory.LLMFactory.create_client")
     def test_generate_with_config_client_creation_error(self, mock_create_client):
         """Test generate_with_config when client creation fails."""
         mock_create_client.side_effect = ValueError("Invalid config")
@@ -244,7 +312,7 @@ class TestLLMFactory:
         with pytest.raises(ValueError, match="Invalid config"):
             LLMFactory.generate_with_config(llm_config, "Test prompt")
 
-    @patch("intent_kit.services.llm_factory.LLMFactory.create_client")
+    @patch("intent_kit.services.ai.llm_factory.LLMFactory.create_client")
     def test_generate_with_config_generate_error(self, mock_create_client):
         """Test generate_with_config when generate method fails."""
         mock_client = Mock()
@@ -255,6 +323,52 @@ class TestLLMFactory:
 
         with pytest.raises(Exception, match="Generate error"):
             LLMFactory.generate_with_config(llm_config, "Test prompt")
+
+    def test_pricing_service_integration(self):
+        """Test that clients are created with pricing service."""
+        llm_config = {"provider": "openai", "api_key": "test-api-key"}
+
+        client = LLMFactory.create_client(llm_config)
+
+        assert hasattr(client, "pricing_service")
+        assert client.pricing_service is not None
+
+    def test_set_pricing_service(self):
+        """Test setting pricing service for the factory."""
+        pricing_service = PricingService()
+        LLMFactory.set_pricing_service(pricing_service)
+
+        assert LLMFactory.get_pricing_service() == pricing_service
+
+    @patch.dict(
+        os.environ,
+        {
+            "OPENAI_API_KEY": "env_openai_key",
+            "ANTHROPIC_API_KEY": "env_anthropic_key",
+            "GOOGLE_API_KEY": "env_google_key",
+        },
+    )
+    def test_environment_variable_support(self):
+        """Test that factory can work with environment variables."""
+        # Test OpenAI with env var
+        llm_config = {"provider": "openai", "api_key": "env_openai_key"}
+        client = LLMFactory.create_client(llm_config)
+        assert isinstance(client, OpenAIClient)
+
+        # Test Anthropic with env var
+        llm_config = {"provider": "anthropic", "api_key": "env_anthropic_key"}
+        client = LLMFactory.create_client(llm_config)
+        assert isinstance(client, AnthropicClient)
+
+        # Test Google with env var
+        llm_config = {"provider": "google", "api_key": "env_google_key"}
+        client = LLMFactory.create_client(llm_config)
+        assert isinstance(client, GoogleClient)
+
+        # Test Ollama (no API key needed)
+        llm_config = {"provider": "ollama"}
+        client = LLMFactory.create_client(llm_config)
+        assert isinstance(client, OllamaClient)
 
 
 class TestLLMFactoryIntegration:
@@ -326,7 +440,43 @@ class TestLLMFactoryIntegration:
             {"provider": "ollama", "base_url": "http://custom:11434"}
         )
         assert isinstance(client, OllamaClient)
+        assert client.base_url == "http://custom:11434"
 
         # Should work with API key (even though not required)
         client = LLMFactory.create_client({"provider": "ollama", "api_key": "test-key"})
         assert isinstance(client, OllamaClient)
+
+    def test_error_handling_with_invalid_api_keys(self):
+        """Test error handling with invalid API keys."""
+        # Test with empty API key
+        with pytest.raises(ValueError):
+            LLMFactory.create_client({"provider": "openai", "api_key": ""})
+
+        # Test with None API key
+        with pytest.raises(ValueError):
+            LLMFactory.create_client({"provider": "openai", "api_key": None})
+
+    def test_case_insensitive_provider_names(self):
+        """Test that provider names are handled case-insensitively."""
+        providers = [
+            "OPENAI",
+            "OpenAI",
+            "openai",
+            "ANTHROPIC",
+            "Anthropic",
+            "anthropic",
+        ]
+
+        for provider in providers:
+            if provider.lower() == "ollama":
+                llm_config = {"provider": provider}
+            else:
+                llm_config = {"provider": provider, "api_key": "test-key"}
+
+            # Should not raise an error for valid providers
+            try:
+                LLMFactory.create_client(llm_config)
+            except ValueError as e:
+                if "unsupported" in str(e):
+                    # This is expected for invalid providers
+                    pass

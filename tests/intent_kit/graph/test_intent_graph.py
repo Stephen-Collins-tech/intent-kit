@@ -62,7 +62,20 @@ class MockClassifierNode(MockTreeNode):
 
     def execute(self, user_input: str, context=None):
         # Classifier nodes should not execute in this test
-        return None
+        # Return a proper ExecutionResult instead of None
+        self.executed = True
+        self.execution_result = ExecutionResult(
+            success=True,
+            node_name=self.name,
+            node_path=[self.name],
+            node_type=self.node_type,
+            input=user_input,
+            output=f"Mock result for {user_input}",
+            error=None,
+            params={},
+            children_results=[],
+        )
+        return self.execution_result
 
 
 class TestIntentGraphInitialization:
@@ -125,8 +138,7 @@ class TestIntentGraphNodeManagement:
         with patch(
             "intent_kit.graph.intent_graph.validate_graph_structure"
         ) as mock_validate:
-            mock_validate.side_effect = GraphValidationError(
-                "Validation failed")
+            mock_validate.side_effect = GraphValidationError("Validation failed")
 
             with pytest.raises(GraphValidationError):
                 graph.add_root_node(root_node)
@@ -373,8 +385,7 @@ class TestIntentGraphContextTracking:
         state_after = {"key1": "new_value", "key2": "added"}
 
         # Should not raise an exception
-        graph._log_detailed_context_trace(
-            state_before, state_after, "test_node")
+        graph._log_detailed_context_trace(state_before, state_after, "test_node")
 
 
 class TestIntentGraphIntegration:

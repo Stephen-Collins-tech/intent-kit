@@ -2,7 +2,6 @@
 Tests for single intent architecture constraints.
 """
 
-import pytest
 from intent_kit.graph.intent_graph import IntentGraph
 from intent_kit.nodes.enums import NodeType
 from intent_kit.utils.node_factory import action, llm_classifier
@@ -26,8 +25,8 @@ class TestSingleIntentConstraint:
         assert len(graph.root_nodes) == 1
         assert graph.root_nodes[0].node_type == NodeType.CLASSIFIER
 
-    def test_action_node_cannot_be_root(self):
-        """Test that action nodes cannot be root nodes."""
+    def test_action_node_can_be_root(self):
+        """Test that action nodes can be root nodes."""
         # Create an action node
         action_node = action(
             name="test_action",
@@ -36,9 +35,10 @@ class TestSingleIntentConstraint:
             param_schema={},
         )
 
-        # This should raise an error
-        with pytest.raises(ValueError, match="must be a classifier node"):
-            IntentGraph(root_nodes=[action_node])
+        # This should work now
+        graph = IntentGraph(root_nodes=[action_node])
+        assert len(graph.root_nodes) == 1
+        assert graph.root_nodes[0].node_type == NodeType.ACTION
 
     def test_add_classifier_root_node(self):
         """Test adding a classifier root node."""
@@ -56,8 +56,8 @@ class TestSingleIntentConstraint:
         assert len(graph.root_nodes) == 1
         assert graph.root_nodes[0].node_type == NodeType.CLASSIFIER
 
-    def test_add_action_root_node_fails(self):
-        """Test that adding an action root node fails."""
+    def test_add_action_root_node_succeeds(self):
+        """Test that adding an action root node succeeds."""
         graph = IntentGraph()
 
         action_node = action(
@@ -67,12 +67,13 @@ class TestSingleIntentConstraint:
             param_schema={},
         )
 
-        # This should raise an error
-        with pytest.raises(ValueError, match="must be a classifier node"):
-            graph.add_root_node(action_node)
+        # This should work now
+        graph.add_root_node(action_node)
+        assert len(graph.root_nodes) == 1
+        assert graph.root_nodes[0].node_type == NodeType.ACTION
 
-    def test_mixed_root_nodes_fails(self):
-        """Test that mixing classifier and action root nodes fails."""
+    def test_mixed_root_nodes_succeeds(self):
+        """Test that mixing classifier and action root nodes succeeds."""
         classifier = llm_classifier(
             name="test_classifier",
             description="Test classifier",
@@ -87,9 +88,11 @@ class TestSingleIntentConstraint:
             param_schema={},
         )
 
-        # This should raise an error because action_node is not a classifier
-        with pytest.raises(ValueError, match="must be a classifier node"):
-            IntentGraph(root_nodes=[classifier, action_node])
+        # This should work now - any node type can be a root node
+        graph = IntentGraph(root_nodes=[classifier, action_node])
+        assert len(graph.root_nodes) == 2
+        assert graph.root_nodes[0].node_type == NodeType.CLASSIFIER
+        assert graph.root_nodes[1].node_type == NodeType.ACTION
 
     def test_multiple_classifier_root_nodes(self):
         """Test that multiple classifier root nodes work."""
@@ -110,5 +113,4 @@ class TestSingleIntentConstraint:
         # This should work
         graph = IntentGraph(root_nodes=[classifier1, classifier2])
         assert len(graph.root_nodes) == 2
-        assert all(node.node_type ==
-                   NodeType.CLASSIFIER for node in graph.root_nodes)
+        assert all(node.node_type == NodeType.CLASSIFIER for node in graph.root_nodes)

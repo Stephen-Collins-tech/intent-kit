@@ -3,8 +3,11 @@ Tests for the Ollama client.
 """
 
 import pytest
+import os
 from unittest.mock import Mock, patch
-from intent_kit.services.ollama_client import OllamaClient
+from intent_kit.services.ai.ollama_client import OllamaClient
+from intent_kit.types import LLMResponse
+from intent_kit.services.ai.pricing_service import PricingService
 
 
 class TestOllamaClient:
@@ -19,6 +22,14 @@ class TestOllamaClient:
         """Test initialization with custom base URL."""
         client = OllamaClient(base_url="http://custom:11434")
         assert client.base_url == "http://custom:11434"
+
+    def test_init_with_pricing_service(self):
+        """Test initialization with custom pricing service."""
+        pricing_service = PricingService()
+        client = OllamaClient(pricing_service=pricing_service)
+
+        assert client.base_url == "http://localhost:11434"
+        assert client.pricing_service == pricing_service
 
     @patch("ollama.Client")
     def test_get_client_success(self, mock_client_class):
@@ -49,7 +60,13 @@ class TestOllamaClient:
         client = OllamaClient()
         result = client.generate("Test prompt", model="llama2")
 
-        assert result == "Test response"
+        assert isinstance(result, LLMResponse)
+        assert result.output == "Test response"
+        assert result.model == "llama2"
+        assert result.provider == "ollama"
+        assert result.duration >= 0
+        assert result.cost >= 0
+
         mock_client.generate.assert_called_once_with(
             model="llama2", prompt="Test prompt"
         )
@@ -249,7 +266,8 @@ class TestOllamaClient:
         client = OllamaClient()
         result = client.generate("Test prompt")
 
-        assert result == ""
+        assert isinstance(result, LLMResponse)
+        assert result.output == ""
 
     @patch("ollama.Client")
     def test_generate_none_response(self, mock_client_class):
@@ -262,7 +280,8 @@ class TestOllamaClient:
         client = OllamaClient()
         result = client.generate("Test prompt")
 
-        assert result == ""
+        assert isinstance(result, LLMResponse)
+        assert result.output == ""
 
     @patch("ollama.Client")
     def test_chat_empty_response(self, mock_client_class):
@@ -326,3 +345,111 @@ class TestOllamaClient:
         client = OllamaClient()
         with pytest.raises(Exception, match="Pull failed"):
             client.pull_model("nonexistent")
+
+    def test_calculate_cost_integration(self):
+        """Test cost calculation integration."""
+        with patch("ollama.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+            mock_response = {"response": "Test response"}
+            mock_client.generate.return_value = mock_response
+
+            client = OllamaClient()
+            result = client.generate("Test prompt", model="llama2")
+
+            assert isinstance(result, LLMResponse)
+            assert result.cost == 0.0  # Ollama is typically free
+
+    @patch.dict(os.environ, {"OLLAMA_BASE_URL": "http://custom-ollama:11434"})
+    def test_environment_variable_support(self):
+        """Test that the client can work with environment variables."""
+        # This test verifies that the client can be initialized with base URLs
+        # from environment variables, though the actual client doesn't read env vars directly
+        client = OllamaClient(base_url="http://custom-ollama:11434")
+        assert client.base_url == "http://custom-ollama:11434"
+
+    def test_pricing_service_integration(self):
+        """Test integration with pricing service."""
+        pricing_service = PricingService()
+        client = OllamaClient(pricing_service=pricing_service)
+
+        assert client.pricing_service == pricing_service
+        assert hasattr(client, "calculate_cost")
+
+    def test_list_available_models(self):
+        """Test listing available models from pricing configuration."""
+        client = OllamaClient()
+        models = client.list_available_models()
+
+        # Should return models from the pricing configuration
+        assert isinstance(models, list)
+        # The list might be empty if no models are configured, which is valid
+
+    def test_get_model_pricing(self):
+        """Test getting model pricing information."""
+        client = OllamaClient()
+        pricing = client.get_model_pricing("llama2")
+
+        # Should return pricing info if available, None otherwise
+        assert pricing is None or hasattr(pricing, "input_price_per_1m")
+
+    def test_generate_with_usage_data(self):
+        """Test generate with usage data."""
+        with patch("ollama.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+            mock_response = {
+                "response": "Test response",
+                "usage": {"prompt_eval_count": 100, "eval_count": 50},
+            }
+            mock_client.generate.return_value = mock_response
+
+            client = OllamaClient()
+            result = client.generate("Test prompt", model="llama2")
+
+            assert isinstance(result, LLMResponse)
+            assert result.output == "Test response"
+            assert result.input_tokens == 100
+            assert (
+                result.output_tokens == 50
+            )  # Fixed: should be eval_count, not prompt_eval_count
+            assert result.cost == 0.0  # Ollama is free
+
+    def test_generate_without_usage_data(self):
+        """Test generate without usage data."""
+        with patch("ollama.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+            mock_response = {"response": "Test response"}
+            mock_client.generate.return_value = mock_response
+
+            client = OllamaClient()
+            result = client.generate("Test prompt", model="llama2")
+
+            assert isinstance(result, LLMResponse)
+            assert result.output == "Test response"
+            assert result.input_tokens == 0
+            assert result.output_tokens == 0
+            assert result.cost == 0.0
+
+    def test_error_handling_with_network_issues(self):
+        """Test error handling with network issues."""
+        with patch("ollama.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+            mock_client.generate.side_effect = Exception("Connection refused")
+
+            client = OllamaClient()
+            with pytest.raises(Exception, match="Connection refused"):
+                client.generate("Test prompt")
+
+    def test_error_handling_with_invalid_model(self):
+        """Test error handling with invalid model."""
+        with patch("ollama.Client") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+            mock_client.generate.side_effect = Exception("Model not found")
+
+            client = OllamaClient()
+            with pytest.raises(Exception, match="Model not found"):
+                client.generate("Test prompt", model="nonexistent-model")

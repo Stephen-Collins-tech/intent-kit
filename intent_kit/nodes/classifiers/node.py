@@ -23,7 +23,8 @@ class ClassifierNode(TreeNode):
         self,
         name: Optional[str],
         classifier: Callable[
-            [str, List["TreeNode"], Optional[Dict[str, Any]]], "ExecutionResult"
+            [str, List["TreeNode"], Optional[Dict[str, Any]]],
+            tuple[Optional["TreeNode"], Optional[Dict[str, Any]]],
         ],
         children: List["TreeNode"],
         description: str = "",
@@ -46,8 +47,13 @@ class ClassifierNode(TreeNode):
     ) -> ExecutionResult:
         context_dict: Dict[str, Any] = {}
         # If context is needed, populate context_dict here in the future
-        classifier_result = self.classifier(user_input, self.children, context_dict)
-        if not classifier_result:
+
+        # Call classifier function - it now returns a tuple (chosen_child, response_info)
+        (chosen_child, response_info) = self.classifier(
+            user_input, self.children, context_dict
+        )
+
+        if not chosen_child:
             self.logger.error(
                 f"Classifier at '{self.name}' (Path: {'.'.join(self.get_path())}) could not route input."
             )
@@ -85,26 +91,43 @@ class ClassifierNode(TreeNode):
                 params=None,
                 children_results=[],
             )
+
+        # Execute the chosen child
+        child_result = chosen_child.execute(user_input, context)
+
+        # Extract LLM response info from the classifier result
+        llm_cost = 0.0
+        llm_input_tokens = 0
+        llm_output_tokens = 0
+
+        if response_info and isinstance(response_info, dict):
+            llm_cost = response_info.get("cost", 0.0)
+            llm_input_tokens = response_info.get("input_tokens", 0)
+            llm_output_tokens = response_info.get("output_tokens", 0)
+
+        # Add LLM cost and tokens to the result
+        total_cost = (child_result.cost or 0.0) + llm_cost
+        total_input_tokens = (child_result.input_tokens or 0) + llm_input_tokens
+        total_output_tokens = (child_result.output_tokens or 0) + llm_output_tokens
+
         return ExecutionResult(
             success=True,
-            node_name=self.name,
+            node_name=self.name or "unknown",
             node_path=self.get_path(),
-            input_tokens=classifier_result.input_tokens,
-            output_tokens=classifier_result.output_tokens,
-            cost=classifier_result.cost,
-            duration=classifier_result.duration,
             node_type=NodeType.CLASSIFIER,
             input=user_input,
-            output=classifier_result.output,  # Return the child's actual output
+            output=child_result.output,  # Return the child's actual output
             error=None,
             params={
-                "chosen_child": str(classifier_result.output)
-                .strip()
-                .replace('"', "")
-                .replace("'", "")
-                .replace("\n", ""),
-                "available_children": [child.name for child in self.children],
+                "chosen_child": chosen_child.name or "unknown",
+                "available_children": [
+                    child.name or "unknown" for child in self.children
+                ],
             },
+            children_results=[child_result],
+            cost=total_cost,
+            input_tokens=total_input_tokens,
+            output_tokens=total_output_tokens,
         )
 
     def _execute_remediation_strategies(
