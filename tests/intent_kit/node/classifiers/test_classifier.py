@@ -8,7 +8,7 @@ from intent_kit.nodes.classifiers.node import ClassifierNode
 from intent_kit.nodes.enums import NodeType
 from intent_kit.nodes.types import ExecutionResult
 from intent_kit.context import IntentContext
-from intent_kit.nodes.actions.remediation import RemediationStrategy
+from intent_kit.nodes.actions.remediation import Strategy, RemediationStrategy
 from intent_kit.nodes.base_node import TreeNode
 
 

@@ -11,7 +11,7 @@ from intent_kit.nodes import TreeNode
 from intent_kit.nodes.classifiers.node import ClassifierNode
 from intent_kit.services.ai.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
-from intent_kit.nodes.actions.remediation import RemediationStrategy
+from intent_kit.nodes.actions.remediation import Strategy, RemediationStrategy
 
 """
 LLM-powered classifiers for intent-kit

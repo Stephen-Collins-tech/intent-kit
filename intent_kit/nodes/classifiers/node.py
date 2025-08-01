@@ -12,6 +12,7 @@ from ..types import ExecutionResult, ExecutionError
 from intent_kit.context import IntentContext
 from ..actions.remediation import (
     get_remediation_strategy,
+    Strategy,
     RemediationStrategy,
 )
 
