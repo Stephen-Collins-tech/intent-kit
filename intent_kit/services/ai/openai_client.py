@@ -2,8 +2,8 @@
 OpenAI client wrapper for intent-kit
 """
 
-from intent_kit.utils.logger import Logger
-from intent_kit.services.base_client import BaseLLMClient
+from intent_kit.services.ai.base_client import BaseLLMClient
+from intent_kit.services.ai.pricing_service import PricingService
 from typing import Optional
 from intent_kit.types import LLMResponse
 from intent_kit.utils.perf_util import PerfUtil
@@ -11,13 +11,13 @@ from intent_kit.utils.perf_util import PerfUtil
 # Dummy assignment for testing
 openai = None
 
-logger = Logger("openai_service")
-
 
 class OpenAIClient(BaseLLMClient):
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, pricing_service: Optional[PricingService] = None):
         self.api_key = api_key
-        super().__init__(api_key=api_key)
+        super().__init__(
+            name="openai_service", api_key=api_key, pricing_service=pricing_service
+        )
 
     def _initialize_client(self, **kwargs) -> None:
         """Initialize the OpenAI client."""
@@ -67,7 +67,7 @@ class OpenAIClient(BaseLLMClient):
                 model=model,
                 input_tokens=0,
                 output_tokens=0,
-                cost=0.0,
+                cost=-1.0,  # TODO: fix this
                 provider="openai",
                 duration=0.0,
             )
@@ -79,12 +79,26 @@ class OpenAIClient(BaseLLMClient):
             input_tokens = 0
             output_tokens = 0
         duration = perf_util.stop()
+
+        # Calculate cost using pricing service
+        cost = self.calculate_cost(model, "openai", input_tokens, output_tokens)
+
+        # Log cost information with cost per token
+        self.logger.log_cost(
+            cost=cost,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            provider="openai",
+            model=model,
+            duration=duration,
+        )
+
         return LLMResponse(
             output=content,
             model=model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
-            cost=0.0,
+            cost=cost,
             provider="openai",
             duration=duration,
         )

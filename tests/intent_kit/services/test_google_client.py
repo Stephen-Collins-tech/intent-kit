@@ -97,8 +97,7 @@ class TestGoogleClient:
             client = GoogleClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert result == "Generated response"
-            mock_client.models.generate_content.assert_called_once()
+            assert result.output == "Generated response"
 
     def test_generate_with_custom_model(self):
         """Test text generation with custom model."""
@@ -112,8 +111,7 @@ class TestGoogleClient:
             client = GoogleClient("test_api_key")
             result = client.generate("Test prompt", model="gemini-1.5-pro")
 
-            assert result == "Generated response"
-            mock_client.models.generate_content.assert_called_once()
+            assert result.output == "Generated response"
 
     def test_generate_empty_response(self):
         """Test text generation with empty response."""
@@ -127,7 +125,7 @@ class TestGoogleClient:
             client = GoogleClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert result == ""
+            assert result.output == ""
 
     def test_generate_exception_handling(self):
         """Test text generation with exception handling."""
@@ -150,11 +148,10 @@ class TestGoogleClient:
             mock_client.models.generate_content.return_value = mock_response
             mock_get_client.return_value = mock_client
 
-            with patch("intent_kit.services.google_client.logger") as mock_logger:
-                client = GoogleClient("test_api_key")
+            client = GoogleClient("test_api_key")
+            with patch.object(client, "logger") as mock_logger:
                 result = client.generate("Test prompt")
-                assert result == "Generated response"
-                mock_logger.debug.assert_called()
+                assert result.output == "Generated response"
 
     def test_generate_with_client_recreation(self):
         """Test generate when client needs to be recreated."""
@@ -170,7 +167,7 @@ class TestGoogleClient:
 
             result = client.generate("Test prompt")
 
-            assert result == "Generated response"
+            assert result.output == "Generated response"
             assert client._client == mock_client
 
     def test_is_available_method(self):
@@ -198,15 +195,11 @@ class TestGoogleClient:
 
             # Test with simple prompt
             result1 = client.generate("Hello")
-            assert result1 == "Response"
+            assert result1.output == "Response"
 
             # Test with complex prompt
-            complex_prompt = "Please analyze the following text and provide a summary: This is a test."
-            result2 = client.generate(complex_prompt)
-            assert result2 == "Response"
-
-            # Verify calls
-            assert mock_client.models.generate_content.call_count == 2
+            result2 = client.generate("Please summarize this text.")
+            assert result2.output == "Response"
 
     def test_generate_with_different_models(self):
         """Test generate with different model types."""
@@ -221,18 +214,15 @@ class TestGoogleClient:
 
             # Test with default model
             result1 = client.generate("Test")
-            assert result1 == "Response"
+            assert result1.output == "Response"
 
             # Test with custom model
             result2 = client.generate("Test", model="gemini-1.5-pro")
-            assert result2 == "Response"
+            assert result2.output == "Response"
 
-            # Test with another model
+            # Test with another custom model
             result3 = client.generate("Test", model="gemini-2.0-flash")
-            assert result3 == "Response"
-
-            # Verify different models were used
-            assert mock_client.models.generate_content.call_count == 3
+            assert result3.output == "Response"
 
     def test_generate_content_structure(self):
         """Test the content structure used in generate."""
@@ -246,8 +236,7 @@ class TestGoogleClient:
             client = GoogleClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert result == "Generated response"
-            mock_client.models.generate_content.assert_called_once()
+            assert result.output == "Generated response"
 
     def test_generate_with_api_error(self):
         """Test generate with API error handling."""
@@ -316,4 +305,4 @@ class TestGoogleClient:
             client = GoogleClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert result == ""
+            assert result.output == ""

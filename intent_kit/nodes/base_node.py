@@ -45,6 +45,8 @@ class Node:
 class TreeNode(Node, ABC):
     """Base class for all nodes in the intent tree."""
 
+    logger: Logger
+
     def __init__(
         self,
         *,
@@ -54,7 +56,7 @@ class TreeNode(Node, ABC):
         parent: Optional["TreeNode"] = None,
     ):
         super().__init__(name=name, parent=parent)
-        self.logger = Logger(name or "unnamed_node")
+        self.logger = Logger(name or self.__class__.__name__.lower())
         self.description = description
         self.children: List["TreeNode"] = list(children) if children else []
         for child in self.children:
@@ -86,8 +88,7 @@ class TreeNode(Node, ABC):
 
         # Execute root node
         self.logger.debug(f"TreeNode traverse root node: {self.name}")
-        self.logger.debug(
-            f"TreeNode traverse root node node_type: {self.node_type}")
+        self.logger.debug(f"TreeNode traverse root node node_type: {self.node_type}")
         root_result = self.execute(user_input, context)
         self.logger.debug(f"TreeNode root_result: {root_result.display()}")
 
@@ -115,8 +116,7 @@ class TreeNode(Node, ABC):
             if hasattr(node_result, "params") and node_result.params:
                 chosen_child_name = node_result.params.get("chosen_child")
 
-            self.logger.info(
-                f"TreeNode Chosen child name: {chosen_child_name}")
+            self.logger.info(f"TreeNode Chosen child name: {chosen_child_name}")
             if chosen_child_name:
                 # Find the specific child to traverse
                 chosen_child = None
@@ -128,8 +128,7 @@ class TreeNode(Node, ABC):
                 if chosen_child:
                     # Execute the chosen child
                     child_result = chosen_child.execute(user_input, context)
-                    self.logger.info(
-                        f"TreeNode child_result: {child_result.display()}")
+                    self.logger.info(f"TreeNode child_result: {child_result.display()}")
                     child_result.node_name = chosen_child.name
                     child_result.node_path = node_path + [chosen_child.name]
                     node_result.children_results.append(child_result)
@@ -143,8 +142,7 @@ class TreeNode(Node, ABC):
                         getattr(child_result, "output_tokens", None) or 0
                     )
                     child_cost = getattr(child_result, "cost", None) or 0.0
-                    child_duration = getattr(
-                        child_result, "duration", None) or 0.0
+                    child_duration = getattr(child_result, "duration", None) or 0.0
 
                     total_input_tokens += child_input_tokens
                     total_output_tokens += child_output_tokens

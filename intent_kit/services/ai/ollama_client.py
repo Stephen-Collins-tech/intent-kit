@@ -2,19 +2,24 @@
 Ollama client wrapper for intent-kit
 """
 
-from intent_kit.utils.logger import Logger
-from intent_kit.services.base_client import BaseLLMClient
-from typing import Optional
+from intent_kit.services.ai.base_client import BaseLLMClient
+from intent_kit.services.ai.pricing_service import PricingService
 from intent_kit.types import LLMResponse
-from intent_kit.utils.perf_util import PerfUtil
+from typing import Optional
 
-logger = Logger("ollama_service")
+from intent_kit.utils.perf_util import PerfUtil
 
 
 class OllamaClient(BaseLLMClient):
-    def __init__(self, base_url: str = "http://localhost:11434"):
+    def __init__(
+        self,
+        base_url: str = "http://localhost:11434",
+        pricing_service: Optional[PricingService] = None,
+    ):
         self.base_url = base_url
-        super().__init__(base_url=base_url)
+        super().__init__(
+            name="ollama_service", base_url=base_url, pricing_service=pricing_service
+        )
 
     def _initialize_client(self, **kwargs) -> None:
         """Initialize the Ollama client."""
@@ -54,13 +59,28 @@ class OllamaClient(BaseLLMClient):
         else:
             input_tokens = 0
             output_tokens = 0
+
+        # Calculate cost using pricing service (Ollama is typically free)
+        cost = self.calculate_cost(model, "ollama", input_tokens, output_tokens)
+
         duration = perf_util.stop()
+
+        # Log cost information with cost per token
+        self.logger.log_cost(
+            cost=cost,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            provider="ollama",
+            model=model,
+            duration=duration,
+        )
+
         return LLMResponse(
             output=result if result is not None else "",
             model=model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
-            cost=0.0,  # ollama is free...
+            cost=cost,  # ollama is free...
             provider="ollama",
             duration=duration,
         )
@@ -73,7 +93,7 @@ class OllamaClient(BaseLLMClient):
             for chunk in self._client.generate(model=model, prompt=prompt, stream=True):
                 yield chunk["response"]
         except Exception as e:
-            logger.error(f"Error streaming with Ollama: {e}")
+            self.logger.error(f"Error streaming with Ollama: {e}")
             raise
 
     def chat(self, messages: list, model: str = "llama2") -> str:
@@ -83,10 +103,10 @@ class OllamaClient(BaseLLMClient):
         try:
             response = self._client.chat(model=model, messages=messages)
             content = response["message"]["content"]
-            logger.debug(f"Ollama chat response: {content}")
+            self.logger.debug(f"Ollama chat response: {content}")
             return str(content) if content else ""
         except Exception as e:
-            logger.error(f"Error chatting with Ollama: {e}")
+            self.logger.error(f"Error chatting with Ollama: {e}")
             raise
 
     def chat_stream(self, messages: list, model: str = "llama2"):
@@ -97,7 +117,7 @@ class OllamaClient(BaseLLMClient):
             for chunk in self._client.chat(model=model, messages=messages, stream=True):
                 yield chunk["message"]["content"]
         except Exception as e:
-            logger.error(f"Error streaming chat with Ollama: {e}")
+            self.logger.error(f"Error streaming chat with Ollama: {e}")
             raise
 
     def list_models(self):
@@ -106,13 +126,13 @@ class OllamaClient(BaseLLMClient):
         assert self._client is not None  # Type assertion for linter
         try:
             models_response = self._client.list()
-            logger.debug(f"Ollama list response: {models_response}")
+            self.logger.debug(f"Ollama list response: {models_response}")
 
             # The correct type is ListResponse, which has a .models attribute
             if hasattr(models_response, "models"):
                 models = models_response.models
             else:
-                logger.error(f"Unexpected response structure: {models_response}")
+                self.logger.error(f"Unexpected response structure: {models_response}")
                 return []
 
             # Each model is a ListResponse.Model with a .model attribute
@@ -125,14 +145,14 @@ class OllamaClient(BaseLLMClient):
                 elif isinstance(model, str):
                     model_names.append(model)
                 else:
-                    logger.warning(f"Unexpected model entry: {model}")
+                    self.logger.warning(f"Unexpected model entry: {model}")
 
             model_names = [name for name in model_names if name]
-            logger.debug(f"Extracted model names: {model_names}")
+            self.logger.debug(f"Extracted model names: {model_names}")
             return model_names
 
         except Exception as e:
-            logger.error(f"Error listing Ollama models: {e}")
+            self.logger.error(f"Error listing Ollama models: {e}")
             return []
 
     def show_model(self, model: str):
@@ -142,7 +162,7 @@ class OllamaClient(BaseLLMClient):
         try:
             return self._client.show(model)
         except Exception as e:
-            logger.error(f"Error showing model {model}: {e}")
+            self.logger.error(f"Error showing model {model}: {e}")
             raise
 
     def pull_model(self, model: str):
@@ -152,7 +172,7 @@ class OllamaClient(BaseLLMClient):
         try:
             return self._client.pull(model)
         except Exception as e:
-            logger.error(f"Error pulling model {model}: {e}")
+            self.logger.error(f"Error pulling model {model}: {e}")
             raise
 
     @classmethod

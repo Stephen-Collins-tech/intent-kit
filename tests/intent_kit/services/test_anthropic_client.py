@@ -81,12 +81,19 @@ class TestAnthropicClient:
             mock_content = Mock()
             mock_content.text = "Generated response"
             mock_response.content = [mock_content]
+
+            # Add mock usage data
+            mock_usage = Mock()
+            mock_usage.prompt_tokens = 100
+            mock_usage.completion_tokens = 50
+            mock_response.usage = mock_usage
+
             mock_client.messages.create.return_value = mock_response
             mock_get_client.return_value = mock_client
 
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
-            assert result == "Generated response"
+            assert result.output == "Generated response"
             mock_client.messages.create.assert_called_once_with(
                 model="claude-sonnet-4-20250514",
                 max_tokens=1000,
@@ -101,12 +108,19 @@ class TestAnthropicClient:
             mock_content = Mock()
             mock_content.text = "Generated response"
             mock_response.content = [mock_content]
+
+            # Add mock usage data
+            mock_usage = Mock()
+            mock_usage.prompt_tokens = 150
+            mock_usage.completion_tokens = 75
+            mock_response.usage = mock_usage
+
             mock_client.messages.create.return_value = mock_response
             mock_get_client.return_value = mock_client
 
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt", model="claude-3-haiku-20240307")
-            assert result == "Generated response"
+            assert result.output == "Generated response"
             mock_client.messages.create.assert_called_once_with(
                 model="claude-3-haiku-20240307",
                 max_tokens=1000,
@@ -125,7 +139,7 @@ class TestAnthropicClient:
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert result == ""
+            assert result.output == ""
 
     def test_generate_no_content(self):
         """Test text generation with no content in response."""
@@ -139,7 +153,7 @@ class TestAnthropicClient:
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert result == ""
+            assert result.output == ""
 
     def test_generate_exception_handling(self):
         """Test text generation with exception handling."""
@@ -169,7 +183,7 @@ class TestAnthropicClient:
         client._client = None  # Simulate client being None
 
         result = client.generate("Test prompt")
-        assert result == "Generated response"
+        assert result.output == "Generated response"
         assert client._client == mock_client
 
         # Clean up
@@ -193,11 +207,11 @@ class TestAnthropicClient:
 
             # Test with simple prompt
             result1 = client.generate("Hello")
-            assert result1 == "Response"
+            assert result1.output == "Response"
 
             # Test with complex prompt
             result2 = client.generate("Please summarize this text.")
-            assert result2 == "Response"
+            assert result2.output == "Response"
 
             # Verify calls
             assert mock_client.messages.create.call_count == 2
@@ -210,6 +224,13 @@ class TestAnthropicClient:
             mock_content = Mock()
             mock_content.text = "Response"
             mock_response.content = [mock_content]
+
+            # Add mock usage data
+            mock_usage = Mock()
+            mock_usage.prompt_tokens = 100
+            mock_usage.completion_tokens = 50
+            mock_response.usage = mock_usage
+
             mock_client.messages.create.return_value = mock_response
             mock_get_client.return_value = mock_client
 
@@ -217,15 +238,15 @@ class TestAnthropicClient:
 
             # Test with default model
             result1 = client.generate("Test")
-            assert result1 == "Response"
+            assert result1.output == "Response"
 
             # Test with custom model
             result2 = client.generate("Test", model="claude-3-haiku-20240307")
-            assert result2 == "Response"
+            assert result2.output == "Response"
 
             # Test with another model
             result3 = client.generate("Test", model="claude-2.1")
-            assert result3 == "Response"
+            assert result3.output == "Response"
 
             # Verify different models were used
             assert mock_client.messages.create.call_count == 3
@@ -246,7 +267,7 @@ class TestAnthropicClient:
 
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
-            assert result == "Part 1"
+            assert result.output == "Part 1"
 
     def test_generate_with_logging(self):
         """Test generate with debug logging."""
@@ -261,7 +282,7 @@ class TestAnthropicClient:
 
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
-            assert result == "Generated response"
+            assert result.output == "Generated response"
             # Note: No debug logging is currently implemented in the generate method
 
     def test_generate_with_api_error(self):

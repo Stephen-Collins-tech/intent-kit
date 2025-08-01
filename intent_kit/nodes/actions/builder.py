@@ -6,9 +6,12 @@ Supports both stateless functions and stateful callable objects as actions.
 from intent_kit.nodes.base_builder import BaseBuilder
 from typing import Any, Callable, Dict, Type, Set, List, Optional, Union
 from intent_kit.nodes.actions.node import ActionNode, RemediationStrategy
-from intent_kit.nodes.actions.param_extraction import create_arg_extractor, parse_param_schema
-from intent_kit.services.base_client import BaseLLMClient
-
+from intent_kit.nodes.actions.param_extraction import (
+    create_arg_extractor,
+    parse_param_schema,
+)
+from intent_kit.services.ai.base_client import BaseLLMClient
+from intent_kit.utils.logger import get_logger
 
 LLMConfig = Union[Dict[str, Any], BaseLLMClient]
 
@@ -20,6 +23,7 @@ class ActionBuilder(BaseBuilder[ActionNode]):
 
     def __init__(self, name: str):
         super().__init__(name)
+        self.logger = get_logger("ActionBuilder")
         # Can be function or instance
         self.action_func: Optional[Callable[..., Any]] = None
         self.param_schema: Optional[Dict[str, Type]] = None
@@ -29,8 +33,9 @@ class ActionBuilder(BaseBuilder[ActionNode]):
         self.context_outputs: Optional[Set[str]] = None
         self.input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None
         self.output_validator: Optional[Callable[[Any], bool]] = None
-        self.remediation_strategies: Optional[List[Union[str,
-                                                         RemediationStrategy]]] = None
+        self.remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = (
+            None
+        )
 
     @staticmethod
     def from_json(
@@ -44,8 +49,7 @@ class ActionBuilder(BaseBuilder[ActionNode]):
         """
         node_id = node_spec.get("id") or node_spec.get("name")
         if not node_id:
-            raise ValueError(
-                f"Node spec must have 'id' or 'name': {node_spec}")
+            raise ValueError(f"Node spec must have 'id' or 'name': {node_spec}")
 
         name = node_spec.get("name", node_id)
         description = node_spec.get("description", "")
@@ -55,20 +59,20 @@ class ActionBuilder(BaseBuilder[ActionNode]):
         action_obj = None
         if isinstance(action, str):
             if action not in function_registry:
-                raise ValueError(
-                    f"Function '{action}' not found for node '{node_id}'")
+                raise ValueError(f"Function '{action}' not found for node '{node_id}'")
             action_obj = function_registry[action]
         elif callable(action):
             action_obj = action
         else:
             raise ValueError(
-                f"Action for node '{node_id}' must be a function name or callable object")
+                f"Action for node '{node_id}' must be a function name or callable object"
+            )
 
         builder = ActionBuilder(name)
         builder.description = description
         builder.action_func = action_obj
-        builder.param_schema = parse_param_schema(
-            node_spec.get("param_schema", {}))
+        builder.logger.info(f"ActionBuilder param_schema: {builder.param_schema}")
+        builder.param_schema = parse_param_schema(node_spec.get("param_schema", {}))
 
         # Use node-specific llm_config if present, otherwise use default
         if "llm_config" in node_spec:
@@ -80,7 +84,7 @@ class ActionBuilder(BaseBuilder[ActionNode]):
         for k, m in [
             ("context_inputs", builder.with_context_inputs),
             ("context_outputs", builder.with_context_outputs),
-            ("remediation_strategies", builder.with_remediation_strategies)
+            ("remediation_strategies", builder.with_remediation_strategies),
         ]:
             v = node_spec.get(k)
             if v:
@@ -115,7 +119,9 @@ class ActionBuilder(BaseBuilder[ActionNode]):
         self.context_outputs = set(outputs)
         return self
 
-    def with_input_validator(self, fn: Callable[[Dict[str, Any]], bool]) -> "ActionBuilder":
+    def with_input_validator(
+        self, fn: Callable[[Dict[str, Any]], bool]
+    ) -> "ActionBuilder":
         self.input_validator = fn
         return self
 
@@ -136,10 +142,12 @@ class ActionBuilder(BaseBuilder[ActionNode]):
         Raises:
             ValueError: If required fields are missing
         """
-        self._validate_required_fields([
-            ("action function", self.action_func, "with_action"),
-            ("parameter schema", self.param_schema, "with_param_schema"),
-        ])
+        self._validate_required_fields(
+            [
+                ("action function", self.action_func, "with_action"),
+                ("parameter schema", self.param_schema, "with_param_schema"),
+            ]
+        )
 
         # Type assertions after validation
         assert self.action_func is not None
@@ -155,7 +163,7 @@ class ActionBuilder(BaseBuilder[ActionNode]):
         return ActionNode(
             name=self.name,
             param_schema=self.param_schema,
-            action=self.action_func,           # <-- can be function or stateful object!
+            action=self.action_func,  # <-- can be function or stateful object!
             arg_extractor=arg_extractor,
             context_inputs=self.context_inputs,
             context_outputs=self.context_outputs,

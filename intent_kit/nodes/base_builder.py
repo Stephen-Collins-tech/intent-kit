@@ -6,7 +6,8 @@ ensuring consistent patterns and common functionality.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, TypeVar, Generic, Optional, Dict, Callable
+from typing import Any, TypeVar, Generic
+from intent_kit.utils.logger import Logger
 
 T = TypeVar("T")
 
@@ -18,6 +19,8 @@ class BaseBuilder(ABC, Generic[T]):
     across all builder implementations.
     """
 
+    logger: Logger
+
     def __init__(self, name: str):
         """Initialize the base builder.
 
@@ -26,6 +29,7 @@ class BaseBuilder(ABC, Generic[T]):
         """
         self.name = name
         self.description = ""
+        self.logger = Logger(name or self.__class__.__name__.lower())
 
     def with_description(self, description: str) -> "BaseBuilder[T]":
         """Set the description for the node.

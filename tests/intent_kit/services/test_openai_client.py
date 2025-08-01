@@ -90,13 +90,20 @@ class TestOpenAIClient:
             mock_message.content = "Generated response"
             mock_choice.message = mock_message
             mock_response.choices = [mock_choice]
+
+            # Add mock usage data
+            mock_usage = Mock()
+            mock_usage.prompt_tokens = 100
+            mock_usage.completion_tokens = 50
+            mock_response.usage = mock_usage
+
             mock_client.chat.completions.create.return_value = mock_response
             mock_get_client.return_value = mock_client
 
             client = OpenAIClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert result == "Generated response"
+            assert result.output == "Generated response"
             mock_client.chat.completions.create.assert_called_once_with(
                 model="gpt-4",
                 messages=[{"role": "user", "content": "Test prompt"}],
@@ -113,13 +120,20 @@ class TestOpenAIClient:
             mock_message.content = "Generated response"
             mock_choice.message = mock_message
             mock_response.choices = [mock_choice]
+
+            # Add mock usage data
+            mock_usage = Mock()
+            mock_usage.prompt_tokens = 150
+            mock_usage.completion_tokens = 75
+            mock_response.usage = mock_usage
+
             mock_client.chat.completions.create.return_value = mock_response
             mock_get_client.return_value = mock_client
 
             client = OpenAIClient("test_api_key")
             result = client.generate("Test prompt", model="gpt-3.5-turbo")
 
-            assert result == "Generated response"
+            assert result.output == "Generated response"
             mock_client.chat.completions.create.assert_called_once_with(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": "Test prompt"}],
@@ -136,13 +150,20 @@ class TestOpenAIClient:
             mock_message.content = None
             mock_choice.message = mock_message
             mock_response.choices = [mock_choice]
+
+            # Add mock usage data
+            mock_usage = Mock()
+            mock_usage.prompt_tokens = 50
+            mock_usage.completion_tokens = 25
+            mock_response.usage = mock_usage
+
             mock_client.chat.completions.create.return_value = mock_response
             mock_get_client.return_value = mock_client
 
             client = OpenAIClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert result == ""
+            assert result.output is None
 
     def test_generate_no_choices(self):
         """Test text generation with no choices in response."""
@@ -157,7 +178,7 @@ class TestOpenAIClient:
             # Handle the case where choices is empty
             result = client.generate("Test prompt")
 
-            assert result == ""
+            assert result.output == ""
 
     def test_generate_exception_handling(self):
         """Test text generation with exception handling."""
@@ -181,6 +202,13 @@ class TestOpenAIClient:
             mock_message.content = "Generated response"
             mock_choice.message = mock_message
             mock_response.choices = [mock_choice]
+
+            # Add mock usage data
+            mock_usage = Mock()
+            mock_usage.prompt_tokens = 200
+            mock_usage.completion_tokens = 100
+            mock_response.usage = mock_usage
+
             mock_client.chat.completions.create.return_value = mock_response
             mock_get_client.return_value = mock_client
 
@@ -189,8 +217,7 @@ class TestOpenAIClient:
 
             result = client.generate("Test prompt")
 
-            assert result == "Generated response"
-            assert client._client == mock_client
+            assert result.output == "Generated response"
 
     def test_is_available_method(self):
         """Test is_available method."""
@@ -215,6 +242,13 @@ class TestOpenAIClient:
             mock_message.content = "Response"
             mock_choice.message = mock_message
             mock_response.choices = [mock_choice]
+
+            # Add mock usage data
+            mock_usage = Mock()
+            mock_usage.prompt_tokens = 100
+            mock_usage.completion_tokens = 50
+            mock_response.usage = mock_usage
+
             mock_client.chat.completions.create.return_value = mock_response
             mock_get_client.return_value = mock_client
 
@@ -224,7 +258,7 @@ class TestOpenAIClient:
             prompts = ["Hello", "How are you?", "What's the weather?"]
             for prompt in prompts:
                 result = client.generate(prompt)
-                assert result == "Response"
+                assert result.output == "Response"
                 mock_client.chat.completions.create.assert_called_with(
                     model="gpt-4",
                     messages=[{"role": "user", "content": prompt}],
@@ -241,6 +275,13 @@ class TestOpenAIClient:
             mock_message.content = "Response"
             mock_choice.message = mock_message
             mock_response.choices = [mock_choice]
+
+            # Add mock usage data
+            mock_usage = Mock()
+            mock_usage.prompt_tokens = 100
+            mock_usage.completion_tokens = 50
+            mock_response.usage = mock_usage
+
             mock_client.chat.completions.create.return_value = mock_response
             mock_get_client.return_value = mock_client
 
@@ -250,7 +291,7 @@ class TestOpenAIClient:
             models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"]
             for model in models:
                 result = client.generate("Test prompt", model=model)
-                assert result == "Response"
+                assert result.output == "Response"
                 mock_client.chat.completions.create.assert_called_with(
                     model=model,
                     messages=[{"role": "user", "content": "Test prompt"}],

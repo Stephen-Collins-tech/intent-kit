@@ -5,10 +5,9 @@ This module provides a builder class for creating IntentGraph instances
 with a more readable and type-safe approach.
 """
 
-from typing import List, Dict, Any, Optional, Callable, Union
+from typing import List, Dict, Any, Optional, Callable
 from intent_kit.nodes import TreeNode
 from intent_kit.graph.intent_graph import IntentGraph
-from intent_kit.utils.logger import Logger
 from intent_kit.graph.graph_components import (
     LLMConfigProcessor,
     GraphValidator,
@@ -33,7 +32,6 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
         self._json_graph: Optional[Dict[str, Any]] = None
         self._function_registry: Optional[Dict[str, Callable]] = None
         self._llm_config: Optional[Dict[str, Any]] = None
-        self._logger = Logger("graph_builder")
 
     @staticmethod
     def from_json(
@@ -53,8 +51,7 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
         validator = GraphValidator()
         node_factory = NodeFactory(function_registry, processed_llm_config)
         relationship_builder = RelationshipBuilder()
-        constructor = GraphConstructor(
-            validator, node_factory, relationship_builder)
+        constructor = GraphConstructor(validator, node_factory, relationship_builder)
 
         return constructor.construct_from_json(graph_spec, processed_llm_config)
 
@@ -96,7 +93,9 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
         self._function_registry = function_registry
         return self
 
-    def with_default_llm_config(self, llm_config: Dict[str, Any]) -> "IntentGraphBuilder":
+    def with_default_llm_config(
+        self, llm_config: Dict[str, Any]
+    ) -> "IntentGraphBuilder":
         """Set the default LLM configuration for the graph.
 
         Args:
@@ -143,19 +142,19 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
         """
         # If we have JSON spec, use the from_json static method
         if self._json_graph and self._function_registry:
-            return self.from_json(self._json_graph, self._function_registry, self._llm_config)
+            return self.from_json(
+                self._json_graph, self._function_registry, self._llm_config
+            )
 
         # Otherwise, validate we have root nodes for direct construction
         if not self._root_nodes:
-            raise ValueError(
-                "Root nodes must be set. Call .root() before .build()")
+            raise ValueError("Root nodes must be set. Call .root() before .build()")
 
         # Process LLM config if provided
         processed_llm_config = None
         if self._llm_config:
             llm_processor = LLMConfigProcessor()
-            processed_llm_config = llm_processor.process_config(
-                self._llm_config)
+            processed_llm_config = llm_processor.process_config(self._llm_config)
 
         # Create IntentGraph directly from root nodes
         return IntentGraph(

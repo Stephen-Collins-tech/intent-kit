@@ -1,9 +1,7 @@
 import pytest
-from intent_kit.builders import (
-    ActionBuilder,
-    ClassifierBuilder,
-    IntentGraphBuilder,
-)
+from intent_kit.nodes.actions import ActionBuilder
+from intent_kit.nodes.classifiers import ClassifierBuilder
+from intent_kit.graph import IntentGraphBuilder
 from intent_kit.nodes.actions import ActionNode
 from intent_kit.nodes.classifiers import ClassifierNode
 from intent_kit.graph import IntentGraph
@@ -83,7 +81,16 @@ def test_intent_graph_builder_full():
         .with_param_schema({"a": int, "b": int})
         .build()
     )
-    classifier = ClassifierBuilder("root").with_children([greet, calc]).build()
+
+    def dummy_classifier(user_input, children, context=None):
+        return children[0]
+
+    classifier = (
+        ClassifierBuilder("root")
+        .with_classifier(dummy_classifier)
+        .with_children([greet, calc])
+        .build()
+    )
     # Build graph
     graph = IntentGraphBuilder().root(classifier).build()
     assert isinstance(graph, IntentGraph)
@@ -98,7 +105,16 @@ def test_intent_graph_builder_with_llm_config():
         .with_param_schema({"name": str})
         .build()
     )
-    classifier = ClassifierBuilder("root").with_children([greet]).build()
+
+    def dummy_classifier(user_input, children, context=None):
+        return children[0]
+
+    classifier = (
+        ClassifierBuilder("root")
+        .with_classifier(dummy_classifier)
+        .with_children([greet])
+        .build()
+    )
 
     llm_config = {"provider": "openai", "model": "gpt-4"}
     graph = (

@@ -2,22 +2,23 @@
 Google GenAI client wrapper for intent-kit
 """
 
-from intent_kit.utils.logger import Logger
-from intent_kit.services.base_client import BaseLLMClient
-from typing import Optional
+from intent_kit.services.ai.base_client import BaseLLMClient
+from intent_kit.services.ai.pricing_service import PricingService
 from intent_kit.types import LLMResponse
+from typing import Optional
+
 from intent_kit.utils.perf_util import PerfUtil
 
 # Dummy assignment for testing
 google = None
 
-logger = Logger("google_service")
-
 
 class GoogleClient(BaseLLMClient):
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, pricing_service: Optional[PricingService] = None):
         self.api_key = api_key
-        super().__init__(api_key=api_key)
+        super().__init__(
+            name="google_service", api_key=api_key, pricing_service=pricing_service
+        )
 
     def _initialize_client(self, **kwargs) -> None:
         """Initialize the Google GenAI client."""
@@ -76,24 +77,39 @@ class GoogleClient(BaseLLMClient):
                 config=generate_content_config,
             )
 
-            logger.debug(f"Google generate response: {response.text}")
+            self.logger.debug(f"Google generate response: {response.text}")
             if response.usage_metadata:
                 input_tokens = response.usage_metadata.prompt_token_count
                 output_tokens = response.usage_metadata.candidates_token_count
             else:
                 input_tokens = 0
                 output_tokens = 0
+
+            # Calculate cost using pricing service
+            cost = self.calculate_cost(model, "google", input_tokens, output_tokens)
+
             duration = perf_util.stop()
+
+            # Log cost information with cost per token
+            self.logger.log_cost(
+                cost=cost,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                provider="google",
+                model=model,
+                duration=duration,
+            )
+
             return LLMResponse(
                 output=str(response.text) if response.text else "",
                 model=model,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
-                cost=0.0,
+                cost=cost,
                 provider="google",
                 duration=duration,
             )
 
         except Exception as e:
-            logger.error(f"Error generating text with Google GenAI: {e}")
+            self.logger.error(f"Error generating text with Google GenAI: {e}")
             raise

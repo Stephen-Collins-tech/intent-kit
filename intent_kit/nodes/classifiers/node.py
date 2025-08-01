@@ -28,8 +28,7 @@ class ClassifierNode(TreeNode):
         children: List["TreeNode"],
         description: str = "",
         parent: Optional["TreeNode"] = None,
-        remediation_strategies: Optional[List[Union[str,
-                                                    RemediationStrategy]]] = None,
+        remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
     ):
         super().__init__(
             name=name, description=description, children=children, parent=parent
@@ -47,8 +46,7 @@ class ClassifierNode(TreeNode):
     ) -> ExecutionResult:
         context_dict: Dict[str, Any] = {}
         # If context is needed, populate context_dict here in the future
-        classifier_result = self.classifier(
-            user_input, self.children, context_dict)
+        classifier_result = self.classifier(user_input, self.children, context_dict)
         if not classifier_result:
             self.logger.error(
                 f"Classifier at '{self.name}' (Path: {'.'.join(self.get_path())}) could not route input."
@@ -93,6 +91,7 @@ class ClassifierNode(TreeNode):
             node_path=self.get_path(),
             input_tokens=classifier_result.input_tokens,
             output_tokens=classifier_result.output_tokens,
+            cost=classifier_result.cost,
             duration=classifier_result.duration,
             node_type=NodeType.CLASSIFIER,
             input=user_input,

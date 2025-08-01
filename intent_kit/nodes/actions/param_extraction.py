@@ -7,10 +7,10 @@ using both rule-based and LLM-based approaches.
 
 import re
 from typing import Any, Callable, Dict, Optional, Type, Union
-from intent_kit.services.base_client import BaseLLMClient
-from intent_kit.services.llm_factory import LLMFactory
+from intent_kit.services.ai.base_client import BaseLLMClient
+from intent_kit.services.ai.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
-from intent_kit.nodes.types import ExecutionResult, ExecutionError
+from intent_kit.nodes.types import ExecutionResult
 from intent_kit.nodes.enums import NodeType
 
 logger = Logger(__name__)
@@ -78,8 +78,7 @@ def create_rule_based_extractor(
 
         # Extract calculation parameters
         if "operation" in param_schema and "a" in param_schema and "b" in param_schema:
-            extracted_params.update(
-                _extract_calculation_parameters(input_lower))
+            extracted_params.update(_extract_calculation_parameters(input_lower))
 
         return extracted_params
 
@@ -248,20 +247,42 @@ def create_llm_arg_extractor(
                 response = llm_config.generate(prompt)
 
             # Parse the response to extract parameters
-            # For now, we'll use a simple approach - in the future this could be JSON parsing
             extracted_params = {}
 
-            # Simple parsing: look for "param_name: value" patterns
-            lines = response.output.strip().split("\n")
-            for line in lines:
-                line = line.strip()
-                if ":" in line:
-                    parts = line.split(":", 1)
-                    if len(parts) == 2:
-                        param_name = parts[0].strip()
-                        param_value = parts[1].strip()
+            # Try to parse as JSON first
+            import json
+
+            try:
+                # Clean up JSON formatting if present
+                response_text = response.output.strip()
+                if response_text.startswith("```json"):
+                    response_text = response_text[7:]
+                if response_text.endswith("```"):
+                    response_text = response_text[:-3]
+                response_text = response_text.strip()
+
+                parsed_json = json.loads(response_text)
+                if isinstance(parsed_json, dict):
+                    for param_name, param_value in parsed_json.items():
                         if param_name in param_schema:
                             extracted_params[param_name] = param_value
+                else:
+                    # Single value JSON
+                    if len(param_schema) == 1:
+                        param_name = list(param_schema.keys())[0]
+                        extracted_params[param_name] = parsed_json
+            except json.JSONDecodeError:
+                # Fall back to simple parsing: look for "param_name: value" patterns
+                lines = response.output.strip().split("\n")
+                for line in lines:
+                    line = line.strip()
+                    if ":" in line:
+                        parts = line.split(":", 1)
+                        if len(parts) == 2:
+                            param_name = parts[0].strip()
+                            param_value = parts[1].strip()
+                            if param_name in param_schema:
+                                extracted_params[param_name] = param_value
 
             logger.debug(f"Extracted parameters: {extracted_params}")
 

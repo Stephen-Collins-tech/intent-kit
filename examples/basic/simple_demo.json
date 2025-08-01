@@ -10,9 +10,9 @@
       "llm_config": {
         "provider": "openrouter",
         "api_key": "${OPENROUTER_API_KEY}",
-        "model": "qwen/qwen3-coder"
+        "model": "liquid/lfm-40b"
       },
-      "classification_prompt": "Given the user input: '{user_input}', choose the most appropriate intent from the following list:\n{node_descriptions}\n\nIMPORTANT:\n- Return ONLY the name of the intent, exactly as shown above (e.g., greet_action, calculate_action, weather_action, help_action).\n- Do NOT return any explanation, number, or invented name.\n- Do NOT return anything except one of the names from the list above.\n\nIf you are unsure, return 'help_action'.\n\nYour answer:",
+      "classification_prompt": "Classify the user input: '{user_input}'\n\nAvailable intents:\n{node_descriptions}\n\nReturn ONLY the intent name (e.g., calculate_action). No explanation.",
       "children": [
         "greet_action",
         "calculate_action",

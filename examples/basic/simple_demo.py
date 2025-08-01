@@ -79,32 +79,43 @@ if __name__ == "__main__":
         context = IntentContext(session_id="simple_demo")
 
         test_inputs = [
-            # "Hello, my name is Alice",
+            "Hello, my name is Alice",
             "What's 15 plus 7?",
-            # "Weather in San Francisco",
-            # "Help me",
-            # "Multiply 8 and 3",
+            "Weather in San Francisco",
+            "Help me",
+            "Multiply 8 and 3",
         ]
 
         timings: list[tuple[str, float]] = []
         successes = []
+        costs = []
         for user_input in test_inputs:
             with PerfUtil.collect(f"Input: {user_input}", timings) as perf:
                 print(f"\nInput: {user_input}")
                 result = graph.route(user_input, context=context)
                 success = bool(result.success)
+                cost = result.cost or 0.0
+                costs.append(cost)
                 if result.success:
                     print(f"Intent: {result.node_name}")
                     print(f"Output: {result.output}")
+                    print(f"Cost: ${cost:.6f}")
                 else:
                     print(f"Error: {result.error}")
                 successes.append(success)
 
     print(perf.format())
-    # Print table with success column
+    # Print table with success and cost columns
     print("\nTiming Summary:")
-    print(f"  {'Label':<40} | {'Elapsed (sec)':>12} | {'Success':>7}")
-    print("  " + "-" * 65)
-    for (label, elapsed), success in zip(timings, successes):
+    print(
+        f"  {'Label':<40} | {'Elapsed (sec)':>12} | {'Success':>7} | {'Cost ($)':>10}"
+    )
+    print("  " + "-" * 75)
+    for (label, elapsed), success, cost in zip(timings, successes, costs):
         elapsed_str = f"{elapsed:12.4f}" if elapsed is not None else "     N/A   "
-        print(f"  {label[:40]:<40} | {elapsed_str} | {str(success):>7}")
+        cost_str = f"{cost:10.6f}"
+        print(f"  {label[:40]:<40} | {elapsed_str} | {str(success):>7} | {cost_str}")
+
+    # Print total cost
+    total_cost = sum(costs)
+    print(f"\nTotal Cost: ${total_cost:.6f}")

@@ -4,12 +4,12 @@ Supports both rule-based and LLM-powered classifiers.
 """
 
 from intent_kit.nodes.base_builder import BaseBuilder
-from intent_kit.services.base_client import BaseLLMClient
+from intent_kit.services.ai.base_client import BaseLLMClient
 from typing import Any, Dict, Union
-from typing import Callable, List, Optional, Union, Any, Dict
+from typing import Callable, List, Optional
 from intent_kit.nodes import TreeNode
 from intent_kit.nodes.classifiers.node import ClassifierNode
-from intent_kit.services.llm_factory import LLMFactory
+from intent_kit.services.ai.llm_factory import LLMFactory
 from intent_kit.utils.logger import Logger
 from intent_kit.nodes.types import ExecutionResult, ExecutionError
 from intent_kit.nodes.enums import NodeType
@@ -62,8 +62,7 @@ def create_classifier_node(
     description: str,
     classifier_func: Callable,
     children: List[TreeNode],
-    remediation_strategies: Optional[List[Union[str,
-                                                RemediationStrategy]]] = None,
+    remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
 ) -> ClassifierNode:
     """Create a classifier node with the given configuration."""
     classifier_node = ClassifierNode(
@@ -82,6 +81,7 @@ def create_classifier_node(
 
 def create_default_classifier() -> Callable:
     """Create a default classifier that returns the first child."""
+
     def default_classifier(
         user_input: str,
         children: List[TreeNode],
@@ -97,11 +97,11 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
 
     def __init__(self, name: str):
         super().__init__(name)
-        self.logger = Logger(__name__)
         self.classifier_func: Optional[Callable] = None
         self.children: List[TreeNode] = []
-        self.remediation_strategies: Optional[List[Union[str,
-                                                         RemediationStrategy]]] = None
+        self.remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = (
+            None
+        )
 
     @staticmethod
     def from_json(
@@ -115,8 +115,7 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
         """
         node_id = node_spec.get("id") or node_spec.get("name")
         if not node_id:
-            raise ValueError(
-                f"Node spec must have 'id' or 'name': {node_spec}")
+            raise ValueError(f"Node spec must have 'id' or 'name': {node_spec}")
 
         name = node_spec.get("name", node_id)
         description = node_spec.get("description", "")
@@ -128,10 +127,10 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
             # LLM classifier - will be configured later with children
             # Use the processed llm_config that was passed in (already processed by NodeFactory)
             if not llm_config:
-                raise ValueError(
-                    f"LLM classifier '{node_id}' requires llm_config")
+                raise ValueError(f"LLM classifier '{node_id}' requires llm_config")
             classification_prompt = node_spec.get(
-                "classification_prompt", get_default_classification_prompt())
+                "classification_prompt", get_default_classification_prompt()
+            )
 
             # Create LLM classifier function directly
             def llm_classifier(
@@ -165,7 +164,8 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
                     child_descriptions = []
                     for child in children:
                         child_descriptions.append(
-                            f"- {child.name}: {child.description}")
+                            f"- {child.name}: {child.description}"
+                        )
 
                     prompt = classification_prompt.format(
                         user_input=user_input,
@@ -180,8 +180,7 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
                             safe_config["api_key"] = "***OBFUSCATED***"
                         logger.debug(f"LLM classifier config: {safe_config}")
                         logger.debug(f"LLM classifier prompt: {prompt}")
-                        response = LLMFactory.generate_with_config(
-                            llm_config, prompt)
+                        response = LLMFactory.generate_with_config(llm_config, prompt)
                     else:
                         # Use BaseLLMClient instance directly
                         logger.debug(
@@ -192,16 +191,45 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
 
                     # Parse the response to get the selected node name
                     selected_node_name = response.output.strip()
+
+                    # Clean up JSON formatting if present
+                    if selected_node_name.startswith("```json"):
+                        selected_node_name = selected_node_name[7:]
+                    if selected_node_name.endswith("```"):
+                        selected_node_name = selected_node_name[:-3]
+                    selected_node_name = selected_node_name.strip()
+
+                    # Try to parse as JSON object first
+                    import json
+
+                    try:
+                        parsed_json = json.loads(selected_node_name)
+                        if isinstance(parsed_json, dict) and "intent" in parsed_json:
+                            selected_node_name = parsed_json["intent"]
+                        elif isinstance(parsed_json, str):
+                            selected_node_name = parsed_json
+                    except json.JSONDecodeError:
+                        # Not valid JSON, treat as plain string
+                        pass
+
+                    # Remove quotes if present
+                    if selected_node_name.startswith(
+                        '"'
+                    ) and selected_node_name.endswith('"'):
+                        selected_node_name = selected_node_name[1:-1]
+                    elif selected_node_name.startswith(
+                        "'"
+                    ) and selected_node_name.endswith("'"):
+                        selected_node_name = selected_node_name[1:-1]
+
                     logger.debug(f"LLM raw output: {response}")
-                    logger.debug(
-                        f"LLM classifier selected node: {selected_node_name}")
+                    logger.debug(f"LLM classifier selected node: {selected_node_name}")
                     logger.debug(f"LLM classifier children: {children}")
 
                     # Find the child node with the matching name
                     chosen_child = None
                     for child in children:
-                        logger.debug(
-                            f"LLM classifier child in for loop: {child.name}")
+                        logger.debug(f"LLM classifier child in for loop: {child.name}")
                         if child.name == selected_node_name:
                             logger.debug(
                                 f"LLM classifier child in for loop found: {child.name}"
@@ -232,11 +260,35 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
                         intent_context = None
                         if context is not None:
                             from intent_kit.context import IntentContext
+
                             intent_context = IntentContext()
                             for key, value in context.items():
                                 intent_context.set(key, value)
-                        result = chosen_child.execute(
-                            user_input, intent_context)
+                        result = chosen_child.execute(user_input, intent_context)
+
+                        # Add LLM cost to the result
+                        if hasattr(result, "cost") and result.cost is not None:
+                            result.cost += response.cost
+                        else:
+                            result.cost = response.cost
+
+                        # Add LLM token information
+                        if (
+                            hasattr(result, "input_tokens")
+                            and result.input_tokens is not None
+                        ):
+                            result.input_tokens += response.input_tokens
+                        else:
+                            result.input_tokens = response.input_tokens
+
+                        if (
+                            hasattr(result, "output_tokens")
+                            and result.output_tokens is not None
+                        ):
+                            result.output_tokens += response.output_tokens
+                        else:
+                            result.output_tokens = response.output_tokens
+
                         return result
                     else:
                         return ExecutionResult(
@@ -282,7 +334,8 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
             if classifier_name:
                 if classifier_name not in function_registry:
                     raise ValueError(
-                        f"Classifier function '{classifier_name}' not found for node '{node_id}'")
+                        f"Classifier function '{classifier_name}' not found for node '{node_id}'"
+                    )
                 classifier_func = function_registry[classifier_name]
             else:
                 # Use default classifier
@@ -293,9 +346,7 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
         builder.classifier_func = classifier_func
 
         # Optionals: allow set/list in JSON
-        for k, m in [
-            ("remediation_strategies", builder.with_remediation_strategies)
-        ]:
+        for k, m in [("remediation_strategies", builder.with_remediation_strategies)]:
             v = node_spec.get(k)
             if v:
                 m(v)
@@ -328,7 +379,8 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
             ValueError: If required fields are missing
         """
         self._validate_required_field(
-            "classifier function", self.classifier_func, "with_classifier")
+            "classifier function", self.classifier_func, "with_classifier"
+        )
 
         # Type assertion after validation
         assert self.classifier_func is not None

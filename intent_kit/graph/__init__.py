@@ -6,7 +6,9 @@ handling multi-intent user inputs and routing them to appropriate taxonomies.
 """
 
 from .intent_graph import IntentGraph
+from .builder import IntentGraphBuilder
 
 __all__ = [
     "IntentGraph",
+    "IntentGraphBuilder",
 ]
