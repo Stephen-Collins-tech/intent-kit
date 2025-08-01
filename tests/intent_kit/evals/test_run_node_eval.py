@@ -42,7 +42,7 @@ class TestRunNodeEval:
         """Test successful node loading from module."""
         mock_node = MagicMock()
         mock_module = MagicMock()
-        mock_module.test_node = mock_node
+        mock_module.test_node = MagicMock(return_value=mock_node)
 
         with patch("importlib.import_module", return_value=mock_module):
             result = get_node_from_module("test.module", "test_node")

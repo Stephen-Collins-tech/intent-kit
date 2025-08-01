@@ -36,7 +36,12 @@ def get_node_from_module(module_name: str, node_name: str):
     """Get a node instance from a module."""
     try:
         module = importlib.import_module(module_name)
-        return getattr(module, node_name)
+        node_func = getattr(module, node_name)
+        # Call the function to get the node instance
+        if callable(node_func):
+            return node_func()
+        else:
+            return node_func
     except (ImportError, AttributeError) as e:
         print(f"Error loading node {node_name} from {module_name}: {e}")
         return None
