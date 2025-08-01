@@ -527,7 +527,7 @@ class TestRetryWithAlternatePromptStrategy:
         mock_llm.generate.return_value = '{"corrected_params": {"x": 5, "y": "positive"}, "explanation": "Mixed types"}'
         mock_llm_factory.create_client.return_value = mock_llm
 
-        llm_config = {"model": "test_model"}
+        llm_config = {"provider": "mock", "model": "test_model"}
         strategy = RetryWithAlternatePromptStrategy(llm_config)
         handler_func = Mock(return_value="success")
         validated_params = {"x": -5, "y": "negative"}
@@ -974,9 +974,10 @@ class TestRemediationEdgeCases:
 
         assert result is None
 
-    def test_alternate_prompt_strategy_with_empty_prompts(self):
+    @patch("intent_kit.services.ai.llm_factory.LLMFactory")
+    def test_alternate_prompt_strategy_with_empty_prompts(self, mock_llm_factory):
         """Test alternate prompt strategy with empty prompts."""
-        llm_config = {"model": "test_model"}
+        llm_config = {"provider": "mock", "model": "test_model"}
         strategy = RetryWithAlternatePromptStrategy(llm_config, [])
         handler_func = Mock(return_value="success")
         validated_params = {"x": 5}

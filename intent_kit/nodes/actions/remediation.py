@@ -770,26 +770,17 @@ class ClassifierFallbackStrategy(RemediationStrategy):
                 f"[DEBUG] ClassifierFallbackStrategy: Fallback result: {result}"
             )
 
-            # Find the best matching child
+            # Find the child that matches the fallback classifier result
             best_child = None
-            best_score = -1
+            best_score = 0
 
             for child in available_children:
-                if hasattr(child, 'name') and hasattr(child, 'description'):
-                    # Simple keyword matching
-                    child_text = f"{child.name} {child.description}".lower()
-                    input_lower = user_input.lower()
-                    
-                    # Count matching words
-                    input_words = set(input_lower.split())
-                    child_words = set(child_text.split())
-                    matches = len(input_words.intersection(child_words))
-                    
-                    if matches > best_score:
-                        best_score = matches
-                        best_child = child
+                if hasattr(child, 'name') and child.name == result:
+                    best_child = child
+                    best_score = 1
+                    break
 
-            if best_child and best_score > 0:
+            if best_child:
                 print(
                     f"[DEBUG] ClassifierFallbackStrategy: Selected child '{best_child.name}' with score {best_score}"
                 )
@@ -869,10 +860,33 @@ class KeywordFallbackStrategy(RemediationStrategy):
                     child_text = f"{child.name} {child.description}".lower()
                     input_lower = user_input.lower()
                     
-                    # Count matching words
+                    # Count exact word matches
                     input_words = set(input_lower.split())
                     child_words = set(child_text.split())
                     matches = len(input_words.intersection(child_words))
+                    
+                    # Check if any input word is contained in the child name or vice versa
+                    for input_word in input_words:
+                        if len(input_word) > 3:
+                            # Check if input word is in child name
+                            if input_word in child.name.lower():
+                                matches += 2
+                            # Check if child name is in input word
+                            elif child.name.lower() in input_word:
+                                matches += 2
+                            # Check for common prefixes (e.g., "calculate" and "calculator")
+                            elif input_word.startswith(child.name.lower()[:6]) or child.name.lower().startswith(input_word[:6]):
+                                matches += 1
+                    
+                    # Check if any input word is contained in the child description
+                    for input_word in input_words:
+                        if len(input_word) > 3 and input_word in child.description.lower():
+                            matches += 1
+                    
+                    # Check if any child word is contained in the input
+                    for child_word in child_words:
+                        if len(child_word) > 3 and child_word in input_lower:
+                            matches += 1
                     
                     # Bonus for exact name matches
                     if child.name.lower() in input_lower:
