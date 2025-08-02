@@ -20,6 +20,7 @@ import re
 from dotenv import load_dotenv
 from intent_kit.context import IntentContext
 from intent_kit.services.yaml_service import yaml_service
+from intent_kit.services.loader_service import dataset_loader, module_loader
 
 load_dotenv()
 
@@ -28,23 +29,12 @@ _first_test_case: dict = {}
 
 def load_dataset(dataset_path: Path) -> Dict[str, Any]:
     """Load a dataset from YAML file."""
-    with open(dataset_path, "r") as f:
-        return yaml_service.safe_load(f)
+    return dataset_loader.load(dataset_path)
 
 
 def get_node_from_module(module_name: str, node_name: str):
     """Get a node instance from a module."""
-    try:
-        module = importlib.import_module(module_name)
-        node_func = getattr(module, node_name)
-        # Call the function to get the node instance
-        if callable(node_func):
-            return node_func()
-        else:
-            return node_func
-    except (ImportError, AttributeError) as e:
-        print(f"Error loading node {node_name} from {module_name}: {e}")
-        return None
+    return module_loader.load(module_name, node_name)
 
 
 def save_raw_results_to_csv(

@@ -5,6 +5,7 @@ from intent_kit.context.dependencies import (
     analyze_action_dependencies,
     create_dependency_graph,
     detect_circular_dependencies,
+    ContextDependencies,
 )
 from intent_kit.context import IntentContext
 
@@ -97,3 +98,107 @@ def test_detect_circular_dependencies_cycle():
     cycle = detect_circular_dependencies(graph)
     assert cycle is not None
     assert set(cycle) == {"A", "B", "C"}
+
+
+# Tests for ContextAwareAction protocol methods
+class MockContextAwareAction:
+    """Mock implementation of ContextAwareAction protocol for testing."""
+
+    def __init__(self, inputs=None, outputs=None, description=""):
+        self._deps = ContextDependencies(
+            inputs=inputs or set(), outputs=outputs or set(), description=description
+        )
+
+    @property
+    def context_dependencies(self) -> ContextDependencies:
+        """Return the context dependencies for this action."""
+        return self._deps
+
+    def __call__(self, context: IntentContext, **kwargs):
+        """Execute the action with context access."""
+        # Mock implementation that reads from context and writes back
+        result = {}
+        for key in self._deps.inputs:
+            if context.has(key):
+                result[key] = context.get(key)
+
+        # Write outputs to context
+        for key in self._deps.outputs:
+            context.set(key, f"processed_{key}", modified_by="mock_action")
+
+        return result
+
+
+def test_context_aware_action_context_dependencies():
+    """Test the context_dependencies property of ContextAwareAction."""
+    action = MockContextAwareAction(
+        inputs={"user_id", "preferences"}, outputs={"result"}, description="Test action"
+    )
+
+    deps = action.context_dependencies
+    assert isinstance(deps, ContextDependencies)
+    assert deps.inputs == {"user_id", "preferences"}
+    assert deps.outputs == {"result"}
+    assert deps.description == "Test action"
+
+
+def test_context_aware_action_call():
+    """Test the __call__ method of ContextAwareAction."""
+    action = MockContextAwareAction(
+        inputs={"user_id", "name"}, outputs={"processed_result"}
+    )
+
+    context = IntentContext()
+    context.set("user_id", "123", modified_by="test")
+    context.set("name", "John", modified_by="test")
+
+    result = action(context, extra_param="value")
+
+    # Check that inputs were read
+    assert result["user_id"] == "123"
+    assert result["name"] == "John"
+
+    # Check that outputs were written to context
+    assert context.get("processed_result") == "processed_processed_result"
+
+
+def test_context_aware_action_call_with_missing_inputs():
+    """Test ContextAwareAction.__call__ with missing context inputs."""
+    action = MockContextAwareAction(
+        inputs={"user_id", "missing_field"}, outputs={"result"}
+    )
+
+    context = IntentContext()
+    context.set("user_id", "123", modified_by="test")
+
+    result = action(context)
+
+    # Should still work, just with None for missing field
+    assert result["user_id"] == "123"
+    assert "missing_field" not in result or result["missing_field"] is None
+
+
+def test_context_aware_action_call_empty_dependencies():
+    """Test ContextAwareAction.__call__ with empty dependencies."""
+    action = MockContextAwareAction()
+
+    context = IntentContext()
+    result = action(context)
+
+    assert result == {}
+    # No outputs should be written
+    assert len(context.keys()) == 0
+
+
+def test_context_aware_action_protocol_compliance():
+    """Test that MockContextAwareAction properly implements the protocol."""
+    action = MockContextAwareAction()
+
+    # Should have the required property
+    assert hasattr(action, "context_dependencies")
+    assert isinstance(action.context_dependencies, ContextDependencies)
+
+    # Should be callable with context
+    context = IntentContext()
+    result = action(context)
+    assert isinstance(result, dict)

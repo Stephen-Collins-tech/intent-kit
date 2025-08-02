@@ -1,30 +1,33 @@
 component_management:
   individual_components:
     - component_id: core_engine
-      name: Core Engine
+      name: Core Engine (Framework & Intent Graph)
       paths:
         - intent_kit/graph/**
         - intent_kit/nodes/**
-    - component_id: llm_services
-      name: LLM Services
+    - component_id: node_library
+      name: Node Library (Batteries Included)
       paths:
-        - intent_kit/services/**
+        - intent_kit/node_library/**
+    - component_id: llm_services
+      name: LLM Services & Model Clients
+      paths:
+        - intent_kit/services/ai/**
+        - intent_kit/services/yaml_service.py
     - component_id: eval_framework
       name: Evaluation Framework
       paths:
         - intent_kit/evals/**
+    - component_id: context_management
+      name: Context Management
+      paths:
+        - intent_kit/context/**
     - component_id: utils
       name: Utilities & Shared Logic
       paths:
         - intent_kit/utils/**
         - intent_kit/types.py
-    - component_id: remediation
-      name: Remediation & Error Handling
+    - component_id: error_handling
+      name: Error Handling
       paths:
-        - intent_kit/node/actions/remediation.py
-        - intent_kit/node/actions/clarifier.py
         - intent_kit/exceptions/**
-    - component_id: testing
-      name: Testing
-      paths:
-        - tests/**
