@@ -6,7 +6,6 @@ Strategies can be registered by string ID or as custom callable functions.
 """
 
 import time
-import json
 from typing import Any, Callable, Dict, List, Optional
 from ..types import ExecutionResult, ExecutionError
 from ..enums import NodeType
@@ -15,13 +14,43 @@ from intent_kit.utils.logger import Logger
 from intent_kit.utils.text_utils import extract_json_from_text
 
 
-class RemediationStrategy:
-    """Base class for remediation strategies."""
+class Strategy:
+    """Base class for all strategies."""
 
     def __init__(self, name: str, description: str = ""):
         self.name = name
         self.description = description
         self.logger = Logger(name)
+
+    def execute(
+        self,
+        node_name: str,
+        user_input: str,
+        context: Optional[IntentContext] = None,
+        original_error: Optional[ExecutionError] = None,
+        **kwargs,
+    ) -> Optional[ExecutionResult]:
+        """
+        Execute the strategy.
+
+        Args:
+            node_name: Name of the node that failed
+            user_input: Original user input
+            context: Optional context object
+            original_error: The original error that triggered remediation
+            **kwargs: Additional strategy-specific parameters
+
+        Returns:
+            ExecutionResult if strategy succeeded, None if it failed
+        """
+        raise NotImplementedError("Subclasses must implement execute()")
+
+
+class RemediationStrategy(Strategy):
+    """Base class for remediation strategies."""
+
+    def __init__(self, name: str, description: str = ""):
+        super().__init__(name, description)
 
     def execute(
         self,
@@ -104,26 +133,21 @@ class RetryOnFailStrategy(RemediationStrategy):
                     node_type=NodeType.ACTION,
                     input=user_input,
                     output=output,
-                    error=None,
                     params=validated_params,
-                    children_results=[],
                 )
 
             except Exception as e:
                 print(
-                    f"[DEBUG] RetryOnFailStrategy: Attempt {attempt} failed for {node_name}: {type(e).__name__}: {str(e)}"
+                    f"[DEBUG] RetryOnFailStrategy: Attempt {attempt} failed for {node_name}: {e}"
                 )
                 self.logger.warning(
-                    f"RetryOnFailStrategy: Attempt {attempt} failed for {node_name}: {type(e).__name__}: {str(e)}"
+                    f"RetryOnFailStrategy: Attempt {attempt} failed for {node_name}: {e}"
                 )
 
                 if attempt < self.max_attempts:
-                    delay = self.base_delay * (
-                        2 ** (attempt - 1)
-                    )  # Exponential backoff
-                    print(f"[DEBUG] RetryOnFailStrategy: Waiting {delay}s before retry")
-                    self.logger.info(
-                        f"RetryOnFailStrategy: Waiting {delay}s before retry"
+                    delay = max(0, self.base_delay * (2 ** (attempt - 1)))
+                    print(
+                        f"[DEBUG] RetryOnFailStrategy: Waiting {delay}s before retry for {node_name}"
                     )
                     time.sleep(delay)
 
@@ -137,10 +161,13 @@ class RetryOnFailStrategy(RemediationStrategy):
 
 
 class FallbackToAnotherNodeStrategy(RemediationStrategy):
-    """Fallback to a specified alternative handler."""
+    """Fallback to another node when the primary node fails."""
 
     def __init__(self, fallback_handler: Callable, fallback_name: str = "fallback"):
-        super().__init__("fallback_to_another_node", f"Fallback to {fallback_name}")
+        super().__init__(
+            "fallback_to_another_node",
+            f"Fallback to {fallback_name} when primary node fails",
+        )
         self.fallback_handler = fallback_handler
         self.fallback_name = fallback_name
 
@@ -153,60 +180,58 @@ class FallbackToAnotherNodeStrategy(RemediationStrategy):
         validated_params: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Optional[ExecutionResult]:
-        print(
-            f"[DEBUG] Entered FallbackToAnotherNodeStrategy for node: {node_name}, fallback: {self.fallback_name}"
-        )
+        print(f"[DEBUG] Entered FallbackToAnotherNodeStrategy for node: {node_name}")
+        if not validated_params:
+            validated_params = {}
+
         try:
+            print(
+                f"[DEBUG] FallbackToAnotherNodeStrategy: Executing fallback {self.fallback_name}"
+            )
             self.logger.info(
-                f"FallbackToAnotherNodeStrategy: Executing {self.fallback_name} for {node_name}"
+                f"FallbackToAnotherNodeStrategy: Executing fallback {self.fallback_name}"
             )
 
-            # Use the same parameters if possible, otherwise use minimal params
-            if validated_params is not None:
-                if context is not None:
-                    output = self.fallback_handler(**validated_params, context=context)
-                else:
-                    output = self.fallback_handler(**validated_params)
+            # Add context if available
+            if context is not None:
+                output = self.fallback_handler(**validated_params, context=context)
             else:
-                # Minimal fallback with just the input
-                if context is not None:
-                    output = self.fallback_handler(
-                        user_input=user_input, context=context
-                    )
-                else:
-                    output = self.fallback_handler(user_input=user_input)
+                output = self.fallback_handler(**validated_params)
 
             print(
-                f"[DEBUG] FallbackToAnotherNodeStrategy: Fallback handler {self.fallback_name} executed for node: {node_name}"
+                f"[DEBUG] FallbackToAnotherNodeStrategy: Success with fallback {self.fallback_name}"
             )
+            self.logger.info(
+                f"FallbackToAnotherNodeStrategy: Success with fallback {self.fallback_name}"
+            )
+
             return ExecutionResult(
                 success=True,
-                node_name=self.fallback_name,
-                node_path=[self.fallback_name],
-                node_type=NodeType.ACTION,  # Default to action type
+                node_name=node_name,
+                node_path=[node_name],
+                node_type=NodeType.ACTION,
                 input=user_input,
                 output=output,
-                error=None,
-                params=validated_params or {},
-                children_results=[],
+                params=validated_params,
             )
 
         except Exception as e:
             print(
-                f"[DEBUG] FallbackToAnotherNodeStrategy: Fallback {self.fallback_name} failed for {node_name}: {type(e).__name__}: {str(e)}"
+                f"[DEBUG] FallbackToAnotherNodeStrategy: Fallback {self.fallback_name} failed: {e}"
             )
             self.logger.error(
-                f"FallbackToAnotherNodeStrategy: Fallback {self.fallback_name} failed for {node_name}: {type(e).__name__}: {str(e)}"
+                f"FallbackToAnotherNodeStrategy: Fallback {self.fallback_name} failed: {e}"
             )
             return None
 
 
 class SelfReflectStrategy(RemediationStrategy):
-    """LLM critiques its own output and retries with improved approach."""
+    """Use LLM to reflect on the error and generate a corrected response."""
 
     def __init__(self, llm_config: Dict[str, Any], max_reflections: int = 2):
         super().__init__(
-            "self_reflect", f"LLM self-reflection with up to {max_reflections} attempts"
+            "self_reflect",
+            f"Use LLM to reflect on errors up to {max_reflections} times",
         )
         self.llm_config = llm_config
         self.max_reflections = max_reflections
@@ -221,7 +246,7 @@ class SelfReflectStrategy(RemediationStrategy):
         validated_params: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Optional[ExecutionResult]:
-        """Use LLM to critique and improve the approach."""
+        print(f"[DEBUG] Entered SelfReflectStrategy for node: {node_name}")
         if not handler_func or validated_params is None:
             self.logger.warning(
                 f"SelfReflectStrategy: Missing handler_func or validated_params for {node_name}"
@@ -230,99 +255,91 @@ class SelfReflectStrategy(RemediationStrategy):
 
         from intent_kit.services.ai.llm_factory import LLMFactory
 
-        llm_client = LLMFactory.create_client(self.llm_config)
+        llm = LLMFactory.create_client(self.llm_config)
 
         for reflection in range(self.max_reflections):
             try:
+                print(
+                    f"[DEBUG] SelfReflectStrategy: Reflection {reflection + 1}/{self.max_reflections} for {node_name}"
+                )
                 self.logger.info(
                     f"SelfReflectStrategy: Reflection {reflection + 1}/{self.max_reflections} for {node_name}"
                 )
 
                 # Create reflection prompt
+                error_msg = str(original_error) if original_error else "Unknown error"
                 reflection_prompt = f"""
-The handler '{node_name}' failed with error: {original_error.message if original_error else 'Unknown error'}
+                The following error occurred while processing user input: "{user_input}"
 
-User input: {user_input}
-Parameters: {validated_params}
+                Error: {error_msg}
 
-Please analyze the failure and suggest improvements:
-1. What went wrong?
-2. How can we fix it?
-3. What should we try differently?
+                Please analyze the error and provide a corrected response. The response should be in JSON format with the following structure:
+                {{
+                    "corrected_params": {{
+                        // corrected parameters here
+                    }},
+                    "explanation": "Brief explanation of what was wrong and how it was fixed"
+                }}
 
-Provide your analysis in JSON format:
-{{
-    "analysis": "What went wrong",
-    "suggestions": ["suggestion1", "suggestion2"],
-    "modified_params": {{"param": "new_value"}},
-    "confidence": 0.8
-}}
-"""
+                Original parameters were: {validated_params}
+                """
 
-                # Get LLM reflection
-                reflection_response = llm_client.generate(reflection_prompt)
+                # Get LLM response
+                response = llm.generate(reflection_prompt)
+                print(f"[DEBUG] SelfReflectStrategy: LLM response: {response}")
 
-                try:
-                    reflection_data = (
-                        extract_json_from_text(reflection_response.output) or {}
+                # Extract JSON from response
+                json_data = extract_json_from_text(response)
+                if not json_data:
+                    print(
+                        "[DEBUG] SelfReflectStrategy: Failed to extract JSON from response"
                     )
-                    self.logger.info(
-                        f"SelfReflectStrategy: LLM reflection for {node_name}: {reflection_data.get('analysis', 'No analysis')}"
-                    )
+                    continue
 
-                    # Try with modified parameters if suggested
-                    modified_params = reflection_data.get(
-                        "modified_params", validated_params
-                    )
+                corrected_params = json_data.get("corrected_params", {})
+                explanation = json_data.get("explanation", "No explanation provided")
 
-                    if context is not None:
-                        output = handler_func(**modified_params, context=context)
-                    else:
-                        output = handler_func(**modified_params)
-
-                    self.logger.info(
-                        f"SelfReflectStrategy: Success after reflection {reflection + 1} for {node_name}"
-                    )
-
-                    return ExecutionResult(
-                        success=True,
-                        node_name=node_name,
-                        node_path=[node_name],
-                        node_type=NodeType.ACTION,
-                        input=user_input,
-                        output=output,
-                        error=None,
-                        params=modified_params,
-                        children_results=[],
-                    )
-
-                except json.JSONDecodeError:
-                    self.logger.warning(
-                        f"SelfReflectStrategy: Invalid JSON response from LLM for {node_name}"
-                    )
-                    # Try with original parameters as fallback
-                    if context is not None:
-                        output = handler_func(**validated_params, context=context)
-                    else:
-                        output = handler_func(**validated_params)
-
-                    return ExecutionResult(
-                        success=True,
-                        node_name=node_name,
-                        node_path=[node_name],
-                        node_type=NodeType.ACTION,
-                        input=user_input,
-                        output=output,
-                        error=None,
-                        params=validated_params,
-                        children_results=[],
-                    )
-
-            except Exception as e:
-                self.logger.warning(
-                    f"SelfReflectStrategy: Reflection {reflection + 1} failed for {node_name}: {type(e).__name__}: {str(e)}"
+                print(
+                    f"[DEBUG] SelfReflectStrategy: Corrected params: {corrected_params}"
+                )
+                self.logger.info(
+                    f"SelfReflectStrategy: Corrected params: {corrected_params}, Explanation: {explanation}"
                 )
 
+                # Try with corrected parameters
+                if context is not None:
+                    output = handler_func(**corrected_params, context=context)
+                else:
+                    output = handler_func(**corrected_params)
+
+                print(
+                    f"[DEBUG] SelfReflectStrategy: Success on reflection {reflection + 1} for {node_name}"
+                )
+                self.logger.info(
+                    f"SelfReflectStrategy: Success on reflection {reflection + 1} for {node_name}"
+                )
+
+                return ExecutionResult(
+                    success=True,
+                    node_name=node_name,
+                    node_path=[node_name],
+                    node_type=NodeType.ACTION,
+                    input=user_input,
+                    output=output,
+                    params=corrected_params,
+                )
+
+            except Exception as e:
+                print(
+                    f"[DEBUG] SelfReflectStrategy: Reflection {reflection + 1} failed for {node_name}: {e}"
+                )
+                self.logger.warning(
+                    f"SelfReflectStrategy: Reflection {reflection + 1} failed for {node_name}: {e}"
+                )
+
+        print(
+            f"[DEBUG] SelfReflectStrategy: All {self.max_reflections} reflections failed for {node_name}"
+        )
         self.logger.error(
             f"SelfReflectStrategy: All {self.max_reflections} reflections failed for {node_name}"
         )
@@ -330,12 +347,12 @@ Provide your analysis in JSON format:
 
 
 class ConsensusVoteStrategy(RemediationStrategy):
-    """Ensemble voting among multiple LLM approaches."""
+    """Use multiple LLMs to vote on the best response."""
 
     def __init__(self, llm_configs: List[Dict[str, Any]], vote_threshold: float = 0.6):
         super().__init__(
             "consensus_vote",
-            f"Ensemble voting with {len(llm_configs)} models, threshold {vote_threshold}",
+            f"Use {len(llm_configs)} LLMs to vote on response (threshold: {vote_threshold})",
         )
         self.llm_configs = llm_configs
         self.vote_threshold = vote_threshold
@@ -350,7 +367,7 @@ class ConsensusVoteStrategy(RemediationStrategy):
         validated_params: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Optional[ExecutionResult]:
-        """Use multiple LLMs to vote on the best approach."""
+        print(f"[DEBUG] Entered ConsensusVoteStrategy for node: {node_name}")
         if not handler_func or validated_params is None:
             self.logger.warning(
                 f"ConsensusVoteStrategy: Missing handler_func or validated_params for {node_name}"
@@ -359,178 +376,140 @@ class ConsensusVoteStrategy(RemediationStrategy):
 
         from intent_kit.services.ai.llm_factory import LLMFactory
 
+        llms = [LLMFactory.create_client(config) for config in self.llm_configs]
+
         # Create voting prompt
+        error_msg = str(original_error) if original_error else "Unknown error"
         voting_prompt = f"""
-The handler '{node_name}' failed with error: {original_error.message if original_error else 'Unknown error'}
+        The following error occurred while processing user input: "{user_input}"
 
-User input: {user_input}
-Parameters: {validated_params}
+        Error: {error_msg}
 
-Please analyze this failure and suggest parameter modifications to fix it.
-Focus on modifying the input parameters, not the handler logic.
+        Please analyze the error and provide a corrected response. The response should be in JSON format with the following structure:
+        {{
+            "corrected_params": {{
+                // corrected parameters here
+            }},
+            "confidence": 0.85,
+            "explanation": "Brief explanation of what was wrong and how it was fixed"
+        }}
 
-For example, if the error is about negative numbers, suggest using absolute values or positive numbers.
+        Original parameters were: {validated_params}
 
-Provide your response in JSON format:
-{{
-    "approach": "description of the approach",
-    "confidence": 0.8,
-    "modified_params": {{"param": "new_value"}},
-    "reasoning": "why this approach should work"
-}}
-
-Common parameter modifications:
-- For negative numbers: use absolute value or max(0, value)
-- For missing values: use reasonable defaults
-- For type mismatches: convert to correct type
-"""
+        The confidence should be a float between 0.0 and 1.0 indicating how confident you are in this correction.
+        """
 
         votes = []
-        successful_votes = 0
-
-        for i, llm_config in enumerate(self.llm_configs):
+        for i, llm in enumerate(llms):
             try:
-                self.logger.info(
-                    f"ConsensusVoteStrategy: Getting vote {i + 1}/{len(self.llm_configs)} for {node_name}"
+                print(
+                    f"[DEBUG] ConsensusVoteStrategy: Getting vote from LLM {i + 1}/{len(llms)}"
+                )
+                response = llm.generate(voting_prompt)
+                print(
+                    f"[DEBUG] ConsensusVoteStrategy: LLM {i + 1} response: {response}"
                 )
 
-                llm_client = LLMFactory.create_client(llm_config)
-                vote_response = llm_client.generate(voting_prompt)
-
-                try:
-                    vote_data = extract_json_from_text(vote_response.output) or {}
-
-                    # Ensure modified_params is properly structured
-                    modified_params = vote_data.get("modified_params", {})
-                    if not isinstance(modified_params, dict):
-                        modified_params = {}
-
-                    # Merge with original validated_params to ensure all required params are present
-                    final_params = validated_params.copy()
-                    final_params.update(modified_params)
-
-                    # Convert string values to appropriate types based on original validated_params
-                    for key, original_value in validated_params.items():
-                        if key in final_params:
-                            new_value = final_params[key]
-                            if isinstance(original_value, int) and isinstance(
-                                new_value, str
-                            ):
-                                try:
-                                    # Try to convert string to int
-                                    final_params[key] = int(new_value)
-                                except (ValueError, TypeError):
-                                    # If conversion fails, try to evaluate simple expressions
-                                    if new_value == "abs(x)":
-                                        final_params[key] = abs(original_value)
-                                    elif new_value == "max(0, x)":
-                                        final_params[key] = max(0, original_value)
-                                    else:
-                                        # Keep original value if conversion fails
-                                        final_params[key] = original_value
-                            elif isinstance(original_value, float) and isinstance(
-                                new_value, str
-                            ):
-                                try:
-                                    final_params[key] = float(new_value)
-                                except (ValueError, TypeError):
-                                    final_params[key] = original_value
-
-                    # Apply automatic parameter modifications if LLM didn't suggest any
-                    if not modified_params:
-                        for key, original_value in validated_params.items():
-                            if (
-                                isinstance(original_value, (int, float))
-                                and original_value < 0
-                            ):
-                                # For negative numbers, use absolute value
-                                final_params[key] = abs(original_value)
-
-                    votes.append(
-                        {
-                            "model": f"model_{i}",
-                            "approach": vote_data.get("approach", "unknown"),
-                            "confidence": vote_data.get("confidence", 0.5),
-                            "modified_params": final_params,
-                            "reasoning": vote_data.get(
-                                "reasoning", "No reasoning provided"
-                            ),
-                        }
+                json_data = extract_json_from_text(response)
+                if not json_data:
+                    print(
+                        f"[DEBUG] ConsensusVoteStrategy: Failed to extract JSON from LLM {i + 1} response"
                     )
-                    successful_votes += 1
+                    continue
 
-                except json.JSONDecodeError:
-                    self.logger.warning(
-                        f"ConsensusVoteStrategy: Invalid JSON from model {i} for {node_name}"
-                    )
+                corrected_params = json_data.get("corrected_params", {})
+                confidence = json_data.get("confidence", 0.0)
+                explanation = json_data.get("explanation", "No explanation provided")
+
+                votes.append(
+                    {
+                        "params": corrected_params,
+                        "confidence": confidence,
+                        "explanation": explanation,
+                        "llm_index": i,
+                    }
+                )
+
+                print(
+                    f"[DEBUG] ConsensusVoteStrategy: LLM {i + 1} vote - confidence: {confidence}, explanation: {explanation}"
+                )
 
             except Exception as e:
-                self.logger.warning(
-                    f"ConsensusVoteStrategy: Model {i} failed for {node_name}: {type(e).__name__}: {str(e)}"
-                )
+                print(f"[DEBUG] ConsensusVoteStrategy: LLM {i + 1} failed: {e}")
+                self.logger.warning(f"ConsensusVoteStrategy: LLM {i + 1} failed: {e}")
 
         if not votes:
+            print(
+                f"[DEBUG] ConsensusVoteStrategy: No valid votes received for {node_name}"
+            )
             self.logger.error(
-                f"ConsensusVoteStrategy: No successful votes for {node_name}"
+                f"ConsensusVoteStrategy: No valid votes received for {node_name}"
             )
             return None
 
-        # Calculate consensus
-        total_confidence = sum(vote["confidence"] for vote in votes)
-        avg_confidence = total_confidence / len(votes)
+        # Find the best vote based on confidence
+        best_vote = max(votes, key=lambda v: v["confidence"])
+        best_confidence = best_vote["confidence"]
 
-        self.logger.info(
-            f"ConsensusVoteStrategy: {successful_votes}/{len(self.llm_configs)} models voted for {node_name}, avg confidence: {avg_confidence:.2f}"
+        print(
+            f"[DEBUG] ConsensusVoteStrategy: Best vote confidence: {best_confidence} (threshold: {self.vote_threshold})"
         )
 
-        if avg_confidence >= self.vote_threshold:
-            # Use the highest confidence vote
-            best_vote = max(votes, key=lambda v: v["confidence"])
+        if best_confidence < self.vote_threshold:
+            print(
+                f"[DEBUG] ConsensusVoteStrategy: Best confidence {best_confidence} below threshold {self.vote_threshold} for {node_name}"
+            )
+            self.logger.warning(
+                f"ConsensusVoteStrategy: Best confidence {best_confidence} below threshold {self.vote_threshold} for {node_name}"
+            )
+            return None
 
-            try:
-                self.logger.info(
-                    f"ConsensusVoteStrategy: Attempting execution with params: {best_vote['modified_params']}"
-                )
+        # Try with the best voted parameters
+        try:
+            corrected_params = best_vote["params"]
+            explanation = best_vote["explanation"]
 
-                if context is not None:
-                    output = handler_func(
-                        **best_vote["modified_params"], context=context
-                    )
-                else:
-                    output = handler_func(**best_vote["modified_params"])
+            print(
+                f"[DEBUG] ConsensusVoteStrategy: Trying with best voted params: {corrected_params}"
+            )
+            self.logger.info(
+                f"ConsensusVoteStrategy: Trying with best voted params: {corrected_params}, Explanation: {explanation}"
+            )
 
-                self.logger.info(
-                    f"ConsensusVoteStrategy: Success with consensus approach for {node_name}"
-                )
+            if context is not None:
+                output = handler_func(**corrected_params, context=context)
+            else:
+                output = handler_func(**corrected_params)
 
-                return ExecutionResult(
-                    success=True,
-                    node_name=node_name,
-                    node_path=[node_name],
-                    node_type=NodeType.ACTION,
-                    input=user_input,
-                    output=output,
-                    error=None,
-                    params=best_vote["modified_params"],
-                    children_results=[],
-                )
+            print(
+                f"[DEBUG] ConsensusVoteStrategy: Success with voted params for {node_name}"
+            )
+            self.logger.info(
+                f"ConsensusVoteStrategy: Success with voted params for {node_name}"
+            )
 
-            except Exception as e:
-                self.logger.error(
-                    f"ConsensusVoteStrategy: Execution failed despite consensus for {node_name}: {type(e).__name__}: {str(e)}"
-                )
-                self.logger.error(
-                    f"ConsensusVoteStrategy: Params that caused failure: {best_vote['modified_params']}"
-                )
+            return ExecutionResult(
+                success=True,
+                node_name=node_name,
+                node_path=[node_name],
+                node_type=NodeType.ACTION,
+                input=user_input,
+                output=output,
+                params=corrected_params,
+            )
 
-        self.logger.error(
-            f"ConsensusVoteStrategy: Insufficient confidence ({avg_confidence:.2f} < {self.vote_threshold}) for {node_name}"
-        )
-        return None
+        except Exception as e:
+            print(
+                f"[DEBUG] ConsensusVoteStrategy: Execution with voted params failed for {node_name}: {e}"
+            )
+            self.logger.error(
+                f"ConsensusVoteStrategy: Execution with voted params failed for {node_name}: {e}"
+            )
+            return None
 
 
 class RetryWithAlternatePromptStrategy(RemediationStrategy):
-    """Retry with modified prompt template."""
+    """Retry with alternate prompts when the original fails."""
 
     def __init__(
         self, llm_config: Dict[str, Any], alternate_prompts: Optional[List[str]] = None
@@ -540,15 +519,11 @@ class RetryWithAlternatePromptStrategy(RemediationStrategy):
             f"Retry with {len(alternate_prompts) if alternate_prompts else 'default'} alternate prompts",
         )
         self.llm_config = llm_config
-        if alternate_prompts is not None and isinstance(alternate_prompts, list):
-            self.alternate_prompts = alternate_prompts
-        else:
-            self.alternate_prompts = [
-                "Try with absolute value: {user_input}",
-                "Try with positive number: {user_input}",
-                "Try with default value: {user_input}",
-                "Try with zero: {user_input}",
-            ]
+        self.alternate_prompts = alternate_prompts or [
+            "Please try a different approach to solve this problem.",
+            "Consider alternative methods to achieve the same goal.",
+            "Think about this problem from a different perspective.",
+        ]
 
     def execute(
         self,
@@ -560,56 +535,82 @@ class RetryWithAlternatePromptStrategy(RemediationStrategy):
         validated_params: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Optional[ExecutionResult]:
-        """Try different parameter modifications."""
+        print(f"[DEBUG] Entered RetryWithAlternatePromptStrategy for node: {node_name}")
         if not handler_func or validated_params is None:
             self.logger.warning(
                 f"RetryWithAlternatePromptStrategy: Missing handler_func or validated_params for {node_name}"
             )
             return None
 
-        # Try different parameter modification strategies
-        modification_strategies = [
-            # Strategy 1: Try with absolute values for numeric parameters
-            lambda params: {
-                k: abs(v) if isinstance(v, (int, float)) else v
-                for k, v in params.items()
-            },
-            # Strategy 2: Try with positive values for numeric parameters
-            lambda params: {
-                k: max(0, v) if isinstance(v, (int, float)) else v
-                for k, v in params.items()
-            },
-            # Strategy 3: Try with default values (1 for numbers, empty string for strings)
-            lambda params: {
-                k: (
-                    (1 if isinstance(v, (int, float)) else "")
-                    if v is None or (isinstance(v, (int, float)) and v < 0)
-                    else v
-                )
-                for k, v in params.items()
-            },
-            # Strategy 4: Try with zero for numeric parameters
-            lambda params: {
-                k: 0 if isinstance(v, (int, float)) else v for k, v in params.items()
-            },
-        ]
+        from intent_kit.services.ai.llm_factory import LLMFactory
 
-        for i, strategy in enumerate(modification_strategies):
+        llm = LLMFactory.create_client(self.llm_config)
+
+        error_msg = str(original_error) if original_error else "Unknown error"
+
+        for i, alternate_prompt in enumerate(self.alternate_prompts):
             try:
+                print(
+                    f"[DEBUG] RetryWithAlternatePromptStrategy: Trying alternate prompt {i + 1}/{len(self.alternate_prompts)} for {node_name}"
+                )
                 self.logger.info(
-                    f"RetryWithAlternatePromptStrategy: Trying modification strategy {i + 1}/{len(modification_strategies)} for {node_name}"
+                    f"RetryWithAlternatePromptStrategy: Trying alternate prompt {i + 1}/{len(self.alternate_prompts)} for {node_name}"
                 )
 
-                # Apply the modification strategy
-                modified_params = strategy(validated_params)
+                # Create prompt with alternate approach
+                full_prompt = f"""
+                The following error occurred while processing user input: "{user_input}"
 
-                if context is not None:
-                    output = handler_func(**modified_params, context=context)
-                else:
-                    output = handler_func(**modified_params)
+                Error: {error_msg}
 
+                {alternate_prompt}
+
+                Please provide a corrected response in JSON format with the following structure:
+                {{
+                    "corrected_params": {{
+                        // corrected parameters here
+                    }},
+                    "explanation": "Brief explanation of the alternate approach used"
+                }}
+
+                Original parameters were: {validated_params}
+                """
+
+                # Get LLM response
+                response = llm.generate(full_prompt)
+                print(
+                    f"[DEBUG] RetryWithAlternatePromptStrategy: LLM response: {response}"
+                )
+
+                # Extract JSON from response
+                json_data = extract_json_from_text(response)
+                if not json_data:
+                    print(
+                        f"[DEBUG] RetryWithAlternatePromptStrategy: Failed to extract JSON from response for prompt {i + 1}"
+                    )
+                    continue
+
+                corrected_params = json_data.get("corrected_params", {})
+                explanation = json_data.get("explanation", "No explanation provided")
+
+                print(
+                    f"[DEBUG] RetryWithAlternatePromptStrategy: Corrected params: {corrected_params}"
+                )
                 self.logger.info(
-                    f"RetryWithAlternatePromptStrategy: Success with strategy {i + 1} for {node_name}"
+                    f"RetryWithAlternatePromptStrategy: Corrected params: {corrected_params}, Explanation: {explanation}"
+                )
+
+                # Try with corrected parameters
+                if context is not None:
+                    output = handler_func(**corrected_params, context=context)
+                else:
+                    output = handler_func(**corrected_params)
+
+                print(
+                    f"[DEBUG] RetryWithAlternatePromptStrategy: Success with alternate prompt {i + 1} for {node_name}"
+                )
+                self.logger.info(
+                    f"RetryWithAlternatePromptStrategy: Success with alternate prompt {i + 1} for {node_name}"
                 )
 
                 return ExecutionResult(
@@ -619,18 +620,22 @@ class RetryWithAlternatePromptStrategy(RemediationStrategy):
                     node_type=NodeType.ACTION,
                     input=user_input,
                     output=output,
-                    error=None,
-                    params=modified_params,
-                    children_results=[],
+                    params=corrected_params,
                 )
 
             except Exception as e:
+                print(
+                    f"[DEBUG] RetryWithAlternatePromptStrategy: Alternate prompt {i + 1} failed for {node_name}: {e}"
+                )
                 self.logger.warning(
-                    f"RetryWithAlternatePromptStrategy: Strategy {i + 1} failed for {node_name}: {type(e).__name__}: {str(e)}"
+                    f"RetryWithAlternatePromptStrategy: Alternate prompt {i + 1} failed for {node_name}: {e}"
                 )
 
+        print(
+            f"[DEBUG] RetryWithAlternatePromptStrategy: All {len(self.alternate_prompts)} alternate prompts failed for {node_name}"
+        )
         self.logger.error(
-            f"RetryWithAlternatePromptStrategy: All {len(modification_strategies)} strategies failed for {node_name}"
+            f"RetryWithAlternatePromptStrategy: All {len(self.alternate_prompts)} alternate prompts failed for {node_name}"
         )
         return None
 
@@ -644,8 +649,15 @@ class RemediationRegistry:
 
     def _register_builtin_strategies(self):
         """Register built-in remediation strategies."""
-        # These will be registered when strategies are created
-        pass
+        self.register("retry_on_fail", RetryOnFailStrategy())
+        self.register(
+            "fallback_to_another_node", FallbackToAnotherNodeStrategy(lambda: None)
+        )
+        self.register("self_reflect", SelfReflectStrategy({}))
+        self.register("consensus_vote", ConsensusVoteStrategy([{}]))
+        self.register(
+            "retry_with_alternate_prompt", RetryWithAlternatePromptStrategy({})
+        )
 
     def register(self, strategy_id: str, strategy: RemediationStrategy):
         """Register a remediation strategy."""
@@ -661,90 +673,70 @@ class RemediationRegistry:
 
 
 # Global registry instance
-_remediation_registry = RemediationRegistry()
+_registry = RemediationRegistry()
 
 
 def register_remediation_strategy(strategy_id: str, strategy: RemediationStrategy):
-    """Register a remediation strategy in the global registry."""
-    _remediation_registry.register(strategy_id, strategy)
+    """Register a remediation strategy globally."""
+    _registry.register(strategy_id, strategy)
 
 
 def get_remediation_strategy(strategy_id: str) -> Optional[RemediationStrategy]:
-    """Get a remediation strategy from the global registry."""
-    return _remediation_registry.get(strategy_id)
+    """Get a remediation strategy by ID from the global registry."""
+    return _registry.get(strategy_id)
 
 
 def list_remediation_strategies() -> List[str]:
-    """List all registered remediation strategies."""
-    return _remediation_registry.list_strategies()
+    """List all registered remediation strategy IDs."""
+    return _registry.list_strategies()
 
 
+# Factory functions for creating strategies
 def create_retry_strategy(
     max_attempts: int = 3, base_delay: float = 1.0
 ) -> RemediationStrategy:
-    """Create a retry strategy with specified parameters."""
-    strategy = RetryOnFailStrategy(max_attempts=max_attempts, base_delay=base_delay)
-    register_remediation_strategy("retry_on_fail", strategy)
-    return strategy
+    """Create a retry strategy."""
+    return RetryOnFailStrategy(max_attempts=max_attempts, base_delay=base_delay)
 
 
 def create_fallback_strategy(
     fallback_handler: Callable, fallback_name: str = "fallback"
 ) -> RemediationStrategy:
-    """Create a fallback strategy with specified handler."""
-    strategy = FallbackToAnotherNodeStrategy(fallback_handler, fallback_name)
-    register_remediation_strategy("fallback_to_another_node", strategy)
-    return strategy
+    """Create a fallback strategy."""
+    return FallbackToAnotherNodeStrategy(fallback_handler, fallback_name)
 
 
 def create_self_reflect_strategy(
     llm_config: Dict[str, Any], max_reflections: int = 2
 ) -> RemediationStrategy:
-    """Create a self-reflection strategy with specified LLM config."""
-    strategy = SelfReflectStrategy(llm_config, max_reflections)
-    register_remediation_strategy("self_reflect", strategy)
-    return strategy
+    """Create a self-reflect strategy."""
+    return SelfReflectStrategy(llm_config, max_reflections)
 
 
 def create_consensus_vote_strategy(
     llm_configs: List[Dict[str, Any]], vote_threshold: float = 0.6
 ) -> RemediationStrategy:
-    """Create a consensus voting strategy with multiple LLM configs."""
-    strategy = ConsensusVoteStrategy(llm_configs, vote_threshold)
-    register_remediation_strategy("consensus_vote", strategy)
-    return strategy
+    """Create a consensus vote strategy."""
+    return ConsensusVoteStrategy(llm_configs, vote_threshold)
 
 
 def create_alternate_prompt_strategy(
     llm_config: Dict[str, Any], alternate_prompts: Optional[List[str]] = None
 ) -> RemediationStrategy:
-    """Create an alternate prompt strategy with specified prompts."""
-    if alternate_prompts is None:
-        alternate_prompts = [
-            "Please try a different approach: {user_input}",
-            "Consider this alternative perspective: {user_input}",
-            "Let's approach this step by step: {user_input}",
-            "Think about this from a different angle: {user_input}",
-        ]
-    strategy = RetryWithAlternatePromptStrategy(llm_config, alternate_prompts)
-    register_remediation_strategy("retry_with_alternate_prompt", strategy)
-    return strategy
-
-
-# Initialize built-in strategies
-create_retry_strategy()
-create_fallback_strategy(
-    lambda **kwargs: "Fallback handler executed", "default_fallback"
-)
+    """Create a retry with alternate prompt strategy."""
+    return RetryWithAlternatePromptStrategy(llm_config, alternate_prompts)
 
 
 class ClassifierFallbackStrategy(RemediationStrategy):
-    """Fallback strategy for classifiers that tries alternative classification methods."""
+    """Fallback strategy for classifier nodes."""
 
     def __init__(
         self, fallback_classifier: Callable, fallback_name: str = "fallback_classifier"
     ):
-        super().__init__("classifier_fallback", f"Fallback to {fallback_name}")
+        super().__init__(
+            "classifier_fallback",
+            f"Fallback to {fallback_name} when primary classifier fails",
+        )
         self.fallback_classifier = fallback_classifier
         self.fallback_name = fallback_name
 
@@ -758,64 +750,83 @@ class ClassifierFallbackStrategy(RemediationStrategy):
         available_children: Optional[List] = None,
         **kwargs,
     ) -> Optional[ExecutionResult]:
-        """Execute the fallback classifier."""
+        print(f"[DEBUG] Entered ClassifierFallbackStrategy for node: {node_name}")
+        if not available_children:
+            self.logger.warning(
+                f"ClassifierFallbackStrategy: No available children for {node_name}"
+            )
+            return None
+
         try:
+            print(
+                f"[DEBUG] ClassifierFallbackStrategy: Executing fallback {self.fallback_name}"
+            )
             self.logger.info(
-                f"ClassifierFallbackStrategy: Executing {self.fallback_name} for {node_name}"
+                f"ClassifierFallbackStrategy: Executing fallback {self.fallback_name}"
             )
 
-            if not available_children:
+            # Execute fallback classifier
+            if context is not None:
+                result = self.fallback_classifier(user_input, context=context)
+            else:
+                result = self.fallback_classifier(user_input)
+
+            print(f"[DEBUG] ClassifierFallbackStrategy: Fallback result: {result}")
+
+            # Find the child that matches the fallback classifier result
+            best_child = None
+            best_score = 0
+
+            for child in available_children:
+                if hasattr(child, "name") and child.name == result:
+                    best_child = child
+                    best_score = 1
+                    break
+
+            if best_child:
+                print(
+                    f"[DEBUG] ClassifierFallbackStrategy: Selected child '{best_child.name}' with score {best_score}"
+                )
+                self.logger.info(
+                    f"ClassifierFallbackStrategy: Selected child '{best_child.name}' with score {best_score}"
+                )
+
+                return ExecutionResult(
+                    success=True,
+                    node_name=node_name,
+                    node_path=[node_name],
+                    node_type=NodeType.CLASSIFIER,
+                    input=user_input,
+                    output=best_child.name,
+                    params={"selected_child": best_child.name, "score": best_score},
+                )
+            else:
+                print(
+                    f"[DEBUG] ClassifierFallbackStrategy: No suitable child found for {node_name}"
+                )
                 self.logger.warning(
-                    f"ClassifierFallbackStrategy: No available children for {node_name}"
+                    f"ClassifierFallbackStrategy: No suitable child found for {node_name}"
                 )
                 return None
-
-            # Try the fallback classifier
-            context_dict: dict = {}
-            if context:
-                context_dict = {}
-
-            chosen = self.fallback_classifier(
-                user_input, available_children, context_dict
-            )
-
-            if not chosen:
-                self.logger.warning(
-                    f"ClassifierFallbackStrategy: Fallback classifier failed for {node_name}"
-                )
-                return None
-
-            # Execute the chosen child
-            child_result = chosen.execute(user_input, context)
-
-            return ExecutionResult(
-                success=True,
-                node_name=self.fallback_name,
-                node_path=[self.fallback_name],
-                node_type=NodeType.CLASSIFIER,
-                input=user_input,
-                output=child_result.output,
-                error=None,
-                params={
-                    "chosen_child": chosen.name,
-                    "available_children": [child.name for child in available_children],
-                    "remediation_strategy": self.name,
-                },
-                children_results=[child_result],
-            )
 
         except Exception as e:
+            print(
+                f"[DEBUG] ClassifierFallbackStrategy: Fallback {self.fallback_name} failed: {e}"
+            )
             self.logger.error(
-                f"ClassifierFallbackStrategy: Fallback {self.fallback_name} failed for {node_name}: {type(e).__name__}: {str(e)}"
+                f"ClassifierFallbackStrategy: Fallback {self.fallback_name} failed: {e}"
             )
             return None
 
 
 class KeywordFallbackStrategy(RemediationStrategy):
-    """Keyword-based fallback strategy for classifiers."""
+    """Keyword-based fallback strategy for classifier nodes."""
 
     def __init__(self):
-        super().__init__("keyword_fallback", "Keyword-based classification fallback")
+        super().__init__(
+            "keyword_fallback",
+            "Use keyword matching to select child node",
+        )
 
     def execute(
         self,
@@ -827,109 +838,119 @@ class KeywordFallbackStrategy(RemediationStrategy):
         available_children: Optional[List] = None,
         **kwargs,
     ) -> Optional[ExecutionResult]:
-        """Use keyword matching as fallback classification."""
-        try:
-            self.logger.info(
-                f"KeywordFallbackStrategy: Using keyword fallback for {node_name}"
-            )
-
-            if not available_children:
-                self.logger.warning(
-                    f"KeywordFallbackStrategy: No available children for {node_name}"
-                )
-                return None
-
-            user_input_lower = user_input.lower()
-
-            # Simple keyword matching based on handler names and descriptions
-            for child in available_children:
-                # Check handler name
-                if child.name and child.name.lower() in user_input_lower:
-                    self.logger.info(
-                        f"KeywordFallbackStrategy: Matched '{child.name}' by name for {node_name}"
-                    )
-                    child_result = child.execute(user_input, context)
-                    return ExecutionResult(
-                        success=True,
-                        node_name=node_name,
-                        node_path=[node_name],
-                        node_type=NodeType.CLASSIFIER,
-                        input=user_input,
-                        output=child_result.output,
-                        error=None,
-                        params={
-                            "chosen_child": child.name,
-                            "available_children": [c.name for c in available_children],
-                            "remediation_strategy": self.name,
-                            "match_type": "name",
-                        },
-                        children_results=[child_result],
-                    )
-
-                # Check description keywords
-                if child.description:
-                    desc_lower = child.description.lower()
-                    # Extract meaningful words from description
-                    desc_words = [
-                        word
-                        for word in desc_lower.split()
-                        if len(word) > 3
-                        and word not in ["the", "and", "for", "with", "this", "that"]
-                    ]
-
-                    for word in desc_words:
-                        if word in user_input_lower:
-                            self.logger.info(
-                                f"KeywordFallbackStrategy: Matched '{child.name}' by description keyword '{word}' for {node_name}"
-                            )
-                            child_result = child.execute(user_input, context)
-                            return ExecutionResult(
-                                success=True,
-                                node_name=node_name,
-                                node_path=[node_name],
-                                node_type=NodeType.CLASSIFIER,
-                                input=user_input,
-                                output=child_result.output,
-                                error=None,
-                                params={
-                                    "chosen_child": child.name,
-                                    "available_children": [
-                                        c.name for c in available_children
-                                    ],
-                                    "remediation_strategy": self.name,
-                                    "match_type": "description",
-                                    "matched_keyword": word,
-                                },
-                                children_results=[child_result],
-                            )
-
+        print(f"[DEBUG] Entered KeywordFallbackStrategy for node: {node_name}")
+        if not available_children:
             self.logger.warning(
-                f"KeywordFallbackStrategy: No keyword match found for {node_name}"
+                f"KeywordFallbackStrategy: No available children for {node_name}"
             )
             return None
 
-        except Exception as e:
-            self.logger.error(
-                f"KeywordFallbackStrategy: Keyword fallback failed for {node_name}: {type(e).__name__}: {str(e)}"
+        try:
+            print(
+                f"[DEBUG] KeywordFallbackStrategy: Analyzing {len(available_children)} children for {node_name}"
             )
+            self.logger.info(
+                f"KeywordFallbackStrategy: Analyzing {len(available_children)} children for {node_name}"
+            )
+
+            # Find the best matching child using keyword matching
+            best_child = None
+            best_score = -1
+
+            for child in available_children:
+                if hasattr(child, "name") and hasattr(child, "description"):
+                    # Create searchable text from child attributes
+                    child_text = f"{child.name} {child.description}".lower()
+                    input_lower = user_input.lower()
+
+                    # Count exact word matches
+                    input_words = set(input_lower.split())
+                    child_words = set(child_text.split())
+                    matches = len(input_words.intersection(child_words))
+
+                    # Check if any input word is contained in the child name or vice versa
+                    for input_word in input_words:
+                        if len(input_word) > 3:
+                            # Check if input word is in child name
+                            if input_word in child.name.lower():
+                                matches += 2
+                            # Check if child name is in input word
+                            elif child.name.lower() in input_word:
+                                matches += 2
+                            # Check for common prefixes (e.g., "calculate" and "calculator")
+                            elif input_word.startswith(
+                                child.name.lower()[:6]
+                            ) or child.name.lower().startswith(input_word[:6]):
+                                matches += 1
+
+                    # Check if any input word is contained in the child description
+                    for input_word in input_words:
+                        if (
+                            len(input_word) > 3
+                            and input_word in child.description.lower()
+                        ):
+                            matches += 1
+
+                    # Check if any child word is contained in the input
+                    for child_word in child_words:
+                        if len(child_word) > 3 and child_word in input_lower:
+                            matches += 1
+
+                    # Bonus for exact name matches
+                    if child.name.lower() in input_lower:
+                        matches += 2
+
+                    # Bonus for description keywords
+                    if child.description.lower() in input_lower:
+                        matches += 1
+
+                    print(
+                        f"[DEBUG] KeywordFallbackStrategy: Child '{child.name}' score: {matches}"
+                    )
+
+                    if matches > best_score:
+                        best_score = matches
+                        best_child = child
+
+            if best_child and best_score > 0:
+                print(
+                    f"[DEBUG] KeywordFallbackStrategy: Selected child '{best_child.name}' with score {best_score}"
+                )
+                self.logger.info(
+                    f"KeywordFallbackStrategy: Selected child '{best_child.name}' with score {best_score}"
+                )
+
+                return ExecutionResult(
+                    success=True,
+                    node_name=node_name,
+                    node_path=[node_name],
+                    node_type=NodeType.CLASSIFIER,
+                    input=user_input,
+                    output=best_child.name,
+                    params={"selected_child": best_child.name, "score": best_score},
+                )
+            else:
+                print(
+                    f"[DEBUG] KeywordFallbackStrategy: No suitable child found for {node_name}"
+                )
+                self.logger.warning(
+                    f"KeywordFallbackStrategy: No suitable child found for {node_name}"
+                )
+                return None
+
+        except Exception as e:
+            print(f"[DEBUG] KeywordFallbackStrategy: Failed for {node_name}: {e}")
+            self.logger.error(f"KeywordFallbackStrategy: Failed for {node_name}: {e}")
             return None
 
 
 def create_classifier_fallback_strategy(
     fallback_classifier: Callable, fallback_name: str = "fallback_classifier"
 ) -> RemediationStrategy:
-    """Create a classifier fallback strategy with specified classifier."""
-    strategy = ClassifierFallbackStrategy(fallback_classifier, fallback_name)
-    register_remediation_strategy("classifier_fallback", strategy)
-    return strategy
+    """Create a classifier fallback strategy."""
+    return ClassifierFallbackStrategy(fallback_classifier, fallback_name)
 
 
 def create_keyword_fallback_strategy() -> RemediationStrategy:
-    """Create a keyword-based fallback strategy for classifiers."""
-    strategy = KeywordFallbackStrategy()
-    register_remediation_strategy("keyword_fallback", strategy)
-    return strategy
-
-
-# Initialize classifier-specific strategies
-create_keyword_fallback_strategy()
+    """Create a keyword fallback strategy."""
+    return KeywordFallbackStrategy()

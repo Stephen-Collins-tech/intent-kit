@@ -5,6 +5,7 @@ Action node implementations.
 from .node import ActionNode
 from .builder import ActionBuilder
 from .remediation import (
+    Strategy,
     RemediationStrategy,
     RetryOnFailStrategy,
     FallbackToAnotherNodeStrategy,
@@ -29,6 +30,7 @@ from .remediation import (
 __all__ = [
     "ActionNode",
     "ActionBuilder",
+    "Strategy",
     "RemediationStrategy",
     "RetryOnFailStrategy",
     "FallbackToAnotherNodeStrategy",

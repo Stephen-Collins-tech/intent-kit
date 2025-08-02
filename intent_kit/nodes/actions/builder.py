@@ -5,7 +5,8 @@ Supports both stateless functions and stateful callable objects as actions.
 
 from intent_kit.nodes.base_builder import BaseBuilder
 from typing import Any, Callable, Dict, Type, Set, List, Optional, Union
-from intent_kit.nodes.actions.node import ActionNode, RemediationStrategy
+from intent_kit.nodes.actions.node import ActionNode
+from intent_kit.nodes.actions.remediation import RemediationStrategy
 from intent_kit.nodes.actions.param_extraction import (
     create_arg_extractor,
     parse_param_schema,
