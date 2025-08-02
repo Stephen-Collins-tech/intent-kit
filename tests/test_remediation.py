@@ -2,9 +2,8 @@
 Tests for the remediation strategies.
 """
 
-import json
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from intent_kit.nodes.actions.remediation import (
     Strategy,
     RemediationStrategy,
@@ -27,7 +26,6 @@ from intent_kit.nodes.actions.remediation import (
     ClassifierFallbackStrategy,
     KeywordFallbackStrategy,
 )
-from intent_kit.nodes.types import ExecutionError, ExecutionResult, NodeType
 from intent_kit.context import IntentContext
 from intent_kit.utils.text_utils import extract_json_from_text
 
@@ -53,13 +51,17 @@ class TestRemediationStrategy:
 
     def test_remediation_strategy_creation(self):
         """Test creating a remediation strategy."""
-        strategy = RemediationStrategy("test_remediation", "Test remediation description")
+        strategy = RemediationStrategy(
+            "test_remediation", "Test remediation description"
+        )
         assert strategy.name == "test_remediation"
         assert strategy.description == "Test remediation description"
 
     def test_remediation_strategy_execute_not_implemented(self):
         """Test that remediation strategy execute raises NotImplementedError."""
-        strategy = RemediationStrategy("test_remediation", "Test remediation description")
+        strategy = RemediationStrategy(
+            "test_remediation", "Test remediation description"
+        )
         with pytest.raises(NotImplementedError):
             strategy.execute("test_node", "test input")
 
@@ -256,7 +258,9 @@ class TestSelfReflectStrategy:
         """Test self-reflect strategy when LLM reflection succeeds."""
         # Mock LLM factory and LLM
         mock_llm = Mock()
-        mock_llm.generate.return_value = '{"corrected_params": {"x": 10}, "explanation": "Fixed negative value"}'
+        mock_llm.generate.return_value = (
+            '{"corrected_params": {"x": 10}, "explanation": "Fixed negative value"}'
+        )
         mock_llm_factory.create_client.return_value = mock_llm
 
         llm_config = {"model": "test_model"}
@@ -345,7 +349,7 @@ class TestConsensusVoteStrategy:
         mock_llm1.generate.return_value = '{"corrected_params": {"x": 10}, "confidence": 0.8, "explanation": "Fixed value"}'
         mock_llm2 = Mock()
         mock_llm2.generate.return_value = '{"corrected_params": {"x": 15}, "confidence": 0.9, "explanation": "Better fix"}'
-        
+
         mock_llm_factory.create_client.side_effect = [mock_llm1, mock_llm2]
 
         llm_configs = [{"model": "model1"}, {"model": "model2"}]
@@ -375,7 +379,7 @@ class TestConsensusVoteStrategy:
         mock_llm1.generate.return_value = '{"corrected_params": {"x": 10}, "confidence": 0.5, "explanation": "Low confidence"}'
         mock_llm2 = Mock()
         mock_llm2.generate.return_value = '{"corrected_params": {"x": 15}, "confidence": 0.6, "explanation": "Still low"}'
-        
+
         mock_factory = Mock()
         mock_factory.create_llm.side_effect = [mock_llm1, mock_llm2]
         mock_llm_factory.return_value = mock_factory
@@ -402,7 +406,7 @@ class TestConsensusVoteStrategy:
         mock_llm1.generate.side_effect = Exception("LLM failed")
         mock_llm2 = Mock()
         mock_llm2.generate.return_value = "Invalid JSON"
-        
+
         mock_factory = Mock()
         mock_factory.create_llm.side_effect = [mock_llm1, mock_llm2]
         mock_llm_factory.return_value = mock_factory
@@ -446,7 +450,9 @@ class TestRetryWithAlternatePromptStrategy:
         """Test alternate prompt strategy with absolute value approach."""
         # Mock LLM factory and LLM
         mock_llm = Mock()
-        mock_llm.generate.return_value = '{"corrected_params": {"x": 5}, "explanation": "Used absolute value"}'
+        mock_llm.generate.return_value = (
+            '{"corrected_params": {"x": 5}, "explanation": "Used absolute value"}'
+        )
         mock_llm_factory.create_client.return_value = mock_llm
 
         llm_config = {"model": "test_model"}
@@ -474,7 +480,9 @@ class TestRetryWithAlternatePromptStrategy:
         """Test alternate prompt strategy with positive value approach."""
         # Mock LLM factory and LLM
         mock_llm = Mock()
-        mock_llm.generate.return_value = '{"corrected_params": {"x": 10}, "explanation": "Used positive value"}'
+        mock_llm.generate.return_value = (
+            '{"corrected_params": {"x": 10}, "explanation": "Used positive value"}'
+        )
         mock_llm_factory.create_client.return_value = mock_llm
 
         llm_config = {"model": "test_model"}
@@ -636,7 +644,9 @@ class TestRemediationFactoryFunctions:
     def test_create_classifier_fallback_strategy(self):
         """Test creating a classifier fallback strategy via factory function."""
         fallback_classifier = Mock()
-        strategy = create_classifier_fallback_strategy(fallback_classifier, "custom_classifier")
+        strategy = create_classifier_fallback_strategy(
+            fallback_classifier, "custom_classifier"
+        )
         assert isinstance(strategy, ClassifierFallbackStrategy)
         assert strategy.fallback_classifier == fallback_classifier
         assert strategy.fallback_name == "custom_classifier"
@@ -664,7 +674,7 @@ class TestGlobalRegistry:
         """Test listing strategies from global registry."""
         # Clear any existing strategies for this test
         strategies_before = list_remediation_strategies()
-        
+
         strategy = Mock(spec=RemediationStrategy)
         strategy.name = "test_strategy"
 
@@ -690,7 +700,7 @@ class TestClassifierFallbackStrategy:
         """Test classifier fallback strategy when fallback succeeds."""
         fallback_classifier = Mock(return_value="child_a")
         strategy = ClassifierFallbackStrategy(fallback_classifier, "test_classifier")
-        
+
         # Mock available children
         child_a = Mock()
         child_a.name = "child_a"
@@ -731,7 +741,7 @@ class TestClassifierFallbackStrategy:
         """Test classifier fallback strategy when fallback classifier fails."""
         fallback_classifier = Mock(side_effect=Exception("Fallback failed"))
         strategy = ClassifierFallbackStrategy(fallback_classifier, "test_classifier")
-        
+
         child_a = Mock()
         child_a.name = "child_a"
         child_a.description = "First child"
@@ -750,7 +760,7 @@ class TestClassifierFallbackStrategy:
         """Test classifier fallback strategy when child execution fails."""
         fallback_classifier = Mock(return_value="child_a")
         strategy = ClassifierFallbackStrategy(fallback_classifier, "test_classifier")
-        
+
         child_a = Mock()
         child_a.name = "child_a"
         child_a.description = "First child"
@@ -779,7 +789,7 @@ class TestKeywordFallbackStrategy:
     def test_keyword_fallback_strategy_match_by_name(self):
         """Test keyword fallback strategy matching by child name."""
         strategy = KeywordFallbackStrategy()
-        
+
         # Mock available children
         child_a = Mock()
         child_a.name = "calculator"
@@ -804,7 +814,7 @@ class TestKeywordFallbackStrategy:
     def test_keyword_fallback_strategy_match_by_description(self):
         """Test keyword fallback strategy matching by child description."""
         strategy = KeywordFallbackStrategy()
-        
+
         # Mock available children
         child_a = Mock()
         child_a.name = "action_a"
@@ -829,7 +839,7 @@ class TestKeywordFallbackStrategy:
     def test_keyword_fallback_strategy_no_match(self):
         """Test keyword fallback strategy when no match is found."""
         strategy = KeywordFallbackStrategy()
-        
+
         # Mock available children
         child_a = Mock()
         child_a.name = "action_a"
@@ -864,7 +874,7 @@ class TestKeywordFallbackStrategy:
     def test_keyword_fallback_strategy_case_insensitive(self):
         """Test keyword fallback strategy with case insensitive matching."""
         strategy = KeywordFallbackStrategy()
-        
+
         # Mock available children
         child_a = Mock()
         child_a.name = "Calculator"
@@ -945,7 +955,9 @@ class TestRemediationEdgeCases:
 
         # Mock LLM factory to handle empty config
         mock_llm = Mock()
-        mock_llm.generate.return_value = '{"corrected_params": {"x": 10}, "explanation": "Fixed"}'
+        mock_llm.generate.return_value = (
+            '{"corrected_params": {"x": 10}, "explanation": "Fixed"}'
+        )
         mock_llm_factory.create_client.return_value = mock_llm
 
         result = strategy.execute(

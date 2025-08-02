@@ -99,7 +99,7 @@ def simple_greeter(name: str, context: IntentContext) -> str:
 
 def create_custom_remediation_strategy():
     """Create a custom remediation strategy that logs and continues."""
-    from intent_kit.nodes.actions.remediation import Strategy, RemediationStrategy
+    from intent_kit.nodes.actions.remediation import RemediationStrategy
 
     class LogAndContinueStrategy(RemediationStrategy):
         def __init__(self):

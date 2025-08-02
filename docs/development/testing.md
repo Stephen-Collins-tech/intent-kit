@@ -61,10 +61,10 @@ def test_simple_action():
         action_func=lambda name: f"Hello {name}!",
         param_schema={"name": str}
     )
-    
+
     graph = IntentGraphBuilder().root(greet_action).build()
     result = graph.route("Hello Alice")
-    
+
     assert result.success
     assert result.output == "Hello Alice!"
 ```
