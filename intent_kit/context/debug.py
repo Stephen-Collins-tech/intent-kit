@@ -11,7 +11,7 @@ from datetime import datetime
 import json
 from . import IntentContext
 from .dependencies import ContextDependencies, analyze_action_dependencies
-from intent_kit.node import TreeNode
+from intent_kit.nodes import TreeNode
 from intent_kit.utils.logger import Logger
 from . import ContextHistoryEntry
 

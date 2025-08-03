@@ -4,8 +4,8 @@ Tests for graph builder module.
 
 import pytest
 from unittest.mock import patch, MagicMock, mock_open
-from intent_kit.builders.graph import IntentGraphBuilder
-from intent_kit.node import TreeNode
+from intent_kit.graph.builder import IntentGraphBuilder
+from intent_kit.nodes import TreeNode
 from intent_kit.graph import IntentGraph
 
 
@@ -16,7 +16,6 @@ class TestIntentGraphBuilder:
         """Test IntentGraphBuilder initialization."""
         builder = IntentGraphBuilder()
         assert builder._root_nodes == []
-        assert builder._splitter is None
         assert builder._debug_context_enabled is False
         assert builder._context_trace_enabled is False
         assert builder._json_graph is None
@@ -32,16 +31,6 @@ class TestIntentGraphBuilder:
 
         assert result is builder
         assert builder._root_nodes == [mock_node]
-
-    def test_splitter(self):
-        """Test setting splitter function."""
-        builder = IntentGraphBuilder()
-        mock_splitter = MagicMock()
-
-        result = builder.splitter(mock_splitter)
-
-        assert result is builder
-        assert builder._splitter == mock_splitter
 
     def test_with_json(self):
         """Test setting JSON graph."""
@@ -300,24 +289,6 @@ class TestIntentGraphBuilder:
         ):
             builder._validate_json_graph()
 
-    def test_build_with_json_validation_splitter_missing_function(self):
-        builder = IntentGraphBuilder()
-        builder._json_graph = {
-            "nodes": {
-                "test": {
-                    "type": "splitter",
-                    "splitter_type": "function",
-                    "name": "test",
-                }
-            },
-            "root": "test",
-        }
-        with pytest.raises(
-            ValueError,
-            match="Function splitter node 'test' missing 'splitter_function' field",
-        ):
-            builder._validate_json_graph()
-
     def test_build_with_json_validation_valid(self):
         """Test build validation with valid JSON graph."""
         builder = IntentGraphBuilder()
@@ -449,6 +420,7 @@ class TestIntentGraphBuilder:
         """Test building graph with root nodes."""
         builder = IntentGraphBuilder()
         mock_node = MagicMock(spec=TreeNode)
+        mock_node.name = "test_node"
         builder.root(mock_node)
 
         result = builder.build()
@@ -492,7 +464,7 @@ class TestIntentGraphBuilder:
         }
 
         with pytest.raises(
-            ValueError, match="Function 'test_func' not found in function registry"
+            ValueError, match="Function registry required for JSON-based construction"
         ):
             builder.build()
 
@@ -546,6 +518,7 @@ class TestIntentGraphBuilder:
         mock_node.classifier = mock_classifier
         mock_node.llm_config = None
         mock_node.children = []
+        mock_node.name = "test_node"
 
         builder.root(mock_node)
         builder.with_default_llm_config({"provider": "openai", "api_key": "test"})
@@ -553,8 +526,8 @@ class TestIntentGraphBuilder:
         result = builder.build()
 
         assert isinstance(result, IntentGraph)
-        # Should have injected LLM config into the node
-        assert mock_node.llm_config == {"provider": "openai", "api_key": "test"}
+        # The LLM config should be passed to the IntentGraph, not injected into nodes
+        assert result.llm_config == {"provider": "openai", "api_key": "test"}
 
     def test_build_with_llm_config_validation_failure(self):
         """Test building graph with LLM config validation failure."""
@@ -569,10 +542,11 @@ class TestIntentGraphBuilder:
         mock_node.name = "test_node"
 
         builder.root(mock_node)
-        # No default LLM config set
+        # No default LLM config set - this should not raise an error anymore
+        # since we allow any node type as root
 
-        with pytest.raises(ValueError, match="requires an LLM config"):
-            builder.build()
+        result = builder.build()
+        assert isinstance(result, IntentGraph)
 
     def test_debug_context(self):
         """Test enabling debug context."""
@@ -728,22 +702,6 @@ class TestIntentGraphBuilder:
         assert node.name == "test_llm_classifier"
         assert node.description == "Test LLM classifier"
 
-    def test_create_node_from_spec_splitter(self):
-        """Test creating splitter node from specification."""
-        builder = IntentGraphBuilder()
-        node_spec = {
-            "type": "splitter",
-            "name": "test_splitter",
-            "description": "Test splitter",
-            "splitter_function": "test_splitter_func",
-            "llm_config": {"provider": "openai"},
-        }
-        function_registry = {"test_splitter_func": lambda x: x}
-
-        node = builder._create_node_from_spec("test_id", node_spec, function_registry)
-        assert node.name == "test_splitter"
-        assert node.description == "Test splitter"
-
     def test_create_node_from_spec_missing_type(self):
         """Test creating node with missing type."""
         builder = IntentGraphBuilder()
@@ -852,45 +810,6 @@ class TestIntentGraphBuilder:
                 "test_id",
                 "test_classifier",
                 "Test classifier",
-                node_spec,
-                function_registry,
-            )
-
-    def test_create_splitter_node_missing_function(self):
-        """Test creating splitter node with missing function."""
-        builder = IntentGraphBuilder()
-        node_spec = {
-            "type": "splitter",
-            "name": "test_splitter",
-            "description": "Test splitter",
-        }
-        function_registry = {}
-
-        with pytest.raises(ValueError, match="must have a 'splitter_function' field"):
-            builder._create_splitter_node(
-                "test_id",
-                "test_splitter",
-                "Test splitter",
-                node_spec,
-                function_registry,
-            )
-
-    def test_create_splitter_node_function_not_found(self):
-        """Test creating splitter node with function not in registry."""
-        builder = IntentGraphBuilder()
-        node_spec = {
-            "type": "splitter",
-            "name": "test_splitter",
-            "description": "Test splitter",
-            "splitter_function": "missing_func",
-        }
-        function_registry = {}
-
-        with pytest.raises(ValueError, match="not found in function registry"):
-            builder._create_splitter_node(
-                "test_id",
-                "test_splitter",
-                "Test splitter",
                 node_spec,
                 function_registry,
             )
@@ -1022,7 +941,9 @@ class TestIntentGraphBuilder:
         }
         function_registry = {"test_func": lambda x: x}
 
-        graph = builder._build_from_json(graph_spec, function_registry)
+        graph = builder._build_from_json(
+            graph_spec, function_registry, {"provider": "openai", "api_key": "test"}
+        )
         assert isinstance(graph, IntentGraph)
         assert graph.llm_config == {"provider": "openai", "api_key": "test"}
 
@@ -1070,21 +991,3 @@ class TestIntentGraphBuilder:
         assert isinstance(result, IntentGraph)
         # Should use JSON graph, not the root node
         assert result.root_nodes[0].name == "test"
-
-    def test_build_with_json_and_splitter(self):
-        """Test building from JSON with custom splitter."""
-        builder = IntentGraphBuilder()
-        mock_splitter = MagicMock()
-        builder.splitter(mock_splitter)
-
-        builder._json_graph = {
-            "root": "test",
-            "nodes": {
-                "test": {"type": "action", "name": "test", "function": "test_func"}
-            },
-        }
-        builder._function_registry = {"test_func": MagicMock()}
-
-        result = builder.build()
-        assert isinstance(result, IntentGraph)
-        assert result.splitter == mock_splitter

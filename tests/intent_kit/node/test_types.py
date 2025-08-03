@@ -2,8 +2,8 @@
 Tests for node types and data structures.
 """
 
-from intent_kit.node.types import ExecutionError, ExecutionResult
-from intent_kit.node.enums import NodeType
+from intent_kit.nodes.types import ExecutionError, ExecutionResult
+from intent_kit.nodes.enums import NodeType
 
 
 class TestExecutionError:
@@ -191,7 +191,6 @@ class TestExecutionResult:
         assert result.error is None
         assert result.params == {"param": "value"}
         assert result.children_results == []
-        assert result.visualization_html is None
 
     def test_init_failure(self):
         """Test initialization for failed execution."""
@@ -218,23 +217,6 @@ class TestExecutionResult:
         assert result.error == error
         assert result.output is None
 
-    def test_init_with_visualization(self):
-        """Test initialization with visualization HTML."""
-        result = ExecutionResult(
-            success=True,
-            node_name="test_node",
-            node_path=["root", "test_node"],
-            node_type=NodeType.SPLITTER,
-            input="test input",
-            output="test output",
-            error=None,
-            params={},
-            children_results=[],
-            visualization_html="<div>Test visualization</div>",
-        )
-
-        assert result.visualization_html == "<div>Test visualization</div>"
-
     def test_init_with_children_results(self):
         """Test initialization with children results."""
         child_result = ExecutionResult(
@@ -244,6 +226,18 @@ class TestExecutionResult:
             node_type=NodeType.ACTION,
             input="child input",
             output="child output",
+            error=None,
+            params={},
+            children_results=[],
+        )
+
+        result = ExecutionResult(
+            success=True,
+            node_name="test_node",
+            node_path=["root", "test_node"],
+            node_type=NodeType.CLASSIFIER,
+            input="test input",
+            output="test output",
             error=None,
             params={},
             children_results=[],
@@ -303,7 +297,6 @@ class TestExecutionResult:
         assert result.output is None
         assert result.error is None
         assert result.params is None
-        assert result.visualization_html is None
 
     def test_different_node_types(self):
         """Test initialization with different node types."""
@@ -311,10 +304,6 @@ class TestExecutionResult:
             NodeType.UNKNOWN,
             NodeType.ACTION,
             NodeType.CLASSIFIER,
-            NodeType.SPLITTER,
-            NodeType.CLARIFY,
-            NodeType.GRAPH,
-            NodeType.UNHANDLED_CHUNK,
         ]
 
         for node_type in node_types:

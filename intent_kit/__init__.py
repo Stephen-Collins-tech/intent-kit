@@ -9,11 +9,11 @@ This library provides:
 - Interactive visualization of execution paths
 """
 
-from .node import TreeNode, NodeType
-from .node.classifiers import ClassifierNode
-from .node.actions import ActionNode
-from .node.splitters import SplitterNode
-from .builders.graph import IntentGraphBuilder
+from .nodes import TreeNode, NodeType
+from .nodes.classifiers import ClassifierNode
+from .nodes.actions import ActionNode
+
+from .graph.builder import IntentGraphBuilder
 from .context import IntentContext
 
 # For advanced node helpers (llm_classifier, llm_splitter, etc.),
@@ -27,6 +27,5 @@ __all__ = [
     "NodeType",
     "ClassifierNode",
     "ActionNode",
-    "SplitterNode",
     "IntentContext",
 ]

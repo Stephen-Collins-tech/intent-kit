@@ -2,6 +2,15 @@
 
 Nodes and actions are the fundamental building blocks of intent graphs. They define how user input is processed, classified, and acted upon.
 
+## Architecture Overview
+
+Intent graphs use a **single intent architecture** where:
+- **Root nodes must be classifiers** - They classify user input and route to actions
+- **Action nodes are leaf nodes** - They execute specific actions and produce outputs
+- **No multi-intent splitting** - Each input is handled as a single, focused intent
+
+This architecture ensures deterministic, focused intent processing without the complexity of multi-intent handling.
+
 ## Node Types
 
 ### Action Nodes
@@ -74,56 +83,7 @@ main_classifier = keyword_classifier(
 )
 ```
 
-#### Chunk Classifier
 
-Classifies text chunks for processing:
-
-```python
-from intent_kit import chunk_classifier
-
-content_classifier = chunk_classifier(
-    name="content",
-    description="Classify content types",
-    children=[text_action, image_action, audio_action],
-    chunk_size=1000
-)
-```
-
-### Splitter Nodes
-
-Splitter nodes handle multiple nodes in a single input by splitting the input into parts.
-
-#### Rule Splitter
-
-Uses rule-based splitting:
-
-```python
-from intent_kit import rule_splitter_node
-
-multi_splitter = rule_splitter_node(
-    name="multi_split",
-    children=[greet_action, weather_action, calculator_action],
-    rules={
-        "greet": ["hello", "hi", "greetings"],
-        "weather": ["weather", "temperature", "forecast"],
-        "calculator": ["add", "subtract", "multiply", "divide"]
-    }
-)
-```
-
-#### LLM Splitter
-
-Uses LLM for intelligent splitting:
-
-```python
-from intent_kit import llm_splitter
-
-smart_splitter = llm_splitter(
-    name="smart_split",
-    children=[greet_action, weather_action],
-    llm_config={"provider": "openai", "model": "gpt-4"}
-)
-```
 
 ## Parameter Extraction
 

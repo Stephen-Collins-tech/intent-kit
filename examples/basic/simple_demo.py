@@ -1,20 +1,23 @@
 """
-Simple IntentGraph Demo
+Simple IntentGraph Demo with Reporting
 
-A minimal demonstration showing how to configure an intent graph with actions and classifiers.
+A minimal demonstration showing how to configure an intent graph with actions and classifiers,
+using the new reporting functionality.
 """
 
 import os
-import json
 from dotenv import load_dotenv
 from intent_kit import IntentGraphBuilder
+from intent_kit.utils.perf_util import PerfUtil
+from intent_kit.utils.report_utils import ReportUtil
+from typing import Dict, Callable, Any, List, Tuple
 
 load_dotenv()
 
 LLM_CONFIG = {
     "provider": "openrouter",
     "api_key": os.getenv("OPENROUTER_API_KEY"),
-    "model": "moonshotai/kimi-k2",
+    "model": "mistralai/ministral-8b",
 }
 
 
@@ -24,6 +27,7 @@ def greet(name, context=None):
 
 def calculate(operation, a, b, context=None):
     # Simple operation mapping
+    operation = operation.lower()
     if operation == "plus":
         return a + b
     if operation == "minus":
@@ -47,36 +51,79 @@ def help_action(context=None):
     return "I can help with greetings, calculations, and weather!"
 
 
-function_registry = {
+function_registry: Dict[str, Callable[..., Any]] = {
     "greet": greet,
     "calculate": calculate,
     "weather": weather,
     "help_action": help_action,
 }
 
-
-def create_intent_graph():
-    # Load the graph definition from local JSON (same directory as script)
-    json_path = os.path.join(os.path.dirname(__file__), "simple_demo.json")
-    with open(json_path, "r") as f:
-        json_graph = json.load(f)
-
-    return (
-        IntentGraphBuilder()
-        .with_json(json_graph)
-        .with_functions(function_registry)
-        .with_default_llm_config(LLM_CONFIG)
-        .build()
-    )
-
+simple_demo_graph = {
+    "root": "main_classifier",
+    "nodes": {
+        "main_classifier": {
+            "id": "main_classifier",
+            "type": "classifier",
+            "classifier_type": "llm",
+            "name": "main_classifier",
+            "description": "Main intent classifier",
+            "llm_config": {
+                "provider": "openrouter",
+                "api_key": os.getenv("OPENROUTER_API_KEY"),
+                "model": "mistralai/ministral-8b",
+            },
+            "classification_prompt": "Classify the user input: '{user_input}'\n\nAvailable intents:\n{node_descriptions}\n\nReturn ONLY the intent name (e.g., calculate_action). No explanation or other text.",
+            "children": [
+                "greet_action",
+                "calculate_action",
+                "weather_action",
+                "help_action",
+            ],
+        },
+        "greet_action": {
+            "id": "greet_action",
+            "type": "action",
+            "name": "greet_action",
+            "description": "Greet the user",
+            "function": "greet",
+            "param_schema": {"name": "str"},
+        },
+        "calculate_action": {
+            "id": "calculate_action",
+            "type": "action",
+            "name": "calculate_action",
+            "description": "Perform a calculation",
+            "function": "calculate",
+            "param_schema": {"operation": "str", "a": "float", "b": "float"},
+        },
+        "weather_action": {
+            "id": "weather_action",
+            "type": "action",
+            "name": "weather_action",
+            "description": "Get weather information",
+            "function": "weather",
+            "param_schema": {"location": "str"},
+        },
+        "help_action": {
+            "id": "help_action",
+            "type": "action",
+            "name": "help_action",
+            "description": "Get help",
+            "function": "help_action",
+            "param_schema": {},
+        },
+    },
+}
 
 if __name__ == "__main__":
-    from intent_kit.context import IntentContext
-    from intent_kit.utils.perf_util import PerfUtil
-
     with PerfUtil("simple_demo.py run time") as perf:
-        graph = create_intent_graph()
-        context = IntentContext(session_id="simple_demo")
+        graph = (
+            IntentGraphBuilder()
+            .with_json(simple_demo_graph)
+            .with_functions(function_registry)
+            .with_default_llm_config(LLM_CONFIG)
+            .build()
+        )
 
         test_inputs = [
             "Hello, my name is Alice",
@@ -86,25 +133,19 @@ if __name__ == "__main__":
             "Multiply 8 and 3",
         ]
 
-        timings: list[tuple[str, float]] = []
-        successes = []
-        for user_input in test_inputs:
-            with PerfUtil.collect(f"Input: {user_input}", timings) as perf:
-                print(f"\nInput: {user_input}")
-                result = graph.route(user_input, context=context)
-                success = bool(result.success)
-                if result.success:
-                    print(f"Intent: {result.node_name}")
-                    print(f"Output: {result.output}")
-                else:
-                    print(f"Error: {result.error}")
-                successes.append(success)
+        results = []
+        timings: List[Tuple[str, float]] = []
+        for test_input in test_inputs:
+            with PerfUtil.collect(test_input, timings) as perf:
+                result = graph.route(test_input)
+                results.append(result)
 
-    print(perf.format())
-    # Print table with success column
-    print("\nTiming Summary:")
-    print(f"  {'Label':<40} | {'Elapsed (sec)':>12} | {'Success':>7}")
-    print("  " + "-" * 65)
-    for (label, elapsed), success in zip(timings, successes):
-        elapsed_str = f"{elapsed:12.4f}" if elapsed is not None else "     N/A   "
-        print(f"  {label[:40]:<40} | {elapsed_str} | {str(success):>7}")
+        # Use the new format_execution_results method to format the existing results
+        report = ReportUtil.format_execution_results(
+            results=results,
+            llm_config=LLM_CONFIG,
+            perf_info=perf.format(),
+            timings=timings,
+        )
+
+        print(report)

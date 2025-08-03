@@ -1,13 +1,9 @@
 import pytest
-from intent_kit.builders import (
-    ActionBuilder,
-    ClassifierBuilder,
-    SplitterBuilder,
-    IntentGraphBuilder,
-)
-from intent_kit.node.actions import ActionNode
-from intent_kit.node.classifiers import ClassifierNode
-from intent_kit.node.splitters import SplitterNode
+from intent_kit.nodes.actions import ActionBuilder
+from intent_kit.nodes.classifiers import ClassifierBuilder
+from intent_kit.graph import IntentGraphBuilder
+from intent_kit.nodes.actions import ActionNode
+from intent_kit.nodes.classifiers import ClassifierNode
 from intent_kit.graph import IntentGraph
 
 
@@ -71,41 +67,6 @@ def test_classifier_builder_missing_children():
         builder.build()
 
 
-def test_splitter_builder_basic():
-    def splitter_func(user_input, debug=False):
-        return [user_input]
-
-    child = (
-        ActionBuilder("greet")
-        .with_action(lambda n: f"Hi {n}")
-        .with_param_schema({"name": str})
-        .build()
-    )
-    node = (
-        SplitterBuilder("splitter")
-        .with_splitter(splitter_func)
-        .with_children([child])
-        .with_description("Test splitter")
-        .build()
-    )
-    assert isinstance(node, SplitterNode)
-    assert node.name == "splitter"
-    assert node.description == "Test splitter"
-    assert node.children == [child]
-
-
-def test_splitter_builder_missing_splitter():
-    child = (
-        ActionBuilder("greet")
-        .with_action(lambda n: f"Hi {n}")
-        .with_param_schema({"name": str})
-        .build()
-    )
-    builder = SplitterBuilder("fail").with_children([child])
-    with pytest.raises(ValueError):
-        builder.build()
-
-
 def test_intent_graph_builder_full():
     # Build nodes
     greet = (
@@ -120,7 +81,16 @@ def test_intent_graph_builder_full():
         .with_param_schema({"a": int, "b": int})
         .build()
     )
-    classifier = ClassifierBuilder("root").with_children([greet, calc]).build()
+
+    def dummy_classifier(user_input, children, context=None):
+        return children[0]
+
+    classifier = (
+        ClassifierBuilder("root")
+        .with_classifier(dummy_classifier)
+        .with_children([greet, calc])
+        .build()
+    )
     # Build graph
     graph = IntentGraphBuilder().root(classifier).build()
     assert isinstance(graph, IntentGraph)
@@ -135,7 +105,16 @@ def test_intent_graph_builder_with_llm_config():
         .with_param_schema({"name": str})
         .build()
     )
-    classifier = ClassifierBuilder("root").with_children([greet]).build()
+
+    def dummy_classifier(user_input, children, context=None):
+        return children[0]
+
+    classifier = (
+        ClassifierBuilder("root")
+        .with_classifier(dummy_classifier)
+        .with_children([greet])
+        .build()
+    )
 
     llm_config = {"provider": "openai", "model": "gpt-4"}
     graph = (

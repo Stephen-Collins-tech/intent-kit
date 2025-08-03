@@ -532,3 +532,103 @@ class TestLogger:
             call_args = mock_print.call_args[0][0]
             assert "[INFO]" in call_args
             assert "123" in call_args
+
+    def test_log_cost_basic(self):
+        """Test log_cost method with basic parameters."""
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            self.logger.log_cost(cost=0.001234)
+            call_args = mock_print.call_args[0][0]
+            assert "[COST]" in call_args
+            assert "Cost: $0.001234" in call_args
+
+    def test_log_cost_with_tokens(self):
+        """Test log_cost method with token information."""
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            self.logger.log_cost(cost=0.002, input_tokens=100, output_tokens=50)
+            call_args = mock_print.call_args[0][0]
+            assert "[COST]" in call_args
+            assert "Cost: $0.002000" in call_args
+            assert "Input: 100 tokens" in call_args
+            assert "Output: 50 tokens" in call_args
+            assert "($0.00001333/token)" in call_args
+
+    def test_log_cost_with_provider_and_model(self):
+        """Test log_cost method with provider and model information."""
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            self.logger.log_cost(
+                cost=0.005,
+                input_tokens=200,
+                output_tokens=100,
+                provider="openai",
+                model="gpt-4",
+            )
+            call_args = mock_print.call_args[0][0]
+            assert "[COST]" in call_args
+            assert "Provider: openai" in call_args
+            assert "Model: gpt-4" in call_args
+
+    def test_log_cost_with_duration(self):
+        """Test log_cost method with duration information."""
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            self.logger.log_cost(
+                cost=0.003, input_tokens=150, output_tokens=75, duration=2.5
+            )
+            call_args = mock_print.call_args[0][0]
+            assert "[COST]" in call_args
+            assert "Duration: 2.500s" in call_args
+
+    def test_log_cost_zero_cost(self):
+        """Test log_cost method with zero cost."""
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            self.logger.log_cost(cost=0.0, input_tokens=100, output_tokens=50)
+            call_args = mock_print.call_args[0][0]
+            assert "[COST]" in call_args
+            assert "Cost: $0.000000" in call_args
+            # When cost is 0, cost_per_token will be "N/A" and won't be included in output
+            assert "Input: 100 tokens" in call_args
+            assert "Output: 50 tokens" in call_args
+
+    def test_log_cost_no_tokens(self):
+        """Test log_cost method with no token information."""
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            self.logger.log_cost(cost=0.001)
+            call_args = mock_print.call_args[0][0]
+            assert "[COST]" in call_args
+            assert "Cost: $0.001000" in call_args
+            # When no tokens provided, cost_per_token will be "N/A" and won't be included
+
+    def test_log_cost_level_filtering(self):
+        """Test that log_cost respects level filtering."""
+        logger = Logger("test", "error")  # Set to error level, should not log info
+
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            logger.log_cost(cost=0.001)
+            mock_print.assert_not_called()
+
+        # Should log when level is info or lower
+        logger = Logger("test", "info")
+        with patch("intent_kit.utils.logger.print") as mock_print:
+            logger.log_cost(cost=0.001)
+            mock_print.assert_called_once()
+
+    def test_log_cost_format_cost_per_token(self):
+        """Test the _format_cost_per_token helper method."""
+        # Test with valid cost and tokens
+        result = self.logger._format_cost_per_token(0.001, 100, 50)
+        assert result == "$0.00000667/token"
+
+        # Test with zero cost
+        result = self.logger._format_cost_per_token(0.0, 100, 50)
+        assert result == "N/A"
+
+        # Test with no tokens
+        result = self.logger._format_cost_per_token(0.001, 0, 0)
+        assert result == "N/A"
+
+        # Test with None values
+        result = self.logger._format_cost_per_token(None, 100, 50)
+        assert result == "N/A"
+
+        # Test with zero tokens
+        result = self.logger._format_cost_per_token(0.001, 0, 0)
+        assert result == "N/A"

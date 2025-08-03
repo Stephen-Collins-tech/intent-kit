@@ -63,7 +63,7 @@ graph = IntentGraphBuilder().with_functions(function_registry).with_json(json_gr
   "root_nodes": [
     {
       "name": "node_name",
-      "type": "action|classifier|splitter",
+      "type": "action|classifier",
       "description": "Optional description",
       "function_name": "registry_function_name",
       "param_schema": {
@@ -82,7 +82,7 @@ graph = IntentGraphBuilder().with_functions(function_registry).with_json(json_gr
       ]
     }
   ],
-  "splitter": "optional_splitter_function_name",
+
   "visualize": false,
   "debug_context": false,
   "context_trace": false
@@ -118,18 +118,7 @@ graph = IntentGraphBuilder().with_functions(function_registry).with_json(json_gr
 }
 ```
 
-#### Splitter Node
-```json
-{
-  "name": "content_splitter",
-  "type": "splitter",
-  "splitter_function": "text_splitter",
-  "description": "Splits content into chunks",
-  "children": [
-    // Child nodes to process each chunk
-  ]
-}
-```
+
 
 ## LLM-Powered Argument Extraction
 

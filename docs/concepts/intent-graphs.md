@@ -14,14 +14,21 @@ An intent graph is a directed acyclic graph (DAG) where:
 ## Graph Structure
 
 ```text
-User Input → Root Classifier → Intent Classifier → Action → Output
+User Input → Root Classifier → Action → Output
 ```
 
 ### Node Types
 
-1. **Classifier Nodes** - Route input to appropriate child nodes
-2. **Action Nodes** - Execute actions and produce outputs
-3. **Splitter Nodes** - Handle multiple nodes in single input
+1. **Classifier Nodes** - Route input to appropriate child nodes (must be root nodes)
+2. **Action Nodes** - Execute actions and produce outputs (leaf nodes)
+
+### Single Intent Architecture
+
+All root nodes must be classifier nodes. This ensures focused, single-intent handling:
+
+- **Root Classifiers** - Entry points that classify user input and route to actions
+- **Action Nodes** - Leaf nodes that execute specific actions
+- **No Splitters** - Multi-intent splitting is not supported in this architecture
 
 ## Building Intent Graphs
 
@@ -53,7 +60,7 @@ main_classifier = llm_classifier(
     llm_config={"provider": "openai", "model": "gpt-4"}
 )
 
-# Build graph with LLM configuration for chunk classification
+# Build graph with LLM configuration
 graph = IntentGraphBuilder().root(main_classifier).with_default_llm_config({
     "provider": "openai",
     "model": "gpt-4"

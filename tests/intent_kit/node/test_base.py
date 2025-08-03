@@ -5,9 +5,9 @@ Tests for node base classes.
 import pytest
 from typing import Optional
 
-from intent_kit.node.base import Node, TreeNode
-from intent_kit.node.enums import NodeType
-from intent_kit.node.types import ExecutionResult
+from intent_kit.nodes.base_node import Node, TreeNode
+from intent_kit.nodes.enums import NodeType
+from intent_kit.nodes.types import ExecutionResult
 from intent_kit.context import IntentContext
 
 

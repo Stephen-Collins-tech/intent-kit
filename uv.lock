@@ -622,9 +622,6 @@ all = [
 anthropic = [
     { name = "anthropic" },
 ]
-evals = [
-    { name = "pyyaml" },
-]
 google = [
     { name = "google-genai" },
 ]
@@ -633,6 +630,9 @@ ollama = [
 ]
 openai = [
     { name = "openai" },
+]
+yaml = [
+    { name = "pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -669,9 +669,9 @@ requires-dist = [
     { name = "openai", marker = "extra == 'all'", specifier = ">=1.0.0" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0.0" },
     { name = "pyyaml", marker = "extra == 'all'", specifier = ">=6.0.2" },
-    { name = "pyyaml", marker = "extra == 'evals'", specifier = ">=6.0.2" },
+    { name = "pyyaml", marker = "extra == 'yaml'", specifier = ">=6.0.2" },
 ]
-provides-extras = ["all", "anthropic", "google", "ollama", "openai", "evals"]
+provides-extras = ["all", "anthropic", "google", "ollama", "openai", "yaml"]
 
 [package.metadata.requires-dev]
 dev = [

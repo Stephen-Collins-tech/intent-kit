@@ -1,4 +1,4 @@
-from intent_kit.node.classifiers.keyword import keyword_classifier
+from intent_kit.nodes.classifiers.keyword import keyword_classifier
 
 
 class DummyChild:

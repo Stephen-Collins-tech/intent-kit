@@ -6,8 +6,8 @@ and graph structure in intent graphs.
 """
 
 from typing import List, Dict, Any, Optional
-from intent_kit.node import TreeNode
-from intent_kit.node.enums import NodeType
+from intent_kit.nodes import TreeNode
+from intent_kit.nodes.enums import NodeType
 from intent_kit.utils.logger import Logger
 
 
@@ -26,45 +26,6 @@ class GraphValidationError(Exception):
         self.child_name = child_name
         self.child_type = child_type
         super().__init__(self.message)
-
-
-def validate_splitter_routing(graph_nodes: List[TreeNode]) -> None:
-    """
-    Validate that all splitter nodes only route to classifier nodes.
-
-    Args:
-        graph_nodes: List of all nodes in the graph to validate
-
-    Raises:
-        GraphValidationError: If any splitter node routes to a non-classifier node
-    """
-    logger = Logger(__name__)
-    logger.debug("Validating splitter-to-classifier routing constraints...")
-
-    for node in graph_nodes:
-        if node.node_type == NodeType.SPLITTER:
-            logger.debug(f"Checking splitter node: {node.name}")
-
-            for child in node.children:
-                if child.node_type != NodeType.CLASSIFIER:
-                    error_msg = (
-                        f"Invalid pipeline: Splitter node '{node.name}' outputs to "
-                        f"non-classifier node '{child.name}' of type '{child.node_type}'. "
-                        f"All splitter outputs must route only to classifier nodes."
-                    )
-                    logger.error(error_msg)
-                    raise GraphValidationError(
-                        message=error_msg,
-                        node_name=node.name,
-                        child_name=child.name,
-                        child_type=child.node_type,
-                    )
-                else:
-                    logger.debug(
-                        f"  ✓ Splitter '{node.name}' correctly routes to classifier '{child.name}'"
-                    )
-
-    logger.info("Splitter routing validation passed ✓")
 
 
 def validate_graph_structure(graph_nodes: List[TreeNode]) -> Dict[str, Any]:
@@ -89,13 +50,8 @@ def validate_graph_structure(graph_nodes: List[TreeNode]) -> Dict[str, Any]:
         node_type = node.node_type
         node_counts[node_type] = node_counts.get(node_type, 0) + 1
 
-    # Validate splitter routing
-    try:
-        validate_splitter_routing(all_nodes)
-        routing_valid = True
-    except GraphValidationError as e:
-        routing_valid = False
-        logger.error(f"Routing validation failed: {e.message}")
+    # Splitter routing validation removed - no splitter node type exists
+    routing_valid = True
 
     # Check for cycles (basic check)
     has_cycles = _check_for_cycles(all_nodes)

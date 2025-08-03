@@ -3,6 +3,7 @@ Tests for YAML service.
 """
 
 import pytest
+import os
 from unittest.mock import patch, Mock
 from io import StringIO
 
@@ -303,6 +304,39 @@ class TestYamlService:
         assert result == "custom: dumper\n"
         mock_yaml.dump.assert_called_once_with(data, stream=None)
 
+    def test_environment_variable_integration(self):
+        """Test that YAML service can work with environment variables."""
+        # This test verifies that the YAML service can be used
+        # in conjunction with environment-based configurations
+        service = YamlService()
+        mock_yaml = Mock()
+        mock_yaml.safe_load.return_value = {"env_key": "env_value"}
+        service.yaml = mock_yaml
+
+        # Test loading YAML that might contain environment variables
+        result = service.safe_load("env_key: env_value")
+        assert result == {"env_key": "env_value"}
+
+    def test_error_handling_with_invalid_yaml(self):
+        """Test error handling with invalid YAML data."""
+        service = YamlService()
+        mock_yaml = Mock()
+        mock_yaml.safe_load.side_effect = Exception("Invalid YAML")
+        service.yaml = mock_yaml
+
+        with pytest.raises(Exception, match="Invalid YAML"):
+            service.safe_load("invalid: yaml: data")
+
+    def test_error_handling_with_invalid_data_types(self):
+        """Test error handling with invalid data types for dumping."""
+        service = YamlService()
+        mock_yaml = Mock()
+        mock_yaml.dump.side_effect = Exception("Invalid data type")
+        service.yaml = mock_yaml
+
+        with pytest.raises(Exception, match="Invalid data type"):
+            service.dump({"key": object()})  # Non-serializable object
+
 
 class TestYamlServiceSingleton:
     """Test YamlService singleton functionality."""
@@ -425,3 +459,36 @@ class TestYamlServiceIntegration:
         # Test dump error
         with pytest.raises(TypeError, match="Invalid data type"):
             service.dump({"key": "value"})
+
+    def test_llm_config_integration(self):
+        """Test YAML service integration with LLM configurations."""
+        service = YamlService()
+        mock_yaml = Mock()
+
+        # Mock LLM configuration data
+        llm_config = {
+            "provider": "openai",
+            "api_key": "test-key",
+            "model": "gpt-4",
+            "max_tokens": 1000,
+        }
+        mock_yaml.safe_load.return_value = llm_config
+        service.yaml = mock_yaml
+
+        # Test loading LLM config from YAML
+        result = service.safe_load("provider: openai\napi_key: test-key")
+        assert result == llm_config
+        assert result["provider"] == "openai"
+        assert result["api_key"] == "test-key"
+
+    @patch.dict(os.environ, {"YAML_CONFIG_PATH": "/tmp/config.yaml"})
+    def test_environment_variable_support(self):
+        """Test that YAML service can work with environment variables."""
+        service = YamlService()
+        mock_yaml = Mock()
+        mock_yaml.safe_load.return_value = {"env_config": "value"}
+        service.yaml = mock_yaml
+
+        # Test loading YAML that might reference environment variables
+        result = service.safe_load("env_config: value")
+        assert result == {"env_config": "value"}

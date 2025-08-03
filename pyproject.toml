@@ -50,7 +50,7 @@ ollama = [
 openai = [
     "openai>=1.0.0",
 ]
-evals = [
+yaml = [
     "pyyaml>=6.0.2",
 ]
 

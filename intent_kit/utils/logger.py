@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 
 class ColorManager:
@@ -212,6 +213,24 @@ class Logger:
         self._validate_log_level()
         self.color_manager = ColorManager()
 
+    def _get_timestamp(self):
+        """Get current timestamp in a consistent format."""
+        return datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[
+            :-3
+        ]  # Include milliseconds
+
+    def _format_cost_per_token(self, cost, input_tokens, output_tokens):
+        """Format cost per token information."""
+        if cost is None or cost == 0:
+            return "N/A"
+
+        total_tokens = (input_tokens or 0) + (output_tokens or 0)
+        if total_tokens == 0:
+            return "N/A"
+
+        cost_per_token = cost / total_tokens
+        return f"${cost_per_token:.8f}/token"
+
     def _validate_log_level(self):
         """Validate the log level and throw exception if invalid."""
         if self.level not in self.VALID_LOG_LEVELS:
@@ -254,20 +273,23 @@ class Logger:
             return
         color = self.get_color("info")
         clear = self.clear_color()
-        print(f"{color}[INFO]{clear} [{self.name}] {message}")
+        timestamp = self._get_timestamp()
+        print(f"{color}[INFO]{clear} [{timestamp}] [{self.name}] {message}")
 
     def error(self, message):
         if not self.should_log("error"):
             return
         color = self.get_color("error")
         clear = self.clear_color()
-        print(f"{color}[ERROR]{clear} [{self.name}] {message}")
+        timestamp = self._get_timestamp()
+        print(f"{color}[ERROR]{clear} [{timestamp}] [{self.name}] {message}")
 
     def debug(self, message, colorize_message=True):
         if not self.should_log("debug"):
             return
         color = self.get_color("debug")
         clear = self.clear_color()
+        timestamp = self._get_timestamp()
 
         if colorize_message and self.supports_color():
             # Colorize the message content for better readability
@@ -283,37 +305,43 @@ class Logger:
                 # For simple messages, use a softer color
                 colored_message = self.colorize_field_value(str(message))
 
-            print(f"{color}[DEBUG]{clear} [{self.name}] {colored_message}")
+            print(
+                f"{color}[DEBUG]{clear} [{timestamp}] [{self.name}] {colored_message}"
+            )
         else:
-            print(f"{color}[DEBUG]{clear} [{self.name}] {message}")
+            print(f"{color}[DEBUG]{clear} [{timestamp}] [{self.name}] {message}")
 
     def warning(self, message):
         if not self.should_log("warning"):
             return
         color = self.get_color("warning")
         clear = self.clear_color()
-        print(f"{color}[WARNING]{clear} [{self.name}] {message}")
+        timestamp = self._get_timestamp()
+        print(f"{color}[WARNING]{clear} [{timestamp}] [{self.name}] {message}")
 
     def critical(self, message):
         if not self.should_log("critical"):
             return
         color = self.get_color("critical")
         clear = self.clear_color()
-        print(f"{color}[CRITICAL]{clear} [{self.name}] {message}")
+        timestamp = self._get_timestamp()
+        print(f"{color}[CRITICAL]{clear} [{timestamp}] [{self.name}] {message}")
 
     def fatal(self, message):
         if not self.should_log("fatal"):
             return
         color = self.get_color("fatal")
         clear = self.clear_color()
-        print(f"{color}[FATAL]{clear} [{self.name}] {message}")
+        timestamp = self._get_timestamp()
+        print(f"{color}[FATAL]{clear} [{timestamp}] [{self.name}] {message}")
 
     def trace(self, message):
         if not self.should_log("trace"):
             return
         color = self.get_color("trace")
         clear = self.clear_color()
-        print(f"{color}[TRACE]{clear} [{self.name}] {message}")
+        timestamp = self._get_timestamp()
+        print(f"{color}[TRACE]{clear} [{timestamp}] [{self.name}] {message}")
 
     def debug_structured(self, data, title="Debug Data"):
         """Log structured debug data with enhanced colorization."""
@@ -337,7 +365,10 @@ class Logger:
         else:
             formatted_data = self.colorize_field_value(str(data))
 
-        print(f"{color}[DEBUG]{clear} [{self.name}] {colored_title}: {formatted_data}")
+        timestamp = self._get_timestamp()
+        print(
+            f"{color}[DEBUG]{clear} [{timestamp}] [{self.name}] {colored_title}: {formatted_data}"
+        )
 
     def _format_dict(self, data, indent=0):
         """Format dictionary data with colorization."""
@@ -401,4 +432,45 @@ class Logger:
             return
         color = self.get_color(level)
         clear = self.clear_color()
-        print(f"{color}[{level}]{clear} [{self.name}] {message}")
+        timestamp = self._get_timestamp()
+        print(f"{color}[{level}]{clear} [{timestamp}] [{self.name}] {message}")
+
+    def log_cost(
+        self,
+        cost,
+        input_tokens=None,
+        output_tokens=None,
+        provider=None,
+        model=None,
+        duration=None,
+    ):
+        """Log cost information with cost per token breakdown."""
+        if not self.should_log("info"):
+            return
+
+        timestamp = self._get_timestamp()
+        cost_per_token = self._format_cost_per_token(cost, input_tokens, output_tokens)
+
+        # Build cost information string
+        cost_info = f"Cost: ${cost:.6f}"
+        if cost_per_token != "N/A":
+            cost_info += f" ({cost_per_token})"
+
+        if input_tokens is not None:
+            cost_info += f", Input: {input_tokens} tokens"
+        if output_tokens is not None:
+            cost_info += f", Output: {output_tokens} tokens"
+        if provider:
+            cost_info += f", Provider: {provider}"
+        if model:
+            cost_info += f", Model: {model}"
+        if duration is not None:
+            cost_info += f", Duration: {duration:.3f}s"
+
+        color = self.get_color("info")
+        clear = self.clear_color()
+        print(f"{color}[COST]{clear} [{timestamp}] [{self.name}] {cost_info}")
+
+
+def get_logger(name):
+    return Logger(name)

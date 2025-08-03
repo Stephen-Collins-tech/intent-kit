@@ -223,7 +223,7 @@ class TestContextDebug:
 
     def test_analyze_node_dependencies_with_classifier(self):
         """Test analyzing node dependencies with classifier function."""
-        from intent_kit.node import TreeNode
+        from intent_kit.nodes import TreeNode
 
         class MinimalNode(TreeNode):
             def __init__(self):

@@ -4,8 +4,8 @@ Tests for ActionNode functionality.
 
 from typing import Dict, Any, Optional
 
-from intent_kit.node.actions import ActionNode
-from intent_kit.node.enums import NodeType
+from intent_kit.nodes.actions import ActionNode
+from intent_kit.nodes.enums import NodeType
 from intent_kit.context import IntentContext
 
 
