@@ -1,21 +1,28 @@
-<div align="center">
-  <img src="https://raw.githubusercontent.com/Stephen-Collins-tech/intent-kit/main/assets/logo.png" alt="Intent Kit Logo" height="100" style="border-radius: 16px;"/>
-</div>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Stephen-Collins-tech/intent-kit/main/assets/logo.png" alt="Intent Kit Logo" height="100"/>
+</p>
 
 <h1 align="center">Intent Kit</h1>
 <p align="center">Build reliable, auditable AI applications that understand user intent and take intelligent actions</p>
 
-<div align="center" >
-  <img src="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg" alt="CI"/>
-  <img src="https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg" alt="Coverage Status"/>
-  <img src="https://img.shields.io/pypi/v/intentkit-py" alt="PyPI"/>
+<p align="center">
+  <a href="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml">
+    <img src="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg" alt="CI Status"/>
+  </a>
+  <a href="https://codecov.io/gh/Stephen-Collins-tech/intent-kit">
+    <img src="https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg" alt="Coverage"/>
+  </a>
+  <a href="https://pypi.org/project/intentkit-py/">
+    <img src="https://img.shields.io/pypi/v/intentkit-py" alt="PyPI Version"/>
+  </a>
   <img src="https://img.shields.io/pypi/dm/intentkit-py" alt="PyPI Downloads"/>
-  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"/>
-</div>
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License"/>
+</p>
 
 <p align="center">
   <a href="https://docs.intentkit.io">Docs</a>
 </p>
+
 
 ---
 
