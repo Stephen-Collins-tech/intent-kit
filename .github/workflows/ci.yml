@@ -41,11 +41,16 @@ jobs:
         run: uv sync --group dev
       - name: Tests with coverage
         run: |
-          uv run pytest --cov=intent_kit --cov-branch --cov-report=xml
+          uv run pytest --cov=intent_kit --cov-branch --cov-report=xml --cov-report=html
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
+          verbose: true
 
   eval:
     runs-on: ubuntu-latest
