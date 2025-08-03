@@ -342,6 +342,7 @@ class ActionNode(TreeNode):
             error=None,
             params=validated_params,
             children_results=[],
+            # NOTE: Setting the sum total for now for this execution call, but should delineate the cost of any LLM calls associated with this node
             input_tokens=total_input_tokens,
             output_tokens=total_output_tokens,
             cost=total_cost,

@@ -4,6 +4,13 @@ Action node implementations.
 
 from .node import ActionNode
 from .builder import ActionBuilder
+from .argument_extractor import (
+    ArgumentExtractor,
+    RuleBasedArgumentExtractor,
+    LLMArgumentExtractor,
+    ArgumentExtractorFactory,
+    ExtractionResult,
+)
 from .remediation import (
     Strategy,
     RemediationStrategy,
@@ -30,6 +37,11 @@ from .remediation import (
 __all__ = [
     "ActionNode",
     "ActionBuilder",
+    "ArgumentExtractor",
+    "RuleBasedArgumentExtractor",
+    "LLMArgumentExtractor",
+    "ArgumentExtractorFactory",
+    "ExtractionResult",
     "Strategy",
     "RemediationStrategy",
     "RetryOnFailStrategy",

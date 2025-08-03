@@ -197,12 +197,19 @@ class OpenRouterClient(BaseLLMClient):
                 output_price_per_1m=0.8,
                 last_updated="2025-07-31",
             ),
-            "mistralai/mistral-7b-instruct-v0.2": ModelPricing(
-                model_name="mistralai/mistral-7b-instruct-v0.2",
+            "mistralai/mistral-7b-instruct": ModelPricing(
+                model_name="mistralai/mistral-7b-instruct",
                 provider="openrouter",
                 input_price_per_1m=0.1,
-                output_price_per_1m=0.3,
+                output_price_per_1m=0.1,
                 last_updated="2025-07-31",
+            ),
+            "mistralai/ministral-8b": ModelPricing(
+                model_name="mistralai/ministral-8b",
+                provider="openrouter",
+                input_price_per_1m=0.15,
+                output_price_per_1m=0.15,
+                last_updated="2025-08-02",
             ),
             "liquid/lfm-40b": ModelPricing(
                 model_name="liquid/lfm-40b",
@@ -257,7 +264,7 @@ class OpenRouterClient(BaseLLMClient):
         """Generate text using OpenRouter's LLM model."""
         self._ensure_imported()
         assert self._client is not None  # Type assertion for linter
-        model = model or "openrouter-default"
+        model = model or "mistralai/mistral-7b-instruct"
         perf_util = PerfUtil("openrouter_generate")
         perf_util.start()
 

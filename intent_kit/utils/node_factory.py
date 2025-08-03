@@ -35,6 +35,7 @@ def llm_classifier(
         "name": name,
         "description": description,
         "type": "llm_classifier",
+        "classifier_type": "llm",  # This is the key fix
         "llm_config": llm_config,
     }
 

@@ -17,9 +17,10 @@ from intent_kit.graph.graph_components import (
     GraphConstructor,
 )
 from intent_kit.services.yaml_service import yaml_service
-from intent_kit.utils.logger import Logger
 
 from intent_kit.nodes.base_builder import BaseBuilder
+from intent_kit.nodes.actions.builder import ActionBuilder
+from intent_kit.nodes.classifiers.builder import ClassifierBuilder
 
 
 class IntentGraphBuilder(BaseBuilder[IntentGraph]):
@@ -34,7 +35,6 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
         self._json_graph: Optional[Dict[str, Any]] = None
         self._function_registry: Optional[Dict[str, Callable]] = None
         self._llm_config: Optional[Dict[str, Any]] = None
-        self._logger = Logger(__name__)
 
     @staticmethod
     def from_json(
@@ -199,13 +199,7 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
                 env_value = os.getenv(env_var)
                 if env_value:
                     processed_config[key] = env_value
-                    self._logger.debug(
-                        f"Resolved environment variable {env_var} for key {key}"
-                    )
                 else:
-                    self._logger.warning(
-                        f"Environment variable {env_var} not found for key {key}"
-                    )
                     processed_config[key] = value  # Keep original value
             else:
                 processed_config[key] = value
@@ -215,9 +209,8 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
         supported_providers = {"openai", "anthropic", "google", "openrouter", "ollama"}
         if provider in supported_providers:
             if provider != "ollama" and not processed_config.get("api_key"):
-                self._logger.warning(
-                    f"Provider {provider} requires api_key but none found in config"
-                )
+                # Warning: Provider requires api_key but none found in config
+                pass
 
         return processed_config
 
@@ -398,8 +391,6 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
                 f"Function '{function_name}' not found in function registry"
             )
 
-        from intent_kit.nodes.actions.builder import ActionBuilder
-
         builder = ActionBuilder(name)
         builder.with_action(function_registry[function_name])
         builder.with_description(description)
@@ -419,31 +410,9 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
         function_registry: Dict[str, Callable],
     ) -> TreeNode:
         """Create a classifier node from specification."""
-        classifier_type = node_spec.get("classifier_type", "rule")
-
-        if classifier_type == "llm":
-            return self._create_llm_classifier_node(
-                node_id, name, description, node_spec, function_registry
-            )
-        else:
-            if "classifier_function" not in node_spec:
-                raise ValueError(
-                    f"Classifier node '{node_id}' must have a 'classifier_function' field"
-                )
-
-            function_name = node_spec["classifier_function"]
-            if function_name not in function_registry:
-                raise ValueError(
-                    f"Function '{function_name}' not found in function registry"
-                )
-
-            from intent_kit.nodes.classifiers.builder import ClassifierBuilder
-
-            builder = ClassifierBuilder(name)
-            builder.with_classifier(function_registry[function_name])
-            builder.with_description(description)
-
-            return builder.build()
+        return ClassifierBuilder.create_from_spec(
+            node_id, name, description, node_spec, function_registry
+        )
 
     def _create_llm_classifier_node(
         self,
@@ -459,29 +428,9 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
                 f"LLM classifier node '{node_id}' must have an 'llm_config' field"
             )
 
-        from intent_kit.nodes.classifiers.builder import ClassifierBuilder
-
-        # Create a node spec that the from_json method can handle
-        classifier_spec = {
-            "id": node_id,
-            "name": name,
-            "description": description,
-            "type": "classifier",
-            "classifier_type": "llm",
-            "llm_config": node_spec["llm_config"],
-        }
-
-        # Add classification prompt if present
-        if "classification_prompt" in node_spec:
-            classifier_spec["classification_prompt"] = node_spec[
-                "classification_prompt"
-            ]
-
-        builder = ClassifierBuilder.from_json(
-            classifier_spec, function_registry, node_spec["llm_config"]
+        return ClassifierBuilder.create_from_spec(
+            node_id, name, description, node_spec, function_registry
         )
-
-        return builder.build()
 
     def _build_from_json(
         self,

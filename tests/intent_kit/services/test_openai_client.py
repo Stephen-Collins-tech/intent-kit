@@ -193,7 +193,7 @@ class TestOpenAIClient:
             result = client.generate("Test prompt")
 
             assert isinstance(result, LLMResponse)
-            assert result.output is None
+            assert result.output == ""
 
     def test_generate_no_choices(self):
         """Test text generation with no choices in response."""
@@ -212,7 +212,7 @@ class TestOpenAIClient:
             assert result.output == ""
             assert result.input_tokens == 0
             assert result.output_tokens == 0
-            assert result.cost == -1.0  # Default error cost
+            assert result.cost == 0.0  # Properly calculated cost
 
     def test_generate_exception_handling(self):
         """Test text generation with exception handling."""

@@ -337,9 +337,6 @@ class IntentGraph:
             for root_node in self.root_nodes:
                 try:
                     result = root_node.traverse(user_input, context=context)
-                    self.logger.debug(
-                        f"IntentGraph .route method call result: {result}"
-                    )
                     if result is not None:
                         results.append(result)
                 except Exception as e:

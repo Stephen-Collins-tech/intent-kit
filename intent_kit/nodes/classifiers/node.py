@@ -10,6 +10,7 @@ from ..base_node import TreeNode
 from ..enums import NodeType
 from ..types import ExecutionResult, ExecutionError
 from intent_kit.context import IntentContext
+from intent_kit.types import LLMResponse
 from ..actions.remediation import (
     get_remediation_strategy,
     RemediationStrategy,
@@ -24,7 +25,7 @@ class ClassifierNode(TreeNode):
         name: Optional[str],
         classifier: Callable[
             [str, List["TreeNode"], Optional[Dict[str, Any]]],
-            tuple[Optional["TreeNode"], Optional[Dict[str, Any]]],
+            tuple[Optional["TreeNode"], Optional[LLMResponse]],
         ],
         children: List["TreeNode"],
         description: str = "",
@@ -49,7 +50,7 @@ class ClassifierNode(TreeNode):
         # If context is needed, populate context_dict here in the future
 
         # Call classifier function - it now returns a tuple (chosen_child, response_info)
-        (chosen_child, response_info) = self.classifier(
+        (chosen_child, response) = self.classifier(
             user_input, self.children, context_dict
         )
 
@@ -92,23 +93,38 @@ class ClassifierNode(TreeNode):
                 children_results=[],
             )
 
-        # Execute the chosen child
+        # Extract LLM response info from the classifier result
+        # Handle both dict and LLMResponse objects
+        if isinstance(response, dict):
+            # Response is a dict with response info
+            cost = response.get("cost", 0.0)
+            model = response.get("model", "")
+            provider = response.get("provider", "")
+            input_tokens = response.get("input_tokens", 0)
+            output_tokens = response.get("output_tokens", 0)
+        else:
+            # Response is an LLMResponse object
+            cost = response.cost if response else 0.0
+            model = response.model if response else ""
+            provider = response.provider if response else ""
+            input_tokens = response.input_tokens if response else 0
+            output_tokens = response.output_tokens if response else 0
+
+        # Execute the chosen child to get the actual output
         child_result = chosen_child.execute(user_input, context)
 
-        # Extract LLM response info from the classifier result
-        llm_cost = 0.0
-        llm_input_tokens = 0
-        llm_output_tokens = 0
-
-        if response_info and isinstance(response_info, dict):
-            llm_cost = response_info.get("cost", 0.0)
-            llm_input_tokens = response_info.get("input_tokens", 0)
-            llm_output_tokens = response_info.get("output_tokens", 0)
-
-        # Add LLM cost and tokens to the result
-        total_cost = (child_result.cost or 0.0) + llm_cost
-        total_input_tokens = (child_result.input_tokens or 0) + llm_input_tokens
-        total_output_tokens = (child_result.output_tokens or 0) + llm_output_tokens
+        # Calculate total cost (classifier + child)
+        total_cost = cost + child_result.cost if child_result.cost else cost
+        total_input_tokens = (
+            input_tokens + child_result.input_tokens
+            if child_result.input_tokens
+            else input_tokens
+        )
+        total_output_tokens = (
+            output_tokens + child_result.output_tokens
+            if child_result.output_tokens
+            else output_tokens
+        )
 
         return ExecutionResult(
             success=True,
@@ -116,7 +132,7 @@ class ClassifierNode(TreeNode):
             node_path=self.get_path(),
             node_type=NodeType.CLASSIFIER,
             input=user_input,
-            output=child_result.output,  # Return the child's actual output
+            output=child_result.output,  # Use the child's output
             error=None,
             params={
                 "chosen_child": chosen_child.name or "unknown",
@@ -126,6 +142,8 @@ class ClassifierNode(TreeNode):
             },
             children_results=[child_result],
             cost=total_cost,
+            model=model,
+            provider=provider,
             input_tokens=total_input_tokens,
             output_tokens=total_output_tokens,
         )

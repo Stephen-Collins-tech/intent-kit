@@ -7,10 +7,7 @@ from intent_kit.nodes.base_builder import BaseBuilder
 from typing import Any, Callable, Dict, Type, Set, List, Optional, Union
 from intent_kit.nodes.actions.node import ActionNode
 from intent_kit.nodes.actions.remediation import RemediationStrategy
-from intent_kit.nodes.actions.param_extraction import (
-    create_arg_extractor,
-    parse_param_schema,
-)
+from intent_kit.nodes.actions.argument_extractor import ArgumentExtractorFactory
 from intent_kit.services.ai.base_client import BaseLLMClient
 from intent_kit.utils.logger import get_logger
 
@@ -73,7 +70,24 @@ class ActionBuilder(BaseBuilder[ActionNode]):
         builder.description = description
         builder.action_func = action_obj
         builder.logger.info(f"ActionBuilder param_schema: {builder.param_schema}")
-        builder.param_schema = parse_param_schema(node_spec.get("param_schema", {}))
+        # Parse parameter schema from JSON string types to Python types
+        schema_data = node_spec.get("param_schema", {})
+        type_map = {
+            "str": str,
+            "int": int,
+            "float": float,
+            "bool": bool,
+            "list": list,
+            "dict": dict,
+        }
+
+        param_schema = {}
+        for param_name, type_name in schema_data.items():
+            if type_name not in type_map:
+                raise ValueError(f"Unknown parameter type: {type_name}")
+            param_schema[param_name] = type_map[type_name]
+
+        builder.param_schema = param_schema
 
         # Use node-specific llm_config if present, otherwise use default
         if "llm_config" in node_spec:
@@ -154,18 +168,28 @@ class ActionBuilder(BaseBuilder[ActionNode]):
         assert self.action_func is not None
         assert self.param_schema is not None
 
-        arg_extractor = create_arg_extractor(
+        # Create argument extractor using the new factory
+        argument_extractor = ArgumentExtractorFactory.create(
             param_schema=self.param_schema,
             llm_config=self.llm_config,
             extraction_prompt=self.extraction_prompt,
-            node_name=self.name,
+            name=self.name,
         )
+
+        # Create wrapper function to convert ExtractionResult to expected format
+        def arg_extractor_wrapper(user_input: str, context=None):
+            result = argument_extractor.extract(user_input, context)
+            if result.success:
+                return result.extracted_params
+            else:
+                # Return empty dict on failure to maintain compatibility
+                return {}
 
         return ActionNode(
             name=self.name,
             param_schema=self.param_schema,
             action=self.action_func,  # <-- can be function or stateful object!
-            arg_extractor=arg_extractor,
+            arg_extractor=arg_extractor_wrapper,
             context_inputs=self.context_inputs,
             context_outputs=self.context_outputs,
             input_validator=self.input_validator,

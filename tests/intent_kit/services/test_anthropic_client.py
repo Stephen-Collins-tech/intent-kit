@@ -122,7 +122,7 @@ class TestAnthropicClient:
 
             assert isinstance(result, LLMResponse)
             assert result.output == "Generated response"
-            assert result.model == "claude-sonnet-4-20250514"
+            assert result.model == "claude-3-5-sonnet-20241022"
             assert result.input_tokens == 100
             assert result.output_tokens == 50
             assert result.provider == "anthropic"
@@ -130,7 +130,7 @@ class TestAnthropicClient:
             assert result.cost >= 0
 
             mock_client.messages.create.assert_called_once_with(
-                model="claude-sonnet-4-20250514",
+                model="claude-3-5-sonnet-20241022",
                 max_tokens=1000,
                 messages=[{"role": "user", "content": "Test prompt"}],
             )

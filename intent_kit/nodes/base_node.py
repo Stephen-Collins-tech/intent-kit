@@ -87,10 +87,7 @@ class TreeNode(Node, ABC):
         # parent_result is None for the root node
 
         # Execute root node
-        self.logger.debug(f"TreeNode traverse root node: {self.name}")
-        self.logger.debug(f"TreeNode traverse root node node_type: {self.node_type}")
         root_result = self.execute(user_input, context)
-        self.logger.debug(f"TreeNode root_result: {root_result.display()}")
 
         root_result.node_name = self.name
         root_result.node_path = parent_path + [self.name]
@@ -107,6 +104,9 @@ class TreeNode(Node, ABC):
         total_output_tokens = getattr(root_result, "output_tokens", None) or 0
         total_cost = getattr(root_result, "cost", None) or 0.0
         total_duration = getattr(root_result, "duration", None) or 0.0
+        self.logger.debug(
+            f"TreeNode root_result BEFORE child traversal:\n{root_result.display()}"
+        )
 
         while stack:
             node, node_path, node_result, child_idx = stack[-1]
@@ -128,9 +128,6 @@ class TreeNode(Node, ABC):
                 if chosen_child:
                     # Execute the chosen child
                     child_result = chosen_child.execute(user_input, context)
-                    self.logger.info(f"TreeNode child_result: {child_result.display()}")
-                    child_result.node_name = chosen_child.name
-                    child_result.node_path = node_path + [chosen_child.name]
                     node_result.children_results.append(child_result)
                     results_map[id(chosen_child)] = child_result
 
@@ -177,7 +174,4 @@ class TreeNode(Node, ABC):
         final_result.cost = total_cost
         final_result.duration = total_duration
 
-        self.logger.debug(f"TreeNode final_result: {final_result.display()}")
-        self.logger.debug(f"TreeNode stack: {stack}")
-        self.logger.debug(f"TreeNode results_map: {results_map}")
         return final_result
