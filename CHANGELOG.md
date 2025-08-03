@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.5.0] - 2025-08-03
+
+### Added
+- Single Intent Architecture - Complete redesign for focused, deterministic intent processing
+- Enhanced Context Management - Context tracing, debug context, and state capture capabilities
+- Improved Error Handling - Pluggable remediation strategies with RetryOnFailStrategy, FallbackToAnotherNodeStrategy, and SelfReflectStrategy
+- Performance Monitoring - PerfUtil class for comprehensive performance tracking and cost calculation
+- Argument Extraction System - Structured parameter extraction with RuleBasedArgumentExtractor and LLMArgumentExtractor
+- Enhanced AI Services - Reorganized AI client wrappers with improved error handling and cost tracking
+- Builder Pattern Improvements - Fluent builders for ActionNode and ClassifierNode with enhanced configuration options
+- Token Usage Tracking - Real-time token consumption and cost calculation across all LLM operations
+
+### Changed
+- Architecture Overhaul - Migrated temporarily from multi-intent to single intent architecture for improved reliability
+- Node System Restructure - Renamed `intent_kit/node/` to `intent_kit/nodes/` for better organization
+- Classifier Simplification - Removed KEYWORD and CHUNK classifier types, streamlined to RULE and LLM only
+- IntentGraph Redesign - Root nodes must now be classifiers, action nodes are leaf nodes only
+- Documentation Updates - Complete overhaul of architecture docs and examples for single intent patterns
+- Service Layer Reorganization - Moved AI services to `intent_kit/services/ai/` with enhanced factory pattern
+- Test Suite Updates - Comprehensive test updates for new architecture and enhanced coverage
+
+### Removed
+- Splitter Node System - Complete removal of SplitterNode, SplitterBuilder, and all splitter implementations
+- Multi-Intent Handling - Eliminated ability to process multiple intents in single user input
+- Splitter Types - Removed SPLITTER from NodeType enum and all splitter-related enums
+- Complex Examples - Removed multi_intent_demo.py, context_demo.py, remediation_demo.py and related JSON configs
+- Builder Directory - Moved IntentGraphBuilder to graph module, removed separate builders package
+- Old Node Structure - Removed entire `intent_kit/node/splitters/` directory and related files
+- Splitter Validation - Removed all splitter routing validation and related validation logic
+
+### Breaking Changes
+- Node Type Changes - NodeType enum now only supports ACTION and CLASSIFIER (SPLITTER removed)
+- Architecture Requirements - All root nodes must be classifiers, no more splitter nodes
+- Import Path Updates - `intent_kit.node` renamed to `intent_kit.nodes` throughout codebase
+- Builder API Changes - IntentGraphBuilder moved from builders package to graph module
+- Multi-Intent Support - No longer supports splitting user input into multiple intents
+
 ## [v0.4.0] - 2025-07-25
 
 ### Added
