@@ -56,8 +56,8 @@ Create systems that make smart decisions based on user requests.
 ## 🚀 Key Features
 
 - **Smart Understanding** - Works with any AI model, extracts parameters automatically
-- **Multi-Step Workflows** - Chain actions together, handle complex requests
-- **Visualization** - See your workflows as interactive diagrams
+- **JSON Configuration** - Define complex workflows in JSON for easy management
+- **Function Registry** - Register your functions and use them in actions
 - **Developer Friendly** - Simple API, comprehensive error handling, built-in debugging
 - **Testing & Evaluation** - Test against real datasets, measure performance
 

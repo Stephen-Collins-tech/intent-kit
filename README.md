@@ -5,24 +5,27 @@
 <h1 align="center">Intent Kit</h1>
 <p align="center">Build reliable, auditable AI applications that understand user intent and take intelligent actions</p>
 
-<p align="center">
-  <a href="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml">
-    <img src="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg" alt="CI Status"/>
+<p align="center" >
+  <a style="text-decoration: none;" href="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml">
+    <img src="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg" alt="CI"/>
   </a>
-  <a href="https://codecov.io/gh/Stephen-Collins-tech/intent-kit">
-    <img src="https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg" alt="Coverage"/>
+  <a style="text-decoration: none;" href="https://codecov.io/gh/Stephen-Collins-tech/intent-kit">
+    <img src="https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg" alt="Coverage Status"/>
   </a>
-  <a href="https://pypi.org/project/intentkit-py/">
-    <img src="https://img.shields.io/pypi/v/intentkit-py" alt="PyPI Version"/>
+  <a style="text-decoration: none;" href="https://docs.intentkit.io">
+    <img src="https://img.shields.io/badge/docs-online-blue" alt="Documentation"/>
   </a>
-  <img src="https://img.shields.io/pypi/dm/intentkit-py" alt="PyPI Downloads"/>
-  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License"/>
+  <a style="text-decoration: none;" href="https://pypi.org/project/intentkit-py">
+    <img src="https://img.shields.io/pypi/v/intentkit-py" alt="PyPI"/>
+  </a>
+  <a style="text-decoration: none;" href="https://pypi.org/project/intentkit-py">
+    <img src="https://img.shields.io/pypi/dm/intentkit-py" alt="PyPI Downloads"/>
+  </a>
 </p>
 
 <p align="center">
   <a href="https://docs.intentkit.io">Docs</a>
 </p>
-
 
 ---
 
@@ -90,12 +93,83 @@ greet = action(
 # Create a classifier to understand requests
 classifier = llm_classifier(
     name="main",
+    description="Route to appropriate action",
     children=[greet],
     llm_config={"provider": "openai", "model": "gpt-3.5-turbo"}
 )
 
 # Build and test your workflow
 graph = IntentGraphBuilder().root(classifier).build()
+result = graph.route("Hello Alice")
+print(result.output)  # → "Hello Alice!"
+```
+
+### 3. Using JSON Configuration
+
+For more complex workflows, use JSON configuration:
+
+```python
+from intent_kit import IntentGraphBuilder
+
+# Define your functions
+def greet(name, context=None):
+    return f"Hello {name}!"
+
+def calculate(operation, a, b, context=None):
+    if operation == "add":
+        return a + b
+    return None
+
+# Create function registry
+function_registry = {
+    "greet": greet,
+    "calculate": calculate,
+}
+
+# Define your graph in JSON
+graph_config = {
+    "root": "main_classifier",
+    "nodes": {
+        "main_classifier": {
+            "id": "main_classifier",
+            "type": "classifier",
+            "classifier_type": "llm",
+            "name": "main_classifier",
+            "description": "Main intent classifier",
+            "llm_config": {
+                "provider": "openai",
+                "model": "gpt-3.5-turbo",
+            },
+            "children": ["greet_action", "calculate_action"],
+        },
+        "greet_action": {
+            "id": "greet_action",
+            "type": "action",
+            "name": "greet_action",
+            "description": "Greet the user",
+            "function": "greet",
+            "param_schema": {"name": "str"},
+        },
+        "calculate_action": {
+            "id": "calculate_action",
+            "type": "action",
+            "name": "calculate_action",
+            "description": "Perform a calculation",
+            "function": "calculate",
+            "param_schema": {"operation": "str", "a": "float", "b": "float"},
+        },
+    },
+}
+
+# Build your graph
+graph = (
+    IntentGraphBuilder()
+    .with_json(graph_config)
+    .with_functions(function_registry)
+    .build()
+)
+
+# Test it!
 result = graph.route("Hello Alice")
 print(result.output)  # → "Hello Alice!"
 ```

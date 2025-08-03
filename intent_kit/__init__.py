@@ -16,8 +16,8 @@ from .nodes.actions import ActionNode
 from .graph.builder import IntentGraphBuilder
 from .context import IntentContext
 
-# For advanced node helpers (llm_classifier, llm_splitter, etc.),
-# import directly from intent_kit.utils.node_factory in your code.
+# Export node factory functions for easier access
+from .utils.node_factory import action, llm_classifier
 
 __version__ = "0.5.0"
 
@@ -28,4 +28,6 @@ __all__ = [
     "ClassifierNode",
     "ActionNode",
     "IntentContext",
+    "action",
+    "llm_classifier",
 ]
