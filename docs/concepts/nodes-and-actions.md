@@ -33,8 +33,7 @@ weather_action = action(
     name="weather",
     description="Get weather information for a city",
     action_func=lambda city: f"Weather in {city} is sunny",
-    param_schema={"city": str},
-    llm_config={"provider": "openai", "model": "gpt-4"}
+    param_schema={"city": str}
 )
 ```
 
@@ -44,10 +43,6 @@ weather_action = action(
 - **description** - Human-readable description
 - **action_func** - Function to execute
 - **param_schema** - Parameter type definitions
-- **llm_config** - Optional LLM configuration for parameter extraction
-- **context_inputs** - Context keys the action reads
-- **context_outputs** - Context keys the action writes
-- **remediation_strategies** - Error handling strategies
 
 ### Classifier Nodes
 
@@ -68,167 +63,196 @@ main_classifier = llm_classifier(
 )
 ```
 
-#### Keyword Classifier
+## Using JSON Configuration
 
-Uses keyword matching for classification:
+For more complex workflows, you can define nodes in JSON:
 
 ```python
-from intent_kit import keyword_classifier
+from intent_kit import IntentGraphBuilder
 
-main_classifier = keyword_classifier(
-    name="main",
-    description="Route user input to appropriate action",
-    children=[greet_action, weather_action, calculator_action],
-    keywords={"greet": ["hello", "hi"], "weather": ["weather", "forecast"]}
+# Define your functions
+def greet(name, context=None):
+    return f"Hello {name}!"
+
+def weather(city, context=None):
+    return f"Weather in {city} is sunny"
+
+# Create function registry
+function_registry = {
+    "greet": greet,
+    "weather": weather,
+}
+
+# Define your graph in JSON
+graph_config = {
+    "root": "main_classifier",
+    "nodes": {
+        "main_classifier": {
+            "id": "main_classifier",
+            "type": "classifier",
+            "classifier_type": "llm",
+            "name": "main_classifier",
+            "description": "Main intent classifier",
+            "llm_config": {
+                "provider": "openai",
+                "model": "gpt-3.5-turbo",
+            },
+            "children": ["greet_action", "weather_action"],
+        },
+        "greet_action": {
+            "id": "greet_action",
+            "type": "action",
+            "name": "greet_action",
+            "description": "Greet the user",
+            "function": "greet",
+            "param_schema": {"name": "str"},
+        },
+        "weather_action": {
+            "id": "weather_action",
+            "type": "action",
+            "name": "weather_action",
+            "description": "Get weather information",
+            "function": "weather",
+            "param_schema": {"city": "str"},
+        },
+    },
+}
+
+# Build your graph
+graph = (
+    IntentGraphBuilder()
+    .with_json(graph_config)
+    .with_functions(function_registry)
+    .build()
 )
 ```
-
-
 
 ## Parameter Extraction
 
 ### Automatic Extraction
 
-When `llm_config` is provided, parameters are automatically extracted from natural language:
+When using LLM classifiers, parameters are automatically extracted from natural language:
 
 ```python
 # Input: "What's the weather in San Francisco?"
 # Extracted: {"city": "San Francisco"}
 
-weather_action = action(
-    name="weather",
-    action_func=lambda city: f"Weather in {city} is sunny",
-    param_schema={"city": str},
-    llm_config={"provider": "openai", "model": "gpt-4"}
-)
+# Input: "Hello Alice"
+# Extracted: {"name": "Alice"}
 ```
 
-### Manual Extraction
+### Parameter Schema
 
-Parameters can be extracted manually using regex or other methods:
+Define the expected parameters and their types:
 
 ```python
-import re
-
-def extract_city(text):
-    match = re.search(r"weather in (\w+)", text)
-    return {"city": match.group(1)} if match else {}
-
-weather_action = action(
-    name="weather",
-    action_func=lambda city: f"Weather in {city} is sunny",
-    param_schema={"city": str},
-    param_extractor=extract_city
-)
+param_schema = {
+    "name": str,
+    "age": int,
+    "city": str,
+    "temperature": float
+}
 ```
 
-## Context Integration
+## Building Graphs
 
-### Reading Context
-
-Handlers can read from context:
+### Using IntentGraphBuilder
 
 ```python
-def personalized_greet(name, context):
-    user_preference = context.get("user_preference", "formal")
-    if user_preference == "formal":
-        return f"Good day, {name}!"
-    else:
-        return f"Hey {name}!"
+from intent_kit import IntentGraphBuilder
+from intent_kit.utils.node_factory import action, llm_classifier
 
+# Define actions
 greet_action = action(
     name="greet",
-    action_func=personalized_greet,
-    param_schema={"name": str},
-    context_inputs=["user_preference"]
+    description="Greet the user",
+    action_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str}
 )
-```
-
-### Writing Context
-
-Handlers can write to context:
-
-```python
-def track_conversation(name, context):
-    history = context.get("conversation_history", [])
-    history.append(f"Greeted {name}")
-    context.set("conversation_history", history)
-    return f"Hello {name}!"
-
-greet_action = action(
-    name="greet",
-    action_func=track_conversation,
-    param_schema={"name": str},
-    context_outputs=["conversation_history"]
-)
-```
-
-## Error Handling
-
-### Remediation Strategies
-
-Handlers can include remediation strategies:
-
-```python
-from intent_kit import RetryStrategy, FallbackStrategy
 
 weather_action = action(
     name="weather",
-    action_func=get_weather,
-    param_schema={"city": str},
-    remediation_strategies=[
-        RetryStrategy(max_retries=3),
-        FallbackStrategy(fallback_func=lambda: "Weather service unavailable")
-    ]
-)
-```
-
-### Error Recovery
-
-Handlers can recover from errors:
-
-```python
-def robust_weather(city):
-    try:
-        return get_weather_api(city)
-    except Exception as e:
-        return f"Weather information for {city} is currently unavailable"
-
-weather_action = action(
-    name="weather",
-    action_func=robust_weather,
+    description="Get weather information",
+    action_func=lambda city: f"Weather in {city} is sunny",
     param_schema={"city": str}
 )
+
+# Create classifier
+main_classifier = llm_classifier(
+    name="main",
+    description="Route to appropriate action",
+    children=[greet_action, weather_action],
+    llm_config={"provider": "openai", "model": "gpt-4"}
+)
+
+# Build graph
+graph = IntentGraphBuilder().root(main_classifier).build()
+```
+
+### Using JSON Configuration
+
+For complex workflows, JSON configuration provides more flexibility:
+
+```python
+# Define your graph in JSON
+graph_config = {
+    "root": "main_classifier",
+    "nodes": {
+        "main_classifier": {
+            "id": "main_classifier",
+            "type": "classifier",
+            "classifier_type": "llm",
+            "name": "main_classifier",
+            "description": "Main intent classifier",
+            "llm_config": {
+                "provider": "openai",
+                "model": "gpt-4"
+            },
+            "children": ["greet_action", "weather_action"],
+        },
+        "greet_action": {
+            "id": "greet_action",
+            "type": "action",
+            "name": "greet_action",
+            "description": "Greet the user",
+            "function": "greet",
+            "param_schema": {"name": "str"},
+        },
+        "weather_action": {
+            "id": "weather_action",
+            "type": "action",
+            "name": "weather_action",
+            "description": "Get weather information",
+            "function": "weather",
+            "param_schema": {"city": "str"},
+        },
+    },
+}
+
+# Build graph
+graph = (
+    IntentGraphBuilder()
+    .with_json(graph_config)
+    .with_functions(function_registry)
+    .build()
+)
+```
+
+## Testing Your Workflows
+
+```python
+# Test your workflow
+result = graph.route("Hello Alice")
+print(result.output)  # → "Hello Alice!"
+
+result = graph.route("What's the weather in San Francisco?")
+print(result.output)  # → "Weather in San Francisco is sunny"
 ```
 
 ## Best Practices
 
-### Naming Conventions
-
-- Use descriptive, lowercase names with underscores
-- Prefix classifiers with their type (e.g., `llm_classifier`, `keyword_classifier`)
-- Use action-oriented names for actions (e.g., `greet_user`, `get_weather`)
-
-### Parameter Schemas
-
-- Define comprehensive parameter schemas
-- Use appropriate types (str, int, float, bool, list, dict)
-- Include validation where possible
-
-### Error Handling
-
-- Always include error handling
-- Use appropriate remediation strategies
-- Provide meaningful error messages
-
-### Documentation
-
-- Write clear descriptions for all nodes
-- Document complex parameter extraction logic
-- Include usage examples
-
-### Testing
-
-- Test actions with various input scenarios
-- Test error conditions and edge cases
-- Validate parameter extraction accuracy
+1. **Keep actions focused** - Each action should do one thing well
+2. **Use descriptive names** - Make your action and classifier names clear
+3. **Provide good descriptions** - Help the LLM understand what each action does
+4. **Test thoroughly** - Use the evaluation framework to test your workflows
+5. **Handle errors gracefully** - Make sure your actions can handle unexpected inputs

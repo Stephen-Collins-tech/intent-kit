@@ -33,6 +33,7 @@ greet_action = action(
 # Create a classifier to understand user requests
 classifier = llm_classifier(
     name="main",
+    description="Route to appropriate action",
     children=[greet_action],
     llm_config={"provider": "openai", "model": "gpt-3.5-turbo"}
 )
@@ -52,6 +53,76 @@ print(result.output)  # → "Hello Alice!"
 3. **We built a graph** - This connects everything together
 4. **We tested it** - The bot understood "Hello Alice" and extracted the name "Alice"
 
+## Using JSON Configuration
+
+For more complex workflows, you can define your graph in JSON:
+
+```python
+from intent_kit import IntentGraphBuilder
+
+# Define your functions
+def greet(name, context=None):
+    return f"Hello {name}!"
+
+def calculate(operation, a, b, context=None):
+    if operation == "add":
+        return a + b
+    return None
+
+# Create function registry
+function_registry = {
+    "greet": greet,
+    "calculate": calculate,
+}
+
+# Define your graph in JSON
+graph_config = {
+    "root": "main_classifier",
+    "nodes": {
+        "main_classifier": {
+            "id": "main_classifier",
+            "type": "classifier",
+            "classifier_type": "llm",
+            "name": "main_classifier",
+            "description": "Main intent classifier",
+            "llm_config": {
+                "provider": "openai",
+                "model": "gpt-3.5-turbo",
+            },
+            "children": ["greet_action", "calculate_action"],
+        },
+        "greet_action": {
+            "id": "greet_action",
+            "type": "action",
+            "name": "greet_action",
+            "description": "Greet the user",
+            "function": "greet",
+            "param_schema": {"name": "str"},
+        },
+        "calculate_action": {
+            "id": "calculate_action",
+            "type": "action",
+            "name": "calculate_action",
+            "description": "Perform a calculation",
+            "function": "calculate",
+            "param_schema": {"operation": "str", "a": "float", "b": "float"},
+        },
+    },
+}
+
+# Build your graph
+graph = (
+    IntentGraphBuilder()
+    .with_json(graph_config)
+    .with_functions(function_registry)
+    .build()
+)
+
+# Test it!
+result = graph.route("Hello Alice")
+print(result.output)  # → "Hello Alice!"
+```
+
 ## Try More Examples
 
 ```python
@@ -61,6 +132,10 @@ print(result.output)  # → "Hello Bob!"
 
 result = graph.route("Greet Sarah")
 print(result.output)  # → "Hello Sarah!"
+
+# Test calculations
+result = graph.route("Add 5 and 3")
+print(result.output)  # → 8
 ```
 
 ## Next Steps

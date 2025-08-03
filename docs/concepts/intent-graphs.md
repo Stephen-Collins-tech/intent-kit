@@ -60,11 +60,8 @@ main_classifier = llm_classifier(
     llm_config={"provider": "openai", "model": "gpt-4"}
 )
 
-# Build graph with LLM configuration
-graph = IntentGraphBuilder().root(main_classifier).with_default_llm_config({
-    "provider": "openai",
-    "model": "gpt-4"
-}).build()
+# Build graph
+graph = IntentGraphBuilder().root(main_classifier).build()
 ```
 
 ### Using JSON Configuration
@@ -72,128 +69,157 @@ graph = IntentGraphBuilder().root(main_classifier).with_default_llm_config({
 ```python
 from intent_kit import IntentGraphBuilder
 
+# Define your functions
+def greet(name, context=None):
+    return f"Hello {name}!"
+
+def weather(city, context=None):
+    return f"Weather in {city} is sunny"
+
+# Create function registry
+function_registry = {
+    "greet": greet,
+    "weather": weather,
+}
+
+# Define your graph in JSON
 json_graph = {
     "root": "main_classifier",
     "nodes": {
         "main_classifier": {
-            "id": "main_classifier",  # Explicit ID (optional - defaults to 'name')
-            "type": "llm_classifier",
+            "id": "main_classifier",
+            "type": "classifier",
+            "classifier_type": "llm",
             "name": "main_classifier",
             "description": "Main intent classifier",
             "children": ["greet_action", "weather_action"],
             "llm_config": {"provider": "openai", "model": "gpt-4"}
         },
         "greet_action": {
-            "id": "greet_action",  # Explicit ID
+            "id": "greet_action",
             "type": "action",
             "name": "greet_action",
             "description": "Greet the user",
-            "function": "greet_function",
+            "function": "greet",
             "param_schema": {"name": "str"}
         },
         "weather_action": {
-            "type": "action",  # No explicit ID - defaults to 'name'
+            "id": "weather_action",
+            "type": "action",
             "name": "weather_action",
             "description": "Get weather information",
-            "function": "weather_function",
+            "function": "weather",
             "param_schema": {"city": "str"}
         }
     }
 }
 
-function_registry = {
-    "greet_function": lambda name: f"Hello {name}!",
-    "weather_function": lambda city: f"Weather in {city} is sunny"
-}
-
-graph = IntentGraphBuilder().with_json(json_graph).with_functions(function_registry).build()
-```
-
-**Node ID Behavior:**
-- Each node can have an explicit `"id"` field
-- If `"id"` is not provided, it defaults to the `"name"` field
-- At least one of `"id"` or `"name"` must be present
-- The `"id"` is used for internal node references and child relationships
-
-## Execution Flow
-
-1. **Input Processing** - User input is received
-2. **Root Classification** - Input is classified by root nodes
-3. **Intent Routing** - Input is routed to appropriate actions
-4. **Parameter Extraction** - Parameters are extracted from input
-5. **Action Execution** - Action functions are executed
-6. **Output Generation** - Structured output is returned
-
-## Multi-Intent Routing
-
-Intent graphs can handle multiple nodes in a single user input using splitter nodes:
-
-```python
-from intent_kit import rule_splitter_node
-
-splitter = rule_splitter_node(
-    name="multi_split",
-    children=[greet_action, weather_action]
-)
-
-graph = IntentGraphBuilder().root(splitter).build()
-
-# Handle: "Hello Alice and what's the weather in Paris?"
-result = graph.route("Hello Alice and what's the weather in Paris?")
-# Output: {"greet": "Hello Alice!", "weather": "Weather in Paris is sunny"}
-```
-
-## Context Management
-
-Intent graphs support stateful conversations through context:
-
-```python
-from intent_kit import IntentContext
-
-context = IntentContext()
-context.set("user_name", "Alice")
-context.set("conversation_history", [])
-
-result = graph.route("Hello!", context=context)
-```
-
-## Error Handling
-
-Intent graphs include comprehensive error handling:
-
-- **Remediation Strategies** - Automatic error recovery
-- **Fallback Mechanisms** - Alternative execution paths
-- **Error Logging** - Detailed error tracking
-- **Graceful Degradation** - Partial success handling
-
-## Visualization
-
-Intent graphs can be visualized for debugging:
-
-```python
-# Generate HTML visualization
-graph.visualize("graph.html")
-
-# Enable debug mode
-graph.route("Hello Alice", debug=True)
-```
-
-## LLM Configuration
-
-Intent graphs can be configured with LLM settings for intelligent chunk classification:
-
-```python
-# Set LLM configuration at the graph level
-llm_config = {
-    "provider": "openai",
-    "model": "gpt-4",
-    "api_key": "your-api-key"
-}
-
+# Build graph
 graph = (
     IntentGraphBuilder()
-    .root(classifier)
-    .with_default_llm_config(llm_config)
+    .with_json(json_graph)
+    .with_functions(function_registry)
     .build()
 )
 ```
+
+## Graph Execution
+
+### Routing Input
+
+```python
+# Route user input through the graph
+result = graph.route("Hello Alice")
+print(result.output)  # → "Hello Alice!"
+
+result = graph.route("What's the weather in San Francisco?")
+print(result.output)  # → "Weather in San Francisco is sunny"
+```
+
+### Execution Flow
+
+1. **Input Processing** - User input is received
+2. **Classification** - Root classifier determines intent
+3. **Parameter Extraction** - LLM extracts parameters from input
+4. **Action Execution** - Selected action runs with parameters
+5. **Output Generation** - Action result is returned
+
+## Graph Validation
+
+### Built-in Validation
+
+IntentGraphBuilder includes validation to ensure:
+
+- No cycles in the graph
+- All referenced nodes exist
+- All nodes are reachable from root
+- Proper node types and relationships
+
+```python
+# Validate your graph
+try:
+    graph = IntentGraphBuilder().with_json(json_graph).build()
+    print("Graph is valid!")
+except ValueError as e:
+    print(f"Graph validation failed: {e}")
+```
+
+### Common Validation Errors
+
+- **Missing nodes** - Referenced nodes don't exist
+- **Cycles** - Graph contains circular references
+- **Unreachable nodes** - Nodes not connected to root
+- **Invalid node types** - Incorrect node type specifications
+
+## Advanced Features
+
+### Debug Context
+
+Enable debug context to track execution:
+
+```python
+graph = (
+    IntentGraphBuilder()
+    .with_json(json_graph)
+    .with_functions(function_registry)
+    .with_debug_context(True)
+    .build()
+)
+```
+
+### Context Tracing
+
+Enable context tracing for detailed execution logs:
+
+```python
+graph = (
+    IntentGraphBuilder()
+    .with_json(json_graph)
+    .with_functions(function_registry)
+    .with_context_trace(True)
+    .build()
+)
+```
+
+## Best Practices
+
+### Graph Design
+
+1. **Keep it simple** - Start with a single root classifier
+2. **Use descriptive names** - Make node names clear and meaningful
+3. **Group related actions** - Organize actions logically
+4. **Test thoroughly** - Validate with various inputs
+
+### Performance
+
+1. **Optimize classifiers** - Use efficient classification strategies
+2. **Cache results** - Cache expensive operations when possible
+3. **Monitor execution** - Track performance metrics
+4. **Scale gradually** - Add complexity incrementally
+
+### Maintenance
+
+1. **Document your graphs** - Keep JSON configurations well-documented
+2. **Version control** - Track changes to graph configurations
+3. **Test changes** - Validate modifications before deployment
+4. **Monitor usage** - Track how your graphs are being used
