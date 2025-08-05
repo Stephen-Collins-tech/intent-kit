@@ -48,4 +48,5 @@ nav:
       - Testing: development/testing.md
       - Evaluation: development/evaluation.md
       - Debugging: development/debugging.md
+      - Performance Monitoring: development/performance-monitoring.md
       - Documentation Management: development/documentation-management.md

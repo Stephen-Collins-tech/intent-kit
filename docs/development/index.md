@@ -8,5 +8,6 @@ Welcome to the Development section of the Intent Kit documentation. Here you'll 
 - [Testing](testing.md): Unit tests and integration testing.
 - [Evaluation](evaluation.md): Performance evaluation and benchmarking.
 - [Debugging](debugging.md): Debugging tools and techniques.
+- [Performance Monitoring](performance-monitoring.md): Performance tracking and reporting.
 
 For additional information, see the [project README on GitHub](https://github.com/Stephen-Collins-tech/intent-kit#readme) or explore other sections of the documentation.
