@@ -234,38 +234,12 @@ class ReportUtil:
         Returns:
             Formatted detailed view string
         """
-        lines = []
+        lines = ["Performance Report:"]
 
         # Add execution results first
         for i, result in enumerate(execution_results):
             if i > 0:
                 lines.append("")  # Add spacing between results
-
-            # Format the execution result
-            lines.append(
-                "[INFO] [2025-08-02 16:14:19.276] [main_classifier] TreeNode child_result: ExecutionResult("
-            )
-            lines.append(f"  success={result.get('success', True)},")
-            lines.append(f"  node_name='{result.get('node_name', 'unknown')}',")
-            lines.append(
-                f"  node_path={result.get('node_path', ['main_classifier', 'unknown'])},"
-            )
-            lines.append(
-                f"  node_type=<NodeType.{result.get('node_type', 'ACTION')}: '{result.get('node_type', 'action').lower()}'>,"
-            )
-            lines.append(f"  input='{result.get('input', 'unknown')}',")
-            lines.append(f"  output={result.get('output', 'None')},")
-            lines.append(f"  total_tokens={result.get('total_tokens', 0)},")
-            lines.append(f"  input_tokens={result.get('input_tokens', 0)},")
-            lines.append(f"  output_tokens={result.get('output_tokens', 0)},")
-            lines.append(f"  cost={result.get('cost', 0.0)},")
-            lines.append(f"  provider={result.get('provider', 'None')},")
-            lines.append(f"  model={result.get('model', 'None')},")
-            lines.append(f"  error={result.get('error', 'None')},")
-            lines.append(f"  params={result.get('params', {})},")
-            lines.append(f"  children_results={result.get('children_results', [])},")
-            lines.append(f"  duration={result.get('duration', 0.0)}")
-            lines.append(")")
 
             # Add intent and output info
             if result.get("node_name"):

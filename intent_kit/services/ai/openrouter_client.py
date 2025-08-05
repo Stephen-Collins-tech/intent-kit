@@ -265,8 +265,6 @@ class OpenRouterClient(BaseLLMClient):
         self._ensure_imported()
         assert self._client is not None  # Type assertion for linter
         model = model or "mistralai/mistral-7b-instruct"
-        perf_util = PerfUtil("openrouter_generate")
-        perf_util.start()
 
         # Add JSON instruction to the prompt
         json_prompt = f"{prompt}\n\nPlease respond in JSON format."
@@ -274,34 +272,36 @@ class OpenRouterClient(BaseLLMClient):
             f"\n\nJSON_PROMPT START\n-------\n\n{json_prompt}\n\n-------\nJSON_PROMPT END\n\n"
         )
 
+        perf_util = PerfUtil("openrouter_generate")
+        perf_util.start()
         # Create response with proper typing
         response: OpenRouterChatCompletion = self._client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": json_prompt}],
             max_tokens=1000,
         )
+        perf_util.stop()
 
         if not response.choices:
+            input_tokens = response.usage.prompt_tokens if response.usage else 0
+            output_tokens = response.usage.completion_tokens if response.usage else 0
             return LLMResponse(
                 output="",
                 model=model,
-                input_tokens=0,
-                output_tokens=0,
-                cost=-1.0,  # TODO: fix this
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cost=self.calculate_cost(
+                    model, "openrouter", input_tokens, output_tokens
+                ),
                 provider="openrouter",
                 duration=0.0,
             )
-
-        self.logger.warning(f"OpenRouter response: {response}")
 
         # Convert raw choice objects to our custom OpenRouterChoice dataclass
         converted_choices = []
         for idx, raw_choice in enumerate(response.choices):
             # Construct our custom choice from the raw object
             converted_choice = OpenRouterChoice.from_raw(raw_choice)
-            self.logger.warning(
-                f"OpenRouter choice[{idx}]: {converted_choice.display()}"
-            )
             converted_choices.append(converted_choice)
 
         # Extract content from the first choice
@@ -330,9 +330,6 @@ class OpenRouterClient(BaseLLMClient):
             model=model,
             duration=duration,
         )
-
-        self.logger.info(f"OpenRouter content: {content}")
-        self.logger.info(f"OpenRouter first_choice: {first_choice.display()}")
 
         return LLMResponse(
             output=content,

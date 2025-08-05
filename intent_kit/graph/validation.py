@@ -30,13 +30,13 @@ class GraphValidationError(Exception):
 
 def validate_graph_structure(graph_nodes: List[TreeNode]) -> Dict[str, Any]:
     """
-    Validate the overall graph structure and return statistics.
+    Validate the structure of an intent graph.
 
     Args:
-        graph_nodes: List of all nodes in the graph to validate
+        graph_nodes: List of root nodes in the graph
 
     Returns:
-        Dictionary containing graph statistics and validation results
+        Dictionary containing validation statistics
     """
     logger = Logger(__name__)
     logger.debug("Validating graph structure...")
@@ -67,6 +67,19 @@ def validate_graph_structure(graph_nodes: List[TreeNode]) -> Dict[str, Any]:
         "orphaned_nodes": [node.name for node in orphaned_nodes],
         "orphaned_count": len(orphaned_nodes),
     }
+
+    # Log structured validation results
+    logger.debug_structured(
+        {
+            "total_nodes": len(all_nodes),
+            "node_counts": node_counts,
+            "routing_valid": routing_valid,
+            "has_cycles": has_cycles,
+            "orphaned_nodes": [node.name for node in orphaned_nodes],
+            "orphaned_count": len(orphaned_nodes),
+        },
+        "Graph Structure Validation",
+    )
 
     logger.info(
         f"Graph validation complete: {stats['total_nodes']} total nodes, "
@@ -138,23 +151,43 @@ def _find_orphaned_nodes(nodes: List[TreeNode]) -> List[TreeNode]:
 
 def validate_node_types(nodes: List[TreeNode]) -> None:
     """
-    Validate that all nodes have valid node types.
+    Validate that all nodes have valid types.
 
     Args:
         nodes: List of nodes to validate
 
     Raises:
-        GraphValidationError: If any node has an invalid or unknown type
+        GraphValidationError: If any node has an invalid type
     """
     logger = Logger(__name__)
     logger.debug("Validating node types...")
 
+    invalid_nodes = []
     for node in nodes:
-        if node.node_type not in NodeType:
-            error_msg = f"Invalid node type '{node.node_type}' for node '{node.name}'. Valid types: {NodeType}"
-            logger.error(error_msg)
-            raise GraphValidationError(
-                message=error_msg, node_name=node.name, child_type=node.node_type
-            )
+        if not hasattr(node, "node_type") or node.node_type is None:
+            invalid_nodes.append(node)
+
+    if invalid_nodes:
+        error_msg = f"Found {len(invalid_nodes)} nodes with invalid types: {[node.name for node in invalid_nodes]}"
+        logger.error(error_msg)
+        raise GraphValidationError(error_msg)
+
+    # Log structured validation results
+    logger.debug_structured(
+        {
+            "total_nodes": len(nodes),
+            "valid_nodes": len(nodes) - len(invalid_nodes),
+            "invalid_nodes": len(invalid_nodes),
+            "node_types": [
+                (
+                    node.node_type.value
+                    if hasattr(node, "node_type") and node.node_type
+                    else None
+                )
+                for node in nodes
+            ],
+        },
+        "Node Type Validation",
+    )
 
     logger.info("Node type validation passed ✓")

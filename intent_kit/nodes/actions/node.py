@@ -81,16 +81,45 @@ class ActionNode(TreeNode):
 
             # Extract parameters - this might involve LLM calls
             extracted_params = self.arg_extractor(user_input, context_dict or {})
-            self.logger.debug(f"ActionNode extracted_params: {extracted_params}")
+
+            if isinstance(extracted_params, ExecutionResult):
+                cost = extracted_params.cost
+                duration = extracted_params.duration
+                input_tokens = extracted_params.input_tokens
+                output_tokens = extracted_params.output_tokens
+                model = extracted_params.model
+                provider = extracted_params.provider
+            else:
+                cost = 0.0
+                duration = 0.0
+                input_tokens = 0
+                output_tokens = 0
+                model = None
+                provider = None
+            # Log structured diagnostic info for parameter extraction
+            self.logger.debug_structured(
+                {
+                    "node_name": self.name,
+                    "node_path": self.get_path(),
+                    "input": user_input,
+                    "extracted_params": extracted_params,
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "cost": cost,
+                    "duration": duration,
+                    "model": model,
+                    "provider": provider,
+                    "context_inputs": list(self.context_inputs) if context else None,
+                },
+                "Parameter Extraction",
+            )
 
             # If the arg_extractor returned an ExecutionResult (LLM-based), extract token info
             if isinstance(extracted_params, ExecutionResult):
-                total_input_tokens += getattr(extracted_params, "input_tokens", 0) or 0
-                total_output_tokens += (
-                    getattr(extracted_params, "output_tokens", 0) or 0
-                )
-                total_cost += getattr(extracted_params, "cost", 0.0) or 0.0
-                total_duration += getattr(extracted_params, "duration", 0.0) or 0.0
+                total_input_tokens += input_tokens or 0
+                total_output_tokens += output_tokens or 0
+                total_cost += cost or 0.0
+                total_duration += duration or 0.0
 
                 # Extract the actual parameters from the result
                 if extracted_params.params:
@@ -178,9 +207,6 @@ class ActionNode(TreeNode):
                     duration=total_duration,
                 )
         try:
-            self.logger.debug(
-                f"Validating types for intent '{self.name}' (Path: {'.'.join(self.get_path())})"
-            )
             validated_params = self._validate_types(extracted_params)
         except Exception as e:
             self.logger.error(
@@ -206,7 +232,17 @@ class ActionNode(TreeNode):
                 cost=total_cost,
                 duration=total_duration,
             )
-        self.logger.debug(f"ActionNode validated_params: {validated_params}")
+
+        # Log structured diagnostic info for validated parameters
+        self.logger.debug_structured(
+            {
+                "node_name": self.name,
+                "node_path": self.get_path(),
+                "validated_params": validated_params,
+            },
+            "Parameter Validation",
+        )
+
         try:
             if context is not None:
                 output = self.action(**validated_params, context=context)
@@ -254,7 +290,6 @@ class ActionNode(TreeNode):
 
                     return remediation_result
 
-            self.logger.debug(f"ActionNode remediation_result: {remediation_result}")
             # If no remediation succeeded, return the original error
             return ExecutionResult(
                 success=False,
@@ -271,7 +306,18 @@ class ActionNode(TreeNode):
                 cost=total_cost,
                 duration=total_duration,
             )
-        self.logger.debug(f"ActionNode output: {output}")
+
+        # Log structured diagnostic info for action output
+        self.logger.debug_structured(
+            {
+                "node_name": self.name,
+                "node_path": self.get_path(),
+                "output": output,
+                "output_type": type(output).__name__,
+            },
+            "Action Execution",
+        )
+
         if self.output_validator:
             try:
                 if not self.output_validator(output):
@@ -331,7 +377,22 @@ class ActionNode(TreeNode):
                 elif isinstance(output, dict) and key in output:
                     context.set(key, output[key], self.name)
 
-        self.logger.debug(f"Final ActionNode returning ExecutionResult: {output}")
+        # Log final execution result with key diagnostic info
+        self.logger.debug_structured(
+            {
+                "node_name": self.name,
+                "node_path": self.get_path(),
+                "success": True,
+                "input_tokens": total_input_tokens,
+                "output_tokens": total_output_tokens,
+                "cost": total_cost,
+                "duration": total_duration,
+                "output": output,
+                "output_type": type(output).__name__,
+            },
+            "Execution Complete",
+        )
+
         return ExecutionResult(
             success=True,
             node_name=self.name,

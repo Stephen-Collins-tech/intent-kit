@@ -11,7 +11,7 @@ from ..types import ExecutionResult, ExecutionError
 from ..enums import NodeType
 from intent_kit.context import IntentContext
 from intent_kit.utils.logger import Logger
-from intent_kit.utils.text_utils import extract_json_from_text
+from intent_kit.utils.text_utils import TextUtil
 
 
 class Strategy:
@@ -289,7 +289,7 @@ class SelfReflectStrategy(RemediationStrategy):
                 print(f"[DEBUG] SelfReflectStrategy: LLM response: {response}")
 
                 # Extract JSON from response
-                json_data = extract_json_from_text(response)
+                json_data = TextUtil.extract_json_from_text(response.output)
                 if not json_data:
                     print(
                         "[DEBUG] SelfReflectStrategy: Failed to extract JSON from response"
@@ -410,7 +410,7 @@ class ConsensusVoteStrategy(RemediationStrategy):
                     f"[DEBUG] ConsensusVoteStrategy: LLM {i + 1} response: {response}"
                 )
 
-                json_data = extract_json_from_text(response)
+                json_data = TextUtil.extract_json_from_text(response.output)
                 if not json_data:
                     print(
                         f"[DEBUG] ConsensusVoteStrategy: Failed to extract JSON from LLM {i + 1} response"
@@ -583,7 +583,7 @@ class RetryWithAlternatePromptStrategy(RemediationStrategy):
                 )
 
                 # Extract JSON from response
-                json_data = extract_json_from_text(response)
+                json_data = TextUtil.extract_json_from_text(response.output)
                 if not json_data:
                     print(
                         f"[DEBUG] RetryWithAlternatePromptStrategy: Failed to extract JSON from response for prompt {i + 1}"

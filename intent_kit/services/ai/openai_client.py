@@ -301,4 +301,19 @@ class OpenAIClient(BaseLLMClient):
         output_cost = (output_tokens / 1_000_000) * model_pricing.output_price_per_1m
         total_cost = input_cost + output_cost
 
+        # Log structured cost calculation info
+        self.logger.debug_structured(
+            {
+                "model": model,
+                "provider": provider,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "input_cost": input_cost,
+                "output_cost": output_cost,
+                "total_cost": total_cost,
+                "pricing_source": "local",
+            },
+            "Cost Calculation",
+        )
+
         return total_cost

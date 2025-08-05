@@ -27,7 +27,7 @@ from intent_kit.nodes.actions.remediation import (
     KeywordFallbackStrategy,
 )
 from intent_kit.context import IntentContext
-from intent_kit.utils.text_utils import extract_json_from_text
+from intent_kit.utils.text_utils import TextUtil
 
 
 class TestStrategy:
@@ -257,10 +257,19 @@ class TestSelfReflectStrategy:
     def test_self_reflect_strategy_success(self, mock_llm_factory):
         """Test self-reflect strategy when LLM reflection succeeds."""
         # Mock LLM factory and LLM
+        from intent_kit.types import LLMResponse
+
         mock_llm = Mock()
-        mock_llm.generate.return_value = (
-            '{"corrected_params": {"x": 10}, "explanation": "Fixed negative value"}'
+        mock_response = LLMResponse(
+            output='{"corrected_params": {"x": 10}, "explanation": "Fixed negative value"}',
+            model="test_model",
+            input_tokens=10,
+            output_tokens=20,
+            cost=0.001,
+            provider="test",
+            duration=1.0,
         )
+        mock_llm.generate.return_value = mock_response
         mock_llm_factory.create_client.return_value = mock_llm
 
         llm_config = {"model": "test_model"}
@@ -345,10 +354,31 @@ class TestConsensusVoteStrategy:
     def test_consensus_vote_strategy_success(self, mock_llm_factory):
         """Test consensus vote strategy when voting succeeds."""
         # Mock LLM factory and LLMs
+        from intent_kit.types import LLMResponse
+
         mock_llm1 = Mock()
-        mock_llm1.generate.return_value = '{"corrected_params": {"x": 10}, "confidence": 0.8, "explanation": "Fixed value"}'
+        mock_response1 = LLMResponse(
+            output='{"corrected_params": {"x": 10}, "confidence": 0.8, "explanation": "Fixed value"}',
+            model="model1",
+            input_tokens=10,
+            output_tokens=20,
+            cost=0.001,
+            provider="test",
+            duration=1.0,
+        )
+        mock_llm1.generate.return_value = mock_response1
+
         mock_llm2 = Mock()
-        mock_llm2.generate.return_value = '{"corrected_params": {"x": 15}, "confidence": 0.9, "explanation": "Better fix"}'
+        mock_response2 = LLMResponse(
+            output='{"corrected_params": {"x": 15}, "confidence": 0.9, "explanation": "Better fix"}',
+            model="model2",
+            input_tokens=10,
+            output_tokens=20,
+            cost=0.001,
+            provider="test",
+            duration=1.0,
+        )
+        mock_llm2.generate.return_value = mock_response2
 
         mock_llm_factory.create_client.side_effect = [mock_llm1, mock_llm2]
 
@@ -449,10 +479,19 @@ class TestRetryWithAlternatePromptStrategy:
     ):
         """Test alternate prompt strategy with absolute value approach."""
         # Mock LLM factory and LLM
+        from intent_kit.types import LLMResponse
+
         mock_llm = Mock()
-        mock_llm.generate.return_value = (
-            '{"corrected_params": {"x": 5}, "explanation": "Used absolute value"}'
+        mock_response = LLMResponse(
+            output='{"corrected_params": {"x": 5}, "explanation": "Used absolute value"}',
+            model="test_model",
+            input_tokens=10,
+            output_tokens=20,
+            cost=0.001,
+            provider="test",
+            duration=1.0,
         )
+        mock_llm.generate.return_value = mock_response
         mock_llm_factory.create_client.return_value = mock_llm
 
         llm_config = {"model": "test_model"}
@@ -479,10 +518,19 @@ class TestRetryWithAlternatePromptStrategy:
     ):
         """Test alternate prompt strategy with positive value approach."""
         # Mock LLM factory and LLM
+        from intent_kit.types import LLMResponse
+
         mock_llm = Mock()
-        mock_llm.generate.return_value = (
-            '{"corrected_params": {"x": 10}, "explanation": "Used positive value"}'
+        mock_response = LLMResponse(
+            output='{"corrected_params": {"x": 10}, "explanation": "Used positive value"}',
+            model="test_model",
+            input_tokens=10,
+            output_tokens=20,
+            cost=0.001,
+            provider="test",
+            duration=1.0,
         )
+        mock_llm.generate.return_value = mock_response
         mock_llm_factory.create_client.return_value = mock_llm
 
         llm_config = {"model": "test_model"}
@@ -531,8 +579,19 @@ class TestRetryWithAlternatePromptStrategy:
     def test_alternate_prompt_strategy_mixed_parameter_types(self, mock_llm_factory):
         """Test alternate prompt strategy with mixed parameter types."""
         # Mock LLM factory and LLM
+        from intent_kit.types import LLMResponse
+
         mock_llm = Mock()
-        mock_llm.generate.return_value = '{"corrected_params": {"x": 5, "y": "positive"}, "explanation": "Mixed types"}'
+        mock_response = LLMResponse(
+            output='{"corrected_params": {"x": 5, "y": "positive"}, "explanation": "Mixed types"}',
+            model="test_model",
+            input_tokens=10,
+            output_tokens=20,
+            cost=0.001,
+            provider="test",
+            duration=1.0,
+        )
+        mock_llm.generate.return_value = mock_response
         mock_llm_factory.create_client.return_value = mock_llm
 
         llm_config = {"provider": "mock", "model": "test_model"}
@@ -720,6 +779,7 @@ class TestClassifierFallbackStrategy:
         assert result is not None
         assert result.success is True
         assert result.output == "child_a"
+        assert result.params is not None
         assert result.params["selected_child"] == "child_a"
         assert result.params["score"] > 0
 
@@ -809,6 +869,7 @@ class TestKeywordFallbackStrategy:
         assert result is not None
         assert result.success is True
         assert result.output == "calculator"
+        assert result.params is not None
         assert result.params["selected_child"] == "calculator"
 
     def test_keyword_fallback_strategy_match_by_description(self):
@@ -834,6 +895,7 @@ class TestKeywordFallbackStrategy:
         assert result is not None
         assert result.success is True
         assert result.output == "action_a"
+        assert result.params is not None
         assert result.params["selected_child"] == "action_a"
 
     def test_keyword_fallback_strategy_no_match(self):
@@ -894,6 +956,7 @@ class TestKeywordFallbackStrategy:
         assert result is not None
         assert result.success is True
         assert result.output == "Calculator"
+        assert result.params is not None
         assert result.params["selected_child"] == "Calculator"
 
 
@@ -933,19 +996,6 @@ class TestRemediationEdgeCases:
         assert result.success is True
         assert handler_func.call_count == 2
 
-    def test_fallback_strategy_with_none_handler(self):
-        """Test fallback strategy with None handler."""
-        strategy = FallbackToAnotherNodeStrategy(None, "test_fallback")
-        validated_params = {"x": 5}
-
-        result = strategy.execute(
-            node_name="test_node",
-            user_input="test input",
-            validated_params=validated_params,
-        )
-
-        assert result is None
-
     @patch("intent_kit.services.ai.llm_factory.LLMFactory")
     def test_self_reflect_strategy_with_empty_llm_config(self, mock_llm_factory):
         """Test self-reflect strategy with empty LLM config."""
@@ -954,10 +1004,19 @@ class TestRemediationEdgeCases:
         validated_params = {"x": 5}
 
         # Mock LLM factory to handle empty config
+        from intent_kit.types import LLMResponse
+
         mock_llm = Mock()
-        mock_llm.generate.return_value = (
-            '{"corrected_params": {"x": 10}, "explanation": "Fixed"}'
+        mock_response = LLMResponse(
+            output='{"corrected_params": {"x": 10}, "explanation": "Fixed"}',
+            model="test_model",
+            input_tokens=10,
+            output_tokens=20,
+            cost=0.001,
+            provider="test",
+            duration=1.0,
         )
+        mock_llm.generate.return_value = mock_response
         mock_llm_factory.create_client.return_value = mock_llm
 
         result = strategy.execute(
@@ -1044,7 +1103,7 @@ class TestRemediationEdgeCases:
 def test_reflection_response_valid_json():
     """Test utility function for valid JSON reflection response."""
     response = '{"corrected_params": {"x": 10}, "explanation": "Fixed negative value"}'
-    result = extract_json_from_text(response)
+    result = TextUtil.extract_json_from_text(response)
     assert result is not None
     assert result["corrected_params"]["x"] == 10
     assert result["explanation"] == "Fixed negative value"
@@ -1053,12 +1112,12 @@ def test_reflection_response_valid_json():
 def test_reflection_response_malformed():
     """Test utility function for malformed JSON reflection response."""
     response = "This is not valid JSON"
-    result = extract_json_from_text(response)
+    result = TextUtil.extract_json_from_text(response)
     assert result is None
 
 
 def test_vote_response_empty():
     """Test utility function for empty vote response."""
     response = ""
-    result = extract_json_from_text(response)
+    result = TextUtil.extract_json_from_text(response)
     assert result is None

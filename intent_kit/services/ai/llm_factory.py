@@ -81,9 +81,7 @@ class LLMFactory:
         """
         Generate text using the specified LLM configuration or client instance.
         """
-        logger.debug(f"generate_with_config LLM config: {llm_config}")
         client = LLMFactory.create_client(llm_config)
-        logger.debug(f"generate_with_config LLM client: {client}")
         model = None
         if isinstance(llm_config, dict):
             model = llm_config.get("model")

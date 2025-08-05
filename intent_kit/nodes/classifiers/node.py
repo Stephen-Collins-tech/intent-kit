@@ -49,6 +49,17 @@ class ClassifierNode(TreeNode):
         context_dict: Dict[str, Any] = {}
         # If context is needed, populate context_dict here in the future
 
+        # Log structured diagnostic info for classifier execution
+        self.logger.debug_structured(
+            {
+                "node_name": self.name,
+                "node_path": self.get_path(),
+                "input": user_input,
+                "available_children": [child.name for child in self.children],
+            },
+            "Classifier Execution",
+        )
+
         # Call classifier function - it now returns a tuple (chosen_child, response_info)
         (chosen_child, response) = self.classifier(
             user_input, self.children, context_dict
@@ -70,13 +81,24 @@ class ClassifierNode(TreeNode):
             remediation_result = self._execute_remediation_strategies(
                 user_input=user_input, context=context, original_error=error
             )
-            self.logger.debug(
-                f"ClassifierNode .execute method call remediation_result: {remediation_result}"
-            )
 
             if remediation_result:
-                self.logger.warning(
-                    f"ClassifierNode .execute method call remediation_result: {remediation_result}"
+                # Log successful remediation
+                self.logger.debug_structured(
+                    {
+                        "node_name": self.name,
+                        "node_path": self.get_path(),
+                        "remediation_success": True,
+                        "remediation_result": {
+                            "success": remediation_result.success,
+                            "output_type": (
+                                type(remediation_result.output).__name__
+                                if remediation_result.output
+                                else None
+                            ),
+                        },
+                    },
+                    "Remediation Applied",
                 )
                 return remediation_result
 
@@ -110,6 +132,20 @@ class ClassifierNode(TreeNode):
             input_tokens = response.input_tokens if response else 0
             output_tokens = response.output_tokens if response else 0
 
+        # Log structured diagnostic info for classifier decision
+        self.logger.debug_structured(
+            {
+                "node_name": self.name,
+                "node_path": self.get_path(),
+                "chosen_child": chosen_child.name,
+                "classifier_cost": cost,
+                "classifier_tokens": {"input": input_tokens, "output": output_tokens},
+                "classifier_model": model,
+                "classifier_provider": provider,
+            },
+            "Classifier Decision",
+        )
+
         # Execute the chosen child to get the actual output
         child_result = chosen_child.execute(user_input, context)
 
@@ -124,6 +160,25 @@ class ClassifierNode(TreeNode):
             output_tokens + child_result.output_tokens
             if child_result.output_tokens
             else output_tokens
+        )
+
+        # Log final execution summary
+        self.logger.debug_structured(
+            {
+                "node_name": self.name,
+                "node_path": self.get_path(),
+                "chosen_child": chosen_child.name,
+                "child_success": child_result.success,
+                "total_cost": total_cost,
+                "total_tokens": {
+                    "input": total_input_tokens,
+                    "output": total_output_tokens,
+                },
+                "child_output_type": (
+                    type(child_result.output).__name__ if child_result.output else None
+                ),
+            },
+            "Classifier Complete",
         )
 
         return ExecutionResult(

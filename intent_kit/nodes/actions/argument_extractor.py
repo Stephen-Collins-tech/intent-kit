@@ -244,11 +244,6 @@ class LLMArgumentExtractor(ArgumentExtractor):
                 context_info += "\nUse this context information to help extract more accurate parameters."
 
             # Build the extraction prompt
-            self.logger.debug(f"LLM arg extractor param_schema: {self.param_schema}")
-            self.logger.debug(
-                f"LLM arg extractor param_schema types: {[(name, type(param_type)) for name, param_type in self.param_schema.items()]}"
-            )
-
             param_descriptions = "\n".join(
                 [
                     f"- {param_name}: {param_type.__name__ if hasattr(param_type, '__name__') else str(param_type)}"
@@ -264,26 +259,13 @@ class LLMArgumentExtractor(ArgumentExtractor):
             )
 
             # Get LLM response
-            # Obfuscate API key in debug log
-            if isinstance(self.llm_config, dict):
-                safe_config = self.llm_config.copy()
-                if "api_key" in safe_config:
-                    safe_config["api_key"] = "***OBFUSCATED***"
-                self.logger.debug(f"LLM arg extractor config: {safe_config}")
-                self.logger.debug(f"LLM arg extractor prompt: {prompt}")
-                response = LLMFactory.generate_with_config(self.llm_config, prompt)
-            else:
-                # Use BaseLLMClient instance directly
-                self.logger.debug(
-                    f"LLM arg extractor using client: {type(self.llm_config).__name__}"
-                )
-                self.logger.debug(f"LLM arg extractor prompt: {prompt}")
-                response = self.llm_config.generate(prompt)
+            response = LLMFactory.generate_with_config(self.llm_config, prompt)
+            self.logger.debug(
+                f"LLM response FROM LLM ARG EXTRACTOR extract method: {response}"
+            )
 
             # Parse the response to extract parameters
             extracted_params = self._parse_llm_response(response.output)
-
-            self.logger.debug(f"Extracted parameters: {extracted_params}")
 
             return ExtractionResult(
                 success=True,
@@ -387,14 +369,11 @@ class ArgumentExtractorFactory:
         """
         if llm_config and param_schema:
             # Use LLM-based extraction
-            logger.debug(f"Creating LLM-based extractor for '{name}'")
             return LLMArgumentExtractor(
                 param_schema=param_schema,
                 llm_config=llm_config,
                 extraction_prompt=extraction_prompt,
                 name=name,
             )
-        else:
-            # Use rule-based extraction
-            logger.debug(f"Creating rule-based extractor for '{name}'")
-            return RuleBasedArgumentExtractor(param_schema=param_schema, name=name)
+        # Use rule-based extraction
+        return RuleBasedArgumentExtractor(param_schema=param_schema, name=name)

@@ -51,11 +51,6 @@ repos:
         entry: uv run security
         language: system
         pass_filenames: false
-      - id: auto-amend
-        name: Auto-amend commit with reformatted files
-        entry: uv run auto-amend
-        language: system
-        pass_filenames: false
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:

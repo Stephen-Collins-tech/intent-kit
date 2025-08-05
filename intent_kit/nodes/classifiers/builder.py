@@ -85,9 +85,6 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
         description = node_spec.get("description", "")
         classifier_type = node_spec.get("classifier_type", "rule")
         llm_config = node_spec.get("llm_config") or llm_config
-        logger.debug(
-            f"AFTER DEFAULT FALLBACK CHECK LLM classifier config: {llm_config}"
-        )
 
         # Resolve classifier function
         classifier_func = None
@@ -107,8 +104,16 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
                 context: Optional[Dict[str, Any]] = None,
             ) -> tuple[Optional[TreeNode], Optional[LLMResponse]]:
 
-                logger = Logger(__name__)  # Added missing import
-                logger.debug(f"LLM classifier input: {user_input}")
+                # Log structured diagnostic info for LLM classifier
+                logger.debug_structured(
+                    {
+                        "input": user_input,
+                        "available_children": [child.name for child in children],
+                        "llm_config_provided": llm_config is not None,
+                    },
+                    "LLM Classifier Start",
+                )
+
                 if llm_config is None:
                     logger.error(
                         "No llm_config provided to LLM classifier. Please set a default on the graph or provide one at the node level."
@@ -131,19 +136,31 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
                     # Get LLM response
                     if isinstance(llm_config, dict):
                         # Obfuscate API key in debug log
-                        logger.debug(f"LLM classifier config IS A DICT: {llm_config}")
                         safe_config = llm_config.copy()
                         if "api_key" in safe_config:
                             safe_config["api_key"] = "***OBFUSCATED***"
-                        logger.debug(f"LLM classifier config: {safe_config}")
-                        logger.debug(f"LLM classifier prompt: {prompt}")
+
+                        logger.debug_structured(
+                            {
+                                "llm_config": safe_config,
+                                "prompt_length": len(prompt),
+                                "child_count": len(children),
+                            },
+                            "LLM Request",
+                        )
+
                         response = LLMFactory.generate_with_config(llm_config, prompt)
                     else:
                         # Use BaseLLMClient instance directly
-                        logger.debug(
-                            f"LLM classifier using client: {type(llm_config).__name__}"
+                        logger.debug_structured(
+                            {
+                                "client_type": type(llm_config).__name__,
+                                "prompt_length": len(prompt),
+                                "child_count": len(children),
+                            },
+                            "LLM Request",
                         )
-                        logger.debug(f"LLM classifier prompt: {prompt}")
+
                         response = llm_config.generate(prompt)
 
                     # Parse the response to get the selected node name
@@ -157,7 +174,6 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
                     selected_node_name = selected_node_name.strip()
 
                     # Try to parse as JSON object first
-
                     try:
                         parsed_json = json.loads(selected_node_name)
                         if isinstance(parsed_json, dict) and "intent" in parsed_json:
@@ -178,18 +194,24 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
                     ) and selected_node_name.endswith("'"):
                         selected_node_name = selected_node_name[1:-1]
 
-                    logger.debug(f"LLM raw output: {response}")
-                    logger.debug(f"LLM classifier selected node: {selected_node_name}")
-                    logger.debug(f"LLM classifier children: {children}")
+                    # Log structured diagnostic info for response parsing
+                    logger.debug_structured(
+                        {
+                            "raw_response": response.output,
+                            "parsed_node_name": selected_node_name,
+                            "response_cost": response.cost,
+                            "response_tokens": {
+                                "input": response.input_tokens,
+                                "output": response.output_tokens,
+                            },
+                        },
+                        "LLM Response Parsed",
+                    )
 
                     # Find the child node with the matching name
                     chosen_child = None
                     for child in children:
-                        logger.debug(f"LLM classifier child in for loop: {child.name}")
                         if child.name == selected_node_name:
-                            logger.debug(
-                                f"LLM classifier child in for loop found: {child.name}"
-                            )
                             chosen_child = child
                             break
 
@@ -197,9 +219,6 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
                     if chosen_child is None:
                         for child in children:
                             if selected_node_name.lower() in child.name.lower():
-                                logger.debug(
-                                    f"LLM classifier partial match found: {child.name}"
-                                )
                                 chosen_child = child
                                 break
 
@@ -210,8 +229,26 @@ class ClassifierBuilder(BaseBuilder[ClassifierNode]):
                         # Return first child as fallback
                         chosen_child = children[0] if children else None
 
-                    # Return both the chosen child and LLM response info
+                    # Log structured diagnostic info for child selection
+                    logger.debug_structured(
+                        {
+                            "selected_node_name": selected_node_name,
+                            "chosen_child": chosen_child.name if chosen_child else None,
+                            "exact_match": any(
+                                c.name == selected_node_name for c in children
+                            ),
+                            "partial_match": any(
+                                selected_node_name.lower() in c.name.lower()
+                                for c in children
+                            ),
+                            "fallback_used": (
+                                chosen_child == children[0] if children else False
+                            ),
+                        },
+                        "Child Selection",
+                    )
 
+                    # Return both the chosen child and LLM response info
                     return chosen_child, response
 
                 except Exception as e:

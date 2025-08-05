@@ -218,7 +218,6 @@ def demonstrate_performance_tracking():
         timings=timings,
     )
 
-    print("Performance Report:")
     print(report)
 
 

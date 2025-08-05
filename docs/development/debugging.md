@@ -20,26 +20,56 @@ result = graph.route("Hello Alice", context=context)
 print(context.debug_log)  # View detailed execution log
 ```
 
+### Structured Debug Logging
+
+Intent Kit now uses structured logging for better diagnostic information. Debug logs are organized into clear sections:
+
+#### Node Execution Diagnostics
+
+```python
+# Example structured debug output for action nodes
+{
+  "node_name": "greet_action",
+  "node_path": ["root", "greet_action"],
+  "input": "Hello Alice",
+  "extracted_params": {"name": "Alice"},
+  "context_inputs": ["user_name"],
+  "validated_params": {"name": "Alice"},
+  "output": "Hello Alice!",
+  "output_type": "str",
+  "success": true,
+  "input_tokens": 45,
+  "output_tokens": 12,
+  "cost": 0.000123,
+  "duration": 0.045
+}
+```
+
+#### Classifier Diagnostics
+
+```python
+# Example structured debug output for classifier nodes
+{
+  "node_name": "intent_classifier",
+  "node_path": ["root", "intent_classifier"],
+  "input": "Hello Alice",
+  "available_children": ["greet_action", "farewell_action"],
+  "chosen_child": "greet_action",
+  "classifier_cost": 0.000045,
+  "classifier_tokens": {"input": 23, "output": 8},
+  "classifier_model": "gpt-4.1-mini",
+  "classifier_provider": "openai"
+}
+```
+
 ### Debug Log Format
 
 The debug log shows:
-- Node execution order
-- Parameter extraction results
-- Context updates
-- Error details
-
-```python
-# Example debug output
-{
-  "session_id": "debug_session",
-  "execution_path": [
-    {"node": "root_classifier", "input": "Hello Alice", "output": "greet"},
-    {"node": "greet_action", "params": {"name": "Alice"}, "output": "Hello Alice!"}
-  ],
-  "context_updates": [...],
-  "timing": {"total_ms": 45, "classifier_ms": 12, "action_ms": 33}
-}
-```
+- **Node execution order** with structured diagnostic information
+- **Parameter extraction results** with input/output details
+- **Context updates** for important fields only
+- **Error details** with structured error information
+- **Cost and token tracking** across all LLM calls
 
 ## Context Debugging
 
@@ -81,93 +111,50 @@ for step in trace:
     print(f"Step {step.step}: {step.node} -> {step.context_changes}")
 ```
 
+### Important Context Keys
+
+Mark specific context keys for detailed logging:
+
+```python
+context = IntentContext(session_id="debug_session", debug=True)
+
+# Mark important keys for detailed logging
+context.mark_important("user_name")
+context.mark_important("session_data")
+
+# Only these keys will be logged in detail
+context.set("user_name", "Alice")  # Will be logged
+context.set("temp_data", "xyz")    # Won't be logged
+```
+
 ## Node-Level Debugging
 
 ### Action Node Debugging
 
 ```python
-# Enable parameter extraction debugging
+# Debug action node execution
 action_node = action(
     name="debug_action",
-    description="Debug action",
-    action_func=lambda **kwargs: str(kwargs),
-    param_schema={"name": str},
-    debug=True
+    action_func=lambda name: f"Hello {name}!",
+    param_schema={"name": str}
 )
 
 result = action_node.execute("Hello Alice")
-print(f"Extracted params: {result.extracted_params}")
-print(f"Validation errors: {result.validation_errors}")
+# Structured logs show parameter extraction, validation, and execution
 ```
 
 ### Classifier Node Debugging
 
 ```python
-# Enable classifier debugging
-classifier = llm_classifier(
-    name="debug_classifier",
-    children=[action1, action2],
-    debug=True
+# Debug classifier node execution
+classifier_node = classifier(
+    name="intent_classifier",
+    classifier_func=llm_classifier,
+    children=[action1, action2]
 )
 
-result = classifier.classify("Hello Alice")
-print(f"Classification confidence: {result.confidence}")
-print(f"Alternative nodes: {result.alternatives}")
-```
-
-## Visualization Debugging
-
-### Graph Visualization
-
-Visualize your graph structure for debugging:
-
-```python
-from intent_kit.utils.visualization import visualize_graph
-
-# Generate interactive graph visualization
-visualize_graph(graph, output_file="debug_graph.html")
-```
-
-### Execution Path Visualization
-
-Visualize the execution path for a specific input:
-
-```python
-from intent_kit.utils.visualization import visualize_execution_path
-
-# Show execution path
-visualize_execution_path(graph, "Hello Alice", output_file="execution_path.html")
-```
-
-## Performance Debugging
-
-### Timing Analysis
-
-```python
-import time
-from intent_kit.context import IntentContext
-
-context = IntentContext(session_id="perf_debug", timing=True)
-result = graph.route("Hello Alice", context=context)
-
-print(f"Total execution time: {context.timing.total_ms}ms")
-print(f"Classifier time: {context.timing.classifier_ms}ms")
-print(f"Action time: {context.timing.action_ms}ms")
-```
-
-### Memory Usage
-
-```python
-import psutil
-import os
-
-process = psutil.Process(os.getpid())
-before_memory = process.memory_info().rss
-
-result = graph.route("Hello Alice")
-
-after_memory = process.memory_info().rss
-print(f"Memory used: {(after_memory - before_memory) / 1024 / 1024:.2f} MB")
+result = classifier_node.execute("Hello Alice")
+# Structured logs show classification decision and child selection
 ```
 
 ## Error Debugging
@@ -198,47 +185,79 @@ if not result.success:
     print(f"Validation errors: {result.validation_errors}")
 ```
 
-## Logging
+## Logging Configuration
 
 ### Configure Logging
 
 ```python
-import logging
+import os
 
-# Set up detailed logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger("intent_kit")
+# Set log level via environment variable
+os.environ["LOG_LEVEL"] = "debug"
 
-# Enable specific component logging
-logging.getLogger("intent_kit.graph").setLevel(logging.DEBUG)
-logging.getLogger("intent_kit.context").setLevel(logging.DEBUG)
+# Or set programmatically
+from intent_kit.utils.logger import Logger
+logger = Logger("my_component", level="debug")
 ```
 
-### Custom Logging
+### Available Log Levels
+
+- `trace`: Most verbose - detailed execution flow
+- `debug`: Debug information for development
+- `info`: General information
+- `warning`: Warnings that don't stop execution
+- `error`: Errors that affect functionality
+- `critical`: Critical errors that may cause failure
+- `fatal`: Fatal errors that will cause termination
+- `off`: No logging
+
+### Structured Logging
+
+Use structured logging for better diagnostic information:
 
 ```python
-from intent_kit.context import IntentContext
+logger.debug_structured(
+    {
+        "node_name": "my_node",
+        "input": user_input,
+        "params": extracted_params,
+        "cost": 0.000123,
+        "tokens": {"input": 45, "output": 12},
+    },
+    "Node Execution"
+)
+```
 
-class DebugContext(IntentContext):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.debug_log = []
+## Performance Monitoring
 
-    def log(self, message, level="INFO"):
-        self.debug_log.append({"message": message, "level": level, "timestamp": time.time()})
+### Cost Tracking
 
-context = DebugContext(session_id="custom_debug")
-result = graph.route("Hello Alice", context=context)
-print(context.debug_log)
+```python
+# Monitor LLM costs across execution
+result = graph.route("Hello Alice")
+print(f"Total cost: ${result.cost:.6f}")
+print(f"Input tokens: {result.input_tokens}")
+print(f"Output tokens: {result.output_tokens}")
+```
+
+### Timing Information
+
+```python
+# Monitor execution timing
+import time
+start_time = time.time()
+result = graph.route("Hello Alice")
+duration = time.time() - start_time
+print(f"Execution time: {duration:.3f}s")
 ```
 
 ## Best Practices
 
 1. **Use debug mode** during development
-2. **Enable timing** for performance-critical applications
-3. **Validate context flow** for complex graphs
-4. **Use visualization** for graph structure debugging
-5. **Log errors** with sufficient context
+2. **Enable structured logging** for better diagnostics
+3. **Mark important context keys** for detailed tracking
+4. **Monitor costs and tokens** for performance optimization
+5. **Use error tracing** for troubleshooting
 6. **Test with edge cases** to catch issues early
 
 ## Common Issues
@@ -254,42 +273,37 @@ action_node = action(
 )
 
 result = action_node.execute("Alice is 25")
-print(f"Raw extraction: {result.raw_extraction}")
-print(f"Validated params: {result.extracted_params}")
+# Structured logs show extraction process and results
 ```
 
-### Context State Issues
+### Classifier Routing Issues
 
 ```python
-# Check context state
-print(f"Context keys: {list(context.keys())}")
-print(f"Context values: {dict(context)}")
+# Debug classifier routing
+classifier_node = classifier(
+    name="intent_classifier",
+    classifier_func=llm_classifier,
+    children=[action1, action2]
+)
 
-# Validate context updates
-for key, value in context.items():
-    print(f"{key}: {value} (type: {type(value)})")
+result = classifier_node.execute("Hello Alice")
+# Structured logs show classification decision process
 ```
 
-### LLM Integration Issues
+## Recent Improvements
 
-```python
-# Test LLM configuration
-from intent_kit.services.llm_factory import LLMFactory
+### Reduced Log Noise
 
-factory = LLMFactory()
-client = factory.create_client({
-    "provider": "openai",
-    "api_key": "your-key",
-    "model": "gpt-3.5-turbo"
-})
+- **Removed verbose internal state logging** from node execution
+- **Consolidated AI client logging** across all providers
+- **Added structured logging** for better organization
+- **Improved context logging** to only log important changes
+- **Enhanced error reporting** with structured error information
 
-# Test basic LLM call
-try:
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "Hello"}]
-    )
-    print("LLM connection successful")
-except Exception as e:
-    print(f"LLM connection failed: {e}")
-```
+### Enhanced Diagnostics
+
+- **Structured parameter extraction logs** with input/output details
+- **Classifier decision tracking** with cost and token information
+- **Context change monitoring** for important fields only
+- **Performance metrics** including cost, tokens, and timing
+- **Error context preservation** for better troubleshooting

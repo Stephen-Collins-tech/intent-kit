@@ -244,7 +244,7 @@ class Logger:
         """Return valid log levels in logical order."""
         return self.VALID_LOG_LEVELS.copy()
 
-    def should_log(self, message_level):
+    def _should_log(self, message_level):
         """Check if a message at the given level should be logged."""
         if self.level == "off":
             return False
@@ -269,7 +269,7 @@ class Logger:
         )
 
     def info(self, message):
-        if not self.should_log("info"):
+        if not self._should_log("info"):
             return
         color = self.get_color("info")
         clear = self.clear_color()
@@ -277,7 +277,7 @@ class Logger:
         print(f"{color}[INFO]{clear} [{timestamp}] [{self.name}] {message}")
 
     def error(self, message):
-        if not self.should_log("error"):
+        if not self._should_log("error"):
             return
         color = self.get_color("error")
         clear = self.clear_color()
@@ -285,7 +285,7 @@ class Logger:
         print(f"{color}[ERROR]{clear} [{timestamp}] [{self.name}] {message}")
 
     def debug(self, message, colorize_message=True):
-        if not self.should_log("debug"):
+        if not self._should_log("debug"):
             return
         color = self.get_color("debug")
         clear = self.clear_color()
@@ -312,7 +312,7 @@ class Logger:
             print(f"{color}[DEBUG]{clear} [{timestamp}] [{self.name}] {message}")
 
     def warning(self, message):
-        if not self.should_log("warning"):
+        if not self._should_log("warning"):
             return
         color = self.get_color("warning")
         clear = self.clear_color()
@@ -320,7 +320,7 @@ class Logger:
         print(f"{color}[WARNING]{clear} [{timestamp}] [{self.name}] {message}")
 
     def critical(self, message):
-        if not self.should_log("critical"):
+        if not self._should_log("critical"):
             return
         color = self.get_color("critical")
         clear = self.clear_color()
@@ -328,7 +328,7 @@ class Logger:
         print(f"{color}[CRITICAL]{clear} [{timestamp}] [{self.name}] {message}")
 
     def fatal(self, message):
-        if not self.should_log("fatal"):
+        if not self._should_log("fatal"):
             return
         color = self.get_color("fatal")
         clear = self.clear_color()
@@ -336,7 +336,7 @@ class Logger:
         print(f"{color}[FATAL]{clear} [{timestamp}] [{self.name}] {message}")
 
     def trace(self, message):
-        if not self.should_log("trace"):
+        if not self._should_log("trace"):
             return
         color = self.get_color("trace")
         clear = self.clear_color()
@@ -345,7 +345,7 @@ class Logger:
 
     def debug_structured(self, data, title="Debug Data"):
         """Log structured debug data with enhanced colorization."""
-        if not self.should_log("debug"):
+        if not self._should_log("debug"):
             return
         color = self.get_color("debug")
         clear = self.clear_color()
@@ -428,7 +428,7 @@ class Logger:
         return "[\n" + ",\n".join(lines) + "\n" + indent_str + "]"
 
     def log(self, level, message):
-        if not self.should_log(level):
+        if not self._should_log(level):
             return
         color = self.get_color(level)
         clear = self.clear_color()
@@ -445,7 +445,7 @@ class Logger:
         duration=None,
     ):
         """Log cost information with cost per token breakdown."""
-        if not self.should_log("info"):
+        if not self._should_log("info"):
             return
 
         timestamp = self._get_timestamp()

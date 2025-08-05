@@ -79,6 +79,9 @@ class IntentContext:
         self._debug = debug
         self.logger = Logger(__name__)
 
+        # Track important context keys that should be logged for debugging
+        self._important_context_keys: Set[str] = set()
+
         if self._debug:
             self.logger.info(
                 f"Created IntentContext with session_id: {self.session_id}"
@@ -107,8 +110,15 @@ class IntentContext:
 
         with field.lock:
             value = field.value
-            if self._debug:
-                self.logger.debug(f"Retrieved '{key}' = {value}")
+            self.logger.debug_structured(
+                {
+                    "action": "get",
+                    "key": key,
+                    "value": value,
+                    "session_id": self.session_id,
+                },
+                "Context Retrieval",
+            )
             self._log_history("get", key, value, None)
             return value
 
@@ -126,8 +136,16 @@ class IntentContext:
                 self._fields[key] = ContextField(value)
                 # Set modified_by for new fields
                 self._fields[key].modified_by = modified_by
-                if self._debug:
-                    self.logger.debug(f"Created new field '{key}' = {value}")
+                self.logger.debug_structured(
+                    {
+                        "action": "create",
+                        "key": key,
+                        "value": value,
+                        "modified_by": modified_by,
+                        "session_id": self.session_id,
+                    },
+                    "Context Field Created",
+                )
             else:
                 field = self._fields[key]
                 with field.lock:
@@ -135,10 +153,17 @@ class IntentContext:
                     field.value = value
                     field.last_modified = datetime.now()
                     field.modified_by = modified_by
-                    if self._debug:
-                        self.logger.debug(
-                            f"Updated field '{key}' from {old_value} to {value}"
-                        )
+                    self.logger.debug_structured(
+                        {
+                            "action": "update",
+                            "key": key,
+                            "old_value": old_value,
+                            "new_value": value,
+                            "modified_by": modified_by,
+                            "session_id": self.session_id,
+                        },
+                        "Context Field Updated",
+                    )
 
             self._log_history("set", key, value, modified_by)
 
@@ -155,14 +180,20 @@ class IntentContext:
         """
         with self._global_lock:
             if key not in self._fields:
-                if self._debug:
-                    self.logger.debug(f"Attempted to delete non-existent key '{key}'")
+                self.logger.debug(f"Attempted to delete non-existent key '{key}'")
                 self._log_history("delete", key, None, modified_by)
                 return False
 
             del self._fields[key]
-            if self._debug:
-                self.logger.debug(f"Deleted field '{key}'")
+            self.logger.debug_structured(
+                {
+                    "action": "delete",
+                    "key": key,
+                    "modified_by": modified_by,
+                    "session_id": self.session_id,
+                },
+                "Context Field Deleted",
+            )
             self._log_history("delete", key, None, modified_by)
             return True
 
@@ -237,6 +268,15 @@ class IntentContext:
                 "value": field.value,
             }
 
+    def mark_important(self, key: str) -> None:
+        """
+        Mark a context key as important for debugging.
+
+        Args:
+            key: The context key to mark as important
+        """
+        self._important_context_keys.add(key)
+
     def clear(self, modified_by: Optional[str] = None) -> None:
         """
         Clear all fields from context.
@@ -247,9 +287,16 @@ class IntentContext:
         with self._global_lock:
             keys = list(self._fields.keys())
             self._fields.clear()
-            if self._debug:
-                self.logger.debug(f"Cleared all fields: {keys}")
-            self._log_history("clear", "ALL", None, modified_by)
+            self.logger.debug_structured(
+                {
+                    "action": "clear",
+                    "cleared_keys": keys,
+                    "modified_by": modified_by,
+                    "session_id": self.session_id,
+                },
+                "Context Cleared",
+            )
+            self._log_history("clear", "all", None, modified_by)
 
     def _log_history(
         self, action: str, key: str, value: Any, modified_by: Optional[str]

@@ -195,18 +195,8 @@ class NodeFactory:
         # Use node-specific LLM config if available, otherwise use default
         raw_node_llm_config = node_spec.get("llm_config", self.default_llm_config)
 
-        # Debug: print the raw LLM config
-        self.llm_processor.logger.debug(
-            f"Raw LLM config for {node_id}: {raw_node_llm_config}"
-        )
-
         # Process the LLM config to handle environment variable substitution
         node_llm_config = self.llm_processor.process_config(raw_node_llm_config)
-
-        # Debug: print the processed LLM config
-        self.llm_processor.logger.debug(
-            f"Processed LLM config for {node_id}: {node_llm_config}"
-        )
 
         if node_type == NodeType.ACTION.value:
             return ActionBuilder.from_json(
