@@ -266,7 +266,7 @@ class OpenAIClient(BaseLLMClient):
                 duration=duration,
             )
 
-            return LLMResponse(
+            response = LLMResponse(
                 output=self._clean_response(content),
                 model=model,
                 input_tokens=input_tokens,
@@ -275,6 +275,11 @@ class OpenAIClient(BaseLLMClient):
                 provider="openai",
                 duration=duration,
             )
+            
+            # Log audit entry
+            self._log_audit_entry(response, prompt)
+            
+            return response
 
         except Exception as e:
             self.logger.error(f"Error generating text with OpenAI: {e}")

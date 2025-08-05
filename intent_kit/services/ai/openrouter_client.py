@@ -334,7 +334,7 @@ class OpenRouterClient(BaseLLMClient):
         self.logger.info(f"OpenRouter content: {content}")
         self.logger.info(f"OpenRouter first_choice: {first_choice.display()}")
 
-        return LLMResponse(
+        response = LLMResponse(
             output=content,
             model=model,
             input_tokens=input_tokens,
@@ -343,6 +343,11 @@ class OpenRouterClient(BaseLLMClient):
             provider="openrouter",
             duration=duration,
         )
+        
+        # Log audit entry
+        self._log_audit_entry(response, prompt)
+        
+        return response
 
     def calculate_cost(
         self,

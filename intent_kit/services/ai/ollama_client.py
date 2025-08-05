@@ -179,7 +179,7 @@ class OllamaClient(BaseLLMClient):
                 duration=duration,
             )
 
-            return LLMResponse(
+            response = LLMResponse(
                 output=self._clean_response(ollama_response.response),
                 model=model,
                 input_tokens=input_tokens,
@@ -188,6 +188,11 @@ class OllamaClient(BaseLLMClient):
                 provider="ollama",
                 duration=duration,
             )
+            
+            # Log audit entry
+            self._log_audit_entry(response, prompt)
+            
+            return response
 
         except Exception as e:
             self.logger.error(f"Error generating text with Ollama: {e}")

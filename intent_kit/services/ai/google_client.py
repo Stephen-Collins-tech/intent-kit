@@ -221,7 +221,7 @@ class GoogleClient(BaseLLMClient):
                 duration=duration,
             )
 
-            return LLMResponse(
+            response = LLMResponse(
                 output=self._clean_response(google_response.text),
                 model=model,
                 input_tokens=input_tokens,
@@ -230,6 +230,11 @@ class GoogleClient(BaseLLMClient):
                 provider="google",
                 duration=duration,
             )
+            
+            # Log audit entry
+            self._log_audit_entry(response, prompt)
+            
+            return response
 
         except Exception as e:
             self.logger.error(f"Error generating text with Google GenAI: {e}")

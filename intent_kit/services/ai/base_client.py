@@ -6,10 +6,26 @@ This module provides a base class for all LLM client implementations.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
+from datetime import datetime
 from intent_kit.types import LLMResponse, Cost, InputTokens, OutputTokens
 from intent_kit.services.ai.pricing_service import PricingService
 from intent_kit.utils.logger import Logger
+
+
+@dataclass
+class AuditLogEntry:
+    """Audit log entry for LLM interactions."""
+    
+    timestamp: datetime
+    input_prompt: str
+    output_response: str
+    model: str
+    provider: str
+    input_tokens: int
+    output_tokens: int
+    cost: float
+    duration: float
 
 
 @dataclass
@@ -55,6 +71,7 @@ class BaseLLMClient(ABC):
         self._client: Optional[Any] = None
         self.pricing_service = pricing_service or PricingService()
         self.pricing_config: PricingConfiguration = self._create_pricing_config()
+        self.audit_log: List[AuditLogEntry] = []
         self._initialize_client(**kwargs)
 
     @abstractmethod
@@ -75,6 +92,29 @@ class BaseLLMClient(ABC):
     def _ensure_imported(self) -> None:
         """Ensure the required package is imported. Must be implemented by subclasses."""
         pass
+
+    def _log_audit_entry(self, response: LLMResponse, prompt: str) -> None:
+        """Log an audit entry for the LLM interaction."""
+        audit_entry = AuditLogEntry(
+            timestamp=datetime.now(),
+            input_prompt=prompt,
+            output_response=response.output,
+            model=response.model,
+            provider=response.provider,
+            input_tokens=response.input_tokens,
+            output_tokens=response.output_tokens,
+            cost=response.cost,
+            duration=response.duration,
+        )
+        self.audit_log.append(audit_entry)
+
+    def get_audit_log(self) -> List[AuditLogEntry]:
+        """Get the complete audit log."""
+        return self.audit_log.copy()
+
+    def clear_audit_log(self) -> None:
+        """Clear the audit log."""
+        self.audit_log.clear()
 
     @abstractmethod
     def generate(self, prompt: str, model: Optional[str] = None) -> LLMResponse:
