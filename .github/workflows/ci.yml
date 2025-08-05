@@ -20,10 +20,8 @@ jobs:
         uses: astral-sh/setup-uv@v6
       - name: Sync dependencies
         run: uv sync --group dev
-      - name: Lint (Ruff)
+      - name: Lint
         run: uv run lint
-      - name: Black
-        run: uv run black --fix .
       - name: Typecheck (mypy)
         run: uv run typecheck
 

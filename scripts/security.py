@@ -19,19 +19,16 @@ def run_pip_audit():
             str(Path.home() / ".local/bin/pip-audit"),
             "/usr/local/bin/pip-audit",
         ]
-        
+
         for path in pip_audit_paths:
             try:
                 result = subprocess.run(
-                    [path, "--local"],
-                    capture_output=True,
-                    text=True,
-                    check=True
+                    [path, "--local"], capture_output=True, text=True, check=True
                 )
                 return True, result.stdout
             except (subprocess.CalledProcessError, FileNotFoundError):
                 continue
-        
+
         return False, "pip-audit not found. Install it with: pip install pip-audit"
     except Exception as e:
         return False, f"Error running pip-audit: {e}"
@@ -41,9 +38,9 @@ def main():
     """Main function to run security audit."""
     print("🔒 Running security audit...")
     print("=" * 50)
-    
+
     success, output = run_pip_audit()
-    
+
     if success:
         print("✅ Security audit passed!")
         print("No known vulnerabilities found.")
