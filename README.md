@@ -345,7 +345,7 @@ uv run pre-commit install
 ```bash
 uv run pytest          # Run tests
 uv run lint            # Lint code
-uv run black --check . # Format check
+uv run black --fix .   # Format and fix code
 uv run typecheck       # Type checking
 uv run security        # Security audit
 uv build               # Build package

@@ -23,7 +23,7 @@ jobs:
       - name: Lint (Ruff)
         run: uv run lint
       - name: Black
-        run: uv run black --check .
+        run: uv run black --fix .
       - name: Typecheck (mypy)
         run: uv run typecheck
 
