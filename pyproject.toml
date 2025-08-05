@@ -63,6 +63,7 @@ examples = "scripts.examples:run_all"
 example = "scripts.examples:run_single"
 list-examples = "scripts.examples:list_examples"
 security = "scripts.security:main"
+auto-amend = "scripts.auto_amend:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
