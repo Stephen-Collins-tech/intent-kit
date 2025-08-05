@@ -15,7 +15,6 @@ Get up and running in minutes with our [Quickstart Guide](quickstart.md).
 ### Examples
 - [Calculator Bot](examples/calculator-bot.md) - Simple math operations
 - [Context-Aware Chatbot](examples/context-aware-chatbot.md) - Remembering conversations
-- [Multi-Intent Routing](examples/multi-intent-routing.md) - Handling complex requests
 
 ### Development
 - [Building](development/building.md) - How to build the package

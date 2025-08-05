@@ -260,6 +260,11 @@ This means you can deploy with confidence, knowing your AI workflows work reliab
 - Catch regressions automatically
 - Validate reliability before deployment
 
+### **Security**
+- Automated security audits with pip-audit
+- Vulnerability scanning in CI/CD pipeline
+- Dependency security monitoring
+
 ---
 
 ## Common Use Cases
@@ -340,8 +345,9 @@ uv run pre-commit install
 ```bash
 uv run pytest          # Run tests
 uv run lint            # Lint code
-uv run black --check . # Format check
+uv run black --fix .   # Format and fix code
 uv run typecheck       # Type checking
+uv run security        # Security audit
 uv build               # Build package
 ```
 

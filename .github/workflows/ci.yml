@@ -20,10 +20,8 @@ jobs:
         uses: astral-sh/setup-uv@v6
       - name: Sync dependencies
         run: uv sync --group dev
-      - name: Lint (Ruff)
+      - name: Lint
         run: uv run lint
-      - name: Black
-        run: uv run black --check .
       - name: Typecheck (mypy)
         run: uv run typecheck
 
@@ -67,9 +65,25 @@ jobs:
       - name: Evaluations (Mock Mode)
         run: uv run python -m intent_kit.evals.run_all_evals --quiet --mock
 
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Sync dependencies
+        run: uv sync --group dev
+      - name: Install pip-audit
+        run: uv add --group dev pip-audit
+      - name: Security audit
+        run: uv run pip-audit --local
+
   build:
     runs-on: ubuntu-latest
-    needs: [test, eval]
+    needs: [test, eval, security]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

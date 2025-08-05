@@ -96,7 +96,7 @@ The documentation has been updated to use consistent terminology:
 
 - **Actions** instead of "handlers" - Functions that execute and produce outputs
 - **Classifiers** - Nodes that route input to appropriate actions
-- **Splitters** - Nodes that handle multiple nodes in single input
+- **Classifiers** - Nodes that route input to appropriate actions
 
 ## Navigation Structure
 

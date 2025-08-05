@@ -29,14 +29,14 @@ pytest -v
 ## Test Categories
 
 ### Unit Tests
-- Node functionality (actions, classifiers, splitters)
+- Node functionality (actions, classifiers)
 - Graph building and routing
 - Context management
 - Parameter extraction and validation
 
 ### Integration Tests
 - Complete workflow execution
-- Multi-intent routing
+- Single intent routing
 - Error handling and recovery
 - LLM integration
 

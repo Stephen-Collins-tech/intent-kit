@@ -62,6 +62,8 @@ typecheck = "scripts.typecheck:main"
 examples = "scripts.examples:run_all"
 example = "scripts.examples:run_single"
 list-examples = "scripts.examples:list_examples"
+security = "scripts.security:main"
+auto-amend = "scripts.auto_amend:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -92,4 +94,5 @@ dev = [
     "tqdm",
     "twine>=5.1.0",
     "types-pyyaml>=6.0.12.20250516",
+    "pip-audit>=2.9.0",
 ]
