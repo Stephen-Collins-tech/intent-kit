@@ -4,7 +4,7 @@
 - ✅ **IntentGraphBuilder API**: Fluent interface for building intent graphs
 - ✅ **Simplified Action Creation**: `action()` function with automatic argument extraction
 - ✅ **LLM Classifier Helper**: `llm_classifier()` function with auto-wired descriptions
-- ✅ **Context Integration**: All demos use IntentContext for state management
+- ✅ **Context Integration**: All demos use Context for state management
 - ✅ **Multi-Intent Demo**: Uses LLM-powered splitting for intelligent intent handling
 - ✅ **JSON-Based Construction**: Flat JSON API for IntentGraphBuilder (complete)
 

@@ -12,7 +12,7 @@ from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
 from intent_kit.services.yaml_service import yaml_service
-from intent_kit.context import IntentContext
+from intent_kit.context import Context
 from intent_kit.utils.perf_util import PerfUtil
 
 
@@ -256,7 +256,7 @@ def run_eval(
     node: Any,
     comparator: Optional[Callable[[Any, Any], bool]] = None,
     fail_fast: bool = False,
-    context_factory: Optional[Callable[[], IntentContext]] = None,
+    context_factory: Optional[Callable[[], Context]] = None,
     extra_kwargs: Optional[dict] = None,
 ) -> EvalResult:
     """
@@ -279,7 +279,7 @@ def run_eval(
             # Context: allow factory or default
             context = context_factory() if context_factory else None
             if context is None:
-                context = IntentContext()
+                context = Context()
             if test_case.context:
                 for key, value in test_case.context.items():
                     context.set(key, value, modified_by="eval")
@@ -338,7 +338,7 @@ def run_eval_from_path(
     node: Any,
     comparator: Optional[Callable[[Any, Any], bool]] = None,
     fail_fast: bool = False,
-    context_factory: Optional[Callable[[], "IntentContext"]] = None,
+    context_factory: Optional[Callable[[], "Context"]] = None,
     extra_kwargs: Optional[dict] = None,
 ) -> EvalResult:
     """
@@ -354,7 +354,7 @@ def run_eval_from_module(
     node_name: str,
     comparator: Optional[Callable[[Any, Any], bool]] = None,
     fail_fast: bool = False,
-    context_factory: Optional[Callable[[], "IntentContext"]] = None,
+    context_factory: Optional[Callable[[], "Context"]] = None,
     extra_kwargs: Optional[dict] = None,
 ) -> EvalResult:
     """

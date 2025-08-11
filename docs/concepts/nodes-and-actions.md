@@ -18,22 +18,22 @@ This architecture ensures deterministic, focused intent processing without the c
 Action nodes execute actions and produce outputs. They are the leaf nodes of intent graphs.
 
 ```python
-from intent_kit import action
+from intent_kit.nodes.actions import ActionNode
 
 # Basic action
-greet_action = action(
+greet_action = ActionNode(
     name="greet",
-    description="Greet the user",
-    action_func=lambda name: f"Hello {name}!",
-    param_schema={"name": str}
+    action=lambda name: f"Hello {name}!",
+    param_schema={"name": str},
+    description="Greet the user"
 )
 
 # Action with LLM parameter extraction
-weather_action = action(
+weather_action = ActionNode(
     name="weather",
-    description="Get weather information for a city",
-    action_func=lambda city: f"Weather in {city} is sunny",
-    param_schema={"city": str}
+    action=lambda city: f"Weather in {city} is sunny",
+    param_schema={"city": str},
+    description="Get weather information for a city"
 )
 ```
 
@@ -53,24 +53,22 @@ Actions automatically extract parameters from user input using the argument extr
 - **Automatic Selection** - Intent Kit chooses the best extractor based on your configuration
 
 ```python
-from intent_kit import action
+from intent_kit.nodes.actions import ActionNode
 
 # Rule-based extraction (fast, deterministic)
-greet_action = action(
+greet_action = ActionNode(
     name="greet",
-    description="Greet the user",
-    action_func=lambda name: f"Hello {name}!",
+    action=lambda name: f"Hello {name}!",
     param_schema={"name": str},
-    argument_extractor="rule"  # Use rule-based extraction
+    description="Greet the user"
 )
 
 # LLM-based extraction (intelligent, flexible)
-weather_action = action(
+weather_action = ActionNode(
     name="weather",
-    description="Get weather information",
-    action_func=lambda city: f"Weather in {city} is sunny",
+    action=lambda city: f"Weather in {city} is sunny",
     param_schema={"city": str},
-    argument_extractor="llm"  # Use LLM extraction
+    description="Get weather information"
 )
 ```
 
@@ -79,44 +77,34 @@ weather_action = action(
 Actions support pluggable error handling strategies for robust execution:
 
 ```python
-from intent_kit import action
+from intent_kit.nodes.actions import ActionNode
+from intent_kit.strategies import create_remediation_manager
 
 # Retry on failure
-retry_action = action(
+retry_action = ActionNode(
     name="retry_example",
-    description="Example with retry strategy",
-    action_func=lambda x: x / 0,  # Will fail
+    action=lambda x: x / 0,  # Will fail
     param_schema={"x": float},
-    remediation_strategy="retry_on_fail",
-    remediation_config={
-        "max_attempts": 3,
-        "base_delay": 1.0
-    }
+    description="Example with retry strategy",
+    remediation_manager=create_remediation_manager(["retry"])
 )
 
 # Fallback to another action
-fallback_action = action(
+fallback_action = ActionNode(
     name="fallback_example",
-    description="Example with fallback strategy",
-    action_func=lambda x: x / 0,  # Will fail
+    action=lambda x: x / 0,  # Will fail
     param_schema={"x": float},
-    remediation_strategy="fallback_to_another_node",
-    remediation_config={
-        "fallback_name": "safe_calculation"
-    }
+    description="Example with fallback strategy",
+    remediation_manager=create_remediation_manager(["fallback"])
 )
 
 # Self-reflection for parameter correction
-reflect_action = action(
+reflect_action = ActionNode(
     name="reflect_example",
-    description="Example with self-reflection",
-    action_func=lambda name: f"Hello {name}!",
+    action=lambda name: f"Hello {name}!",
     param_schema={"name": str},
-    remediation_strategy="self_reflect",
-    remediation_config={
-        "max_reflections": 2,
-        "llm_config": {"provider": "openai", "model": "gpt-3.5-turbo"}
-    }
+    description="Example with self-reflection",
+    remediation_manager=create_remediation_manager(["self_reflect"])
 )
 ```
 
@@ -235,31 +223,30 @@ param_schema = {
 ### Using IntentGraphBuilder
 
 ```python
-from intent_kit import IntentGraphBuilder
-from intent_kit.utils.node_factory import action, llm_classifier
+from intent_kit.graph.builder import IntentGraphBuilder
+from intent_kit.nodes.actions.builder import ActionBuilder
+from intent_kit.nodes.classifiers.builder import ClassifierBuilder
 
-# Define actions
-greet_action = action(
-    name="greet",
-    description="Greet the user",
-    action_func=lambda name: f"Hello {name}!",
-    param_schema={"name": str}
-)
+# Define actions using builders
+greet_builder = ActionBuilder("greet")
+greet_builder.description = "Greet the user"
+greet_builder.action_func = lambda name: f"Hello {name}!"
+greet_builder.param_schema = {"name": str}
+greet_action = greet_builder.build()
 
-weather_action = action(
-    name="weather",
-    description="Get weather information",
-    action_func=lambda city: f"Weather in {city} is sunny",
-    param_schema={"city": str}
-)
+weather_builder = ActionBuilder("weather")
+weather_builder.description = "Get weather information"
+weather_builder.action_func = lambda city: f"Weather in {city} is sunny"
+weather_builder.param_schema = {"city": str}
+weather_action = weather_builder.build()
 
-# Create classifier
-main_classifier = llm_classifier(
-    name="main",
-    description="Route to appropriate action",
-    children=[greet_action, weather_action],
-    llm_config={"provider": "openai", "model": "gpt-4"}
-)
+# Create classifier using builder
+classifier_builder = ClassifierBuilder("main")
+classifier_builder.description = "Route to appropriate action"
+classifier_builder.classifier_type = "llm"
+classifier_builder.llm_config = {"provider": "openai", "model": "gpt-4"}
+classifier_builder.with_children([greet_action, weather_action])
+main_classifier = classifier_builder.build()
 
 # Build graph
 graph = IntentGraphBuilder().root(main_classifier).build()

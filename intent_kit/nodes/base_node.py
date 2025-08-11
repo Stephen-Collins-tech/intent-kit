@@ -1,10 +1,15 @@
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, Callable, TypeVar
 from abc import ABC, abstractmethod
 from intent_kit.utils.logger import Logger
-from intent_kit.context import IntentContext
+from intent_kit.context import Context
 from intent_kit.nodes.types import ExecutionResult
 from intent_kit.nodes.enums import NodeType
+from intent_kit.services.ai.llm_factory import LLMFactory
+from intent_kit.services.ai.base_client import BaseLLMClient
+
+# Generic type for node specifications
+T = TypeVar("T", bound="TreeNode")
 
 
 class Node:
@@ -54,13 +59,24 @@ class TreeNode(Node, ABC):
         description: str,
         children: Optional[List["TreeNode"]] = None,
         parent: Optional["TreeNode"] = None,
+        llm_config: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(name=name, parent=parent)
         self.logger = Logger(name or self.__class__.__name__.lower())
         self.description = description
         self.children: List["TreeNode"] = list(children) if children else []
-        for child in self.children:
-            child.parent = self
+
+        # Initialize LLM client if config is provided
+        self.llm_client: Optional[BaseLLMClient] = None
+        if llm_config:
+            try:
+                self.llm_client = LLMFactory.create_client(llm_config)
+                self.logger.info(f"Initialized LLM client for node '{self.name}'")
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to initialize LLM client for node '{self.name}': {e}"
+                )
+                self.llm_client = None
 
     @property
     def node_type(self) -> NodeType:
@@ -69,9 +85,22 @@ class TreeNode(Node, ABC):
 
     @abstractmethod
     def execute(
-        self, user_input: str, context: Optional[IntentContext] = None
+        self, user_input: str, context: Optional[Context] = None
     ) -> ExecutionResult:
         """Execute the node with the given user input and optional context."""
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def from_json(
+        node_spec: Dict[str, Any],
+        function_registry: Dict[str, Callable],
+        llm_config: Optional[Dict[str, Any]] = None,
+    ) -> "TreeNode":
+        """
+        Create a TreeNode from JSON spec.
+        This method must be implemented by subclasses.
+        """
         pass
 
     def traverse(self, user_input, context=None, parent_path=None):
@@ -97,16 +126,12 @@ class TreeNode(Node, ABC):
         stack.append((self, root_result.node_path, root_result, 0))
         results_map = {id(self): root_result}
         final_result = root_result
-        self.logger.debug(f"TreeNode initial results_map: {results_map}")
 
         # For token aggregation - properly handle None values
         total_input_tokens = getattr(root_result, "input_tokens", None) or 0
         total_output_tokens = getattr(root_result, "output_tokens", None) or 0
         total_cost = getattr(root_result, "cost", None) or 0.0
         total_duration = getattr(root_result, "duration", None) or 0.0
-        self.logger.debug(
-            f"TreeNode root_result BEFORE child traversal:\n{root_result.display()}"
-        )
 
         while stack:
             node, node_path, node_result, child_idx = stack[-1]

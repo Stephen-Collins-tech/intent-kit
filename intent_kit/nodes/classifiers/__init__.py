@@ -2,12 +2,10 @@
 Classifier node implementations.
 """
 
-from .keyword import keyword_classifier
-from .node import ClassifierNode
-from .builder import ClassifierBuilder
+from .node import (
+    ClassifierNode,
+)
 
 __all__ = [
-    "keyword_classifier",
     "ClassifierNode",
-    "ClassifierBuilder",
 ]

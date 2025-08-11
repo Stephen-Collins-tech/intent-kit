@@ -3,12 +3,12 @@ Tests for node base classes.
 """
 
 import pytest
-from typing import Optional
+from typing import Optional, Dict, Any, Callable
 
 from intent_kit.nodes.base_node import Node, TreeNode
 from intent_kit.nodes.enums import NodeType
 from intent_kit.nodes.types import ExecutionResult
-from intent_kit.context import IntentContext
+from intent_kit.context import Context
 
 
 class TestNode:
@@ -241,23 +241,37 @@ class TestTreeNode:
 
 
 class ConcreteTreeNode(TreeNode):
-    """Concrete implementation for testing abstract methods."""
+    """Concrete implementation of TreeNode for testing."""
 
     def execute(
-        self, user_input: str, context: Optional[IntentContext] = None
+        self, user_input: str, context: Optional[Context] = None
     ) -> ExecutionResult:
-        """Concrete implementation of execute method."""
+        """Execute the node."""
         return ExecutionResult(
             success=True,
             node_name=self.name,
             node_path=self.get_path(),
             node_type=self.node_type,
             input=user_input,
-            output=f"Processed: {user_input}",
-            error=None,
-            params={},
+            output=f"Executed {self.name}",
             children_results=[],
         )
+
+    @staticmethod
+    def from_json(
+        node_spec: Dict[str, Any],
+        function_registry: Dict[str, Callable],
+        llm_config: Optional[Dict[str, Any]] = None,
+    ) -> "ConcreteTreeNode":
+        """Create a ConcreteTreeNode from JSON spec."""
+        node_id = node_spec.get("id") or node_spec.get("name")
+        if not node_id:
+            raise ValueError(f"Node spec must have 'id' or 'name': {node_spec}")
+
+        name = node_spec.get("name", node_id)
+        description = node_spec.get("description", "")
+
+        return ConcreteTreeNode(name=name, description=description, children=[])
 
 
 class TestConcreteTreeNode:
@@ -269,19 +283,16 @@ class TestConcreteTreeNode:
         result = node.execute("test input")
 
         assert result.success is True
-        assert result.output == "Processed: test input"
-        assert result.node_name == node.name
-        assert result.node_path == node.get_path()
-        assert result.node_type == node.node_type
+        assert result.output == f"Executed {node.name}"
 
     def test_concrete_execute_with_context(self):
         """Test execute method with context."""
         node = ConcreteTreeNode(description="Test")
-        context = IntentContext()
+        context = Context()
         result = node.execute("test input", context)
 
         assert result.success is True
-        assert result.output == "Processed: test input"
+        assert result.output == f"Executed {node.name}"
 
     def test_concrete_node_inheritance(self):
         """Test that concrete node inherits all properties."""

@@ -7,7 +7,7 @@ for nodes and actions. This enables dependency graph building and validation.
 
 from typing import Set, Dict, Any, Optional, Protocol
 from dataclasses import dataclass
-from . import IntentContext
+from .context import Context
 
 
 @dataclass
@@ -27,7 +27,7 @@ class ContextAwareAction(Protocol):
         """Return the context dependencies for this action."""
         ...
 
-    def __call__(self, context: IntentContext, **kwargs) -> Any:
+    def __call__(self, context: Context, **kwargs) -> Any:
         """Execute the action with context access."""
         ...
 
@@ -50,7 +50,7 @@ def declare_dependencies(
 
 
 def validate_context_dependencies(
-    dependencies: ContextDependencies, context: IntentContext, strict: bool = False
+    dependencies: ContextDependencies, context: Context, strict: bool = False
 ) -> Dict[str, Any]:
     """
     Validate that required context fields are available.

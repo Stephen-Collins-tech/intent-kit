@@ -1,9 +1,9 @@
 """
-Tests for the IntentContext system.
+Tests for the Context system.
 """
 
 import pytest
-from intent_kit.context import IntentContext
+from intent_kit.context import Context
 from intent_kit.context.dependencies import (
     declare_dependencies,
     validate_context_dependencies,
@@ -12,24 +12,24 @@ from intent_kit.context.dependencies import (
 
 
 class TestIntentContext:
-    """Test the IntentContext class."""
+    """Test the Context class."""
 
     def test_context_creation(self):
         """Test creating a new context."""
-        context = IntentContext(session_id="test_123")
+        context = Context(session_id="test_123")
         assert context.session_id == "test_123"
         assert len(context.keys()) == 0
         assert len(context.get_history()) == 0
 
     def test_context_auto_session_id(self):
         """Test that context gets auto-generated session ID if none provided."""
-        context = IntentContext()
+        context = Context()
         assert context.session_id is not None
         assert len(context.session_id) > 0
 
     def test_context_set_get(self):
         """Test setting and getting values from context."""
-        context = IntentContext(session_id="test_123")
+        context = Context(session_id="test_123")
 
         # Set a value
         context.set("test_key", "test_value", modified_by="test")
@@ -53,13 +53,13 @@ class TestIntentContext:
 
     def test_context_default_value(self):
         """Test getting default value when key doesn't exist."""
-        context = IntentContext()
+        context = Context()
         value = context.get("nonexistent", default="default_value")
         assert value == "default_value"
 
     def test_context_has_key(self):
         """Test checking if key exists."""
-        context = IntentContext()
+        context = Context()
         assert not context.has("test_key")
 
         context.set("test_key", "value")
@@ -67,7 +67,7 @@ class TestIntentContext:
 
     def test_context_delete(self):
         """Test deleting a key."""
-        context = IntentContext()
+        context = Context()
         context.set("test_key", "value")
         assert context.has("test_key")
 
@@ -81,7 +81,7 @@ class TestIntentContext:
 
     def test_context_keys(self):
         """Test getting all keys."""
-        context = IntentContext()
+        context = Context()
         context.set("key1", "value1")
         context.set("key2", "value2")
 
@@ -92,7 +92,7 @@ class TestIntentContext:
 
     def test_context_clear(self):
         """Test clearing all fields."""
-        context = IntentContext()
+        context = Context()
         context.set("key1", "value1")
         context.set("key2", "value2")
 
@@ -108,7 +108,7 @@ class TestIntentContext:
 
     def test_context_get_field_metadata(self):
         """Test getting field metadata."""
-        context = IntentContext()
+        context = Context()
         context.set("test_key", "test_value", modified_by="test")
 
         metadata = context.get_field_metadata("test_key")
@@ -120,7 +120,7 @@ class TestIntentContext:
 
     def test_context_get_history_filtered(self):
         """Test getting filtered history."""
-        context = IntentContext()
+        context = Context()
         context.set("key1", "value1")
         context.set("key2", "value2")
         context.set("key1", "value1_updated")
@@ -138,7 +138,7 @@ class TestIntentContext:
         import threading
         import time
 
-        context = IntentContext()
+        context = Context()
         results = []
 
         def worker(thread_id):
@@ -173,7 +173,7 @@ class TestIntentContext:
 
     def test_add_error(self):
         """Test adding errors to the context."""
-        context = IntentContext(session_id="test_123")
+        context = Context(session_id="test_123")
 
         # Add an error
         context.add_error(
@@ -199,7 +199,7 @@ class TestIntentContext:
 
     def test_get_errors_filtered_by_node(self):
         """Test getting errors filtered by node name."""
-        context = IntentContext()
+        context = Context()
 
         # Add errors from different nodes
         context.add_error("node1", "input1", "error1", "TypeError")
@@ -221,7 +221,7 @@ class TestIntentContext:
 
     def test_get_errors_with_limit(self):
         """Test getting errors with a limit."""
-        context = IntentContext()
+        context = Context()
 
         # Add multiple errors
         for i in range(5):
@@ -241,7 +241,7 @@ class TestIntentContext:
 
     def test_clear_errors(self):
         """Test clearing all errors from the context."""
-        context = IntentContext()
+        context = Context()
 
         # Add some errors
         context.add_error("node1", "input1", "error1", "TypeError")
@@ -258,7 +258,7 @@ class TestIntentContext:
 
     def test_error_count(self):
         """Test getting the error count."""
-        context = IntentContext()
+        context = Context()
 
         # Initially no errors
         assert context.error_count() == 0
@@ -276,11 +276,11 @@ class TestIntentContext:
 
     def test_context_repr(self):
         """Test the string representation of the context."""
-        context = IntentContext(session_id="test_123")
+        context = Context(session_id="test_123")
 
         # Test empty context
         repr_str = repr(context)
-        assert "IntentContext" in repr_str
+        assert "Context" in repr_str
         assert "session_id=test_123" in repr_str
         assert "fields=0" in repr_str
         assert "history=0" in repr_str
@@ -297,13 +297,13 @@ class TestIntentContext:
 
     def test_context_debug_mode(self):
         """Test context creation with debug mode enabled."""
-        context = IntentContext(session_id="test_123", debug=True)
+        context = Context(session_id="test_123", debug=True)
         assert context.session_id == "test_123"
         assert context._debug is True
 
     def test_get_with_debug_logging(self):
         """Test get operations with debug logging enabled."""
-        context = IntentContext(debug=True)
+        context = Context(debug=True)
 
         # Test get non-existent key with debug logging
         value = context.get("nonexistent", default="default_value")
@@ -316,7 +316,7 @@ class TestIntentContext:
 
     def test_set_with_debug_logging(self):
         """Test set operations with debug logging enabled."""
-        context = IntentContext(debug=True)
+        context = Context(debug=True)
 
         # Test creating new field with debug logging
         context.set("new_key", "new_value", modified_by="test")
@@ -328,7 +328,7 @@ class TestIntentContext:
 
     def test_delete_with_debug_logging(self):
         """Test delete operations with debug logging enabled."""
-        context = IntentContext(debug=True)
+        context = Context(debug=True)
 
         # Test deleting non-existent key with debug logging
         deleted = context.delete("nonexistent")
@@ -341,7 +341,7 @@ class TestIntentContext:
 
     def test_add_error_with_debug_logging(self):
         """Test adding errors with debug logging enabled."""
-        context = IntentContext(debug=True)
+        context = Context(debug=True)
 
         context.add_error(
             node_name="test_node",
@@ -356,7 +356,7 @@ class TestIntentContext:
 
     def test_add_error_debug_logging_specific(self):
         """Test the specific debug logging line in add_error method."""
-        context = IntentContext(debug=True)
+        context = Context(debug=True)
 
         # This should trigger the debug logging in add_error
         context.add_error(
@@ -374,7 +374,7 @@ class TestIntentContext:
 
     def test_get_errors_with_debug_logging(self):
         """Test getting errors with debug logging enabled."""
-        context = IntentContext(debug=True)
+        context = Context(debug=True)
 
         # Add some errors
         context.add_error("node1", "input1", "error1", "TypeError")
@@ -390,7 +390,7 @@ class TestIntentContext:
 
     def test_clear_errors_with_debug_logging(self):
         """Test clearing errors with debug logging enabled."""
-        context = IntentContext(debug=True)
+        context = Context(debug=True)
 
         # Add some errors
         context.add_error("node1", "input1", "error1", "TypeError")
@@ -402,7 +402,7 @@ class TestIntentContext:
 
     def test_clear_with_debug_logging(self):
         """Test clearing all fields with debug logging enabled."""
-        context = IntentContext(debug=True)
+        context = Context(debug=True)
 
         # Add some fields
         context.set("key1", "value1")
@@ -417,7 +417,7 @@ class TestIntentContext:
 
     def test_clear_method_coverage(self):
         """Test clear method to ensure line 230 is covered."""
-        context = IntentContext()
+        context = Context()
 
         # Add multiple fields to ensure the keys list is populated
         context.set("field1", "value1")
@@ -448,7 +448,7 @@ class TestContextDependencies:
 
     def test_validate_context_dependencies(self):
         """Test validating dependencies against context."""
-        context = IntentContext()
+        context = Context()
         context.set("input1", "value1")
         context.set("input2", "value2")
 
@@ -464,7 +464,7 @@ class TestContextDependencies:
 
     def test_validate_context_dependencies_strict(self):
         """Test strict validation of dependencies."""
-        context = IntentContext()
+        context = Context()
         context.set("input1", "value1")
 
         deps = declare_dependencies(

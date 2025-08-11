@@ -2,10 +2,22 @@
 OpenRouter client wrapper for intent-kit
 """
 
+from intent_kit.utils.perf_util import PerfUtil
+from intent_kit.types import StructuredLLMResponse, InputTokens, OutputTokens, Cost
+from intent_kit.services.ai.pricing_service import PricingService
+from intent_kit.services.ai.base_client import (
+    BaseLLMClient,
+    PricingConfiguration,
+    ProviderPricing,
+    ModelPricing,
+)
 from dataclasses import dataclass
-from typing import Optional, Any, List, Union, Dict
+from typing import Optional, Any, List, Union, Dict, Type, TypeVar
 import json
+import re
 from intent_kit.utils.logger import get_logger
+
+T = TypeVar("T")
 
 # Try to import yaml, but don't fail if it's not available
 try:
@@ -14,15 +26,6 @@ try:
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
-from intent_kit.services.ai.base_client import (
-    BaseLLMClient,
-    PricingConfiguration,
-    ProviderPricing,
-    ModelPricing,
-)
-from intent_kit.services.ai.pricing_service import PricingService
-from intent_kit.types import LLMResponse, InputTokens, OutputTokens, Cost
-from intent_kit.utils.perf_util import PerfUtil
 
 
 @dataclass
@@ -38,24 +41,58 @@ class OpenRouterChatCompletionMessage:
     tool_calls: Optional[Any] = None
     reasoning: Optional[Any] = None
 
+    def __init__(
+        self,
+        content: str,
+        role: str,
+        refusal: Optional[str] = None,
+        annotations: Optional[Any] = None,
+        audio: Optional[Any] = None,
+        function_call: Optional[Any] = None,
+        tool_calls: Optional[Any] = None,
+        reasoning: Optional[Any] = None,
+    ):
+        self.logger = get_logger("openrouter_client")
+        self.content = content
+        self.role = role
+        self.refusal = refusal
+        self.annotations = annotations
+        self.audio = audio
+        self.function_call = function_call
+        self.tool_calls = tool_calls
+        self.reasoning = reasoning
+
     def parse_content(self) -> Union[Dict, str]:
         """Try to parse content as JSON or YAML, fallback to string."""
         content = self.content.strip()
-        self.logger = get_logger("openrouter_client")
         self.logger.info(f"OpenRouter content in parse_content: {content}")
+
+        cleaned_content = content
+        json_block_pattern = re.compile(r"```json\s*([\s\S]*?)\s*```", re.IGNORECASE)
+        match = json_block_pattern.search(content)
+        if match:
+            cleaned_content = match.group(1).strip()
+        else:
+            # Fallback: remove generic triple-backtick code blocks if present
+            generic_block_pattern = re.compile(r"```\s*([\s\S]*?)\s*```")
+            match = generic_block_pattern.search(content)
+            if match:
+                cleaned_content = match.group(1).strip()
+            else:
+                cleaned_content = content.strip()
 
         # Try JSON first
         try:
-            return json.loads(content)
-        except (json.JSONDecodeError, ValueError):
-            pass
+            return json.loads(cleaned_content)
+        except (json.JSONDecodeError, ValueError) as e:
+            self.logger.error(f"Error parsing content as JSON: {e}")
 
         # Try YAML if available
         if YAML_AVAILABLE:
             try:
-                return yaml.safe_load(content)
-            except (yaml.YAMLError, ValueError):
-                pass
+                return yaml.safe_load(cleaned_content)
+            except (yaml.YAMLError, ValueError) as e:
+                self.logger.error(f"Error parsing content as YAML: {e}")
 
         # Fallback to original string
         return content
@@ -162,6 +199,20 @@ class OpenRouterClient(BaseLLMClient):
 
         openrouter_provider = ProviderPricing("openrouter")
         openrouter_provider.models = {
+            "google/gemma-2-9b-it": ModelPricing(
+                model_name="google/gemma-2-9b-it",
+                provider="openrouter",
+                input_price_per_1m=0.01,
+                output_price_per_1m=0.01,
+                last_updated="2025-08-06",
+            ),
+            "meta-llama/llama-3.2-3b-instruct": ModelPricing(
+                model_name="meta-llama/llama-3.2-3b-instruct",
+                provider="openrouter",
+                input_price_per_1m=0.003,
+                output_price_per_1m=0.006,
+                last_updated="2025-08-06",
+            ),
             "moonshotai/kimi-k2": ModelPricing(
                 model_name="moonshotai/kimi-k2",
                 provider="openrouter",
@@ -210,6 +261,13 @@ class OpenRouterClient(BaseLLMClient):
                 input_price_per_1m=0.15,
                 output_price_per_1m=0.15,
                 last_updated="2025-08-02",
+            ),
+            "mistralai/mistral-nemo-20b": ModelPricing(
+                model_name="mistralai/mistral-nemo-20b",
+                provider="openrouter",
+                input_price_per_1m=0.008,
+                output_price_per_1m=0.05,
+                last_updated="2025-08-06",
             ),
             "liquid/lfm-40b": ModelPricing(
                 model_name="liquid/lfm-40b",
@@ -260,33 +318,29 @@ class OpenRouterClient(BaseLLMClient):
 
         return cleaned
 
-    def generate(self, prompt: str, model: Optional[str] = None) -> LLMResponse:
+    def generate(
+        self, prompt: str, expected_type: Type[T], model: Optional[str] = None
+    ) -> StructuredLLMResponse[T]:
         """Generate text using OpenRouter's LLM model."""
         self._ensure_imported()
-        assert self._client is not None  # Type assertion for linter
+        assert self._client is not None
         model = model or "mistralai/mistral-7b-instruct"
-
-        # Add JSON instruction to the prompt
-        json_prompt = f"{prompt}\n\nPlease respond in JSON format."
-        self.logger.info(
-            f"\n\nJSON_PROMPT START\n-------\n\n{json_prompt}\n\n-------\nJSON_PROMPT END\n\n"
-        )
 
         perf_util = PerfUtil("openrouter_generate")
         perf_util.start()
-        # Create response with proper typing
+
         response: OpenRouterChatCompletion = self._client.chat.completions.create(
             model=model,
-            messages=[{"role": "user", "content": json_prompt}],
+            messages=[{"role": "user", "content": prompt}],
             max_tokens=1000,
         )
-        perf_util.stop()
 
         if not response.choices:
             input_tokens = response.usage.prompt_tokens if response.usage else 0
             output_tokens = response.usage.completion_tokens if response.usage else 0
-            return LLMResponse(
-                output="",
+            return StructuredLLMResponse(
+                output={"error": "No choices returned from model"},
+                expected_type=expected_type,
                 model=model,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
@@ -294,34 +348,20 @@ class OpenRouterClient(BaseLLMClient):
                     model, "openrouter", input_tokens, output_tokens
                 ),
                 provider="openrouter",
-                duration=0.0,
+                duration=perf_util.stop(),
             )
 
-        # Convert raw choice objects to our custom OpenRouterChoice dataclass
-        converted_choices = []
-        for idx, raw_choice in enumerate(response.choices):
-            # Construct our custom choice from the raw object
-            converted_choice = OpenRouterChoice.from_raw(raw_choice)
-            converted_choices.append(converted_choice)
-
         # Extract content from the first choice
-        first_choice: OpenRouterChoice = converted_choices[0]
-        content = first_choice.message.content
+        first_choice = OpenRouterChoice.from_raw(response.choices[0])
+        content = first_choice.message.parse_content()
 
         # Extract usage information
-        if response.usage:
-            input_tokens = response.usage.prompt_tokens
-            output_tokens = response.usage.completion_tokens
-        else:
-            input_tokens = 0
-            output_tokens = 0
-
-        # Calculate cost using pricing service
+        input_tokens = response.usage.prompt_tokens if response.usage else 0
+        output_tokens = response.usage.completion_tokens if response.usage else 0
         cost = self.calculate_cost(model, "openrouter", input_tokens, output_tokens)
-
         duration = perf_util.stop()
 
-        # Log cost information with cost per token
+        # Log cost information
         self.logger.log_cost(
             cost=cost,
             input_tokens=input_tokens,
@@ -331,8 +371,9 @@ class OpenRouterClient(BaseLLMClient):
             duration=duration,
         )
 
-        return LLMResponse(
+        return StructuredLLMResponse(
             output=content,
+            expected_type=expected_type,
             model=model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,

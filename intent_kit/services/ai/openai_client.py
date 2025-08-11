@@ -3,7 +3,7 @@ OpenAI client wrapper for intent-kit
 """
 
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Type, TypeVar
 from intent_kit.services.ai.base_client import (
     BaseLLMClient,
     PricingConfiguration,
@@ -11,8 +11,10 @@ from intent_kit.services.ai.base_client import (
     ModelPricing,
 )
 from intent_kit.services.ai.pricing_service import PricingService
-from intent_kit.types import LLMResponse, InputTokens, OutputTokens, Cost
+from intent_kit.types import StructuredLLMResponse, InputTokens, OutputTokens, Cost
 from intent_kit.utils.perf_util import PerfUtil
+
+T = TypeVar("T")
 
 # Dummy assignment for testing
 openai = None
@@ -69,6 +71,13 @@ class OpenAIClient(BaseLLMClient):
 
         openai_provider = ProviderPricing("openai")
         openai_provider.models = {
+            "gpt-5-2025-08-07": ModelPricing(
+                model_name="gpt-5-2025-08-07",
+                provider="openai",
+                input_price_per_1m=1.25,
+                output_price_per_1m=10.0,
+                last_updated="2025-08-09",
+            ),
             "gpt-4": ModelPricing(
                 model_name="gpt-4",
                 provider="openai",
@@ -158,7 +167,9 @@ class OpenAIClient(BaseLLMClient):
 
         return cleaned
 
-    def generate(self, prompt: str, model: Optional[str] = None) -> LLMResponse:
+    def generate(
+        self, prompt: str, model: str, expected_type: Type[T]
+    ) -> StructuredLLMResponse[T]:
         """Generate text using OpenAI's GPT model."""
         self._ensure_imported()
         assert self._client is not None  # Type assertion for linter
@@ -170,7 +181,7 @@ class OpenAIClient(BaseLLMClient):
             response = self._client.chat.completions.create(
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=1000,
+                max_completion_tokens=1000,
             )
 
             # Convert to our custom dataclass structure
@@ -216,8 +227,9 @@ class OpenAIClient(BaseLLMClient):
             )
 
             if not openai_response.choices:
-                return LLMResponse(
+                return StructuredLLMResponse(
                     output="",
+                    expected_type=expected_type,
                     model=model,
                     input_tokens=0,
                     output_tokens=0,
@@ -266,8 +278,9 @@ class OpenAIClient(BaseLLMClient):
                 duration=duration,
             )
 
-            return LLMResponse(
+            return StructuredLLMResponse(
                 output=self._clean_response(content),
+                expected_type=expected_type,
                 model=model,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,

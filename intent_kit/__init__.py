@@ -14,10 +14,7 @@ from .nodes.classifiers import ClassifierNode
 from .nodes.actions import ActionNode
 
 from .graph.builder import IntentGraphBuilder
-from .context import IntentContext
-
-# Export node factory functions for easier access
-from .utils.node_factory import action, llm_classifier
+from .context import Context
 
 __version__ = "0.5.0"
 
@@ -27,7 +24,5 @@ __all__ = [
     "NodeType",
     "ClassifierNode",
     "ActionNode",
-    "IntentContext",
-    "action",
-    "llm_classifier",
+    "Context",
 ]

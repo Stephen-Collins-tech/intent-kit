@@ -9,11 +9,10 @@ generating debug output, and visualizing context flow.
 from typing import Dict, Any, Optional, List, cast
 from datetime import datetime
 import json
-from . import IntentContext
+from .context import Context, ContextHistoryEntry
 from .dependencies import ContextDependencies, analyze_action_dependencies
 from intent_kit.nodes import TreeNode
 from intent_kit.utils.logger import Logger
-from . import ContextHistoryEntry
 
 logger = Logger(__name__)
 
@@ -44,7 +43,7 @@ def get_context_dependencies(graph: Any) -> Dict[str, ContextDependencies]:
     return dependencies
 
 
-def validate_context_flow(graph: Any, context: IntentContext) -> Dict[str, Any]:
+def validate_context_flow(graph: Any, context: Context) -> Dict[str, Any]:
     """
     Validate the context flow for a graph and context.
     """
@@ -73,7 +72,7 @@ def validate_context_flow(graph: Any, context: IntentContext) -> Dict[str, Any]:
 
 
 def trace_context_execution(
-    graph: Any, user_input: str, context: IntentContext, output_format: str = "console"
+    graph: Any, user_input: str, context: Context, output_format: str = "console"
 ) -> str:
     """
     Generate a detailed execution trace with context state changes.
@@ -200,7 +199,7 @@ def _analyze_node_dependencies(node: TreeNode) -> Optional[ContextDependencies]:
 
 
 def _validate_node_dependencies(
-    deps: ContextDependencies, context: IntentContext
+    deps: ContextDependencies, context: Context
 ) -> Dict[str, Any]:
     """
     Validate dependencies for a specific node against a context.
@@ -223,7 +222,7 @@ def _validate_node_dependencies(
     }
 
 
-def _capture_full_context_state(context: IntentContext) -> Dict[str, Any]:
+def _capture_full_context_state(context: Context) -> Dict[str, Any]:
     """
     Capture the complete state of a context object without adding to history.
 

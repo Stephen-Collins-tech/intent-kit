@@ -3,7 +3,7 @@ Google GenAI client wrapper for intent-kit
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Type, TypeVar
 from intent_kit.services.ai.base_client import (
     BaseLLMClient,
     PricingConfiguration,
@@ -11,8 +11,10 @@ from intent_kit.services.ai.base_client import (
     ModelPricing,
 )
 from intent_kit.services.ai.pricing_service import PricingService
-from intent_kit.types import LLMResponse, InputTokens, OutputTokens, Cost
+from intent_kit.types import StructuredLLMResponse, InputTokens, OutputTokens, Cost
 from intent_kit.utils.perf_util import PerfUtil
+
+T = TypeVar("T")
 
 # Dummy assignment for testing
 google = None
@@ -123,7 +125,9 @@ class GoogleClient(BaseLLMClient):
 
         return cleaned
 
-    def generate(self, prompt: str, model: Optional[str] = None) -> LLMResponse:
+    def generate(
+        self, prompt: str, model: str, expected_type: Type[T]
+    ) -> StructuredLLMResponse[T]:
         """Generate text using Google's Gemini model."""
         self._ensure_imported()
         assert self._client is not None  # Type assertion for linter
@@ -221,8 +225,9 @@ class GoogleClient(BaseLLMClient):
                 duration=duration,
             )
 
-            return LLMResponse(
+            return StructuredLLMResponse(
                 output=self._clean_response(google_response.text),
+                expected_type=expected_type,
                 model=model,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,

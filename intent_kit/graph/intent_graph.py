@@ -8,7 +8,8 @@ routing to root nodes, and result aggregation.
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 from intent_kit.utils.logger import Logger
-from intent_kit.context import IntentContext
+from intent_kit.context import Context, StackContext
+from intent_kit.extraction import Extractor
 
 from intent_kit.graph.validation import (
     validate_graph_structure,
@@ -91,7 +92,8 @@ class IntentGraph:
         llm_config: Optional[dict] = None,
         debug_context: bool = False,
         context_trace: bool = False,
-        context: Optional[IntentContext] = None,
+        context: Optional[Context] = None,
+        default_extractor: Optional[Extractor] = None,
     ):
         """
         Initialize the IntentGraph with root classifier nodes.
@@ -102,13 +104,13 @@ class IntentGraph:
             llm_config: LLM configuration for classification (optional)
             debug_context: If True, enable context debugging and state tracking
             context_trace: If True, enable detailed context tracing with timestamps
-            context: Optional IntentContext to use as the default for this graph
+            context: Optional Context to use as the default for this graph
 
         Note: All root nodes must be classifier nodes for single intent handling.
         This ensures focused, deterministic intent processing.
         """
         self.root_nodes: List[TreeNode] = root_nodes or []
-        self.context = context or IntentContext()
+        self.context = context or Context()
 
         # Validate that all root nodes are valid TreeNode instances
         for root_node in self.root_nodes:
@@ -123,6 +125,7 @@ class IntentGraph:
         self.llm_config = llm_config
         self.debug_context = debug_context
         self.context_trace = context_trace
+        self.default_extractor = default_extractor
 
     def add_root_node(self, root_node: TreeNode, validate: bool = True) -> None:
         """
@@ -272,7 +275,7 @@ class IntentGraph:
     def route(
         self,
         user_input: str,
-        context: Optional[IntentContext] = None,
+        context: Optional[Context] = None,
         debug: bool = False,
         debug_context: Optional[bool] = None,
         context_trace: Optional[bool] = None,
@@ -301,6 +304,18 @@ class IntentGraph:
 
         context = context or self.context  # Use member context if not provided
 
+        # Initialize StackContext if not already present
+        stack_context = None
+        if context:
+            if not hasattr(self, "_stack_contexts"):
+                self._stack_contexts = {}
+
+            context_id = context.session_id
+            if context_id not in self._stack_contexts:
+                self._stack_contexts[context_id] = StackContext(context)
+
+            stack_context = self._stack_contexts[context_id]
+
         if debug:
             self.logger.info(f"Processing input: {user_input}")
             if context:
@@ -312,6 +327,18 @@ class IntentGraph:
 
         # Check if there are any root nodes available
         if not self.root_nodes:
+            error_msg = "No root nodes available"
+
+            # Track operation in context (if provided)
+            if context:
+                context.track_operation(
+                    operation_type="graph_execution",
+                    success=False,
+                    node_name="no_root_nodes",
+                    user_input=user_input,
+                    error_message=error_msg,
+                )
+
             return ExecutionResult(
                 success=False,
                 params=None,
@@ -323,10 +350,24 @@ class IntentGraph:
                 output=None,
                 error=ExecutionError(
                     error_type="NoRootNodesAvailable",
-                    message="No root nodes available",
+                    message=error_msg,
                     node_name="no_root_nodes",
                     node_path=[],
                 ),
+            )
+
+        # Push frame for main route execution
+        if stack_context:
+            frame_id = stack_context.push_frame(
+                function_name="route",
+                node_name="IntentGraph",
+                node_path=["IntentGraph"],
+                user_input=user_input,
+                parameters={
+                    "debug": debug,
+                    "debug_context": debug_context_enabled,
+                    "context_trace": context_trace_enabled,
+                },
             )
 
         # If we have root nodes, use traverse method for each root node
@@ -360,7 +401,20 @@ class IntentGraph:
 
             # If there's only one result, return it directly
             if len(results) == 1:
-                return results[0]
+                result = results[0]
+
+                # Track operation in context (if provided)
+                if context:
+                    context.track_operation(
+                        operation_type="graph_execution",
+                        success=result.success,
+                        node_name=result.node_name,
+                        user_input=user_input,
+                        result=result.output if result.success else None,
+                        error_message=result.error.message if result.error else None,
+                    )
+
+                return result
 
             self.logger.debug(f"IntentGraph .route method call results: {results}")
             # Aggregate multiple results
@@ -402,6 +456,31 @@ class IntentGraph:
                     node_path=[],
                 )
 
+            # Pop frame for successful route execution
+            if stack_context:
+                stack_context.pop_frame(
+                    execution_result={
+                        "success": overall_success,
+                        "output": aggregated_output,
+                        "results_count": len(results),
+                        "successful_results": len(successful_results),
+                        "failed_results": len(failed_results),
+                    }
+                )
+
+            # Track operation in context (if provided)
+            if context:
+                context.track_operation(
+                    operation_type="graph_execution",
+                    success=overall_success,
+                    node_name="intent_graph",
+                    user_input=user_input,
+                    result=aggregated_output if overall_success else None,
+                    error_message=(
+                        aggregated_error.message if aggregated_error else None
+                    ),
+                )
+
             return ExecutionResult(
                 success=overall_success,
                 params=aggregated_params,
@@ -415,6 +494,17 @@ class IntentGraph:
                 input=user_input,
                 output=aggregated_output,
                 error=aggregated_error,
+            )
+
+        # Pop frame for failed route execution (no root nodes)
+        if stack_context:
+            stack_context.pop_frame(
+                error_info={
+                    "error_type": "NoRootNodesAvailable",
+                    "message": "No root nodes available",
+                    "node_name": "no_root_nodes",
+                    "node_path": [],
+                }
             )
 
         # If no root nodes, return error
@@ -435,9 +525,7 @@ class IntentGraph:
             ),
         )
 
-    def _capture_context_state(
-        self, context: IntentContext, label: str
-    ) -> Dict[str, Any]:
+    def _capture_context_state(self, context: Context, label: str) -> Dict[str, Any]:
         """
         Capture the current state of the context for debugging without adding to history.
 

@@ -11,8 +11,8 @@ from intent_kit.nodes.enums import NodeType
 from intent_kit.graph import IntentGraph
 from intent_kit.services.yaml_service import yaml_service
 from intent_kit.utils.logger import Logger
-from intent_kit.nodes.actions.builder import ActionBuilder
-from intent_kit.nodes.classifiers.builder import ClassifierBuilder
+from intent_kit.nodes.actions import ActionNode
+from intent_kit.nodes.classifiers import ClassifierNode
 import os
 
 
@@ -199,11 +199,15 @@ class NodeFactory:
         node_llm_config = self.llm_processor.process_config(raw_node_llm_config)
 
         if node_type == NodeType.ACTION.value:
-            return ActionBuilder.from_json(
+            return ActionNode.from_json(
                 node_spec, self.function_registry, node_llm_config
             )
         elif node_type == NodeType.CLASSIFIER.value:
-            return ClassifierBuilder.from_json(
+            if "children" not in node_spec:
+                raise ValueError(
+                    f"Classifier node '{node_id}' must have 'children' field"
+                )
+            return ClassifierNode.from_json(
                 node_spec, self.function_registry, node_llm_config
             )
         else:
@@ -256,8 +260,8 @@ class GraphConstructor:
         self.validator.validate_graph_spec(graph_spec)
         self.validator.validate_node_references(graph_spec)
 
-        # Create all node builders first, mapping IDs to builders
-        builder_map: Dict[str, Any] = {}
+        # Create all nodes first, mapping IDs to nodes
+        node_map: Dict[str, TreeNode] = {}
 
         for node_id, node_spec in graph_spec["nodes"].items():
             # Validate individual node
@@ -267,14 +271,10 @@ class GraphConstructor:
             if "id" not in node_spec:
                 node_spec["id"] = node_spec["name"]
 
-            # Create node builder using factory
-            builder = self.node_factory.create_node_builder(node_id, node_spec)
-            builder_map[node_id] = builder
-
-        # Build all nodes first
-        node_map: Dict[str, TreeNode] = {}
-        for node_id, builder in builder_map.items():
-            node = builder.build()
+            # Create node using factory
+            result = self.node_factory.create_node_builder(node_id, node_spec)
+            # Both ActionNode.from_json and ClassifierNode.from_json return nodes directly
+            node = result
             node_map[node_id] = node
 
         # Set parent-child relationships on built nodes

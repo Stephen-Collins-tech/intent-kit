@@ -82,7 +82,6 @@ def action_node_llm():
         description="LLM-powered booking action",
         param_schema={"destination": str, "date": str},
         action=booking_action,
-        arg_extractor=simple_extractor,
     )
 
     return action

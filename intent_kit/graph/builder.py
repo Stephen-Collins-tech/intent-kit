@@ -16,11 +16,13 @@ from intent_kit.graph.graph_components import (
     RelationshipBuilder,
     GraphConstructor,
 )
+from intent_kit.nodes.classifiers.node import ClassifierNode
+from intent_kit.nodes.actions.node import ActionNode
 from intent_kit.services.yaml_service import yaml_service
 
 from intent_kit.nodes.base_builder import BaseBuilder
-from intent_kit.nodes.actions.builder import ActionBuilder
-from intent_kit.nodes.classifiers.builder import ClassifierBuilder
+from intent_kit.nodes.actions import ActionNode
+from intent_kit.nodes.classifiers import ClassifierNode
 
 
 class IntentGraphBuilder(BaseBuilder[IntentGraph]):
@@ -382,24 +384,7 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
         function_registry: Dict[str, Callable],
     ) -> TreeNode:
         """Create an action node from specification."""
-        if "function" not in node_spec:
-            raise ValueError(f"Action node '{node_id}' must have a 'function' field")
-
-        function_name = node_spec["function"]
-        if function_name not in function_registry:
-            raise ValueError(
-                f"Function '{function_name}' not found in function registry"
-            )
-
-        builder = ActionBuilder(name)
-        builder.with_action(function_registry[function_name])
-        builder.with_description(description)
-
-        # Use provided param_schema or default to empty dict
-        param_schema = node_spec.get("param_schema", {})
-        builder.with_param_schema(param_schema)
-
-        return builder.build()
+        return ActionNode.from_json(node_spec, function_registry)
 
     def _create_classifier_node(
         self,
@@ -410,9 +395,7 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
         function_registry: Dict[str, Callable],
     ) -> TreeNode:
         """Create a classifier node from specification."""
-        return ClassifierBuilder.create_from_spec(
-            node_id, name, description, node_spec, function_registry
-        )
+        return ClassifierNode.from_json(node_spec, function_registry)
 
     def _create_llm_classifier_node(
         self,
@@ -428,9 +411,7 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
                 f"LLM classifier node '{node_id}' must have an 'llm_config' field"
             )
 
-        return ClassifierBuilder.create_from_spec(
-            node_id, name, description, node_spec, function_registry
-        )
+        return ClassifierNode.from_json(node_spec, function_registry)
 
     def _build_from_json(
         self,
@@ -506,12 +487,18 @@ class IntentGraphBuilder(BaseBuilder[IntentGraph]):
             if not self._function_registry:
                 # Validate JSON even without function registry to catch validation errors
                 self._validate_json_graph()
-                raise ValueError(
-                    "Function registry required for JSON-based construction"
+                # Only require function registry if there are action nodes
+                has_action_nodes = any(
+                    node.get("type") == "action"
+                    for node in self._json_graph.get("nodes", {}).values()
                 )
+                if has_action_nodes:
+                    raise ValueError(
+                        "Function registry required for JSON-based construction with action nodes"
+                    )
 
             return self.from_json(
-                self._json_graph, self._function_registry, self._llm_config
+                self._json_graph, self._function_registry or {}, self._llm_config
             )
 
         # Otherwise, validate we have root nodes for direct construction

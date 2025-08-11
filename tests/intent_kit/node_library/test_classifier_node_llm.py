@@ -3,7 +3,7 @@ Tests for classifier_node_llm module.
 """
 
 from intent_kit.node_library.classifier_node_llm import classifier_node_llm
-from intent_kit.context import IntentContext
+from intent_kit.context import Context
 
 
 class TestClassifierNodeLLM:
@@ -39,7 +39,8 @@ class TestClassifierNodeLLM:
 
         for input_text in cancellation_inputs:
             result = node.classifier(input_text, node.children, None)
-            assert result[0] == node.children[1]  # Should return cancellation child
+            # Should return cancellation child
+            assert result[0] == node.children[1]
             assert result[1] is None
 
     def test_simple_classifier_with_weather_keywords(self):
@@ -71,7 +72,8 @@ class TestClassifierNodeLLM:
 
         for input_text in mixed_inputs:
             result = node.classifier(input_text, node.children, None)
-            assert result[0] == node.children[1]  # Should return cancellation child
+            # Should return cancellation child
+            assert result[0] == node.children[1]
             assert result[1] is None
 
     def test_simple_classifier_with_no_keywords(self):
@@ -87,7 +89,8 @@ class TestClassifierNodeLLM:
 
         for input_text in neutral_inputs:
             result = node.classifier(input_text, node.children, None)
-            assert result[0] == node.children[0]  # Should return first child (weather)
+            # Should return first child (weather)
+            assert result[0] == node.children[0]
             assert result[1] is None
 
     def test_simple_classifier_with_no_children(self):
@@ -201,7 +204,7 @@ class TestClassifierNodeLLM:
         node = classifier_node_llm()
         weather_node = node.children[0]
 
-        context = IntentContext(session_id="test_session")
+        context = Context(session_id="test_session")
         context.set("user_id", "123", modified_by="test")
         result = weather_node.execute("What's the weather in Paris?", context)
         assert result.success is True
@@ -263,7 +266,7 @@ class TestClassifierNodeLLM:
         node = classifier_node_llm()
         cancellation_node = node.children[1]
 
-        context = IntentContext(session_id="test_session")
+        context = Context(session_id="test_session")
         context.set("user_id", "123", modified_by="test")
         result = cancellation_node.execute("Cancel my flight reservation", context)
         assert result.success is True

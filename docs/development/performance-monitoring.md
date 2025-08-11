@@ -64,8 +64,8 @@ The `ReportUtil` class generates comprehensive performance reports for your inte
 ### Basic Performance Report
 
 ```python
-from intent_kit.utils.report_utils import ReportUtil
-from intent_kit.utils.perf_util import PerfUtil
+from intent_kit.utils.report_utils import format_execution_results
+from intent_kit.utils.perf_util import PerfUtil, collect
 
 # Your graph and test inputs
 graph = IntentGraphBuilder().root(classifier).build()
@@ -77,12 +77,12 @@ timings = []
 # Run tests with timing
 with PerfUtil("full test run") as perf:
     for test_input in test_inputs:
-        with PerfUtil.collect(test_input, timings):
+        with collect(test_input, timings):
             result = graph.route(test_input)
             results.append(result)
 
 # Generate report
-report = ReportUtil.format_execution_results(
+report = format_execution_results(
     results=results,
     llm_config=llm_config,
     perf_info=perf.format(),
@@ -109,7 +109,7 @@ Intent Kit automatically tracks token usage across all LLM operations.
 ### Cost Calculation
 
 ```python
-from intent_kit.utils.report_utils import ReportUtil
+from intent_kit.utils.report_utils import format_execution_results
 
 # Get cost information from results
 for result in results:
@@ -188,10 +188,10 @@ for result in results:
 # Profile different parts of your workflow
 with PerfUtil.collect("classification", timings):
     # Classifier execution
-    
+
 with PerfUtil.collect("parameter_extraction", timings):
     # Parameter extraction
-    
+
 with PerfUtil.collect("action_execution", timings):
     # Action execution
 ```

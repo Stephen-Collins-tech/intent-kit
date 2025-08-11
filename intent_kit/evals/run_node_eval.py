@@ -18,7 +18,7 @@ from datetime import datetime
 from difflib import SequenceMatcher
 import re
 from dotenv import load_dotenv
-from intent_kit.context import IntentContext
+from intent_kit.context import Context
 from intent_kit.services.yaml_service import yaml_service
 from intent_kit.services.loader_service import dataset_loader, module_loader
 
@@ -158,7 +158,7 @@ def evaluate_node(
     # Create persistent context if needed
     persistent_context = None
     if needs_persistent_context:
-        persistent_context = IntentContext()
+        persistent_context = Context()
         # Initialize booking count for action_node_llm
         persistent_context.set("booking_count", 0, modified_by="evaluation_init")
 
@@ -175,7 +175,7 @@ def evaluate_node(
                 context.set(key, value, modified_by="test_case")
         else:
             # Create new context for each test case
-            context = IntentContext()
+            context = Context()
             for key, value in context_data.items():
                 context.set(key, value, modified_by="test_case")
 

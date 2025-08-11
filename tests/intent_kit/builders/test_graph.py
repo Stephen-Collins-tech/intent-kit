@@ -6,6 +6,7 @@ import pytest
 from unittest.mock import patch, MagicMock, mock_open
 from intent_kit.graph.builder import IntentGraphBuilder
 from intent_kit.nodes import TreeNode
+from intent_kit.nodes.classifiers.node import ClassifierNode
 from intent_kit.graph import IntentGraph
 
 
@@ -782,17 +783,21 @@ class TestIntentGraphBuilder:
             "type": "classifier",
             "name": "test_classifier",
             "description": "Test classifier",
+            # Provide LLM config
+            "llm_config": {"provider": "ollama", "model": "llama2"},
         }
         function_registry = {}
 
-        with pytest.raises(ValueError, match="must have a 'classifier_function' field"):
-            builder._create_classifier_node(
-                "test_id",
-                "test_classifier",
-                "Test classifier",
-                node_spec,
-                function_registry,
-            )
+        # Should not raise an error since LLM config is provided (classifier_function is ignored)
+        node = builder._create_classifier_node(
+            "test_id",
+            "test_classifier",
+            "Test classifier",
+            node_spec,
+            function_registry,
+        )
+        assert isinstance(node, ClassifierNode)
+        assert node.name == "test_classifier"
 
     def test_create_classifier_node_function_not_found(self):
         """Test creating classifier node with function not in registry."""
@@ -802,17 +807,21 @@ class TestIntentGraphBuilder:
             "name": "test_classifier",
             "description": "Test classifier",
             "classifier_function": "missing_func",
+            # Provide LLM config
+            "llm_config": {"provider": "ollama", "model": "llama2"},
         }
         function_registry = {}
 
-        with pytest.raises(ValueError, match="not found in function registry"):
-            builder._create_classifier_node(
-                "test_id",
-                "test_classifier",
-                "Test classifier",
-                node_spec,
-                function_registry,
-            )
+        # Should not raise an error since LLM config is provided (classifier_function is ignored)
+        node = builder._create_classifier_node(
+            "test_id",
+            "test_classifier",
+            "Test classifier",
+            node_spec,
+            function_registry,
+        )
+        assert isinstance(node, ClassifierNode)
+        assert node.name == "test_classifier"
 
     def test_build_from_json_complex_graph(self):
         """Test building complex graph from JSON."""

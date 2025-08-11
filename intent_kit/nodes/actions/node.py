@@ -1,19 +1,23 @@
 """
 Action node implementation.
 
-This module provides the ActionNode class which is a leaf node representing
-an executable action with argument extraction and validation.
+This module provides the ActionNode class which is a leaf node
+that executes actions with argument extraction and validation.
 """
 
-from typing import Any, Callable, Dict, Optional, Set, Type, List, Union
+import re
+import json
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 from ..base_node import TreeNode
 from ..enums import NodeType
 from ..types import ExecutionResult, ExecutionError
-from intent_kit.context import IntentContext
-from intent_kit.context.dependencies import declare_dependencies
-from .remediation import (
-    get_remediation_strategy,
-    RemediationStrategy,
+from intent_kit.context import Context
+from intent_kit.strategies import InputValidator, OutputValidator
+from intent_kit.extraction import ArgumentSchema
+from intent_kit.utils.type_validator import (
+    validate_type,
+    TypeValidationError,
+    resolve_type,
 )
 
 
@@ -22,460 +26,462 @@ class ActionNode(TreeNode):
 
     def __init__(
         self,
-        name: Optional[str],
-        param_schema: Dict[str, Type],
+        name: str,
         action: Callable[..., Any],
-        arg_extractor: Callable[
-            [str, Optional[Dict[str, Any]]], Union[Dict[str, Any], ExecutionResult]
-        ],
-        context_inputs: Optional[Set[str]] = None,
-        context_outputs: Optional[Set[str]] = None,
-        input_validator: Optional[Callable[[Dict[str, Any]], bool]] = None,
-        output_validator: Optional[Callable[[Any], bool]] = None,
+        param_schema: Optional[Dict[str, Union[Type[Any], str]]] = None,
         description: str = "",
+        context: Optional[Context] = None,
+        input_validator: Optional[InputValidator] = None,
+        output_validator: Optional[OutputValidator] = None,
+        llm_config: Optional[Dict[str, Any]] = None,
         parent: Optional["TreeNode"] = None,
         children: Optional[List["TreeNode"]] = None,
-        remediation_strategies: Optional[List[Union[str, RemediationStrategy]]] = None,
+        custom_prompt: Optional[str] = None,
+        prompt_template: Optional[str] = None,
+        arg_schema: Optional[ArgumentSchema] = None,
     ):
         super().__init__(
-            name=name, description=description, children=children or [], parent=parent
+            name=name,
+            description=description,
+            children=children or [],
+            parent=parent,
+            llm_config=llm_config,
         )
-        self.param_schema = param_schema
         self.action = action
-        self.arg_extractor = arg_extractor
-        self.context_inputs = context_inputs or set()
-        self.context_outputs = context_outputs or set()
+        self.param_schema = param_schema or {}
+        self._llm_config = llm_config or {}
+
+        # Use new Context class
+        self.context = context or Context()
+
+        # Use new validator classes
         self.input_validator = input_validator
         self.output_validator = output_validator
-        self.context_dependencies = declare_dependencies(
-            inputs=self.context_inputs,
-            outputs=self.context_outputs,
-            description=f"Context dependencies for intent '{self.name}'",
+
+        # New extraction system
+        self.arg_schema = arg_schema or self._build_arg_schema()
+
+        # Prompt configuration
+        self.custom_prompt = custom_prompt
+        self.prompt_template = prompt_template or self._get_default_prompt_template()
+
+    def _build_arg_schema(self) -> ArgumentSchema:
+        """Build argument schema from param_schema."""
+        schema: ArgumentSchema = {"type": "object", "properties": {}, "required": []}
+
+        for param_name, param_type in self.param_schema.items():
+            # Handle both string type names and actual Python types
+            if isinstance(param_type, str):
+                type_name = param_type
+            elif hasattr(param_type, "__name__"):
+                type_name = param_type.__name__
+            else:
+                type_name = str(param_type)
+
+            schema["properties"][param_name] = {
+                "type": type_name,
+                "description": f"Parameter {param_name}",
+            }
+            schema["required"].append(param_name)
+
+        return schema
+
+    def _get_default_prompt_template(self) -> str:
+        """Get the default action prompt template."""
+        return """You are an action executor. Given a user input, extract the required parameters and execute the action.
+
+User Input: {user_input}
+
+Action: {action_name}
+Description: {action_description}
+
+Required Parameters:
+{param_descriptions}
+
+{context_info}
+
+Instructions:
+- Extract the required parameters from the user input
+- Consider the available context information to help with extraction
+- Return the parameters as a JSON object
+- If a parameter is not found, use a reasonable default or null
+- Be specific and accurate in your extraction
+
+Return only the JSON object with the extracted parameters:"""
+
+    def _build_prompt(self, user_input: str, context: Optional[Context] = None) -> str:
+        """Build the action prompt."""
+        # Build parameter descriptions
+        param_descriptions = []
+        for param_name, param_type in self.param_schema.items():
+            # Handle both string type names and actual Python types
+            if isinstance(param_type, str):
+                type_name = param_type
+            elif hasattr(param_type, "__name__"):
+                type_name = param_type.__name__
+            else:
+                type_name = str(param_type)
+
+            param_descriptions.append(
+                f"- {param_name} ({type_name}): Parameter {param_name}"
+            )
+
+        # Build context info
+        context_info = ""
+        if context:
+            context_dict = context.export_to_dict()
+            if context_dict:
+                context_info = "\n\nContext Information:\n"
+                for key, value in context_dict.items():
+                    context_info += f"- {key}: {value}\n"
+
+        return self.prompt_template.format(
+            user_input=user_input,
+            action_name=self.name,
+            action_description=self.description,
+            param_descriptions="\n".join(param_descriptions),
+            context_info=context_info,
         )
 
-        # Store remediation strategies
-        self.remediation_strategies = remediation_strategies or []
+    def _parse_response(self, response: Any) -> Dict[str, Any]:
+        """Parse the LLM response to extract parameters."""
+        try:
+            # Clean up the response
+            self.logger.debug_structured(
+                {
+                    "response": response,
+                    "response_type": type(response).__name__,
+                },
+                "Action Response _parse_response",
+            )
+
+            if isinstance(response, dict):
+                # Check if response has raw_content field (LLM client wrapper)
+                if "raw_content" in response:
+                    raw_content = response["raw_content"]
+                    if isinstance(raw_content, dict):
+                        return raw_content
+                    elif isinstance(raw_content, str):
+                        return self._extract_key_value_pairs(raw_content)
+
+                # Direct dict response
+                return response
+
+            elif isinstance(response, str):
+                # Try to extract JSON from the response
+                return self._extract_key_value_pairs(response)
+            else:
+                self.logger.warning(f"Unexpected response type: {type(response)}")
+                return {}
+
+        except Exception as e:
+            self.logger.error(f"Error parsing response: {e}")
+            return {}
+
+    def _extract_key_value_pairs(self, text: str) -> Dict[str, Any]:
+        """Extract key-value pairs from text using regex patterns."""
+        # Try to find JSON object
+        json_match = re.search(r"\{[^{}]*\}", text)
+        if json_match:
+            try:
+                return json.loads(json_match.group())
+            except json.JSONDecodeError:
+                pass
+
+        # Fallback to regex extraction
+        result = {}
+        # Pattern for key: value or "key": value
+        pattern = r'["\']?(\w+)["\']?\s*:\s*["\']?([^"\',\s]+)["\']?'
+        matches = re.findall(pattern, text)
+
+        for key, value in matches:
+            # Try to convert to appropriate type
+            if value.lower() in ("true", "false"):
+                result[key] = value.lower() == "true"
+            elif value.isdigit():
+                result[key] = int(value)
+            elif value.replace(".", "").isdigit():
+                result[key] = float(value)
+            else:
+                result[key] = value
+
+        return result
+
+    def _validate_and_cast_data(self, parsed_data: Any) -> Dict[str, Any]:
+        """Validate and cast the parsed data to the expected types."""
+        if not isinstance(parsed_data, dict):
+            raise TypeValidationError(
+                f"Expected dict, got {type(parsed_data)}", parsed_data, dict
+            )
+
+        validated_data = {}
+        self.logger.debug_structured(
+            {"parsed_data": parsed_data, "param_schema": self.param_schema},
+            "ActionNode _validate_and_cast_data",
+        )
+        for param_name, param_type in self.param_schema.items():
+            self.logger.debug(
+                f"Validating parameter: {param_name} with type: {param_type}"
+            )
+            if param_name in parsed_data:
+                try:
+                    # Resolve the type if it's a string
+                    resolved_type = resolve_type(param_type)
+                    self.logger.debug_structured(
+                        {
+                            "param_name": param_name,
+                            "param_type": param_type,
+                            "resolved_type": resolved_type,
+                            "parsed_data": parsed_data[param_name],
+                        },
+                        "ActionNode _validate_and_cast_data BEFORE VALIDATION",
+                    )
+                    validated_data[param_name] = validate_type(
+                        parsed_data[param_name], resolved_type
+                    )
+                except TypeValidationError as e:
+                    self.logger.warning(
+                        f"Parameter validation failed for {param_name}: {e}"
+                    )
+                    # Use the original value if validation fails
+                    validated_data[param_name] = parsed_data[param_name]
+            else:
+                # Parameter not found, use None as default
+                validated_data[param_name] = None
+
+        # Apply operation normalization for calculate actions
+        validated_data = self._normalize_operation(validated_data)
+
+        return validated_data
+
+    def _normalize_operation(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize operation parameter for calculate actions."""
+        self.logger.debug(f"Normalizing operation params: {params}")
+
+        if "operation" in params and isinstance(params["operation"], str):
+            operation = params["operation"].lower()
+            self.logger.debug(f"Processing operation: '{operation}'")
+
+            # Map various operation formats to standard symbols
+            operation_map = {
+                "+": "+",
+                "add": "+",
+                "addition": "+",
+                "plus": "+",
+                "-": "-",
+                "subtract": "-",
+                "subtraction": "-",
+                "minus": "-",
+                "*": "*",
+                "multiply": "*",
+                "multiplication": "*",
+                "times": "*",
+                "/": "/",
+                "divide": "/",
+                "division": "/",
+                "divided by": "/",
+            }
+
+            if operation in operation_map:
+                params["operation"] = operation_map[operation]
+                self.logger.debug(
+                    f"Normalized operation '{operation}' to '{params['operation']}'"
+                )
+            else:
+                self.logger.warning(f"Unknown operation: '{operation}'")
+        else:
+            self.logger.warning(
+                f"No operation found in params or not a string: {params.get('operation', 'NOT_FOUND')}"
+            )
+
+        return params
+
+    def _execute_action_with_llm(
+        self, user_input: str, context: Optional[Context] = None
+    ) -> ExecutionResult:
+        """Execute the action using LLM for parameter extraction."""
+        try:
+            # Build prompt
+            prompt = self.custom_prompt or self._build_prompt(user_input, context)
+
+            # Generate response using LLM
+            if self.llm_client:
+                # Get model from config or use default
+                model = self._llm_config.get("model", "default")
+                llm_response = self.llm_client.generate(
+                    prompt, model=model, expected_type=dict
+                )
+
+                # Parse the response
+                parsed_data = self._parse_response(llm_response.output)
+
+                # Validate and cast the data
+                validated_params = self._validate_and_cast_data(parsed_data)
+
+                # Apply input validation if available
+                if self.input_validator:
+                    if not self.input_validator.validate(validated_params):
+                        return ExecutionResult(
+                            success=False,
+                            node_name=self.name,
+                            node_path=[self.name],
+                            node_type=NodeType.ACTION,
+                            input=user_input,
+                            output=None,
+                            error=ExecutionError(
+                                error_type="InputValidationError",
+                                message="Input validation failed",
+                                node_name=self.name,
+                                node_path=[self.name],
+                                original_exception=None,
+                            ),
+                            children_results=[],
+                        )
+
+                # Execute the action
+                action_result = self.action(**validated_params)
+
+                # Apply output validation if available
+                if self.output_validator:
+                    if not self.output_validator.validate(action_result):
+                        return ExecutionResult(
+                            success=False,
+                            node_name=self.name,
+                            node_path=[self.name],
+                            node_type=NodeType.ACTION,
+                            input=user_input,
+                            output=None,
+                            error=ExecutionError(
+                                error_type="OutputValidationError",
+                                message="Output validation failed",
+                                node_name=self.name,
+                                node_path=[self.name],
+                                original_exception=None,
+                            ),
+                            children_results=[],
+                        )
+
+                return ExecutionResult(
+                    success=True,
+                    node_name=self.name,
+                    node_path=[self.name],
+                    node_type=NodeType.ACTION,
+                    input=user_input,
+                    output=action_result,
+                    input_tokens=llm_response.input_tokens,
+                    output_tokens=llm_response.output_tokens,
+                    cost=llm_response.cost,
+                    provider=llm_response.provider,
+                    model=llm_response.model,
+                    params=validated_params,
+                    children_results=[],
+                    duration=llm_response.duration,
+                )
+            else:
+                raise ValueError("No LLM client available for parameter extraction")
+
+        except Exception as e:
+            self.logger.error(f"Action execution failed: {e}")
+            return ExecutionResult(
+                success=False,
+                node_name=self.name,
+                node_path=[self.name],
+                node_type=NodeType.ACTION,
+                input=user_input,
+                output=None,
+                error=ExecutionError(
+                    error_type="ActionExecutionError",
+                    message=f"Action execution failed: {e}",
+                    node_name=self.name,
+                    node_path=[self.name],
+                    original_exception=e,
+                ),
+                children_results=[],
+            )
+
+    @staticmethod
+    def from_json(
+        node_spec: Dict[str, Any],
+        function_registry: Dict[str, Callable],
+        llm_config: Optional[Dict[str, Any]] = None,
+    ) -> "ActionNode":
+        """
+        Create an ActionNode from JSON spec.
+        Supports function names (resolved via function_registry) or full callable objects (for stateful actions).
+        """
+        # Extract common node information (same logic as base class)
+        node_id = node_spec.get("id") or node_spec.get("name")
+        if not node_id:
+            raise ValueError(f"Node spec must have 'id' or 'name': {node_spec}")
+
+        name = node_spec.get("name", node_id)
+        description = node_spec.get("description", "")
+        node_llm_config = node_spec.get("llm_config", {})
+
+        # Merge LLM configs
+        if llm_config:
+            node_llm_config = {**llm_config, **node_llm_config}
+
+        # Resolve action (function or stateful callable)
+        action = node_spec.get("function")
+        action_obj = None
+        if action is None:
+            raise ValueError(f"Action node '{name}' must have a 'function' field")
+        elif isinstance(action, str):
+            if action not in function_registry:
+                raise ValueError(f"Function '{action}' not found in function registry")
+            action_obj = function_registry[action]
+        elif callable(action):
+            action_obj = action
+        else:
+            raise ValueError(
+                f"Invalid action specification for node '{name}': {action}"
+            )
+
+        # Get custom prompt from node spec
+        custom_prompt = node_spec.get("custom_prompt")
+        prompt_template = node_spec.get("prompt_template")
+
+        # Create the node
+        node = ActionNode(
+            name=name,
+            description=description,
+            action=action_obj,
+            param_schema=node_spec.get("param_schema", {}),
+            llm_config=node_llm_config,
+            custom_prompt=custom_prompt,
+            prompt_template=prompt_template,
+        )
+
+        return node
 
     @property
     def node_type(self) -> NodeType:
-        """Get the type of this node."""
+        """Get the node type."""
         return NodeType.ACTION
 
     def execute(
-        self, user_input: str, context: Optional[IntentContext] = None
+        self, user_input: str, context: Optional[Context] = None
     ) -> ExecutionResult:
-        # Track token usage across the entire execution
-        total_input_tokens = 0
-        total_output_tokens = 0
-        total_cost = 0.0
-        total_duration = 0.0
-
+        """Execute the action node."""
         try:
-            context_dict: Optional[Dict[str, Any]] = None
-            if context:
-                context_dict = {
-                    key: context.get(key)
-                    for key in self.context_inputs
-                    if context.has(key)
-                }
-
-            # Extract parameters - this might involve LLM calls
-            extracted_params = self.arg_extractor(user_input, context_dict or {})
-
-            if isinstance(extracted_params, ExecutionResult):
-                cost = extracted_params.cost
-                duration = extracted_params.duration
-                input_tokens = extracted_params.input_tokens
-                output_tokens = extracted_params.output_tokens
-                model = extracted_params.model
-                provider = extracted_params.provider
-            else:
-                cost = 0.0
-                duration = 0.0
-                input_tokens = 0
-                output_tokens = 0
-                model = None
-                provider = None
-            # Log structured diagnostic info for parameter extraction
-            self.logger.debug_structured(
-                {
-                    "node_name": self.name,
-                    "node_path": self.get_path(),
-                    "input": user_input,
-                    "extracted_params": extracted_params,
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "cost": cost,
-                    "duration": duration,
-                    "model": model,
-                    "provider": provider,
-                    "context_inputs": list(self.context_inputs) if context else None,
-                },
-                "Parameter Extraction",
-            )
-
-            # If the arg_extractor returned an ExecutionResult (LLM-based), extract token info
-            if isinstance(extracted_params, ExecutionResult):
-                total_input_tokens += input_tokens or 0
-                total_output_tokens += output_tokens or 0
-                total_cost += cost or 0.0
-                total_duration += duration or 0.0
-
-                # Extract the actual parameters from the result
-                if extracted_params.params:
-                    extracted_params = extracted_params.params
-                elif extracted_params.output:
-                    extracted_params = extracted_params.output
-                else:
-                    extracted_params = {}
-            elif not isinstance(extracted_params, dict):
-                # If it's not a dict or ExecutionResult, convert to dict
-                extracted_params = {}
-
+            # Execute the action using LLM for parameter extraction
+            return self._execute_action_with_llm(user_input, context)
         except Exception as e:
-            self.logger.error(
-                f"Argument extraction failed for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-            )
+            self.logger.error(f"Action execution failed: {e}")
             return ExecutionResult(
                 success=False,
                 node_name=self.name,
-                node_path=self.get_path(),
+                node_path=[self.name],
                 node_type=NodeType.ACTION,
                 input=user_input,
                 output=None,
                 error=ExecutionError(
-                    error_type=type(e).__name__,
-                    message=str(e),
+                    error_type="ActionExecutionError",
+                    message=f"Action execution failed: {e}",
                     node_name=self.name,
-                    node_path=self.get_path(),
+                    node_path=[self.name],
+                    original_exception=e,
                 ),
-                params=None,
                 children_results=[],
-                input_tokens=total_input_tokens,
-                output_tokens=total_output_tokens,
-                cost=total_cost,
-                duration=total_duration,
             )
-        if self.input_validator:
-            try:
-                if not self.input_validator(extracted_params):
-                    self.logger.error(
-                        f"Input validation failed for intent '{self.name}' (Path: {'.'.join(self.get_path())})"
-                    )
-                    return ExecutionResult(
-                        success=False,
-                        node_name=self.name,
-                        node_path=self.get_path(),
-                        node_type=NodeType.ACTION,
-                        input=user_input,
-                        output=None,
-                        error=ExecutionError(
-                            error_type="InputValidationError",
-                            message="Input validation failed",
-                            node_name=self.name,
-                            node_path=self.get_path(),
-                        ),
-                        params=extracted_params,
-                        children_results=[],
-                        input_tokens=total_input_tokens,
-                        output_tokens=total_output_tokens,
-                        cost=total_cost,
-                        duration=total_duration,
-                    )
-            except Exception as e:
-                self.logger.error(
-                    f"Input validation error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-                )
-                return ExecutionResult(
-                    success=False,
-                    node_name=self.name,
-                    node_path=self.get_path(),
-                    node_type=NodeType.ACTION,
-                    input=user_input,
-                    output=None,
-                    error=ExecutionError(
-                        error_type=type(e).__name__,
-                        message=str(e),
-                        node_name=self.name,
-                        node_path=self.get_path(),
-                    ),
-                    params=extracted_params,
-                    children_results=[],
-                    input_tokens=total_input_tokens,
-                    output_tokens=total_output_tokens,
-                    cost=total_cost,
-                    duration=total_duration,
-                )
-        try:
-            validated_params = self._validate_types(extracted_params)
-        except Exception as e:
-            self.logger.error(
-                f"Type validation error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-            )
-            return ExecutionResult(
-                success=False,
-                node_name=self.name,
-                node_path=self.get_path(),
-                node_type=NodeType.ACTION,
-                input=user_input,
-                output=None,
-                error=ExecutionError(
-                    error_type=type(e).__name__,
-                    message=str(e),
-                    node_name=self.name,
-                    node_path=self.get_path(),
-                ),
-                params=extracted_params,
-                children_results=[],
-                input_tokens=total_input_tokens,
-                output_tokens=total_output_tokens,
-                cost=total_cost,
-                duration=total_duration,
-            )
-
-        # Log structured diagnostic info for validated parameters
-        self.logger.debug_structured(
-            {
-                "node_name": self.name,
-                "node_path": self.get_path(),
-                "validated_params": validated_params,
-            },
-            "Parameter Validation",
-        )
-
-        try:
-            if context is not None:
-                output = self.action(**validated_params, context=context)
-            else:
-                output = self.action(**validated_params)
-        except Exception as e:
-            self.logger.error(
-                f"Action execution error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-            )
-
-            # Try remediation strategies
-            error = ExecutionError(
-                error_type=type(e).__name__,
-                message=str(e),
-                node_name=self.name,
-                node_path=self.get_path(),
-            )
-
-            remediation_result = self._execute_remediation_strategies(
-                user_input=user_input,
-                context=context,
-                original_error=error,
-                validated_params=validated_params,
-            )
-
-            if remediation_result:
-                # Aggregate tokens from remediation if it succeeded
-                if isinstance(remediation_result, ExecutionResult):
-                    total_input_tokens += (
-                        getattr(remediation_result, "input_tokens", 0) or 0
-                    )
-                    total_output_tokens += (
-                        getattr(remediation_result, "output_tokens", 0) or 0
-                    )
-                    total_cost += getattr(remediation_result, "cost", 0.0) or 0.0
-                    total_duration += (
-                        getattr(remediation_result, "duration", 0.0) or 0.0
-                    )
-
-                    # Update the remediation result with aggregated tokens
-                    remediation_result.input_tokens = total_input_tokens
-                    remediation_result.output_tokens = total_output_tokens
-                    remediation_result.cost = total_cost
-                    remediation_result.duration = total_duration
-
-                    return remediation_result
-
-            # If no remediation succeeded, return the original error
-            return ExecutionResult(
-                success=False,
-                node_name=self.name,
-                node_path=self.get_path(),
-                node_type=NodeType.ACTION,
-                input=user_input,
-                output=None,
-                error=error,
-                params=validated_params,
-                children_results=[],
-                input_tokens=total_input_tokens,
-                output_tokens=total_output_tokens,
-                cost=total_cost,
-                duration=total_duration,
-            )
-
-        # Log structured diagnostic info for action output
-        self.logger.debug_structured(
-            {
-                "node_name": self.name,
-                "node_path": self.get_path(),
-                "output": output,
-                "output_type": type(output).__name__,
-            },
-            "Action Execution",
-        )
-
-        if self.output_validator:
-            try:
-                if not self.output_validator(output):
-                    self.logger.error(
-                        f"Output validation failed for intent '{self.name}' (Path: {'.'.join(self.get_path())})"
-                    )
-                    return ExecutionResult(
-                        success=False,
-                        node_name=self.name,
-                        node_path=self.get_path(),
-                        node_type=NodeType.ACTION,
-                        input=user_input,
-                        output=None,
-                        error=ExecutionError(
-                            error_type="OutputValidationError",
-                            message="Output validation failed",
-                            node_name=self.name,
-                            node_path=self.get_path(),
-                        ),
-                        params=validated_params,
-                        children_results=[],
-                        input_tokens=total_input_tokens,
-                        output_tokens=total_output_tokens,
-                        cost=total_cost,
-                        duration=total_duration,
-                    )
-            except Exception as e:
-                self.logger.error(
-                    f"Output validation error for intent '{self.name}' (Path: {'.'.join(self.get_path())}): {type(e).__name__}: {str(e)}"
-                )
-                return ExecutionResult(
-                    success=False,
-                    node_name=self.name,
-                    node_path=self.get_path(),
-                    node_type=NodeType.ACTION,
-                    input=user_input,
-                    output=None,
-                    error=ExecutionError(
-                        error_type=type(e).__name__,
-                        message=str(e),
-                        node_name=self.name,
-                        node_path=self.get_path(),
-                    ),
-                    params=validated_params,
-                    children_results=[],
-                    input_tokens=total_input_tokens,
-                    output_tokens=total_output_tokens,
-                    cost=total_cost,
-                    duration=total_duration,
-                )
-
-        # Update context with outputs
-        if context is not None:
-            for key in self.context_outputs:
-                if hasattr(output, key):
-                    context.set(key, getattr(output, key), self.name)
-                elif isinstance(output, dict) and key in output:
-                    context.set(key, output[key], self.name)
-
-        # Log final execution result with key diagnostic info
-        self.logger.debug_structured(
-            {
-                "node_name": self.name,
-                "node_path": self.get_path(),
-                "success": True,
-                "input_tokens": total_input_tokens,
-                "output_tokens": total_output_tokens,
-                "cost": total_cost,
-                "duration": total_duration,
-                "output": output,
-                "output_type": type(output).__name__,
-            },
-            "Execution Complete",
-        )
-
-        return ExecutionResult(
-            success=True,
-            node_name=self.name,
-            node_path=self.get_path(),
-            node_type=NodeType.ACTION,
-            input=user_input,
-            output=output,
-            error=None,
-            params=validated_params,
-            children_results=[],
-            # NOTE: Setting the sum total for now for this execution call, but should delineate the cost of any LLM calls associated with this node
-            input_tokens=total_input_tokens,
-            output_tokens=total_output_tokens,
-            cost=total_cost,
-            duration=total_duration,
-        )
-
-    def _execute_remediation_strategies(
-        self,
-        user_input: str,
-        context: Optional[IntentContext] = None,
-        original_error: Optional[ExecutionError] = None,
-        validated_params: Optional[Dict[str, Any]] = None,
-    ) -> Optional[ExecutionResult]:
-        """Execute remediation strategies in order until one succeeds."""
-        for strategy in self.remediation_strategies:
-            try:
-                if isinstance(strategy, str):
-                    strategy_instance = get_remediation_strategy(strategy)
-                else:
-                    strategy_instance = strategy
-
-                if strategy_instance:
-                    remediation_result = strategy_instance.execute(
-                        node_name=self.name or "unknown",
-                        user_input=user_input,
-                        context=context,
-                        original_error=original_error,
-                        handler_func=self.action,
-                        validated_params=validated_params,
-                    )
-                    if remediation_result and remediation_result.success:
-                        self.logger.info(
-                            f"Remediation strategy '{strategy_instance.__class__.__name__}' succeeded for intent '{self.name}'"
-                        )
-                        return remediation_result
-            except Exception as e:
-                self.logger.error(
-                    f"Remediation strategy execution failed for intent '{self.name}': {type(e).__name__}: {str(e)}"
-                )
-
-        return None
-
-    def _validate_types(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate and convert parameter types according to the schema."""
-        validated_params: Dict[str, Any] = {}
-        for param_name, param_type in self.param_schema.items():
-            if param_name not in params:
-                raise ValueError(f"Missing required parameter: {param_name}")
-
-            param_value = params[param_name]
-            try:
-                if param_type is str:
-                    validated_params[param_name] = str(param_value)
-                elif param_type is int:
-                    validated_params[param_name] = int(param_value)
-                elif param_type is float:
-                    validated_params[param_name] = float(param_value)
-                elif param_type is bool:
-                    if isinstance(param_value, str):
-                        validated_params[param_name] = param_value.lower() in (
-                            "true",
-                            "1",
-                            "yes",
-                            "on",
-                        )
-                    else:
-                        validated_params[param_name] = bool(param_value)
-                else:
-                    validated_params[param_name] = param_value
-            except (ValueError, TypeError) as e:
-                raise ValueError(
-                    f"Invalid type for parameter '{param_name}': expected {param_type.__name__}, got {type(param_value).__name__}"
-                ) from e
-
-        return validated_params

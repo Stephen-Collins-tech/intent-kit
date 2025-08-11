@@ -9,7 +9,7 @@ from intent_kit.types import InputTokens, Cost, Provider, TotalTokens, Duration
 
 
 @dataclass
-class ExecutionError:
+class ExecutionError(Exception):
     """Structured error information for execution results."""
 
     error_type: str

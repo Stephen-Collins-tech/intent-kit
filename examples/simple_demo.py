@@ -1,232 +1,222 @@
 """
-Simple IntentGraph Demo
+Simple Intent Kit Demo - The Basics
 
-A minimal demonstration showing how to configure an intent graph with actions and classifiers.
-This example shows both the programmatic API and JSON configuration approaches.
+This is the most minimal example to get started with Intent Kit.
+Shows basic graph building and execution in ~30 lines.
 """
 
 import os
 from dotenv import load_dotenv
-from intent_kit import IntentGraphBuilder
-from intent_kit import action, llm_classifier
-from intent_kit.utils.perf_util import PerfUtil
-from intent_kit.utils.report_utils import ReportUtil
-from typing import Dict, Callable, Any, List, Tuple
+from intent_kit.graph.builder import IntentGraphBuilder
+from intent_kit.context import Context
+
+# Import strategies module to ensure strategies are available in registry
 
 load_dotenv()
 
-# LLM Configuration
-LLM_CONFIG = {
-    "provider": "openrouter",
-    "api_key": os.getenv("OPENROUTER_API_KEY"),
-    "model": "mistralai/ministral-8b",
-}
-
-# Define action functions
+# Simple action functions
 
 
-def greet(name, context=None):
-    """Greet a user by name."""
+def greet(name: str) -> str:
     return f"Hello {name}!"
 
 
-def calculate(operation, a, b, context=None):
-    """Perform a simple calculation."""
-    operation = operation.lower()
-    if operation in ["plus", "add"]:
-        return a + b
-    elif operation in ["minus", "subtract"]:
-        return a - b
-    elif operation in ["times", "multiply"]:
-        return a * b
-    elif operation in ["divided", "divide"]:
-        return a / b
-    return None
+def calculate(operation: str, a: float, b: float) -> str:
+    calc_result = 0.0
+    if operation == "+":
+        calc_result = a + b
+    elif operation == "-":
+        calc_result = a - b
+    elif operation == "*":
+        calc_result = a * b
+    elif operation == "/":
+        if b == 0:
+            raise ValueError("Cannot divide by zero")
+        calc_result = a / b
+    else:
+        raise ValueError(f"Unsupported operation: {operation}. Use +, -, *, or /")
+
+    return f"{a} {operation} {b} = {calc_result}"
 
 
-def weather(location, context=None):
-    """Get weather information for a location."""
+def weather(location: str) -> str:
     return f"Weather in {location}: 72°F, Sunny (simulated)"
 
 
-def help_action(context=None):
-    """Provide help information."""
-    return "I can help with greetings, calculations, and weather!"
+# Validation functions for each action
+def validate_greet_params(params: dict) -> bool:
+    """Validate greet action parameters."""
+    if "name" not in params:
+        return False
+    name = params["name"]
+    return isinstance(name, str) and len(name.strip()) > 0
 
 
-# Create function registry
-function_registry: Dict[str, Callable[..., Any]] = {
-    "greet": greet,
-    "calculate": calculate,
-    "weather": weather,
-    "help_action": help_action,
-}
+def validate_calculate_params(params: dict) -> bool:
+    """Validate calculate action parameters."""
+    required_keys = {"operation", "a", "b"}
+    if not required_keys.issubset(params.keys()):
+        return False
 
-# JSON configuration for the graph
-simple_demo_graph = {
+    operation = (
+        params["operation"].lower()
+        if isinstance(params["operation"], str)
+        else str(params["operation"])
+    )
+
+    # Map various operation formats to standard symbols
+    operation_map = {
+        "+": "+",
+        "add": "+",
+        "addition": "+",
+        "plus": "+",
+        "-": "-",
+        "subtract": "-",
+        "subtraction": "-",
+        "minus": "-",
+        "*": "*",
+        "multiply": "*",
+        "multiplication": "*",
+        "times": "*",
+        "/": "/",
+        "divide": "/",
+        "division": "/",
+        "divided by": "/",
+    }
+
+    if operation not in operation_map:
+        return False
+
+    # Normalize the operation in the params dict
+    params["operation"] = operation_map[operation]
+
+    try:
+        float(params["a"])
+        float(params["b"])
+        return True
+    except (ValueError, TypeError):
+        return False
+
+
+def validate_weather_params(params: dict) -> bool:
+    """Validate weather action parameters."""
+    if "location" not in params:
+        return False
+    location = params["location"]
+    return isinstance(location, str) and len(location.strip()) > 0
+
+
+# Minimal graph configuration
+demo_graph = {
     "root": "main_classifier",
     "nodes": {
         "main_classifier": {
             "id": "main_classifier",
+            "name": "main_classifier",
             "type": "classifier",
             "classifier_type": "llm",
-            "name": "main_classifier",
-            "description": "Main intent classifier",
             "llm_config": {
                 "provider": "openrouter",
+                # "provider": "openai",
                 "api_key": os.getenv("OPENROUTER_API_KEY"),
-                "model": "mistralai/ministral-8b",
+                "model": "google/gemma-2-9b-it",
+                # "model": "gpt-5-2025-08-07",
+                # "model": "mistralai/ministral-8b",
             },
-            "classification_prompt": "Classify the user input: '{user_input}'\n\nAvailable intents:\n{node_descriptions}\n\nReturn ONLY the intent name (e.g., calculate_action). No explanation or other text.",
-            "children": [
-                "greet_action",
-                "calculate_action",
-                "weather_action",
-                "help_action",
-            ],
+            "children": ["greet_action", "calculate_action", "weather_action"],
+            "remediation_strategies": ["keyword_fallback"],
         },
         "greet_action": {
             "id": "greet_action",
-            "type": "action",
             "name": "greet_action",
-            "description": "Greet the user",
+            "type": "action",
             "function": "greet",
+            "description": "Greet the user with a personalized message",
             "param_schema": {"name": "str"},
+            "input_validator": "validate_greet_params",
+            "remediation_strategies": ["retry_on_fail", "keyword_fallback"],
         },
         "calculate_action": {
             "id": "calculate_action",
-            "type": "action",
             "name": "calculate_action",
-            "description": "Perform a calculation",
+            "type": "action",
             "function": "calculate",
+            "description": "Perform mathematical calculations (addition, subtraction, multiplication, division)",
             "param_schema": {"operation": "str", "a": "float", "b": "float"},
+            "input_validator": "validate_calculate_params",
+            "remediation_strategies": ["retry_on_fail", "keyword_fallback"],
         },
         "weather_action": {
             "id": "weather_action",
-            "type": "action",
             "name": "weather_action",
-            "description": "Get weather information",
-            "function": "weather",
-            "param_schema": {"location": "str"},
-        },
-        "help_action": {
-            "id": "help_action",
             "type": "action",
-            "name": "help_action",
-            "description": "Get help",
-            "function": "help_action",
-            "param_schema": {},
+            "function": "weather",
+            "description": "Get weather information for a specific location",
+            "param_schema": {"location": "str"},
+            "input_validator": "validate_weather_params",
+            "remediation_strategies": ["retry_on_fail", "keyword_fallback"],
         },
     },
 }
 
-
-def demonstrate_programmatic_api():
-    """Demonstrate building a graph using the programmatic API."""
-    print("=== Programmatic API Demo ===")
-
-    # Define actions using the node factory
-    greet_action = action(
-        name="greet",
-        description="Greet the user by name",
-        action_func=lambda name: f"Hello {name}!",
-        param_schema={"name": str},
-    )
-
-    # Create classifier
-    classifier = llm_classifier(
-        name="main",
-        description="Route to appropriate action",
-        children=[greet_action],
-        llm_config=LLM_CONFIG,
-    )
-
-    # Build graph
-    graph = IntentGraphBuilder().root(classifier).build()
-
-    # Test it
-    result = graph.route("Hello Alice")
-    print("Input: 'Hello Alice'")
-    print(f"Output: {result.output}")
-    print()
-
-
-def demonstrate_json_configuration():
-    """Demonstrate building a graph using JSON configuration."""
-    print("=== JSON Configuration Demo ===")
-
-    # Build graph from JSON
-    graph = (
-        IntentGraphBuilder()
-        .with_json(simple_demo_graph)
-        .with_functions(function_registry)
-        .with_default_llm_config(LLM_CONFIG)
-        .build()
-    )
-
-    # Test inputs
-    test_inputs = [
-        "Hello, my name is Alice",
-        "What's 15 plus 7?",
-        "Weather in San Francisco",
-        "Help me",
-        "Multiply 8 and 3",
-    ]
-
-    print("Testing various inputs:")
-    for test_input in test_inputs:
-        result = graph.route(test_input)
-        print(f"Input: '{test_input}'")
-        print(f"Output: {result.output}")
-        print()
-
-
-def demonstrate_performance_tracking():
-    """Demonstrate performance tracking and reporting."""
-    print("=== Performance Tracking Demo ===")
-
-    graph = (
-        IntentGraphBuilder()
-        .with_json(simple_demo_graph)
-        .with_functions(function_registry)
-        .with_default_llm_config(LLM_CONFIG)
-        .build()
-    )
-
-    test_inputs = [
-        "Hello, my name is Alice",
-        "What's 15 plus 7?",
-        "Weather in San Francisco",
-        "Help me",
-        "Multiply 8 and 3",
-    ]
-
-    results = []
-    timings: List[Tuple[str, float]] = []
-
-    with PerfUtil("simple_demo.py run time") as perf:
-        for test_input in test_inputs:
-            with PerfUtil.collect(test_input, timings) as perf:
-                result = graph.route(test_input)
-                results.append(result)
-
-    # Generate performance report
-    report = ReportUtil.format_execution_results(
-        results=results,
-        llm_config=LLM_CONFIG,
-        perf_info=perf.format(),
-        timings=timings,
-    )
-
-    print(report)
-
-
 if __name__ == "__main__":
-    print("Intent Kit Simple Demo")
-    print("=" * 50)
-    print()
+    # Build graph
+    llm_config = {
+        "provider": "openrouter",
+        "api_key": os.getenv("OPENROUTER_API_KEY"),
+        "model": "google/gemma-2-9b-it",
+    }
 
-    # Demonstrate different approaches
-    demonstrate_programmatic_api()
-    demonstrate_json_configuration()
-    demonstrate_performance_tracking()
+    graph = (
+        IntentGraphBuilder()
+        .with_json(demo_graph)
+        .with_functions(
+            {
+                "greet": greet,
+                "calculate": calculate,
+                "weather": weather,
+                "validate_greet_params": validate_greet_params,
+                "validate_calculate_params": validate_calculate_params,
+                "validate_weather_params": validate_weather_params,
+            }
+        )
+        .with_default_llm_config(llm_config)
+        .build()
+    )
+    context = Context()
+
+    # Test with different inputs
+    test_inputs = [
+        #     # Overlapping semantics
+        #     "Hey there, what’s 5 plus 3? And also, how’s the weather?",
+        #     "Good morning, can you tell me if it's sunny?",
+        #     # Implicit intent
+        # "I’m shivering and the sky’s grey — do you think I’ll need a coat?",
+        #     "Could you help me with something?",
+        #     # Ambiguous wording
+        #     "It’s a beautiful day, isn’t it?",
+        #     "Can you work out if I’ll need an umbrella tomorrow?",
+        #     # Adversarial keyword placement
+        #     "Calculate whether it’s going to rain today.",
+        "Weather you could greet me or do the math doesn’t matter.",
+        #     # Context shift in same sentence
+        "Hello! Actually, never mind the small talk — what’s 42 times 13?",
+        #     "Before you answer my math question, how warm is it outside?",
+        #     # Mixed signals and indirect requests
+        #     "Morning! Quick — what’s 15 squared?",
+        #     "Is it sunny today or should I bring my calculator?",
+        #     "If it’s raining, tell me. Otherwise, say hi.",
+        #     "Greet me, then solve 8 × 7.",
+        #     # Puns and idioms
+        #     "I’m feeling under the weather — how about you?",
+        #     "You really brighten my day like the sun.",
+        #     # Trick phrasing
+        #     "Give me the forecast for my mood.",
+        # "Work out the temperature in London.",
+        #     "Say hello in the warmest way possible.",
+        # "Check if it’s snowing, then tell me a joke."
+    ]
+
+    for user_input in test_inputs:
+        result = graph.route(user_input, context=context)
+        print(f"Input: '{user_input}' → {result.output}")

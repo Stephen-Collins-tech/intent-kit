@@ -10,11 +10,11 @@ Enable debug output to see detailed execution information:
 
 ```python
 from intent_kit import IntentGraphBuilder, action
-from intent_kit.context import IntentContext
+from intent_kit.context import Context
 
 # Create a graph with debug enabled
 graph = IntentGraphBuilder().root(action(...)).build()
-context = IntentContext(session_id="debug_session", debug=True)
+context = Context(session_id="debug_session", debug=True)
 
 result = graph.route("Hello Alice", context=context)
 print(context.debug_log)  # View detailed execution log
@@ -116,7 +116,7 @@ for step in trace:
 Mark specific context keys for detailed logging:
 
 ```python
-context = IntentContext(session_id="debug_session", debug=True)
+context = Context(session_id="debug_session", debug=True)
 
 # Mark important keys for detailed logging
 context.mark_important("user_name")

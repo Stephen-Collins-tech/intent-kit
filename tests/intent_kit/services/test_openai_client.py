@@ -6,7 +6,7 @@ import pytest
 import os
 from unittest.mock import Mock, patch
 from intent_kit.services.ai.openai_client import OpenAIClient
-from intent_kit.types import LLMResponse
+from intent_kit.types import LLMResponse, StructuredLLMResponse
 from intent_kit.services.ai.pricing_service import PricingService
 
 
@@ -119,8 +119,8 @@ class TestOpenAIClient:
             client = OpenAIClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert isinstance(result, LLMResponse)
-            assert result.output == "Generated response"
+            assert isinstance(result, StructuredLLMResponse)
+            assert result.output == {"raw_content": "Generated response"}
             assert result.model == "gpt-4"
             assert result.input_tokens == 100
             assert result.output_tokens == 50
@@ -131,7 +131,7 @@ class TestOpenAIClient:
             mock_client.chat.completions.create.assert_called_once_with(
                 model="gpt-4",
                 messages=[{"role": "user", "content": "Test prompt"}],
-                max_tokens=1000,
+                max_completion_tokens=1000,
             )
 
     def test_generate_with_custom_model(self):
@@ -157,8 +157,8 @@ class TestOpenAIClient:
             client = OpenAIClient("test_api_key")
             result = client.generate("Test prompt", model="gpt-3.5-turbo")
 
-            assert isinstance(result, LLMResponse)
-            assert result.output == "Generated response"
+            assert isinstance(result, StructuredLLMResponse)
+            assert result.output == {"raw_content": "Generated response"}
             assert result.model == "gpt-3.5-turbo"
             assert result.input_tokens == 150
             assert result.output_tokens == 75
@@ -166,7 +166,7 @@ class TestOpenAIClient:
             mock_client.chat.completions.create.assert_called_once_with(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": "Test prompt"}],
-                max_tokens=1000,
+                max_completion_tokens=1000,
             )
 
     def test_generate_empty_response(self):
@@ -192,8 +192,8 @@ class TestOpenAIClient:
             client = OpenAIClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert isinstance(result, LLMResponse)
-            assert result.output == ""
+            assert isinstance(result, StructuredLLMResponse)
+            assert result.output == {"raw_content": ""}
 
     def test_generate_no_choices(self):
         """Test text generation with no choices in response."""
@@ -208,8 +208,8 @@ class TestOpenAIClient:
             # Handle the case where choices is empty
             result = client.generate("Test prompt")
 
-            assert isinstance(result, LLMResponse)
-            assert result.output == ""
+            assert isinstance(result, StructuredLLMResponse)
+            assert result.output == {"raw_content": ""}
             assert result.input_tokens == 0
             assert result.output_tokens == 0
             assert result.cost == 0.0  # Properly calculated cost
@@ -251,8 +251,8 @@ class TestOpenAIClient:
 
             result = client.generate("Test prompt")
 
-            assert isinstance(result, LLMResponse)
-            assert result.output == "Generated response"
+            assert isinstance(result, StructuredLLMResponse)
+            assert result.output == {"raw_content": "Generated response"}
 
     def test_is_available_method(self):
         """Test is_available method."""
@@ -293,12 +293,12 @@ class TestOpenAIClient:
             prompts = ["Hello", "How are you?", "What's the weather?"]
             for prompt in prompts:
                 result = client.generate(prompt)
-                assert isinstance(result, LLMResponse)
-                assert result.output == "Response"
+                assert isinstance(result, StructuredLLMResponse)
+                assert result.output == {"raw_content": "Response"}
                 mock_client.chat.completions.create.assert_called_with(
                     model="gpt-4",
                     messages=[{"role": "user", "content": prompt}],
-                    max_tokens=1000,
+                    max_completion_tokens=1000,
                 )
 
     def test_generate_with_different_models(self):
@@ -327,12 +327,12 @@ class TestOpenAIClient:
             models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"]
             for model in models:
                 result = client.generate("Test prompt", model=model)
-                assert isinstance(result, LLMResponse)
-                assert result.output == "Response"
+                assert isinstance(result, StructuredLLMResponse)
+                assert result.output == {"raw_content": "Response"}
                 mock_client.chat.completions.create.assert_called_with(
                     model=model,
                     messages=[{"role": "user", "content": "Test prompt"}],
-                    max_tokens=1000,
+                    max_completion_tokens=1000,
                 )
 
     def test_calculate_cost_integration(self):

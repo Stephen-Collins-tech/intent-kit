@@ -7,7 +7,7 @@ from intent_kit.context.dependencies import (
     detect_circular_dependencies,
     ContextDependencies,
 )
-from intent_kit.context import IntentContext
+from intent_kit.context import Context
 
 
 def test_declare_dependencies():
@@ -19,7 +19,7 @@ def test_declare_dependencies():
 
 def test_validate_context_dependencies_all_present():
     deps = declare_dependencies({"a", "b"}, {"c"})
-    ctx = IntentContext()
+    ctx = Context()
     ctx.set("a", 1, "test")
     ctx.set("b", 2, "test")
     result = validate_context_dependencies(deps, ctx)
@@ -30,7 +30,7 @@ def test_validate_context_dependencies_all_present():
 
 def test_validate_context_dependencies_missing_strict():
     deps = declare_dependencies({"a", "b"}, {"c"})
-    ctx = IntentContext()
+    ctx = Context()
     ctx.set("a", 1, "test")
     result = validate_context_dependencies(deps, ctx, strict=True)
     assert result["valid"] is False
@@ -41,7 +41,7 @@ def test_validate_context_dependencies_missing_strict():
 
 def test_validate_context_dependencies_missing_non_strict():
     deps = declare_dependencies({"a", "b"}, {"c"})
-    ctx = IntentContext()
+    ctx = Context()
     ctx.set("a", 1, "test")
     result = validate_context_dependencies(deps, ctx, strict=False)
     assert result["valid"] is True
@@ -114,7 +114,7 @@ class MockContextAwareAction:
         """Return the context dependencies for this action."""
         return self._deps
 
-    def __call__(self, context: IntentContext, **kwargs):
+    def __call__(self, context: Context, **kwargs):
         """Execute the action with context access."""
         # Mock implementation that reads from context and writes back
         result = {}
@@ -148,7 +148,7 @@ def test_context_aware_action_call():
         inputs={"user_id", "name"}, outputs={"processed_result"}
     )
 
-    context = IntentContext()
+    context = Context()
     context.set("user_id", "123", modified_by="test")
     context.set("name", "John", modified_by="test")
 
@@ -168,7 +168,7 @@ def test_context_aware_action_call_with_missing_inputs():
         inputs={"user_id", "missing_field"}, outputs={"result"}
     )
 
-    context = IntentContext()
+    context = Context()
     context.set("user_id", "123", modified_by="test")
 
     result = action(context)
@@ -182,7 +182,7 @@ def test_context_aware_action_call_empty_dependencies():
     """Test ContextAwareAction.__call__ with empty dependencies."""
     action = MockContextAwareAction()
 
-    context = IntentContext()
+    context = Context()
     result = action(context)
 
     assert result == {}
@@ -199,6 +199,6 @@ def test_context_aware_action_protocol_compliance():
     assert isinstance(action.context_dependencies, ContextDependencies)
 
     # Should be callable with context
-    context = IntentContext()
+    context = Context()
     result = action(context)
     assert isinstance(result, dict)

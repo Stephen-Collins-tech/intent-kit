@@ -3,82 +3,66 @@
 Simple test script to verify the validation functionality.
 """
 
-from intent_kit.utils.node_factory import action
-from intent_kit.nodes.classifiers import ClassifierNode
-from intent_kit.graph import IntentGraph
-from intent_kit.graph.validation import GraphValidationError
+import pytest
+from intent_kit.graph.builder import IntentGraphBuilder
 
 
-def test_valid_graph():
-    """Test a valid graph configuration."""
-    print("Testing valid graph...")
+class TestGraphBuilding:
+    """Test basic graph building functionality."""
 
-    # Create intent nodes
-    greet_node = action(
-        name="greet",
-        description="Greet the user",
-        action_func=lambda name: f"Hello {name}!",
-        param_schema={"name": str},
-    )
+    def test_valid_graph_builds_successfully(self):
+        """Test that a valid graph builds successfully."""
+        # Create a simple valid graph using JSON config
+        graph_config = {
+            "root": "main_classifier",
+            "nodes": {
+                "main_classifier": {
+                    "id": "main_classifier",
+                    "type": "classifier",
+                    "classifier_type": "llm",
+                    "name": "main_classifier",
+                    "description": "Main intent classifier",
+                    "llm_config": {"provider": "openai", "model": "gpt-4"},
+                    "children": ["greet_action"],
+                },
+                "greet_action": {
+                    "id": "greet_action",
+                    "type": "action",
+                    "name": "greet_action",
+                    "description": "Greet the user",
+                    "function": "greet",
+                    "param_schema": {"name": "str"},
+                },
+            },
+        }
 
-    # Create classifier node manually since we need a custom classifier
-    classifier_node = ClassifierNode(
-        name="main_classifier",
-        classifier=lambda text, children, context: children[0],
-        children=[greet_node],
-        description="Main classifier",
-    )
+        # Build graph
+        graph = (
+            IntentGraphBuilder()
+            .with_json(graph_config)
+            .with_functions({"greet": lambda name: f"Hello {name}!"})
+            .build()
+        )
 
-    # Set parent reference
-    greet_node.parent = classifier_node
+        # This should build successfully
+        assert graph is not None
+        assert len(graph.root_nodes) == 1
+        assert graph.root_nodes[0].name == "main_classifier"
 
-    # Create graph and validate
-    graph = IntentGraph()
-    graph.add_root_node(classifier_node, validate=True)
+    def test_invalid_graph_fails_to_build(self):
+        """Test that an invalid graph fails to build."""
+        # Create a graph with missing required fields
+        graph_config = {
+            "root": "main_classifier",
+            "nodes": {
+                "main_classifier": {
+                    "id": "main_classifier",
+                    "type": "classifier",
+                    # Missing required fields
+                },
+            },
+        }
 
-    print("✓ Valid graph test passed!")
-
-
-def test_invalid_graph():
-    """Test an invalid graph configuration."""
-    print("Testing invalid graph...")
-
-    # Create intent nodes
-    greet_node = action(
-        name="greet",
-        description="Greet the user",
-        action_func=lambda name: f"Hello {name}!",
-        param_schema={"name": str},
-    )
-
-    # Create graph and try to validate
-    graph = IntentGraph()
-
-    try:
-        graph.add_root_node(greet_node, validate=True)
-        print("✗ Invalid graph test failed - should have raised an error")
-    except ValueError as e:
-        if "must be a classifier node" in str(e):
-            print(f"✓ Invalid graph test passed - caught error: {e}")
-        else:
-            print(f"✗ Unexpected error: {e}")
-    except GraphValidationError as e:
-        print(f"✓ Invalid graph test passed - caught error: {e.message}")
-        print(f"  Node: {e.node_name}")
-        print(f"  Child: {e.child_name}")
-        print(f"  Child type: {e.child_type}")
-
-
-def main():
-    print("Validation System Test")
-    print("=" * 40)
-
-    test_valid_graph()
-    test_invalid_graph()
-
-    print("\n" + "=" * 40)
-    print("All tests completed!")
-
-
-if __name__ == "__main__":
-    main()
+        # This should fail to build
+        with pytest.raises(Exception):
+            IntentGraphBuilder().with_json(graph_config).build()

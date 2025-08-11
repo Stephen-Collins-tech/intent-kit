@@ -9,7 +9,7 @@ from typing import List, Optional
 from intent_kit.graph.intent_graph import IntentGraph
 from intent_kit.nodes import TreeNode
 from intent_kit.nodes.enums import NodeType
-from intent_kit.context import IntentContext
+from intent_kit.context import Context
 from intent_kit.nodes import ExecutionResult
 from intent_kit.graph.validation import GraphValidationError
 
@@ -305,7 +305,7 @@ class TestIntentGraphExecution:
         graph = IntentGraph()
         root_node = MockClassifierNode("root", "Root node")
         graph.add_root_node(root_node)
-        context = IntentContext()
+        context = Context()
         context.set("key", "value")
 
         result = graph.route("test input", context=context)
@@ -355,7 +355,7 @@ class TestIntentGraphContextTracking:
     def test_capture_context_state(self):
         """Test capturing context state."""
         graph = IntentGraph()
-        context = IntentContext()
+        context = Context()
         context.set("key1", "value1")
         context.set("key2", "value2")
 
