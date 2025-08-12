@@ -2,9 +2,8 @@
 Report utilities for generating formatted performance and cost reports.
 """
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Any
 from dataclasses import dataclass
-from intent_kit.nodes.types import ExecutionResult
 
 
 @dataclass
@@ -125,13 +124,15 @@ def generate_timing_table(data: ReportData) -> str:
         elapsed_str = f"{elapsed:11.4f}" if elapsed is not None else "     N/A   "
         cost_str = format_cost(cost)
         model_str = model[:35] if len(model) <= 35 else model[:32] + "..."
-        provider_str = provider[:10] if len(provider) <= 10 else provider[:7] + "..."
+        provider_str = provider[:10] if len(
+            provider) <= 10 else provider[:7] + "..."
         tokens_str = f"{format_tokens(in_toks)}/{format_tokens(out_toks)}"
 
         # Truncate input and output if too long
         input_str = label[:25] if len(label) <= 25 else label[:22] + "..."
         output_str = (
-            str(output)[:20] if len(str(output)) <= 20 else str(output)[:17] + "..."
+            str(output)[:20] if len(str(output)
+                                    ) <= 20 else str(output)[:17] + "..."
         )
 
         lines.append(
@@ -169,7 +170,8 @@ def generate_summary_statistics(
         lines.append(
             f"  Cost per 1K Tokens: {format_cost(total_cost/(total_tokens/1000))}"
         )
-        lines.append(f"  Cost per Token: {format_cost(total_cost/total_tokens)}")
+        lines.append(
+            f"  Cost per Token: {format_cost(total_cost/total_tokens)}")
 
     if total_cost > 0:
         lines.append(
@@ -267,7 +269,7 @@ def generate_detailed_view(
 
 
 def format_execution_results(
-    results: List[ExecutionResult],
+    results: List[Any],  # ExecutionResult
     llm_config: dict,
     perf_info: str = "",
     timings: Optional[List[Tuple[str, float]]] = None,
@@ -320,7 +322,8 @@ def format_execution_results(
 
         # Extract model and provider info
         model_used = result.model or llm_config.get("model", "unknown")
-        provider_used = result.provider or llm_config.get("provider", "unknown")
+        provider_used = result.provider or llm_config.get(
+            "provider", "unknown")
         models_used.append(model_used)
         providers_used.append(provider_used)
 
@@ -338,7 +341,7 @@ def format_execution_results(
             "success": result.success,
             "node_name": result.node_name,
             "node_path": result.node_path or ["unknown"],
-            "node_type": result.node_type.name if result.node_type else "ACTION",
+            "node_type": result.node_type or "ACTION",
             "input": result.input,
             "output": result.output,
             "total_tokens": (result.input_tokens or 0) + (result.output_tokens or 0),
@@ -348,8 +351,8 @@ def format_execution_results(
             "provider": result.provider,
             "model": result.model,
             "error": result.error,
-            "params": result.params or {},
-            "children_results": result.children_results or [],
+            "params": result.context_patch or {},
+            "children_results": [],  # DAG results don't have children_results
             "duration": result.duration or 0.0,
         }
         execution_results.append(execution_result)

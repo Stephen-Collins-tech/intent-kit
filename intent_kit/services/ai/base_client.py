@@ -7,7 +7,7 @@ This module provides a base class for all LLM client implementations.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional, Any, Dict, Type, TypeVar
-from intent_kit.types import StructuredLLMResponse, Cost, InputTokens, OutputTokens
+from intent_kit.types import RawLLMResponse, Cost, InputTokens, OutputTokens
 from intent_kit.services.ai.pricing_service import PricingService
 from intent_kit.utils.logger import Logger
 
@@ -80,18 +80,17 @@ class BaseLLMClient(ABC):
 
     @abstractmethod
     def generate(
-        self, prompt: str, model: str, expected_type: Type[Any]
-    ) -> StructuredLLMResponse[Any]:
+        self, prompt: str, model: str
+    ) -> RawLLMResponse:
         """
         Generate text using the LLM model.
 
         Args:
             prompt: The text prompt to send to the model
-            model: The model name to use (optional, uses default if not provided)
-            expected_type: Optional type to coerce the output into using type validation
+            model: The model name to use
 
         Returns:
-            StructuredLLMResponse containing the generated text, token usage, and cost
+            RawLLMResponse containing the raw generated text and metadata
         """
         pass
 

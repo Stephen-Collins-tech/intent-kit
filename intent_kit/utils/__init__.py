@@ -25,7 +25,7 @@ from .report_utils import (
     generate_detailed_view,
     format_execution_results,
 )
-from .type_validator import (
+from .type_coercion import (
     validate_type,
     validate_dict,
     TypeValidationError,

@@ -3,6 +3,7 @@ Core types for intent-kit package.
 """
 
 from dataclasses import dataclass
+import json
 from abc import ABC
 from typing import (
     TypedDict,
@@ -17,8 +18,14 @@ from typing import (
     Generic,
     cast,
 )
-from intent_kit.utils.type_validator import validate_type
+from intent_kit.utils.type_coercion import validate_type, validate_raw_content, TypeValidationError
 from enum import Enum
+
+# Try to import yaml at module load time
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
 if TYPE_CHECKING:
     pass
@@ -111,23 +118,21 @@ class LLMResponse:
         elif isinstance(self.output, str):
             # Try to parse as JSON
             try:
-                import json
-
                 return json.loads(self.output)
             except (json.JSONDecodeError, ValueError):
                 # Try to parse as YAML
-                try:
-                    import yaml
-
-                    parsed = yaml.safe_load(self.output)
-                    # Only return YAML result if it's a dict or list, otherwise wrap in dict
-                    if isinstance(parsed, (dict, list)):
-                        return parsed
-                    else:
-                        return {"raw_content": self.output}
-                except (yaml.YAMLError, ValueError, ImportError):
-                    # Return as dict with raw string
-                    return {"raw_content": self.output}
+                if yaml is not None:
+                    try:
+                        parsed = yaml.safe_load(self.output)
+                        # Only return YAML result if it's a dict or list, otherwise wrap in dict
+                        if isinstance(parsed, (dict, list)):
+                            return parsed
+                        else:
+                            return {"raw_content": self.output}
+                    except (yaml.YAMLError, ValueError):
+                        pass
+                # Return as dict with raw string
+                return {"raw_content": self.output}
         else:
             return {"raw_content": str(self.output)}
 
@@ -139,6 +144,56 @@ class LLMResponse:
             import json
 
             return json.dumps(self.output, indent=2)
+
+
+@dataclass
+class RawLLMResponse:
+    """Raw response from an LLM service before type validation."""
+
+    content: str
+    model: str
+    provider: str
+    input_tokens: Optional[int] = None
+    output_tokens: Optional[int] = None
+    cost: Optional[float] = None
+    duration: Optional[float] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+    def __post_init__(self):
+        """Initialize metadata if not provided."""
+        if self.metadata is None:
+            self.metadata = {}
+
+    @property
+    def total_tokens(self) -> Optional[int]:
+        """Return total tokens if both input and output are available."""
+        if self.input_tokens is not None and self.output_tokens is not None:
+            return self.input_tokens + self.output_tokens
+        return None
+
+    def to_structured_response(self, expected_type: Type[T]) -> "StructuredLLMResponse[T]":
+        """Convert to StructuredLLMResponse with type validation.
+
+        Args:
+            expected_type: The expected type for validation
+
+        Returns:
+            StructuredLLMResponse with validated output
+        """
+
+        # Use the consolidated validation utility
+        validated_output = validate_raw_content(self.content, expected_type)
+
+        return StructuredLLMResponse(
+            output=validated_output,
+            expected_type=expected_type,
+            model=self.model,
+            input_tokens=self.input_tokens or 0,
+            output_tokens=self.output_tokens or 0,
+            cost=self.cost or 0.0,
+            provider=self.provider,
+            duration=self.duration or 0.0,
+        )
 
 
 T = TypeVar("T")
@@ -157,7 +212,11 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
         """
         # Parse string output into structured data
         if isinstance(output, str):
-            parsed_output = self._parse_string_to_structured(output)
+            # If expected_type is str, don't try to parse as JSON/YAML
+            if expected_type == str:
+                parsed_output = output
+            else:
+                parsed_output = self._parse_string_to_structured(output)
         else:
             parsed_output = output
 
@@ -198,7 +257,6 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
 
         # If validation failed during initialization, the output will contain error info
         if isinstance(self.output, dict) and "validation_error" in self.output:
-            from intent_kit.utils.type_validator import TypeValidationError
 
             raise TypeValidationError(
                 self.output["validation_error"],
@@ -215,7 +273,6 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
             pass
 
         # Otherwise, try to validate now
-        from intent_kit.utils.type_validator import validate_type, TypeValidationError
 
         return validate_type(self.output, self._expected_type)  # type: ignore
 
@@ -227,8 +284,10 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
         # Remove markdown code blocks if present
         import re
 
-        json_block_pattern = re.compile(r"```json\s*([\s\S]*?)\s*```", re.IGNORECASE)
-        yaml_block_pattern = re.compile(r"```yaml\s*([\s\S]*?)\s*```", re.IGNORECASE)
+        json_block_pattern = re.compile(
+            r"```json\s*([\s\S]*?)\s*```", re.IGNORECASE)
+        yaml_block_pattern = re.compile(
+            r"```yaml\s*([\s\S]*?)\s*```", re.IGNORECASE)
         generic_block_pattern = re.compile(r"```\s*([\s\S]*?)\s*```")
 
         # Try to extract from JSON code block first
@@ -255,18 +314,17 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
         except (json.JSONDecodeError, ValueError):
             pass
 
-        # Try to parse as YAML
-        try:
-            import yaml
-
-            parsed = yaml.safe_load(cleaned_str)
-            # Only return YAML result if it's a dict or list, otherwise wrap in dict
-            if isinstance(parsed, (dict, list)):
-                return parsed
-            else:
-                return {"raw_content": output_str}
-        except (yaml.YAMLError, ValueError, ImportError):
-            pass
+        if yaml is not None:
+            # Try to parse as YAML
+            try:
+                parsed = yaml.safe_load(cleaned_str)
+                # Only return YAML result if it's a dict or list, otherwise wrap in dict
+                if isinstance(parsed, (dict, list)):
+                    return parsed
+                else:
+                    return {"raw_content": output_str}
+            except (yaml.YAMLError, ValueError, ImportError):
+                pass
 
         # If parsing fails, wrap in a dict
         return {"raw_content": output_str}
@@ -337,7 +395,7 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
                 return cast(T, 0.0)
 
         # For other types, try to use the type validator
-        from intent_kit.utils.type_validator import validate_type
+        from intent_kit.utils.type_coercion import validate_type
 
         return cast(T, validate_type(data, expected_type))
 
@@ -430,16 +488,16 @@ class TypedOutputData:
                 return json.loads(self.content)
             except (json.JSONDecodeError, ValueError):
                 # Try to parse as YAML
-                try:
-                    import yaml
-
-                    parsed = yaml.safe_load(self.content)
-                    if isinstance(parsed, (dict, list)):
-                        return parsed
-                    else:
-                        return {"raw_content": self.content}
-                except (yaml.YAMLError, ValueError, ImportError):
-                    return {"raw_content": self.content}
+                if yaml is not None:
+                    try:
+                        parsed = yaml.safe_load(self.content)
+                        if isinstance(parsed, (dict, list)):
+                            return parsed
+                        else:
+                            return {"raw_content": self.content}
+                    except (yaml.YAMLError, ValueError):
+                        pass
+                return {"raw_content": self.content}
         else:
             return {"raw_content": str(self.content)}
 
@@ -460,16 +518,16 @@ class TypedOutputData:
     def _cast_to_yaml(self) -> Any:
         """Cast content to YAML format."""
         if isinstance(self.content, str):
-            try:
-                import yaml
-
-                parsed = yaml.safe_load(self.content)
-                if isinstance(parsed, (dict, list)):
-                    return parsed
-                else:
-                    return {"raw_content": self.content}
-            except (yaml.YAMLError, ValueError, ImportError):
-                return {"raw_content": self.content}
+            if yaml is not None:
+                try:
+                    parsed = yaml.safe_load(self.content)
+                    if isinstance(parsed, (dict, list)):
+                        return parsed
+                    else:
+                        return {"raw_content": self.content}
+                except (yaml.YAMLError, ValueError):
+                    pass
+            return {"raw_content": self.content}
         elif isinstance(self.content, (dict, list)):
             return self.content
         else:

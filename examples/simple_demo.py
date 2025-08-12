@@ -1,222 +1,88 @@
 """
-Simple Intent Kit Demo - The Basics
+Simple Intent Kit Demo - Programmatic DAG Example
 
-This is the most minimal example to get started with Intent Kit.
-Shows basic graph building and execution in ~30 lines.
+A minimal example showing basic DAG building and execution using the programmatic API.
 """
 
 import os
 from dotenv import load_dotenv
-from intent_kit.graph.builder import IntentGraphBuilder
+from intent_kit.core import DAGBuilder, run_dag
+from intent_kit.core.traversal import resolve_impl_direct
 from intent_kit.context import Context
-
-# Import strategies module to ensure strategies are available in registry
+from intent_kit.services.ai.llm_service import LLMService
 
 load_dotenv()
-
-# Simple action functions
 
 
 def greet(name: str) -> str:
     return f"Hello {name}!"
 
 
-def calculate(operation: str, a: float, b: float) -> str:
-    calc_result = 0.0
-    if operation == "+":
-        calc_result = a + b
-    elif operation == "-":
-        calc_result = a - b
-    elif operation == "*":
-        calc_result = a * b
-    elif operation == "/":
-        if b == 0:
-            raise ValueError("Cannot divide by zero")
-        calc_result = a / b
-    else:
-        raise ValueError(f"Unsupported operation: {operation}. Use +, -, *, or /")
+def create_simple_dag():
+    """Create a minimal DAG with classifier, extractor, action, and clarification."""
+    builder = DAGBuilder()
 
-    return f"{a} {operation} {b} = {calc_result}"
+    # Add classifier node
+    builder.add_node("classifier", "dag_classifier",
+                     output_labels=["greet"],
+                     description="Classify if input is a greeting",
+                     llm_config={
+                         "provider": "openrouter",
+                         "api_key": os.getenv("OPENROUTER_API_KEY"),
+                         "model": "google/gemma-2-9b-it"
+                     })
 
+    # Add extractor node
+    builder.add_node("extractor", "dag_extractor",
+                     param_schema={"name": str},
+                     description="Extract name from greeting",
+                     llm_config={
+                         "provider": "openrouter",
+                         "api_key": os.getenv("OPENROUTER_API_KEY"),
+                         "model": "google/gemma-2-9b-it"
+                     },
+                     output_key="extracted_params")
 
-def weather(location: str) -> str:
-    return f"Weather in {location}: 72°F, Sunny (simulated)"
+    # Add action node
+    builder.add_node("greet_action", "dag_action",
+                     action=greet,
+                     description="Greet the user")
 
+    # Add clarification node
+    builder.add_node("clarification", "dag_clarification",
+                     clarification_message="I'm not sure what you'd like me to do. Please try saying hello!",
+                     available_options=["Say hello to someone"],
+                     description="Ask for clarification when intent is unclear")
 
-# Validation functions for each action
-def validate_greet_params(params: dict) -> bool:
-    """Validate greet action parameters."""
-    if "name" not in params:
-        return False
-    name = params["name"]
-    return isinstance(name, str) and len(name.strip()) > 0
+    # Connect nodes
+    builder.add_edge("classifier", "extractor", "greet")
+    builder.add_edge("extractor", "greet_action", "success")
+    builder.add_edge("classifier", "clarification", "clarification")
+    builder.set_entrypoints(["classifier"])
+    return builder
 
-
-def validate_calculate_params(params: dict) -> bool:
-    """Validate calculate action parameters."""
-    required_keys = {"operation", "a", "b"}
-    if not required_keys.issubset(params.keys()):
-        return False
-
-    operation = (
-        params["operation"].lower()
-        if isinstance(params["operation"], str)
-        else str(params["operation"])
-    )
-
-    # Map various operation formats to standard symbols
-    operation_map = {
-        "+": "+",
-        "add": "+",
-        "addition": "+",
-        "plus": "+",
-        "-": "-",
-        "subtract": "-",
-        "subtraction": "-",
-        "minus": "-",
-        "*": "*",
-        "multiply": "*",
-        "multiplication": "*",
-        "times": "*",
-        "/": "/",
-        "divide": "/",
-        "division": "/",
-        "divided by": "/",
-    }
-
-    if operation not in operation_map:
-        return False
-
-    # Normalize the operation in the params dict
-    params["operation"] = operation_map[operation]
-
-    try:
-        float(params["a"])
-        float(params["b"])
-        return True
-    except (ValueError, TypeError):
-        return False
-
-
-def validate_weather_params(params: dict) -> bool:
-    """Validate weather action parameters."""
-    if "location" not in params:
-        return False
-    location = params["location"]
-    return isinstance(location, str) and len(location.strip()) > 0
-
-
-# Minimal graph configuration
-demo_graph = {
-    "root": "main_classifier",
-    "nodes": {
-        "main_classifier": {
-            "id": "main_classifier",
-            "name": "main_classifier",
-            "type": "classifier",
-            "classifier_type": "llm",
-            "llm_config": {
-                "provider": "openrouter",
-                # "provider": "openai",
-                "api_key": os.getenv("OPENROUTER_API_KEY"),
-                "model": "google/gemma-2-9b-it",
-                # "model": "gpt-5-2025-08-07",
-                # "model": "mistralai/ministral-8b",
-            },
-            "children": ["greet_action", "calculate_action", "weather_action"],
-            "remediation_strategies": ["keyword_fallback"],
-        },
-        "greet_action": {
-            "id": "greet_action",
-            "name": "greet_action",
-            "type": "action",
-            "function": "greet",
-            "description": "Greet the user with a personalized message",
-            "param_schema": {"name": "str"},
-            "input_validator": "validate_greet_params",
-            "remediation_strategies": ["retry_on_fail", "keyword_fallback"],
-        },
-        "calculate_action": {
-            "id": "calculate_action",
-            "name": "calculate_action",
-            "type": "action",
-            "function": "calculate",
-            "description": "Perform mathematical calculations (addition, subtraction, multiplication, division)",
-            "param_schema": {"operation": "str", "a": "float", "b": "float"},
-            "input_validator": "validate_calculate_params",
-            "remediation_strategies": ["retry_on_fail", "keyword_fallback"],
-        },
-        "weather_action": {
-            "id": "weather_action",
-            "name": "weather_action",
-            "type": "action",
-            "function": "weather",
-            "description": "Get weather information for a specific location",
-            "param_schema": {"location": "str"},
-            "input_validator": "validate_weather_params",
-            "remediation_strategies": ["retry_on_fail", "keyword_fallback"],
-        },
-    },
-}
 
 if __name__ == "__main__":
-    # Build graph
-    llm_config = {
-        "provider": "openrouter",
-        "api_key": os.getenv("OPENROUTER_API_KEY"),
-        "model": "google/gemma-2-9b-it",
-    }
+    print("=== Simple DAG Demo ===\n")
 
-    graph = (
-        IntentGraphBuilder()
-        .with_json(demo_graph)
-        .with_functions(
-            {
-                "greet": greet,
-                "calculate": calculate,
-                "weather": weather,
-                "validate_greet_params": validate_greet_params,
-                "validate_calculate_params": validate_calculate_params,
-                "validate_weather_params": validate_weather_params,
-            }
-        )
-        .with_default_llm_config(llm_config)
-        .build()
-    )
-    context = Context()
+    builder = create_simple_dag()
+    llm_service = LLMService()
 
-    # Test with different inputs
-    test_inputs = [
-        #     # Overlapping semantics
-        #     "Hey there, what’s 5 plus 3? And also, how’s the weather?",
-        #     "Good morning, can you tell me if it's sunny?",
-        #     # Implicit intent
-        # "I’m shivering and the sky’s grey — do you think I’ll need a coat?",
-        #     "Could you help me with something?",
-        #     # Ambiguous wording
-        #     "It’s a beautiful day, isn’t it?",
-        #     "Can you work out if I’ll need an umbrella tomorrow?",
-        #     # Adversarial keyword placement
-        #     "Calculate whether it’s going to rain today.",
-        "Weather you could greet me or do the math doesn’t matter.",
-        #     # Context shift in same sentence
-        "Hello! Actually, never mind the small talk — what’s 42 times 13?",
-        #     "Before you answer my math question, how warm is it outside?",
-        #     # Mixed signals and indirect requests
-        #     "Morning! Quick — what’s 15 squared?",
-        #     "Is it sunny today or should I bring my calculator?",
-        #     "If it’s raining, tell me. Otherwise, say hi.",
-        #     "Greet me, then solve 8 × 7.",
-        #     # Puns and idioms
-        #     "I’m feeling under the weather — how about you?",
-        #     "You really brighten my day like the sun.",
-        #     # Trick phrasing
-        #     "Give me the forecast for my mood.",
-        # "Work out the temperature in London.",
-        #     "Say hello in the warmest way possible.",
-        # "Check if it’s snowing, then tell me a joke."
-    ]
+    test_inputs = ["Hello, I'm Alice!", "What's the weather?", "Hi there!"]
 
     for user_input in test_inputs:
-        result = graph.route(user_input, context=context)
-        print(f"Input: '{user_input}' → {result.output}")
+        print(f"\nInput: '{user_input}'")
+        ctx = Context()
+        dag = builder.build()
+        result, _ = run_dag(
+            dag, ctx, user_input, resolve_impl=resolve_impl_direct, llm_service=llm_service)
+
+        if result and result.data:
+            if "action_result" in result.data:
+                print(f"Result: {result.data['action_result']}")
+            elif "clarification_message" in result.data:
+                print(f"Clarification: {result.data['clarification_message']}")
+            else:
+                print(f"Result: {result.data}")
+        else:
+            print("No result detected")

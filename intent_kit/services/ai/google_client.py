@@ -1,9 +1,9 @@
 """
-Google GenAI client wrapper for intent-kit
+Google AI client wrapper for intent-kit
 """
 
 from dataclasses import dataclass
-from typing import Optional, Type, TypeVar
+from typing import Optional, List, Type, TypeVar
 from intent_kit.services.ai.base_client import (
     BaseLLMClient,
     PricingConfiguration,
@@ -11,7 +11,7 @@ from intent_kit.services.ai.base_client import (
     ModelPricing,
 )
 from intent_kit.services.ai.pricing_service import PricingService
-from intent_kit.types import StructuredLLMResponse, InputTokens, OutputTokens, Cost
+from intent_kit.types import RawLLMResponse, InputTokens, OutputTokens, Cost
 from intent_kit.utils.perf_util import PerfUtil
 
 T = TypeVar("T")
@@ -126,11 +126,11 @@ class GoogleClient(BaseLLMClient):
         return cleaned
 
     def generate(
-        self, prompt: str, model: str, expected_type: Type[T]
-    ) -> StructuredLLMResponse[T]:
+        self, prompt: str, model: str
+    ) -> RawLLMResponse:
         """Generate text using Google's Gemini model."""
         self._ensure_imported()
-        assert self._client is not None  # Type assertion for linter
+        assert self._client is not None
         model = model or "gemini-2.0-flash-lite"
         perf_util = PerfUtil("google_generate")
         perf_util.start()
@@ -154,64 +154,21 @@ class GoogleClient(BaseLLMClient):
                 config=generate_content_config,
             )
 
-            # Convert to our custom dataclass structure
-            usage_metadata = None
-            if response.usage_metadata:
-                # Handle both real and mocked usage metadata
-                prompt_count = getattr(response.usage_metadata, "prompt_token_count", 0)
-                candidates_count = getattr(
-                    response.usage_metadata, "candidates_token_count", 0
-                )
-
-                # Safe arithmetic for mocked objects
-                if hasattr(prompt_count, "__add__") and hasattr(
-                    candidates_count, "__add__"
-                ):
-                    total_count = prompt_count + candidates_count
-                else:
-                    total_count = 0
-
-                usage_metadata = GoogleUsageMetadata(
-                    prompt_token_count=prompt_count,
-                    candidates_token_count=candidates_count,
-                    total_token_count=total_count,
-                )
-
-            google_response = GoogleGenerateContentResponse(
-                text=str(response.text) if response.text else "",
-                usage_metadata=usage_metadata,
-            )
-
-            self.logger.debug(f"Google generate response: {google_response.text}")
+            # Extract text content
+            output_text = str(response.text) if response.text else ""
 
             # Extract token information
-            if google_response.usage_metadata:
-                # Handle both real and mocked usage metadata
+            input_tokens = 0
+            output_tokens = 0
+            if response.usage_metadata:
                 input_tokens = getattr(
-                    google_response.usage_metadata, "prompt_token_count", 0
-                )
+                    response.usage_metadata, "prompt_token_count", 0) or 0
                 output_tokens = getattr(
-                    google_response.usage_metadata, "candidates_token_count", 0
-                )
-
-                # Convert to int if they're mocked objects or ensure they're integers
-                try:
-                    input_tokens = int(input_tokens) if input_tokens is not None else 0
-                except (TypeError, ValueError):
-                    input_tokens = 0
-
-                try:
-                    output_tokens = (
-                        int(output_tokens) if output_tokens is not None else 0
-                    )
-                except (TypeError, ValueError):
-                    output_tokens = 0
-            else:
-                input_tokens = 0
-                output_tokens = 0
+                    response.usage_metadata, "candidates_token_count", 0) or 0
 
             # Calculate cost using local pricing configuration
-            cost = self.calculate_cost(model, "google", input_tokens, output_tokens)
+            cost = self.calculate_cost(
+                model, "google", input_tokens, output_tokens)
 
             duration = perf_util.stop()
 
@@ -225,14 +182,13 @@ class GoogleClient(BaseLLMClient):
                 duration=duration,
             )
 
-            return StructuredLLMResponse(
-                output=self._clean_response(google_response.text),
-                expected_type=expected_type,
+            return RawLLMResponse(
+                content=self._clean_response(output_text),
                 model=model,
+                provider="google",
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 cost=cost,
-                provider="google",
                 duration=duration,
             )
 
@@ -257,8 +213,10 @@ class GoogleClient(BaseLLMClient):
             return super().calculate_cost(model, provider, input_tokens, output_tokens)
 
         # Calculate cost using local pricing data
-        input_cost = (input_tokens / 1_000_000) * model_pricing.input_price_per_1m
-        output_cost = (output_tokens / 1_000_000) * model_pricing.output_price_per_1m
+        input_cost = (input_tokens / 1_000_000) * \
+            model_pricing.input_price_per_1m
+        output_cost = (output_tokens / 1_000_000) * \
+            model_pricing.output_price_per_1m
         total_cost = input_cost + output_cost
 
         return total_cost

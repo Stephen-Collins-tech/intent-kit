@@ -1,28 +1,32 @@
 """
-IntentKit - A Python library for building hierarchical intent classification and execution systems.
+Intent Kit - A Python library for building hierarchical intent classification and execution systems.
 
-This library provides:
-- Tree-based intent architecture with classifier and intent nodes
-- IntentGraph for multi-intent routing and splitting
-- Context-aware execution with dependency tracking
-- Multiple AI service backends (OpenAI, Anthropic, Google AI, Ollama)
-- Interactive visualization of execution paths
+This library provides a tree-based intent architecture with classifier and action nodes,
+supports multiple AI service backends, and enables context-aware execution.
 """
 
-from .nodes import TreeNode, NodeType
-from .nodes.classifiers import ClassifierNode
-from .nodes.actions import ActionNode
+from intent_kit.core import (
+    IntentDAG,
+    DAGBuilder,
+    GraphNode,
+    ExecutionResult,
+    ExecutionError,
+    NodeProtocol,
+    Context,
+    run_dag,
+)
 
-from .graph.builder import IntentGraphBuilder
-from .context import Context
+# run_dag moved to DAGBuilder.run()
 
-__version__ = "0.5.0"
+__version__ = "0.1.0"
 
 __all__ = [
-    "IntentGraphBuilder",
-    "TreeNode",
-    "NodeType",
-    "ClassifierNode",
-    "ActionNode",
+    "IntentDAG",
+    "DAGBuilder",
+    "GraphNode",
+    "ExecutionResult",
+    "ExecutionError",
+    "NodeProtocol",
     "Context",
+
 ]

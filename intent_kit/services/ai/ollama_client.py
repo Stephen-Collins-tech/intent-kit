@@ -3,7 +3,7 @@ Ollama client wrapper for intent-kit
 """
 
 from dataclasses import dataclass
-from typing import Optional, Type, TypeVar
+from typing import Optional, List, Type, TypeVar
 from intent_kit.services.ai.base_client import (
     BaseLLMClient,
     PricingConfiguration,
@@ -11,7 +11,7 @@ from intent_kit.services.ai.base_client import (
     ModelPricing,
 )
 from intent_kit.services.ai.pricing_service import PricingService
-from intent_kit.types import StructuredLLMResponse, InputTokens, OutputTokens, Cost
+from intent_kit.types import RawLLMResponse, InputTokens, OutputTokens, Cost
 from intent_kit.utils.perf_util import PerfUtil
 
 T = TypeVar("T")
@@ -130,11 +130,11 @@ class OllamaClient(BaseLLMClient):
         return cleaned
 
     def generate(
-        self, prompt: str, model: str, expected_type: Type[T]
-    ) -> StructuredLLMResponse[T]:
+        self, prompt: str, model: str
+    ) -> RawLLMResponse:
         """Generate text using Ollama's LLM model."""
         self._ensure_imported()
-        assert self._client is not None  # Type assertion for linter
+        assert self._client is not None
         model = model or "llama2"
         perf_util = PerfUtil("ollama_generate")
         perf_util.start()
@@ -145,31 +145,20 @@ class OllamaClient(BaseLLMClient):
                 prompt=prompt,
             )
 
-            # Convert to our custom dataclass structure
-            usage = None
-            if response.get("usage"):
-                usage = OllamaUsage(
-                    prompt_eval_count=response.get("usage").get("prompt_eval_count", 0),
-                    eval_count=response.get("usage").get("eval_count", 0),
-                    total_count=response.get("usage").get("prompt_eval_count", 0)
-                    + response.get("usage").get("eval_count", 0),
-                )
-
-            ollama_response = OllamaGenerateResponse(
-                response=response.get("response", ""),
-                usage=usage,
-            )
+            # Extract response content
+            output_text = response.get("response", "")
 
             # Extract token information
-            if ollama_response.usage:
-                input_tokens = ollama_response.usage.prompt_eval_count
-                output_tokens = ollama_response.usage.eval_count
-            else:
-                input_tokens = 0
-                output_tokens = 0
+            input_tokens = 0
+            output_tokens = 0
+            if response.get("usage"):
+                input_tokens = response.get("usage").get(
+                    "prompt_eval_count", 0) or 0
+                output_tokens = response.get("usage").get("eval_count", 0) or 0
 
             # Calculate cost using local pricing configuration (Ollama is typically free)
-            cost = self.calculate_cost(model, "ollama", input_tokens, output_tokens)
+            cost = self.calculate_cost(
+                model, "ollama", input_tokens, output_tokens)
 
             duration = perf_util.stop()
 
@@ -183,14 +172,13 @@ class OllamaClient(BaseLLMClient):
                 duration=duration,
             )
 
-            return StructuredLLMResponse(
-                output=self._clean_response(ollama_response.response),
-                expected_type=expected_type,
+            return RawLLMResponse(
+                content=self._clean_response(output_text),
                 model=model,
+                provider="ollama",
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 cost=cost,  # ollama is free...
-                provider="ollama",
                 duration=duration,
             )
 
@@ -245,7 +233,8 @@ class OllamaClient(BaseLLMClient):
             if hasattr(models_response, "models"):
                 models = models_response.models
             else:
-                self.logger.error(f"Unexpected response structure: {models_response}")
+                self.logger.error(
+                    f"Unexpected response structure: {models_response}")
                 return []
 
             # Each model is a ListResponse.Model with a .model attribute
@@ -315,8 +304,10 @@ class OllamaClient(BaseLLMClient):
             return super().calculate_cost(model, provider, input_tokens, output_tokens)
 
         # Calculate cost using local pricing data (Ollama is typically free)
-        input_cost = (input_tokens / 1_000_000) * model_pricing.input_price_per_1m
-        output_cost = (output_tokens / 1_000_000) * model_pricing.output_price_per_1m
+        input_cost = (input_tokens / 1_000_000) * \
+            model_pricing.input_price_per_1m
+        output_cost = (output_tokens / 1_000_000) * \
+            model_pricing.output_price_per_1m
         total_cost = input_cost + output_cost
 
         return total_cost
