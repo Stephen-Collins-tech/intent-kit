@@ -39,21 +39,25 @@ class ExecutionError(Exception):
 
 class TraversalLimitError(RuntimeError):
     """Raised when traversal limits are exceeded."""
+
     pass
 
 
 class NodeError(RuntimeError):
     """Raised when a node execution fails."""
+
     pass
 
 
 class TraversalError(RuntimeError):
     """Raised when traversal fails due to node errors or other issues."""
+
     pass
 
 
 class ContextConflictError(RuntimeError):
     """Raised when context patches conflict and cannot be merged."""
+
     pass
 
 
@@ -67,4 +71,5 @@ class CycleError(RuntimeError):
 
 class NodeResolutionError(RuntimeError):
     """Raised when a node implementation cannot be resolved."""
+
     pass

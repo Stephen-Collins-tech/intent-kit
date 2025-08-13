@@ -19,6 +19,8 @@ class ColorManager:
             return "\033[33m"  # yellow
         elif level == "critical":
             return "\033[35m"  # magenta
+        elif level == "fatal":
+            return "\033[36m"  # cyan (used for fatal errors)
         elif level == "metric":
             return "\033[36m"  # cyan (used for metrics)
         elif level == "trace":
@@ -203,6 +205,7 @@ class Logger:
         "warning",  # Warnings that don't stop execution
         "error",  # Errors that affect functionality
         "critical",  # Critical errors that may cause failure
+        "fatal",  # Fatal errors that cause system failure
         "off",  # No logging
     ]
 
@@ -325,6 +328,14 @@ class Logger:
         clear = self.clear_color()
         timestamp = self._get_timestamp()
         print(f"{color}[CRITICAL]{clear} [{timestamp}] [{self.name}] {message}")
+
+    def fatal(self, message):
+        if not self._should_log("fatal"):
+            return
+        color = self.get_color("fatal")
+        clear = self.clear_color()
+        timestamp = self._get_timestamp()
+        print(f"{color}[FATAL]{clear} [{timestamp}] [{self.name}] {message}")
 
     def trace(self, message):
         if not self._should_log("trace"):

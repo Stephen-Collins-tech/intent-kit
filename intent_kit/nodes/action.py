@@ -2,7 +2,7 @@
 
 from typing import Any, Callable, Dict
 from intent_kit.core.types import NodeProtocol, ExecutionResult
-from intent_kit.context import Context
+from intent_kit.core.context import ContextProtocol
 from intent_kit.utils.logger import Logger
 
 
@@ -33,7 +33,7 @@ class ActionNode(NodeProtocol):
         self.param_key = param_key
         self.logger = Logger(name)
 
-    def execute(self, user_input: str, ctx: Context) -> ExecutionResult:
+    def execute(self, user_input: str, ctx: ContextProtocol) -> ExecutionResult:
         """Execute the action node using parameters from context.
 
         Args:
@@ -43,53 +43,36 @@ class ActionNode(NodeProtocol):
         Returns:
             ExecutionResult with action results
         """
-        try:
-            # Get parameters from context
-            params = self._get_params_from_context(ctx)
+        # Get parameters from context
+        params = self._get_params_from_context(ctx)
 
-            # Execute the action with parameters
-            action_result = self.action(**params)
+        # Execute the action with parameters
+        action_result = self.action(**params)
 
-            return ExecutionResult(
-                data=action_result,
-                next_edges=None,
-                terminate=self.terminate_on_success,
-                metrics={},
-                context_patch={
-                    "action_result": action_result,
-                    "action_name": self.name
-                }
-            )
-        except Exception as e:
-            self.logger.error(f"Action execution failed: {e}")
-            return ExecutionResult(
-                data=None,
-                next_edges=None,
-                terminate=True,
-                metrics={},
-                context_patch={
-                    "error": str(e),
-                    "error_type": "ActionExecutionError"
-                }
-            )
+        return ExecutionResult(
+            data=action_result,
+            next_edges=["next"] if not self.terminate_on_success else None,
+            terminate=self.terminate_on_success,
+            metrics={},
+            context_patch={"action_result": action_result, "action_name": self.name},
+        )
 
     def _get_params_from_context(self, ctx: Any) -> Dict[str, Any]:
         """Extract parameters from context."""
-        if not ctx or not hasattr(ctx, 'export_to_dict'):
+        if not ctx or not hasattr(ctx, "get"):
             self.logger.warning("No context available, using empty parameters")
             return {}
 
-        context_data = ctx.export_to_dict()
-        fields = context_data.get('fields', {})
-
-        # Get parameters from the specified key
-        if self.param_key in fields:
-            param_field = fields[self.param_key]
-            if isinstance(param_field, dict) and 'value' in param_field:
-                return param_field['value']
+        # Get parameters directly from context using the param_key
+        params = ctx.get(self.param_key)
+        if params is not None:
+            if isinstance(params, dict):
+                return params
             else:
-                return param_field
+                self.logger.warning(
+                    f"Parameters at '{self.param_key}' are not a dict: {type(params)}"
+                )
+                return {}
 
-        self.logger.warning(
-            f"Parameter key '{self.param_key}' not found in context")
+        self.logger.warning(f"Parameter key '{self.param_key}' not found in context")
         return {}

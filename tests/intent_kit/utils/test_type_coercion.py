@@ -20,7 +20,7 @@ from intent_kit.utils.type_coercion import (
 )
 
 
-class TestRole(enum.Enum):
+class Role(enum.Enum):
     """Test role enumeration."""
 
     ADMIN = "admin"
@@ -28,7 +28,7 @@ class TestRole(enum.Enum):
 
 
 @dataclass
-class TestAddress:
+class Address:
     """Test address dataclass."""
 
     street: str
@@ -37,15 +37,15 @@ class TestAddress:
 
 
 @dataclass
-class TestUser:
+class User:
     """Test user dataclass."""
 
     id: int
     name: str
     email: str
-    role: TestRole
+    role: Role
     is_active: bool = True
-    address: Optional[TestAddress] = None
+    address: Optional[Address] = None
 
 
 class TestTypeValidator:
@@ -82,12 +82,12 @@ class TestTypeValidator:
 
     def test_validate_bool(self):
         """Test boolean validation."""
-        assert validate_bool("true") == True
-        assert validate_bool("True") == True
-        assert validate_bool("false") == False
-        assert validate_bool("False") == False
-        assert validate_bool(1) == True
-        assert validate_bool(0) == False
+        assert validate_bool("true")
+        assert validate_bool("True")
+        assert not validate_bool("false")
+        assert not validate_bool("False")
+        assert validate_bool(1)
+        assert not validate_bool(0)
 
         with pytest.raises(TypeValidationError):
             validate_bool("maybe")
@@ -115,11 +115,11 @@ class TestTypeValidator:
             },
         }
 
-        user = validate_type(user_data, TestUser)
+        user = validate_type(user_data, User)
         assert user.id == 123
         assert user.name == "John Doe"
-        assert user.role == TestRole.ADMIN
-        assert user.is_active == True
+        assert user.role == Role.ADMIN
+        assert user.is_active
         assert user.address is not None
         assert user.address.street == "123 Main St"
 
@@ -137,7 +137,7 @@ class TestTypeValidator:
     def test_missing_required_field(self):
         """Test missing required field error."""
         with pytest.raises(TypeValidationError) as exc_info:
-            validate_type({"name": "Bob"}, TestUser)
+            validate_type({"name": "Bob"}, User)
 
         assert "Missing required field(s)" in str(exc_info.value)
         assert "email" in str(exc_info.value)
@@ -153,10 +153,10 @@ class TestTypeValidator:
         }
 
         with pytest.raises(TypeValidationError) as exc_info:
-            validate_type(user_data, TestUser)
+            validate_type(user_data, User)
 
         assert "Cannot coerce" in str(exc_info.value)
-        assert "TestRole" in str(exc_info.value)
+        assert "Role" in str(exc_info.value)
 
     def test_extra_field_error(self):
         """Test extra field error."""
@@ -169,7 +169,7 @@ class TestTypeValidator:
         }
 
         with pytest.raises(TypeValidationError) as exc_info:
-            validate_type(user_data, TestUser)
+            validate_type(user_data, User)
 
         assert "Unexpected fields" in str(exc_info.value)
         assert "extra_field" in str(exc_info.value)
@@ -184,7 +184,7 @@ class TestTypeValidator:
             # address is optional, so it's OK to omit
         }
 
-        user = validate_type(user_data, TestUser)
+        user = validate_type(user_data, User)
         assert user.address is None
 
     def test_none_value_handling(self):
@@ -198,7 +198,7 @@ class TestTypeValidator:
             "address": None,
         }
 
-        user = validate_type(user_data, TestUser)
+        user = validate_type(user_data, User)
         assert user.address is None
 
     def test_union_type_handling(self):
@@ -226,7 +226,7 @@ class TestTypeValidator:
             validate_type("not a number", int)
         except TypeValidationError as e:
             assert e.value == "not a number"
-            assert e.expected_type == int
+            assert e.expected_type is int
             assert "Expected int" in str(e)
 
 
@@ -235,21 +235,21 @@ class TestResolveType:
 
     def test_resolve_type_with_actual_types(self):
         """Test resolve_type with actual Python types."""
-        assert resolve_type(str) == str
-        assert resolve_type(int) == int
-        assert resolve_type(float) == float
-        assert resolve_type(bool) == bool
-        assert resolve_type(list) == list
-        assert resolve_type(dict) == dict
+        assert resolve_type(str) is str
+        assert resolve_type(int) is int
+        assert resolve_type(float) is float
+        assert resolve_type(bool) is bool
+        assert resolve_type(list) is list
+        assert resolve_type(dict) is dict
 
     def test_resolve_type_with_string_names(self):
         """Test resolve_type with string type names."""
-        assert resolve_type("str") == str
-        assert resolve_type("int") == int
-        assert resolve_type("float") == float
-        assert resolve_type("bool") == bool
-        assert resolve_type("list") == list
-        assert resolve_type("dict") == dict
+        assert resolve_type("str") is str
+        assert resolve_type("int") is int
+        assert resolve_type("float") is float
+        assert resolve_type("bool") is bool
+        assert resolve_type("list") is list
+        assert resolve_type("dict") is dict
 
     def test_resolve_type_with_unknown_type(self):
         """Test resolve_type with unknown type name."""

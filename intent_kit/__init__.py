@@ -12,8 +12,9 @@ from intent_kit.core import (
     ExecutionResult,
     ExecutionError,
     NodeProtocol,
-    Context,
     run_dag,
+    ContextProtocol,
+    DefaultContext,
 )
 
 # run_dag moved to DAGBuilder.run()
@@ -27,6 +28,7 @@ __all__ = [
     "ExecutionResult",
     "ExecutionError",
     "NodeProtocol",
-    "Context",
-
+    "run_dag",
+    "ContextProtocol",
+    "DefaultContext",
 ]

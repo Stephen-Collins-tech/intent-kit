@@ -6,7 +6,7 @@ import pytest
 import os
 from unittest.mock import Mock, patch
 from intent_kit.services.ai.google_client import GoogleClient
-from intent_kit.types import LLMResponse, StructuredLLMResponse
+from intent_kit.types import RawLLMResponse
 from intent_kit.services.ai.pricing_service import PricingService
 
 
@@ -117,8 +117,8 @@ class TestGoogleClient:
             client = GoogleClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert isinstance(result, StructuredLLMResponse)
-            assert result.output == {"raw_content": "Generated response"}
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == "Generated response"
             assert result.model == "gemini-2.0-flash-lite"
             assert result.provider == "google"
             assert result.duration >= 0
@@ -136,8 +136,8 @@ class TestGoogleClient:
             client = GoogleClient("test_api_key")
             result = client.generate("Test prompt", model="gemini-1.5-pro")
 
-            assert isinstance(result, StructuredLLMResponse)
-            assert result.output == {"raw_content": "Generated response"}
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == "Generated response"
             assert result.model == "gemini-1.5-pro"
 
     def test_generate_empty_response(self):
@@ -153,8 +153,8 @@ class TestGoogleClient:
             client = GoogleClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert isinstance(result, StructuredLLMResponse)
-            assert result.output == {"raw_content": ""}
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == ""
             assert result.input_tokens == 0
             assert result.output_tokens == 0
             assert result.cost == 0
@@ -186,8 +186,8 @@ class TestGoogleClient:
 
             client = GoogleClient("test_api_key")
             result = client.generate("Test prompt")
-            assert isinstance(result, StructuredLLMResponse)
-            assert result.output == {"raw_content": "Generated response"}
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == "Generated response"
 
     def test_generate_with_client_recreation(self):
         """Test generate when client needs to be recreated."""
@@ -207,8 +207,8 @@ class TestGoogleClient:
 
             result = client.generate("Test prompt")
 
-            assert isinstance(result, StructuredLLMResponse)
-            assert result.output == {"raw_content": "Generated response"}
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == "Generated response"
             assert client._client == mock_client
 
     def test_is_available_method(self):
@@ -240,13 +240,13 @@ class TestGoogleClient:
 
             # Test with simple prompt
             result1 = client.generate("Hello")
-            assert isinstance(result1, StructuredLLMResponse)
-            assert result1.output == {"raw_content": "Response"}
+            assert isinstance(result1, RawLLMResponse)
+            assert result1.content == "Response"
 
             # Test with complex prompt
             result2 = client.generate("Please summarize this text.")
-            assert isinstance(result2, StructuredLLMResponse)
-            assert result2.output == {"raw_content": "Response"}
+            assert isinstance(result2, RawLLMResponse)
+            assert result2.content == "Response"
 
     def test_generate_with_different_models(self):
         """Test generate with different model types."""
@@ -265,18 +265,18 @@ class TestGoogleClient:
 
             # Test with default model
             result1 = client.generate("Test")
-            assert isinstance(result1, StructuredLLMResponse)
-            assert result1.output == {"raw_content": "Response"}
+            assert isinstance(result1, RawLLMResponse)
+            assert result1.content == "Response"
 
             # Test with custom model
             result2 = client.generate("Test", model="gemini-1.5-pro")
-            assert isinstance(result2, StructuredLLMResponse)
-            assert result2.output == {"raw_content": "Response"}
+            assert isinstance(result2, RawLLMResponse)
+            assert result2.content == "Response"
 
             # Test with another custom model
             result3 = client.generate("Test", model="gemini-2.0-flash")
-            assert isinstance(result3, StructuredLLMResponse)
-            assert result3.output == {"raw_content": "Response"}
+            assert isinstance(result3, RawLLMResponse)
+            assert result3.content == "Response"
 
     def test_generate_content_structure(self):
         """Test the content structure used in generate."""
@@ -294,8 +294,8 @@ class TestGoogleClient:
             client = GoogleClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert isinstance(result, StructuredLLMResponse)
-            assert result.output == {"raw_content": "Generated response"}
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == "Generated response"
 
     def test_generate_with_api_error(self):
         """Test generate with API error handling."""
@@ -351,8 +351,8 @@ class TestGoogleClient:
             client = GoogleClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert isinstance(result, StructuredLLMResponse)
-            assert result.output == {"raw_content": ""}
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == ""
 
     def test_calculate_cost_integration(self):
         """Test cost calculation integration."""
@@ -369,7 +369,7 @@ class TestGoogleClient:
             client = GoogleClient("test_api_key")
             result = client.generate("Test prompt", model="gemini-pro")
 
-            assert isinstance(result, LLMResponse)
+            assert isinstance(result, RawLLMResponse)
             assert result.cost > 0  # Should calculate cost based on pricing service
 
     @patch.dict(os.environ, {"GOOGLE_API_KEY": "env_test_key"})

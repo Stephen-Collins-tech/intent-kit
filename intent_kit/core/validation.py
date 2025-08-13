@@ -6,7 +6,9 @@ from intent_kit.core.types import IntentDAG
 from intent_kit.core.exceptions import CycleError
 
 
-def validate_dag_structure(dag: IntentDAG, producer_labels: Optional[Dict[str, Set[str]]] = None) -> List[str]:
+def validate_dag_structure(
+    dag: IntentDAG, producer_labels: Optional[Dict[str, Set[str]]] = None
+) -> List[str]:
     """Validate the DAG structure.
 
     Args:
@@ -40,7 +42,7 @@ def validate_dag_structure(dag: IntentDAG, producer_labels: Optional[Dict[str, S
             label_issues = _validate_labels(dag, producer_labels)
             issues.extend(label_issues)
 
-    except (ValueError, CycleError) as e:
+    except (ValueError, CycleError):
         # Re-raise these as they indicate fundamental problems
         raise
 
@@ -52,8 +54,7 @@ def _validate_ids(dag: IntentDAG) -> None:
     # Check entrypoints
     for entrypoint in dag.entrypoints:
         if entrypoint not in dag.nodes:
-            raise ValueError(
-                f"Entrypoint {entrypoint} does not exist in nodes")
+            raise ValueError(f"Entrypoint {entrypoint} does not exist in nodes")
 
     # Check edges
     for src, labels in dag.adj.items():
@@ -62,18 +63,15 @@ def _validate_ids(dag: IntentDAG) -> None:
         for label, dsts in labels.items():
             for dst in dsts:
                 if dst not in dag.nodes:
-                    raise ValueError(
-                        f"Edge destination {dst} does not exist in nodes")
+                    raise ValueError(f"Edge destination {dst} does not exist in nodes")
 
     # Check reverse adjacency
     for dst, srcs in dag.rev.items():
         if dst not in dag.nodes:
-            raise ValueError(
-                f"Reverse edge destination {dst} does not exist in nodes")
+            raise ValueError(f"Reverse edge destination {dst} does not exist in nodes")
         for src in srcs:
             if src not in dag.nodes:
-                raise ValueError(
-                    f"Reverse edge source {src} does not exist in nodes")
+                raise ValueError(f"Reverse edge source {src} does not exist in nodes")
 
 
 def _validate_entrypoints(dag: IntentDAG) -> None:
@@ -83,8 +81,7 @@ def _validate_entrypoints(dag: IntentDAG) -> None:
 
     for entrypoint in dag.entrypoints:
         if entrypoint not in dag.nodes:
-            raise ValueError(
-                f"Entrypoint {entrypoint} does not exist in nodes")
+            raise ValueError(f"Entrypoint {entrypoint} does not exist in nodes")
 
 
 def _validate_acyclic(dag: IntentDAG) -> None:
@@ -95,7 +92,7 @@ def _validate_acyclic(dag: IntentDAG) -> None:
         in_degree[node_id] = len(dag.rev.get(node_id, set()))
 
     # Kahn's algorithm
-    queue = deque()
+    queue: deque[str] = deque()
     for node_id in dag.nodes:
         if in_degree[node_id] == 0:
             queue.append(node_id)
@@ -120,8 +117,7 @@ def _validate_acyclic(dag: IntentDAG) -> None:
         # Find the cycle using DFS
         cycle_path = _find_cycle_dfs(dag)
         raise CycleError(
-            f"DAG contains a cycle with {len(cycle_path)} nodes",
-            cycle_path
+            f"DAG contains a cycle with {len(cycle_path)} nodes", cycle_path
         )
 
 
@@ -194,8 +190,7 @@ def _validate_labels(dag: IntentDAG, producer_labels: Dict[str, Set[str]]) -> Li
 
     for node_id, labels in producer_labels.items():
         if node_id not in dag.nodes:
-            issues.append(
-                f"Node {node_id} in producer_labels does not exist")
+            issues.append(f"Node {node_id} in producer_labels does not exist")
             continue
 
         # Get all outgoing edge labels for this node

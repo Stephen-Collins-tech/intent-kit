@@ -1,10 +1,9 @@
 """DAG ClarificationNode implementation for user clarification."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from intent_kit.core.types import NodeProtocol, ExecutionResult
-from intent_kit.context import Context
+from intent_kit.core.context import ContextProtocol
 from intent_kit.utils.logger import Logger
-from intent_kit.services.ai.llm_service import LLMService
 from intent_kit.utils.type_coercion import validate_raw_content
 
 
@@ -49,7 +48,7 @@ class ClarificationNode(NodeProtocol):
             "Could you please clarify your request?"
         )
 
-    def execute(self, user_input: str, ctx: Context) -> ExecutionResult:
+    def execute(self, user_input: str, ctx: ContextProtocol) -> ExecutionResult:
         """Execute the clarification node.
 
         Args:
@@ -61,26 +60,19 @@ class ClarificationNode(NodeProtocol):
         """
         # Generate clarification message using LLM if configured
         if self.llm_config and self.custom_prompt:
-            clarification_text = self._generate_clarification_with_llm(
-                user_input, ctx)
+            clarification_text = self._generate_clarification_with_llm(user_input, ctx)
         else:
             # Use static message
             clarification_text = self._format_message()
 
-        # Add context information about the clarification
-        ctx.set("clarification_requested", True,
-                modified_by=f"traversal:{self.name}")
-        ctx.set("original_input", user_input,
-                modified_by=f"traversal:{self.name}")
-        ctx.set("available_options", self.available_options,
-                modified_by=f"traversal:{self.name}")
+        # Context information will be added via context_patch
 
         return ExecutionResult(
             data={
                 "clarification_message": clarification_text,
                 "original_input": user_input,
                 "available_options": self.available_options,
-                "node_type": "clarification"
+                "node_type": "clarification",
             },
             next_edges=None,  # Terminate the DAG
             terminate=True,
@@ -89,20 +81,18 @@ class ClarificationNode(NodeProtocol):
                 "clarification_requested": True,
                 "original_input": user_input,
                 "available_options": self.available_options,
-                "clarification_message": clarification_text
-            }
+                "clarification_message": clarification_text,
+            },
         )
 
     def _generate_clarification_with_llm(self, user_input: str, ctx: Any) -> str:
         """Generate a contextual clarification message using LLM."""
         try:
             # Get LLM service from context
-            llm_service = ctx.get("llm_service") if hasattr(
-                ctx, 'get') else None
+            llm_service = ctx.get("llm_service") if hasattr(ctx, "get") else None
 
             if not llm_service or not self.llm_config:
-                self.logger.warning(
-                    "LLM service not available, using static message")
+                self.logger.warning("LLM service not available, using static message")
                 return self._format_message()
 
             # Build prompt for clarification
@@ -118,11 +108,9 @@ class ClarificationNode(NodeProtocol):
             raw_response = llm_client.generate(prompt, model=model)
 
             # Parse the response using the validation utility
-            clarification_text = validate_raw_content(
-                raw_response.content, str)
+            clarification_text = validate_raw_content(raw_response.content, str)
 
-            self.logger.info(
-                f"Generated clarification message: {clarification_text}")
+            self.logger.info(f"Generated clarification message: {clarification_text}")
             return clarification_text
 
         except Exception as e:
@@ -136,16 +124,15 @@ class ClarificationNode(NodeProtocol):
 
         # Build context info
         context_info = ""
-        if ctx and hasattr(ctx, 'export_to_dict'):
-            context_data = ctx.export_to_dict()
-            if context_data.get('fields'):
-                context_info = f"\nAvailable Context:\n{context_data['fields']}"
+        if ctx and hasattr(ctx, "snapshot"):
+            context_data = ctx.snapshot()
+            if context_data:
+                context_info = f"\nAvailable Context:\n{context_data}"
 
         # Build available options text
         options_text = ""
         if self.available_options:
-            options_text = "\n".join(
-                f"- {option}" for option in self.available_options)
+            options_text = "\n".join(f"- {option}" for option in self.available_options)
 
         return f"""You are a helpful assistant that asks for clarification when user intent is unclear.
 
@@ -176,6 +163,5 @@ Generate a clarification message:"""
         if not self.available_options:
             return message
 
-        options_text = "\n".join(
-            f"- {option}" for option in self.available_options)
+        options_text = "\n".join(f"- {option}" for option in self.available_options)
         return f"{message}\n\nAvailable options:\n{options_text}"

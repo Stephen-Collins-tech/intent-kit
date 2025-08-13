@@ -3,7 +3,7 @@ Google AI client wrapper for intent-kit
 """
 
 from dataclasses import dataclass
-from typing import Optional, List, Type, TypeVar
+from typing import Optional, TypeVar
 from intent_kit.services.ai.base_client import (
     BaseLLMClient,
     PricingConfiguration,
@@ -126,7 +126,7 @@ class GoogleClient(BaseLLMClient):
         return cleaned
 
     def generate(
-        self, prompt: str, model: str
+        self, prompt: str, model: str = "gemini-2.0-flash-lite"
     ) -> RawLLMResponse:
         """Generate text using Google's Gemini model."""
         self._ensure_imported()
@@ -161,14 +161,15 @@ class GoogleClient(BaseLLMClient):
             input_tokens = 0
             output_tokens = 0
             if response.usage_metadata:
-                input_tokens = getattr(
-                    response.usage_metadata, "prompt_token_count", 0) or 0
-                output_tokens = getattr(
-                    response.usage_metadata, "candidates_token_count", 0) or 0
+                input_tokens = (
+                    getattr(response.usage_metadata, "prompt_token_count", 0) or 0
+                )
+                output_tokens = (
+                    getattr(response.usage_metadata, "candidates_token_count", 0) or 0
+                )
 
             # Calculate cost using local pricing configuration
-            cost = self.calculate_cost(
-                model, "google", input_tokens, output_tokens)
+            cost = self.calculate_cost(model, "google", input_tokens, output_tokens)
 
             duration = perf_util.stop()
 
@@ -213,10 +214,8 @@ class GoogleClient(BaseLLMClient):
             return super().calculate_cost(model, provider, input_tokens, output_tokens)
 
         # Calculate cost using local pricing data
-        input_cost = (input_tokens / 1_000_000) * \
-            model_pricing.input_price_per_1m
-        output_cost = (output_tokens / 1_000_000) * \
-            model_pricing.output_price_per_1m
+        input_cost = (input_tokens / 1_000_000) * model_pricing.input_price_per_1m
+        output_cost = (output_tokens / 1_000_000) * model_pricing.output_price_per_1m
         total_cost = input_cost + output_cost
 
         return total_cost

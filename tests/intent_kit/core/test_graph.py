@@ -37,12 +37,12 @@ class TestIntentDAG:
     def test_add_node(self):
         """Test adding nodes to DAG."""
         builder = DAGBuilder()
-        builder.add_node("test", "dag_classifier", key="value")
+        builder.add_node("test", "classifier", key="value")
         builder.set_entrypoints(["test"])
         dag = builder.build()
 
         assert dag.nodes["test"].id == "test"
-        assert dag.nodes["test"].type == "dag_classifier"
+        assert dag.nodes["test"].type == "classifier"
         assert dag.nodes["test"].config == {"key": "value"}
         assert "test" in dag.nodes
         assert "test" in dag.adj
@@ -51,16 +51,16 @@ class TestIntentDAG:
     def test_add_duplicate_node(self):
         """Test adding duplicate node raises error."""
         builder = DAGBuilder()
-        builder.add_node("test", "dag_classifier")
+        builder.add_node("test", "classifier")
 
         with pytest.raises(ValueError, match="Node test already exists"):
-            builder.add_node("test", "dag_action")
+            builder.add_node("test", "action")
 
     def test_add_edge(self):
         """Test adding edges between nodes."""
         builder = DAGBuilder()
-        builder.add_node("src", "dag_classifier")
-        builder.add_node("dst", "dag_action")
+        builder.add_node("src", "classifier")
+        builder.add_node("dst", "action")
 
         builder.add_edge("src", "dst", "success")
 
@@ -75,18 +75,18 @@ class TestIntentDAG:
         with pytest.raises(ValueError, match="Source node src does not exist"):
             builder.add_edge("src", "dst", "label")
 
-        builder.add_node("src", "dag_classifier")
+        builder.add_node("src", "classifier")
         with pytest.raises(ValueError, match="Destination node dst does not exist"):
             builder.add_edge("src", "dst", "label")
 
     def test_freeze_dag(self):
         """Test freezing DAG makes it immutable."""
         builder = DAGBuilder()
-        builder.add_node("test", "dag_classifier")
+        builder.add_node("test", "classifier")
         builder.freeze()
 
         with pytest.raises(RuntimeError, match="Cannot modify frozen DAG"):
-            builder.add_node("another", "dag_action")
+            builder.add_node("another", "action")
 
         with pytest.raises(RuntimeError, match="Cannot modify frozen DAG"):
             builder.add_edge("test", "another", "label")
@@ -102,7 +102,7 @@ class TestExecutionResult:
             next_edges=["success", "fallback"],
             terminate=False,
             metrics={"tokens": 100},
-            context_patch={"user_id": "123"}
+            context_patch={"user_id": "123"},
         )
 
         assert result.data == "test_data"
@@ -117,5 +117,5 @@ class TestExecutionResult:
         result.merge_metrics({"tokens": 50, "errors": 1})
 
         assert result.metrics["tokens"] == 150  # Should add numeric values
-        assert result.metrics["cost"] == 0.01   # Should preserve existing
-        assert result.metrics["errors"] == 1    # Should add new
+        assert result.metrics["cost"] == 0.01  # Should preserve existing
+        assert result.metrics["errors"] == 1  # Should add new

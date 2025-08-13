@@ -3,7 +3,7 @@ Ollama client wrapper for intent-kit
 """
 
 from dataclasses import dataclass
-from typing import Optional, List, Type, TypeVar
+from typing import Optional, TypeVar
 from intent_kit.services.ai.base_client import (
     BaseLLMClient,
     PricingConfiguration,
@@ -129,9 +129,7 @@ class OllamaClient(BaseLLMClient):
 
         return cleaned
 
-    def generate(
-        self, prompt: str, model: str
-    ) -> RawLLMResponse:
+    def generate(self, prompt: str, model: str = "llama2") -> RawLLMResponse:
         """Generate text using Ollama's LLM model."""
         self._ensure_imported()
         assert self._client is not None
@@ -152,13 +150,11 @@ class OllamaClient(BaseLLMClient):
             input_tokens = 0
             output_tokens = 0
             if response.get("usage"):
-                input_tokens = response.get("usage").get(
-                    "prompt_eval_count", 0) or 0
+                input_tokens = response.get("usage").get("prompt_eval_count", 0) or 0
                 output_tokens = response.get("usage").get("eval_count", 0) or 0
 
             # Calculate cost using local pricing configuration (Ollama is typically free)
-            cost = self.calculate_cost(
-                model, "ollama", input_tokens, output_tokens)
+            cost = self.calculate_cost(model, "ollama", input_tokens, output_tokens)
 
             duration = perf_util.stop()
 
@@ -233,8 +229,7 @@ class OllamaClient(BaseLLMClient):
             if hasattr(models_response, "models"):
                 models = models_response.models
             else:
-                self.logger.error(
-                    f"Unexpected response structure: {models_response}")
+                self.logger.error(f"Unexpected response structure: {models_response}")
                 return []
 
             # Each model is a ListResponse.Model with a .model attribute
@@ -304,10 +299,8 @@ class OllamaClient(BaseLLMClient):
             return super().calculate_cost(model, provider, input_tokens, output_tokens)
 
         # Calculate cost using local pricing data (Ollama is typically free)
-        input_cost = (input_tokens / 1_000_000) * \
-            model_pricing.input_price_per_1m
-        output_cost = (output_tokens / 1_000_000) * \
-            model_pricing.output_price_per_1m
+        input_cost = (input_tokens / 1_000_000) * model_pricing.input_price_per_1m
+        output_cost = (output_tokens / 1_000_000) * model_pricing.output_price_per_1m
         total_cost = input_cost + output_cost
 
         return total_cost

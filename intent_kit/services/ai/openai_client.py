@@ -3,7 +3,7 @@ OpenAI client wrapper for intent-kit
 """
 
 from dataclasses import dataclass
-from typing import Optional, List, Type, TypeVar
+from typing import Optional, List, TypeVar
 from intent_kit.services.ai.base_client import (
     BaseLLMClient,
     PricingConfiguration,
@@ -167,9 +167,7 @@ class OpenAIClient(BaseLLMClient):
 
         return cleaned
 
-    def generate(
-        self, prompt: str, model: str
-    ) -> RawLLMResponse:
+    def generate(self, prompt: str, model: str = "gpt-4") -> RawLLMResponse:
         """Generate text using OpenAI's GPT model."""
         self._ensure_imported()
         assert self._client is not None
@@ -178,10 +176,12 @@ class OpenAIClient(BaseLLMClient):
         perf_util.start()
 
         try:
-            openai_response: OpenAIChatCompletion = self._client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=1000,
+            openai_response: OpenAIChatCompletion = (
+                self._client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=1000,
+                )
             )
 
             if not openai_response.choices:
@@ -201,15 +201,12 @@ class OpenAIClient(BaseLLMClient):
             # Extract token information
             if openai_response.usage:
                 # Handle both real and mocked usage metadata
-                input_tokens = getattr(
-                    openai_response.usage, "prompt_tokens", 0)
-                output_tokens = getattr(
-                    openai_response.usage, "completion_tokens", 0)
+                input_tokens = getattr(openai_response.usage, "prompt_tokens", 0)
+                output_tokens = getattr(openai_response.usage, "completion_tokens", 0)
 
                 # Convert to int if they're mocked objects or ensure they're integers
                 try:
-                    input_tokens = int(
-                        input_tokens) if input_tokens is not None else 0
+                    input_tokens = int(input_tokens) if input_tokens is not None else 0
                 except (TypeError, ValueError):
                     input_tokens = 0
 
@@ -224,8 +221,7 @@ class OpenAIClient(BaseLLMClient):
                 output_tokens = 0
 
             # Calculate cost using local pricing configuration
-            cost = self.calculate_cost(
-                model, "openai", input_tokens, output_tokens)
+            cost = self.calculate_cost(model, "openai", input_tokens, output_tokens)
 
             duration = perf_util.stop()
 
@@ -270,10 +266,8 @@ class OpenAIClient(BaseLLMClient):
             return super().calculate_cost(model, provider, input_tokens, output_tokens)
 
         # Calculate cost using local pricing data
-        input_cost = (input_tokens / 1_000_000) * \
-            model_pricing.input_price_per_1m
-        output_cost = (output_tokens / 1_000_000) * \
-            model_pricing.output_price_per_1m
+        input_cost = (input_tokens / 1_000_000) * model_pricing.input_price_per_1m
+        output_cost = (output_tokens / 1_000_000) * model_pricing.output_price_per_1m
         total_cost = input_cost + output_cost
 
         # Log structured cost calculation info

@@ -1,6 +1,6 @@
 """Shared LLM service for intent-kit."""
 
-from typing import Dict, Any, Optional, Type, TypeVar
+from typing import Dict, Any, Type, TypeVar
 from intent_kit.services.ai.llm_factory import LLMFactory
 from intent_kit.services.ai.base_client import BaseLLMClient
 from intent_kit.types import RawLLMResponse, StructuredLLMResponse
@@ -37,8 +37,7 @@ class LLMService:
         try:
             client = LLMFactory.create_client(llm_config)
             self._clients[cache_key] = client
-            self._logger.info(
-                f"Created new LLM client for config: {cache_key}")
+            self._logger.info(f"Created new LLM client for config: {cache_key}")
             return client
         except Exception as e:
             self._logger.error(f"Failed to create LLM client: {e}")
@@ -62,15 +61,13 @@ class LLMService:
         """List all cached client keys."""
         return list(self._clients.keys())
 
-    def generate_raw(
-        self, prompt: str, llm_config: Dict[str, Any]
-    ) -> RawLLMResponse:
+    def generate_raw(self, prompt: str, llm_config: Dict[str, Any]) -> RawLLMResponse:
         """Generate a raw response from the LLM.
-        
+
         Args:
             prompt: The prompt to send to the LLM
             llm_config: LLM configuration dictionary
-            
+
         Returns:
             RawLLMResponse with the raw content and metadata
         """
@@ -82,12 +79,12 @@ class LLMService:
         self, prompt: str, llm_config: Dict[str, Any], expected_type: Type[T]
     ) -> StructuredLLMResponse[T]:
         """Generate a structured response with type validation.
-        
+
         Args:
             prompt: The prompt to send to the LLM
             llm_config: LLM configuration dictionary
             expected_type: The expected type for validation
-            
+
         Returns:
             StructuredLLMResponse with validated output
         """

@@ -13,9 +13,8 @@ from intent_kit.services.ai.base_client import (
     ModelPricing,
 )
 from intent_kit.services.ai.pricing_service import PricingService
-from intent_kit.utils.logger import Logger
 from dataclasses import dataclass
-from typing import Optional, Any, List, Union, Dict, Type, TypeVar
+from typing import Optional, Any, List, Union, Dict, TypeVar
 import json
 import re
 from intent_kit.utils.logger import get_logger
@@ -71,8 +70,7 @@ class OpenRouterChatCompletionMessage:
         self.logger.info(f"OpenRouter content in parse_content: {content}")
 
         cleaned_content = content
-        json_block_pattern = re.compile(
-            r"```json\s*([\s\S]*?)\s*```", re.IGNORECASE)
+        json_block_pattern = re.compile(r"```json\s*([\s\S]*?)\s*```", re.IGNORECASE)
         match = json_block_pattern.search(content)
         if match:
             cleaned_content = match.group(1).strip()
@@ -160,13 +158,11 @@ class OpenRouterChoice:
                 refusal=getattr(raw_choice.message, "refusal", None),
                 annotations=getattr(raw_choice.message, "annotations", None),
                 audio=getattr(raw_choice.message, "audio", None),
-                function_call=getattr(raw_choice.message,
-                                      "function_call", None),
+                function_call=getattr(raw_choice.message, "function_call", None),
                 tool_calls=getattr(raw_choice.message, "tool_calls", None),
                 reasoning=getattr(raw_choice.message, "reasoning", None),
             ),
-            native_finish_reason=str(
-                getattr(raw_choice, "native_finish_reason", "")),
+            native_finish_reason=str(getattr(raw_choice, "native_finish_reason", "")),
             logprobs=getattr(raw_choice, "logprobs", None),
         )
 
@@ -325,12 +321,11 @@ class OpenRouterClient(BaseLLMClient):
         return cleaned
 
     def generate(
-        self, prompt: str, model: Optional[str] = None
+        self, prompt: str, model: str = "mistralai/mistral-7b-instruct"
     ) -> RawLLMResponse:
         """Generate text using OpenRouter's LLM model."""
         self._ensure_imported()
         assert self._client is not None
-        model = model or "mistralai/mistral-7b-instruct"
 
         perf_util = PerfUtil("openrouter_generate")
         perf_util.start()
@@ -363,8 +358,7 @@ class OpenRouterClient(BaseLLMClient):
         # Extract usage information
         input_tokens = response.usage.prompt_tokens if response.usage else 0
         output_tokens = response.usage.completion_tokens if response.usage else 0
-        cost = self.calculate_cost(
-            model, "openrouter", input_tokens, output_tokens)
+        cost = self.calculate_cost(model, "openrouter", input_tokens, output_tokens)
         duration = perf_util.stop()
 
         # Log cost information
@@ -404,10 +398,8 @@ class OpenRouterClient(BaseLLMClient):
             return super().calculate_cost(model, provider, input_tokens, output_tokens)
 
         # Calculate cost using local pricing data
-        input_cost = (input_tokens / 1_000_000) * \
-            model_pricing.input_price_per_1m
-        output_cost = (output_tokens / 1_000_000) * \
-            model_pricing.output_price_per_1m
+        input_cost = (input_tokens / 1_000_000) * model_pricing.input_price_per_1m
+        output_cost = (output_tokens / 1_000_000) * model_pricing.output_price_per_1m
         total_cost = input_cost + output_cost
 
         return total_cost

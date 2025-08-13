@@ -7,10 +7,7 @@ A minimal example showing how to define and execute a DAG using JSON configurati
 import os
 import json
 from dotenv import load_dotenv
-from intent_kit.core import DAGBuilder, run_dag
-from intent_kit.core.traversal import resolve_impl_direct
-from intent_kit.context import Context
-from intent_kit.services.ai.llm_service import LLMService
+from intent_kit import DAGBuilder, run_dag
 
 load_dotenv()
 
@@ -26,44 +23,44 @@ def create_dag_from_json():
     dag_config = {
         "nodes": {
             "classifier": {
-                "type": "dag_classifier",
+                "type": "classifier",
                 "output_labels": ["greet"],
                 "description": "Classify if input is a greeting",
                 "llm_config": {
                     "provider": "openrouter",
                     "api_key": os.getenv("OPENROUTER_API_KEY"),
-                    "model": "google/gemma-2-9b-it"
-                }
+                    "model": "google/gemma-2-9b-it",
+                },
             },
             "extractor": {
-                "type": "dag_extractor",
+                "type": "extractor",
                 "param_schema": {"name": str},
                 "description": "Extract name from greeting",
                 "llm_config": {
                     "provider": "openrouter",
                     "api_key": os.getenv("OPENROUTER_API_KEY"),
-                    "model": "google/gemma-2-9b-it"
+                    "model": "google/gemma-2-9b-it",
                 },
-                "output_key": "extracted_params"
+                "output_key": "extracted_params",
             },
             "greet_action": {
-                "type": "dag_action",
+                "type": "action",
                 "action": greet,
-                "description": "Greet the user"
+                "description": "Greet the user",
             },
             "clarification": {
-                "type": "dag_clarification",
+                "type": "clarification",
                 "clarification_message": "I'm not sure what you'd like me to do. Please try saying hello!",
                 "available_options": ["Say hello to someone"],
-                "description": "Ask for clarification when intent is unclear"
-            }
+                "description": "Ask for clarification when intent is unclear",
+            },
         },
         "edges": [
             {"from": "classifier", "to": "extractor", "label": "greet"},
             {"from": "extractor", "to": "greet_action", "label": "success"},
-            {"from": "classifier", "to": "clarification", "label": "clarification"}
+            {"from": "classifier", "to": "clarification", "label": "clarification"},
         ],
-        "entrypoints": ["classifier"]
+        "entrypoints": ["classifier"],
     }
 
     # Use the convenience method to create DAG from JSON
@@ -78,54 +75,51 @@ if __name__ == "__main__":
     display_config = {
         "nodes": {
             "classifier": {
-                "type": "dag_classifier",
+                "type": "classifier",
                 "output_labels": ["greet"],
                 "description": "Classify if input is a greeting",
                 "llm_config": {
                     "provider": "openrouter",
-                    "model": "google/gemma-2-9b-it"
-                }
+                    "model": "google/gemma-2-9b-it",
+                },
             },
             "extractor": {
-                "type": "dag_extractor",
+                "type": "extractor",
                 "param_schema": {"name": "str"},
-                "description": "Extract name from greeting"
+                "description": "Extract name from greeting",
             },
             "greet_action": {
-                "type": "dag_action",
+                "type": "action",
                 "action": "greet",
-                "description": "Greet the user"
+                "description": "Greet the user",
             },
             "clarification": {
-                "type": "dag_clarification",
-                "clarification_message": "I'm not sure what you'd like me to do. Please try saying hello!"
-            }
+                "type": "clarification",
+                "clarification_message": "I'm not sure what you'd like me to do. Please try saying hello!",
+            },
         },
         "edges": [
             {"from": "classifier", "to": "extractor", "label": "greet"},
             {"from": "extractor", "to": "greet_action", "label": "success"},
-            {"from": "classifier", "to": "clarification", "label": "clarification"}
+            {"from": "classifier", "to": "clarification", "label": "clarification"},
         ],
-        "entrypoints": ["classifier"]
+        "entrypoints": ["classifier"],
     }
 
     print(json.dumps(display_config, indent=2))
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("Executing DAG from JSON config:")
 
     # Execute the DAG using the convenience method
     builder = create_dag_from_json()
-    llm_service = LLMService()
 
     test_inputs = ["Hello, I'm Alice!", "What's the weather?", "Hi there!"]
 
     for user_input in test_inputs:
         print(f"\nInput: '{user_input}'")
-        ctx = Context()
         dag = builder.build()
-        result, _ = run_dag(
-            dag, ctx, user_input, resolve_impl=resolve_impl_direct, llm_service=llm_service)
+        result, _ = run_dag(dag, user_input)
 
         if result and result.data:
             if "action_result" in result.data:

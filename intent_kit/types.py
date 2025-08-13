@@ -18,14 +18,18 @@ from typing import (
     Generic,
     cast,
 )
-from intent_kit.utils.type_coercion import validate_type, validate_raw_content, TypeValidationError
+from intent_kit.utils.type_coercion import (
+    validate_type,
+    validate_raw_content,
+    TypeValidationError,
+)
 from enum import Enum
 
 # Try to import yaml at module load time
 try:
     import yaml
 except ImportError:
-    yaml = None
+    yaml = None  # type: ignore
 
 if TYPE_CHECKING:
     pass
@@ -171,7 +175,9 @@ class RawLLMResponse:
             return self.input_tokens + self.output_tokens
         return None
 
-    def to_structured_response(self, expected_type: Type[T]) -> "StructuredLLMResponse[T]":
+    def to_structured_response(
+        self, expected_type: Type[T]
+    ) -> "StructuredLLMResponse[T]":
         """Convert to StructuredLLMResponse with type validation.
 
         Args:
@@ -196,13 +202,15 @@ class RawLLMResponse:
         )
 
 
-T = TypeVar("T")
-
-
 class StructuredLLMResponse(LLMResponse, Generic[T]):
     """LLM response that guarantees structured output."""
 
-    def __init__(self, output: StructuredOutput, expected_type: Type[T], **kwargs):
+    def __init__(
+        self,
+        output: StructuredOutput,
+        expected_type: Optional[Type[T]] = None,
+        **kwargs,
+    ):
         """Initialize with structured output.
 
         Args:
@@ -211,9 +219,10 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
             **kwargs: Additional arguments for LLMResponse
         """
         # Parse string output into structured data
+        parsed_output: StructuredOutput
         if isinstance(output, str):
             # If expected_type is str, don't try to parse as JSON/YAML
-            if expected_type == str:
+            if expected_type is str:
                 parsed_output = output
             else:
                 parsed_output = self._parse_string_to_structured(output)
@@ -237,8 +246,16 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
                     "expected_type": str(expected_type),
                 }
 
-        # Initialize the parent class
-        super().__init__(output=parsed_output, **kwargs)
+        # Initialize the parent class with required fields
+        super().__init__(
+            output=parsed_output,
+            model=kwargs.get("model", ""),
+            input_tokens=kwargs.get("input_tokens", 0),
+            output_tokens=kwargs.get("output_tokens", 0),
+            cost=kwargs.get("cost", 0.0),
+            provider=kwargs.get("provider", ""),
+            duration=kwargs.get("duration", 0.0),
+        )
 
         # Store the expected type for later use
         self._expected_type = expected_type
@@ -284,10 +301,8 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
         # Remove markdown code blocks if present
         import re
 
-        json_block_pattern = re.compile(
-            r"```json\s*([\s\S]*?)\s*```", re.IGNORECASE)
-        yaml_block_pattern = re.compile(
-            r"```yaml\s*([\s\S]*?)\s*```", re.IGNORECASE)
+        json_block_pattern = re.compile(r"```json\s*([\s\S]*?)\s*```", re.IGNORECASE)
+        yaml_block_pattern = re.compile(r"```yaml\s*([\s\S]*?)\s*```", re.IGNORECASE)
         generic_block_pattern = re.compile(r"```\s*([\s\S]*?)\s*```")
 
         # Try to extract from JSON code block first
@@ -315,16 +330,15 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
             pass
 
         if yaml is not None:
-            # Try to parse as YAML
-            try:
-                parsed = yaml.safe_load(cleaned_str)
-                # Only return YAML result if it's a dict or list, otherwise wrap in dict
-                if isinstance(parsed, (dict, list)):
-                    return parsed
-                else:
-                    return {"raw_content": output_str}
-            except (yaml.YAMLError, ValueError, ImportError):
-                pass
+            # Try to parse as YAML (try both cleaned and original string)
+            for test_str in [cleaned_str, output_str]:
+                try:
+                    parsed = yaml.safe_load(test_str)
+                    # Only return YAML result if it's a dict or list, otherwise wrap in dict
+                    if isinstance(parsed, (dict, list)):
+                        return parsed
+                except (yaml.YAMLError, ValueError, ImportError):
+                    continue
 
         # If parsing fails, wrap in a dict
         return {"raw_content": output_str}
@@ -336,7 +350,7 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
             return data
 
         # Handle common type conversions
-        if expected_type == dict:
+        if expected_type is dict:
             if isinstance(data, str):
                 # Try to parse string as JSON/YAML
                 return cast(T, self._parse_string_to_structured(data))
@@ -346,7 +360,7 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
             else:
                 return cast(T, {"raw_content": str(data)})
 
-        elif expected_type == list:
+        elif expected_type is list:
             if isinstance(data, str):
                 # Try to parse string as JSON/YAML
                 parsed = self._parse_string_to_structured(data)
@@ -360,7 +374,7 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
             else:
                 return cast(T, [data])
 
-        elif expected_type == str:
+        elif expected_type is str:
             if isinstance(data, (dict, list)):
                 import json
 
@@ -368,7 +382,7 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
             else:
                 return cast(T, str(data))
 
-        elif expected_type == int:
+        elif expected_type is int:
             if isinstance(data, str):
                 # Try to extract number from string
                 import re
@@ -381,7 +395,7 @@ class StructuredLLMResponse(LLMResponse, Generic[T]):
             else:
                 return cast(T, 0)
 
-        elif expected_type == float:
+        elif expected_type is float:
             if isinstance(data, str):
                 # Try to extract number from string
                 import re

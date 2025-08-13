@@ -2,497 +2,504 @@
 
 ## Overview
 
-The Intent Kit framework provides a sophisticated context management system that supports both persistent state management and execution tracking. This document covers the architectural design, implementation details, and practical usage of the context system.
+Intent Kit provides a sophisticated context management system that enables stateful, multi-turn conversations and robust execution tracking. The context system is designed around a protocol-based architecture that supports flexible implementations while maintaining type safety and audit capabilities.
 
-## Architecture Components
+## Core Architecture
 
-### BaseContext Abstract Base Class
+### ContextProtocol
 
-The `BaseContext` abstract base class provides a unified interface for all context implementations, extracting shared characteristics between `Context` and `StackContext` classes.
+The foundation of the context system is the `ContextProtocol`, which defines the interface that all context implementations must follow:
 
-#### Shared Characteristics
-- Session-based architecture with UUID generation
-- Debug logging support with configurable verbosity
-- Error tracking capabilities with structured logging
-- State persistence patterns with export functionality
-- Thread safety considerations
-- Common utility methods for logging and session management
+```python
+from typing import Protocol, runtime_checkable, Any, Optional
 
-#### Abstract Methods
-- `get_error_count()` - Get total number of errors
-- `add_error()` - Add error to context log
-- `get_errors()` - Retrieve errors with optional filtering
-- `clear_errors()` - Clear all errors
-- `get_history()` - Get operation history
-- `export_to_dict()` - Export context to dictionary
+@runtime_checkable
+class ContextProtocol(Protocol):
+    """Protocol for context implementations."""
 
-#### Concrete Utility Methods
-- `get_session_id()` - Get session identifier
-- `is_debug_enabled()` - Check debug mode status
-- `log_debug()`, `log_info()`, `log_error()` - Structured logging methods
-- `__str__()` and `__repr__()` - String representations
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get a value from context."""
+        ...
 
-### Context Class
+    def set(self, key: str, value: Any, modified_by: Optional[str] = None) -> None:
+        """Set a value in context."""
+        ...
 
-The `Context` class provides thread-safe state management for workflow execution with key-value storage and comprehensive audit trails.
+    def has(self, key: str) -> bool:
+        """Check if a key exists in context."""
+        ...
 
-#### Core Features
-- **State Management**: Direct key-value storage with field-level locking
-- **Thread Safety**: Field-level locking for concurrent access
-- **Audit Trail**: Operation history (get/set/delete) with metadata
-- **Error Tracking**: Error entries with comprehensive metadata
-- **Session Management**: Session-based isolation
+    def delete(self, key: str) -> None:
+        """Delete a key from context."""
+        ...
+
+    def keys(self) -> list[str]:
+        """Get all keys in context."""
+        ...
+
+    def clear(self) -> None:
+        """Clear all data from context."""
+        ...
+
+    def snapshot(self) -> dict[str, Any]:
+        """Create an immutable snapshot of the context."""
+        ...
+
+    def apply_patch(self, patch: dict[str, Any]) -> None:
+        """Apply a context patch."""
+        ...
+```
+
+### DefaultContext
+
+The primary context implementation is `DefaultContext`, which provides a reference implementation with deterministic merge policies, memoization, and comprehensive audit trails.
+
+#### Key Features
+
+- **Type Safety**: Validates and coerces data types
+- **Audit Trails**: Tracks all modifications with metadata
+- **Namespace Protection**: Protects system keys from conflicts
+- **Deterministic Merging**: Predictable behavior for concurrent updates
+- **Memoization**: Caches expensive operations
+- **Error Tracking**: Comprehensive error logging and recovery
 
 #### Data Structures
+
 ```python
 @dataclass
-class ContextField:
+class ContextPatch:
+    """Represents a set of context changes."""
+    data: dict[str, Any]
+    provenance: Optional[str] = None
+    tags: Optional[list[str]] = None
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+@dataclass
+class ContextOperation:
+    """Tracks a context operation for audit purposes."""
+    timestamp: datetime
+    operation: str  # 'get', 'set', 'delete', 'clear'
+    key: Optional[str]
     value: Any
-    lock: Lock
-    last_modified: datetime
     modified_by: Optional[str]
-    created_at: datetime
-
-@dataclass
-class ContextHistoryEntry:
-    timestamp: datetime
-    action: str  # 'set', 'get', 'delete'
-    key: str
-    value: Any
-    modified_by: Optional[str]
-    session_id: Optional[str]
-
-@dataclass
-class ContextErrorEntry:
-    timestamp: datetime
-    node_name: str
-    user_input: str
-    error_message: str
-    error_type: str
-    stack_trace: str
-    params: Optional[Dict[str, Any]]
-    session_id: Optional[str]
+    success: bool
+    error_message: Optional[str] = None
 ```
 
-### StackContext Class
+## Context Implementation
 
-The `StackContext` class provides execution stack tracking and context state snapshots for debugging and analysis.
+### DefaultContext Usage
 
-#### Core Features
-- **Execution Stack Management**: Call stack tracking with parent-child relationships
-- **Context State Snapshots**: Complete context state capture at each frame
-- **Graph Execution Tracking**: Node path tracking through the graph
-- **Execution Flow Analysis**: Frame-based execution history
-
-#### Data Structures
-```python
-@dataclass
-class StackFrame:
-    frame_id: str
-    timestamp: datetime
-    function_name: str
-    node_name: str
-    node_path: List[str]
-    user_input: str
-    parameters: Dict[str, Any]
-    context_state: Dict[str, Any]
-    context_field_count: int
-    context_history_count: int
-    context_error_count: int
-    depth: int
-    parent_frame_id: Optional[str]
-    children_frame_ids: List[str]
-    execution_result: Optional[Dict[str, Any]]
-    error_info: Optional[Dict[str, Any]]
-```
-
-## Inheritance Hierarchy
-
-```
-BaseContext (ABC)
-├── Context (concrete implementation)
-└── StackContext (concrete implementation)
-```
-
-## Integration Patterns
-
-### How Context and StackContext Work Together
-
-1. **StackContext depends on Context**
-   - StackContext takes a Context instance in constructor
-   - StackContext captures Context state in frames
-   - StackContext queries Context for state information
-
-2. **Complementary Roles**
-   - Context: Persistent state storage
-   - StackContext: Execution flow tracking
-
-3. **Shared Session Identity**
-   - Both use the same session_id for correlation
-   - Both maintain session-specific state
-
-## Practical Usage Guide
-
-### Basic Context Usage
-
-#### Creating and Configuring Context
+#### Basic Operations
 
 ```python
-from intent_kit.context import Context
+from intent_kit.core.context import DefaultContext
 
-# Basic context with default settings
-context = Context()
+# Create a new context
+context = DefaultContext()
 
-# Context with custom session ID and debug mode
-context = Context(
-    session_id="my-custom-session",
-    debug=True
-)
+# Set values with metadata
+context.set("user.name", "Alice", modified_by="greet_action")
+context.set("user.preferences", {"theme": "dark", "language": "en"})
 
-# Context with specific configuration
-context = Context(
-    session_id="workflow-123",
-    debug=True,
-    log_level="DEBUG"
-)
-```
+# Get values with defaults
+name = context.get("user.name", "Unknown")
+theme = context.get("user.preferences.theme", "light")
 
-#### State Management Operations
+# Check existence
+if context.has("user.name"):
+    print("User name is set")
 
-```python
-# Setting values
-context.set("user_id", "12345", modified_by="auth_node")
-context.set("preferences", {"theme": "dark", "language": "en"})
-
-# Getting values
-user_id = context.get("user_id")
-preferences = context.get("preferences")
-
-# Checking existence
-if context.has("user_id"):
-    print("User ID exists")
-
-# Deleting values
+# Delete values
 context.delete("temporary_data")
 
-# Getting all keys
+# Get all keys
 all_keys = context.keys()
 
-# Clearing all data
-context.clear()
+# Create snapshot
+snapshot = context.snapshot()
+```
+
+#### Context Patches
+
+```python
+# Apply a patch of changes
+patch = {
+    "user.name": "Bob",
+    "user.age": 30,
+    "session.start_time": datetime.utcnow()
+}
+
+context.apply_patch(patch, provenance="user_registration")
+
+# Create patches with metadata
+from intent_kit.core.context import ContextPatch
+
+patch = ContextPatch(
+    data={"user.preferences": {"theme": "light"}},
+    provenance="preference_update",
+    tags=["user", "preferences"]
+)
+
+context.apply_patch(patch.data)
 ```
 
 #### Error Handling
 
 ```python
-# Adding errors
-context.add_error(
-    node_name="classifier_node",
-    user_input="Hello world",
-    error_message="Failed to classify intent",
-    error_type="ClassificationError",
-    params={"confidence": 0.3}
-)
+# Context operations are safe and logged
+try:
+    context.set("invalid.key", "value")
+except Exception as e:
+    print(f"Error setting context: {e}")
 
-# Getting error count
-error_count = context.get_error_count()
-
-# Getting all errors
-all_errors = context.get_errors()
-
-# Getting errors for specific node
-node_errors = context.get_errors(node_name="classifier_node")
-
-# Clearing errors
-context.clear_errors()
+# Check for errors
+if context.has_errors():
+    errors = context.get_errors()
+    for error in errors:
+        print(f"Error: {error}")
 ```
 
-#### History and Audit Trail
+### Context in DAG Execution
+
+#### Integration with DAGs
 
 ```python
-# Getting operation history
-history = context.get_history()
+from intent_kit import DAGBuilder, run_dag
+from intent_kit.core.context import DefaultContext
 
-# Getting history for specific key
-key_history = context.get_history(key="user_id")
-
-# Getting recent operations
-recent_history = context.get_history(limit=10)
-```
-
-### StackContext Usage
-
-#### Creating StackContext
-
-```python
-from intent_kit.context import Context, StackContext
-
-# Create base context
-context = Context(session_id="workflow-123", debug=True)
-
-# Create stack context that wraps the base context
-stack_context = StackContext(context)
-```
-
-#### Execution Tracking
-
-```python
-# Push a frame when entering a node
-frame_id = stack_context.push_frame(
-    function_name="classify_intent",
-    node_name="intent_classifier",
-    node_path=["root", "classifier"],
-    user_input="Hello world",
-    parameters={"model": "gpt-3.5-turbo"}
-)
-
-# Execute your logic here
-result = {"intent": "greeting", "confidence": 0.95}
-
-# Pop the frame when exiting the node
-stack_context.pop_frame(frame_id, execution_result=result)
-```
-
-#### Debugging and Analysis
-
-```python
-# Get current frame
-current_frame = stack_context.get_current_frame()
-
-# Get all frames
-all_frames = stack_context.get_all_frames()
-
-# Get frames for specific node
-node_frames = stack_context.get_frames_by_node("intent_classifier")
-
-# Get frames for specific function
-function_frames = stack_context.get_frames_by_function("classify_intent")
-
-# Get frame by ID
-specific_frame = stack_context.get_frame_by_id("frame-123")
-
-# Print stack trace
-stack_context.print_stack_trace()
-
-# Get execution summary
-summary = stack_context.get_execution_summary()
-```
-
-#### Context State Analysis
-
-```python
-# Get context changes between frames
-changes = stack_context.get_context_changes_between_frames(
-    frame_id_1="frame-1",
-    frame_id_2="frame-2"
-)
-
-# Export complete state
-export_data = stack_context.export_to_dict()
-```
-
-### Advanced Usage Patterns
-
-#### Polymorphic Context Usage
-
-```python
-from intent_kit.context import Context, StackContext, BaseContext
-from typing import List
-
-# Create different context types
-contexts: List[BaseContext] = [
-    Context(session_id="session-1"),
-    StackContext(Context(session_id="session-2"))
-]
-
-# Use them polymorphically
-for ctx in contexts:
-    ctx.add_error("test_node", "test_input", "test_error", "test_type")
-    print(f"Session: {ctx.get_session_id()}, Errors: {ctx.get_error_count()}")
-```
-
-#### Context Serialization
-
-```python
-# Export context to dictionary
-context_data = context.export_to_dict()
-
-# Export stack context
-stack_data = stack_context.export_to_dict()
-
-# Both return consistent dictionary structures
-assert "session_id" in context_data
-assert "session_id" in stack_data
-```
-
-#### Thread-Safe Operations
-
-```python
-import threading
-from intent_kit.context import Context
-
-context = Context(session_id="multi-threaded")
-
-def worker(thread_id: int):
-    for i in range(10):
-        context.set(f"thread_{thread_id}_value_{i}", i, modified_by=f"thread_{thread_id}")
-
-# Create multiple threads
-threads = []
-for i in range(3):
-    thread = threading.Thread(target=worker, args=(i,))
-    threads.append(thread)
-    thread.start()
-
-# Wait for all threads to complete
-for thread in threads:
-    thread.join()
-
-# All operations are thread-safe
-print(f"Total fields: {len(context.keys())}")
-```
-
-#### Integration with Intent Graphs
-
-```python
-from intent_kit.graph import IntentGraphBuilder
-from intent_kit.context import Context, StackContext
-
-# Create context
-context = Context(session_id="graph-execution", debug=True)
-stack_context = StackContext(context)
-
-# Build graph
-builder = IntentGraphBuilder()
-graph = builder.add_node(classifier_node).build()
+# Create DAG
+builder = DAGBuilder()
+builder.add_node("classifier", "classifier",
+                 output_labels=["greet", "weather"],
+                 description="Main classifier")
+# ... add more nodes
+dag = builder.build()
 
 # Execute with context
-result = graph.execute("Hello world", context=stack_context)
+context = DefaultContext()
+result = run_dag(dag, "Hello Alice", context)
 
-# Analyze execution
-frames = stack_context.get_all_frames()
-print(f"Execution involved {len(frames)} frames")
+# Context persists across executions
+result2 = run_dag(dag, "What's the weather?", context)
+# Context still contains data from previous execution
 ```
 
-## Performance Characteristics
+#### Action Node Context Integration
 
-### Context Performance
-- **Memory**: Linear with number of fields
-- **Operations**: O(1) for field access with locking overhead
-- **History**: Linear growth with operations
-- **Threading**: Field-level locking for concurrent access
+```python
+def greet(name: str, context=None) -> str:
+    """Greet user and track greeting count."""
+    if context:
+        count = context.get("greet_count", 0) + 1
+        context.set("greet_count", count, modified_by="greet_action")
+        return f"Hello {name}! (greeting #{count})"
+    return f"Hello {name}!"
 
-### StackContext Performance
-- **Memory**: Linear with number of frames
-- **Operations**: O(1) for frame access, O(n) for context snapshots
-- **History**: Frame-based with complete state snapshots
-- **Threading**: Relies on Context's thread safety
+# The action automatically receives context from the DAG execution
+```
 
-## Design Patterns
+## Advanced Context Features
 
-### Context Patterns
-- **Builder Pattern**: Field creation and modification
-- **Observer Pattern**: History tracking of all operations
-- **Factory Pattern**: ContextField creation
-- **Decorator Pattern**: Metadata wrapping of values
+### Merge Policies
 
-### StackContext Patterns
-- **Stack Pattern**: LIFO frame management
-- **Snapshot Pattern**: State capture at each frame
-- **Visitor Pattern**: Frame traversal and analysis
-- **Memento Pattern**: State restoration capabilities
+The context system supports different merge policies for handling conflicts:
+
+```python
+from intent_kit.core.context.policies import (
+    last_write_wins,
+    first_write_wins,
+    append_list,
+    merge_dict
+)
+
+# Policies can be applied when merging contexts
+context1 = DefaultContext()
+context1.set("data", {"a": 1, "b": 2})
+
+context2 = DefaultContext()
+context2.set("data", {"b": 3, "c": 4})
+
+# Merge with different policies
+merged = context1.snapshot()
+merged["data"] = merge_dict(context1.get("data"), context2.get("data"))
+```
+
+### Fingerprinting
+
+Generate deterministic fingerprints for context state:
+
+```python
+from intent_kit.core.context.fingerprint import generate_fingerprint
+
+# Generate fingerprint from selected keys
+fingerprint = generate_fingerprint(context.snapshot(),
+                                 keys=["user.name", "user.preferences"])
+
+# Use for caching or change detection
+if fingerprint != last_fingerprint:
+    # Context has changed
+    update_cache(context.snapshot())
+```
+
+### Protected Namespaces
+
+The context system protects certain namespaces:
+
+```python
+# System keys are protected
+context.set("private.system_key", "value")  # Protected
+context.set("tmp.temporary_data", "value")  # Protected
+
+# User keys are allowed
+context.set("user.data", "value")  # Allowed
+context.set("app.config", "value")  # Allowed
+```
+
+## Context Patterns
+
+### Stateful Conversations
+
+```python
+# Multi-turn conversation with context persistence
+context = DefaultContext()
+
+# Turn 1: User introduces themselves
+result1 = run_dag(dag, "Hi, my name is Alice", context)
+# Context now contains: user.name = "Alice"
+
+# Turn 2: User asks about weather (bot remembers name)
+result2 = run_dag(dag, "What's the weather like?", context)
+# Action can access: context.get("user.name") = "Alice"
+```
+
+### Context Inheritance
+
+```python
+# Create context with initial data
+initial_data = {
+    "user.name": "Alice",
+    "user.preferences": {"theme": "dark"}
+}
+
+context = DefaultContext()
+context.apply_patch(initial_data, provenance="initialization")
+
+# Context now has initial state
+print(context.get("user.name"))  # "Alice"
+```
+
+### Context Validation
+
+```python
+def validate_user_context(context):
+    """Validate required context keys."""
+    required_keys = ["user.name", "user.id"]
+    missing_keys = [key for key in required_keys if not context.has(key)]
+
+    if missing_keys:
+        raise ValueError(f"Missing required context keys: {missing_keys}")
+
+    return True
+
+# Use in actions
+def process_user_request(context):
+    validate_user_context(context)
+    # Process request with validated context
+```
+
+## Performance Considerations
+
+### Memory Management
+
+```python
+# Context grows with usage
+context = DefaultContext()
+
+# Monitor context size
+print(f"Context keys: {len(context.keys())}")
+
+# Clear when no longer needed
+context.clear()
+
+# Use snapshots for read-only access
+snapshot = context.snapshot()  # Immutable copy
+```
+
+### Caching Strategies
+
+```python
+# Cache expensive computations
+def expensive_calculation(context):
+    cache_key = "expensive_result"
+
+    if context.has(cache_key):
+        return context.get(cache_key)
+
+    # Perform expensive calculation
+    result = perform_expensive_calculation()
+
+    # Cache result
+    context.set(cache_key, result, modified_by="expensive_calculation")
+    return result
+```
 
 ## Best Practices
 
-### 1. **Context Management**
-- Use descriptive session IDs for easy identification
-- Enable debug mode during development
-- Clear sensitive data when no longer needed
-- Use meaningful field names and metadata
+### 1. **Context Design**
 
-### 2. **Error Handling**
-- Add errors with descriptive messages and types
-- Include relevant parameters for debugging
-- Use consistent error types across your application
-- Regularly check error counts and clear when appropriate
+- Use descriptive key names with dot notation
+- Group related data under common prefixes
+- Document context key schemas
+- Use consistent naming conventions
 
-### 3. **Performance Optimization**
-- Limit history size for long-running applications
-- Use StackContext selectively (not for every operation)
-- Consider frame snapshot frequency based on debugging needs
-- Monitor memory usage with large context states
+### 2. **State Management**
 
-### 4. **Thread Safety**
-- Context operations are thread-safe by default
-- Use field-level locking for concurrent access
-- Avoid long-running operations while holding locks
-- Consider async patterns for high-concurrency scenarios
+- Keep context focused on conversation state
+- Avoid storing large objects in context
+- Use context patches for bulk updates
+- Clear temporary data when no longer needed
 
-### 5. **Debugging and Monitoring**
-- Use StackContext for execution flow analysis
-- Export context state for external analysis
-- Monitor error rates and patterns
-- Track context size and growth over time
+### 3. **Error Handling**
 
-## Use Case Analysis
+- Always check for context availability in actions
+- Use default values for optional context keys
+- Validate context state before critical operations
+- Log context operations for debugging
 
-### Context Use Cases
-- **State Persistence**: Storing user data, configuration, results
-- **Cross-Node Communication**: Sharing data between workflow steps
-- **Audit Trails**: Tracking all state modifications
-- **Error Accumulation**: Collecting errors across execution
+### 4. **Performance**
 
-### StackContext Use Cases
-- **Execution Debugging**: Understanding execution flow
-- **Performance Analysis**: Tracking execution patterns
-- **Error Diagnosis**: Identifying where errors occurred
-- **State Evolution**: Understanding how context changes during execution
+- Use snapshots for read-only access
+- Monitor context size in long-running applications
+- Cache expensive computations in context
+- Clear context periodically in batch processing
+
+### 5. **Security**
+
+- Never store sensitive data in context without encryption
+- Use protected namespaces for system data
+- Validate context data before use
+- Implement context expiration for sensitive sessions
+
+## Integration Examples
+
+### Web Application Integration
+
+```python
+from flask import Flask, request, session
+from intent_kit.core.context import DefaultContext
+
+app = Flask(__name__)
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    user_input = request.json['message']
+
+    # Get or create context for user session
+    session_id = session.get('session_id')
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        session['session_id'] = session_id
+
+    # Create context with session data
+    context = DefaultContext()
+    context.set("session.id", session_id)
+    context.set("user.id", session.get('user_id'))
+
+    # Execute DAG
+    result = run_dag(dag, user_input, context)
+
+    # Store context state for next request
+    session['context_state'] = context.snapshot()
+
+    return {'response': result.data}
+```
+
+### Database Integration
+
+```python
+import json
+from intent_kit.core.context import DefaultContext
+
+def save_context_to_db(context, user_id):
+    """Save context state to database."""
+    context_data = context.snapshot()
+
+    # Store in database
+    db.execute("""
+        INSERT INTO user_contexts (user_id, context_data, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+        context_data = ?, updated_at = ?
+    """, (user_id, json.dumps(context_data), datetime.utcnow(),
+          json.dumps(context_data), datetime.utcnow()))
+
+def load_context_from_db(user_id):
+    """Load context state from database."""
+    result = db.execute("""
+        SELECT context_data FROM user_contexts
+        WHERE user_id = ?
+    """, (user_id,)).fetchone()
+
+    if result:
+        context = DefaultContext()
+        context_data = json.loads(result[0])
+        context.apply_patch(context_data, provenance="database_load")
+        return context
+
+    return DefaultContext()
+```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Memory Growth**
-   - Clear history periodically
-   - Limit frame snapshots in StackContext
-   - Monitor context size in long-running applications
+1. **Context Not Persisting**
+   - Ensure context is passed to `run_dag()`
+   - Check that actions accept context parameter
+   - Verify context is not being recreated
 
-2. **Thread Contention**
-   - Avoid long operations while holding locks
-   - Consider async patterns for high concurrency
-   - Use field-level operations when possible
+2. **Type Errors**
+   - Use type hints in action functions
+   - Provide default values for optional context keys
+   - Validate context data before use
 
-3. **Debug Information Missing**
-   - Ensure debug mode is enabled
-   - Check log level configuration
-   - Verify session ID is set correctly
+3. **Memory Issues**
+   - Monitor context size with `len(context.keys())`
+   - Clear temporary data with `context.delete()`
+   - Use snapshots for read-only access
 
-4. **Performance Issues**
-   - Monitor operation frequency
-   - Consider caching for frequently accessed data
-   - Optimize frame snapshot frequency
+4. **Performance Problems**
+   - Cache expensive computations in context
+   - Use context patches for bulk updates
+   - Monitor context operation frequency
 
 ## Future Enhancements
 
-### Potential New Context Types
-- `AsyncContext` - For async/await patterns
-- `PersistentContext` - For database-backed state
-- `DistributedContext` - For multi-process scenarios
-- `CachedContext` - For performance optimization
+### Planned Features
 
-### Additional Features
-- `import_from_dict()` - For deserialization
-- `validate_state()` - For state validation
-- `get_statistics()` - For performance metrics
-- `backup()` and `restore()` - For state persistence
+- **Async Context**: Support for async/await patterns
+- **Persistent Context**: Database-backed context storage
+- **Distributed Context**: Multi-process context sharing
+- **Context Validation**: Schema-based context validation
+- **Context Migration**: Version-aware context upgrades
+
+### Extension Points
+
+The context system is designed for extensibility:
+
+- Implement `ContextProtocol` for custom context types
+- Extend `DefaultContext` for specialized use cases
+- Create custom merge policies for domain-specific logic
+- Add context middleware for cross-cutting concerns
 
 ## Conclusion
 
-The context architecture in Intent Kit provides a robust foundation for state management and execution tracking. By following the patterns and best practices outlined in this guide, you can:
+The context architecture in Intent Kit provides a robust foundation for stateful AI applications. By following the patterns and best practices outlined in this guide, you can:
 
-- **Build reliable applications** with comprehensive state management
-- **Debug effectively** with detailed execution tracking
-- **Scale applications** with thread-safe operations
-- **Monitor performance** with built-in analytics capabilities
+- **Build conversational AI** with persistent memory
+- **Create reliable applications** with comprehensive state management
+- **Scale applications** with efficient context handling
+- **Debug effectively** with detailed audit trails
 
-The architecture follows the Intent Kit project's patterns and provides a solid foundation for future enhancements while maintaining clear boundaries between concerns.
+The protocol-based design ensures flexibility while the `DefaultContext` implementation provides a solid foundation for most use cases. The context system integrates seamlessly with the DAG execution engine and supports the complex state management requirements of modern AI applications.

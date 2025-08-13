@@ -4,54 +4,62 @@ This document provides a reference for the Intent Kit API.
 
 ## Core Classes
 
-### IntentGraphBuilder
+### DAGBuilder
 
-The main builder class for creating intent graphs.
+The main builder class for creating intent DAGs.
 
 ```python
-from intent_kit import IntentGraphBuilder
+from intent_kit import DAGBuilder
 ```
 
 #### Methods
 
-##### `root(node)`
-Set the root node for the graph.
+##### `add_node(node_id, node_type, **config)`
+Add a node to the DAG.
 
 ```python
-graph = IntentGraphBuilder().root(classifier).build()
+builder = DAGBuilder()
+
+# Add classifier node
+builder.add_node("classifier", "classifier",
+                 output_labels=["greet", "weather"],
+                 description="Main intent classifier")
+
+# Add extractor node
+builder.add_node("extract_name", "extractor",
+                 param_schema={"name": str},
+                 description="Extract name from greeting",
+                 output_key="extracted_params")
+
+# Add action node
+builder.add_node("greet_action", "action",
+                 action=greet_function,
+                 description="Greet the user")
 ```
 
-##### `with_json(json_graph)`
-Configure the graph using JSON specification.
+##### `add_edge(from_node, to_node, label=None)`
+Add an edge between nodes.
 
 ```python
-graph = (
-    IntentGraphBuilder()
-    .with_json(graph_config)
-    .with_functions(function_registry)
-    .build()
-)
+# Connect classifier to extractor
+builder.add_edge("classifier", "extract_name", "greet")
+
+# Connect extractor to action
+builder.add_edge("extract_name", "greet_action", "success")
+
+# Add error handling edge
+builder.add_edge("extract_name", "clarification", "error")
 ```
 
-##### `with_functions(function_registry)`
-Register functions for use in actions.
+##### `set_entrypoints(entrypoints)`
+Set the entry points for the DAG.
 
 ```python
-function_registry = {
-    "greet": lambda name: f"Hello {name}!",
-    "calculate": lambda op, a, b: a + b if op == "add" else None,
-}
-
-graph = (
-    IntentGraphBuilder()
-    .with_json(graph_config)
-    .with_functions(function_registry)
-    .build()
-)
+builder.set_entrypoints(["classifier"])
 ```
 
 ##### `with_default_llm_config(config)`
-Set default LLM configuration for the graph.
+Set default LLM configuration for the DAG.
 
 ```python
 llm_config = {
@@ -60,294 +68,306 @@ llm_config = {
     "api_key": "your-api-key"
 }
 
-graph = (
-    IntentGraphBuilder()
-    .with_json(graph_config)
-    .with_functions(function_registry)
-    .with_default_llm_config(llm_config)
-    .build()
-)
+builder.with_default_llm_config(llm_config)
 ```
 
-##### `with_debug_context(enabled=True)`
-Enable debug context for execution tracking.
+##### `from_json(config)`
+Create a DAGBuilder from JSON configuration.
 
 ```python
-graph = (
-    IntentGraphBuilder()
-    .with_json(graph_config)
-    .with_functions(function_registry)
-    .with_debug_context(True)
-    .build()
-)
-```
+dag_config = {
+    "nodes": {
+        "classifier": {
+            "type": "classifier",
+            "output_labels": ["greet", "weather"],
+            "description": "Main intent classifier"
+        },
+        "greet_action": {
+            "type": "action",
+            "action": greet_function,
+            "description": "Greet the user"
+        }
+    },
+    "edges": [
+        {"from": "classifier", "to": "greet_action", "label": "greet"}
+    ],
+    "entrypoints": ["classifier"]
+}
 
-##### `with_context_trace(enabled=True)`
-Enable context tracing for detailed execution logs.
-
-```python
-graph = (
-    IntentGraphBuilder()
-    .with_json(graph_config)
-    .with_functions(function_registry)
-    .with_context_trace(True)
-    .build()
-)
+dag = DAGBuilder.from_json(dag_config)
 ```
 
 ##### `build()`
-Build and return the IntentGraph instance.
+Build and return the IntentDAG instance.
 
 ```python
-graph = IntentGraphBuilder().root(classifier).build()
+dag = builder.build()
 ```
 
-## Node Factory Functions
+### IntentDAG
 
-### action()
-
-Create an action node.
+The core DAG data structure.
 
 ```python
-from intent_kit import action
+from intent_kit.core.types import IntentDAG
+```
 
-greet_action = action(
-    name="greet",
-    description="Greet the user by name",
-    action_func=lambda name: f"Hello {name}!",
-    param_schema={"name": str}
+#### Properties
+
+- **nodes** - Dictionary mapping node IDs to GraphNode instances
+- **adj** - Adjacency list for forward edges
+- **rev** - Reverse adjacency list for backward edges
+- **entrypoints** - List of entry point node IDs
+- **metadata** - Dictionary of DAG metadata
+
+### GraphNode
+
+Represents a node in the DAG.
+
+```python
+from intent_kit.core.types import GraphNode
+```
+
+#### Properties
+
+- **id** - Unique node identifier
+- **type** - Node type (classifier, extractor, action, clarification)
+- **config** - Node configuration dictionary
+
+### ExecutionResult
+
+Result of a node execution.
+
+```python
+from intent_kit.core.types import ExecutionResult
+```
+
+#### Properties
+
+- **data** - Execution result data
+- **next_edges** - List of next edge labels to follow
+- **terminate** - Whether to terminate execution
+- **metrics** - Dictionary of execution metrics
+- **context_patch** - Dictionary of context updates
+
+## Node Types
+
+### ClassifierNode
+
+Classifier nodes determine intent and route to appropriate paths.
+
+```python
+from intent_kit.nodes.classifier import ClassifierNode
+
+classifier = ClassifierNode(
+    name="main_classifier",
+    output_labels=["greet", "weather", "calculate"],
+    description="Main intent classifier",
+    llm_config={"provider": "openai", "model": "gpt-4"}
 )
 ```
 
 #### Parameters
 
-- **name** (str): Unique identifier for the action
-- **description** (str): Human-readable description
-- **action_func** (callable): Function to execute
-- **param_schema** (dict): Parameter type definitions
+- **name** - Node name
+- **output_labels** - List of possible classification outputs
+- **description** - Human-readable description for LLM
+- **llm_config** - LLM configuration for AI-based classification
+- **classification_func** - Custom function for classification (overrides LLM)
 
-### llm_classifier()
+### ExtractorNode
 
-Create an LLM classifier node.
+Extractor nodes use LLM to extract parameters from natural language.
 
 ```python
-from intent_kit import llm_classifier
+from intent_kit.nodes.extractor import ExtractorNode
 
-classifier = llm_classifier(
-    name="main",
-    description="Route to appropriate action",
-    children=[greet_action, weather_action],
-    llm_config={"provider": "openai", "model": "gpt-3.5-turbo"}
+extractor = ExtractorNode(
+    name="name_extractor",
+    param_schema={"name": str},
+    description="Extract name from greeting",
+    output_key="extracted_params"
 )
 ```
 
 #### Parameters
 
-- **name** (str): Unique identifier for the classifier
-- **description** (str): Human-readable description
-- **children** (list): List of child nodes
-- **llm_config** (dict): LLM configuration
+- **name** - Node name
+- **param_schema** - Dictionary defining expected parameters and their types
+- **description** - Human-readable description for LLM
+- **output_key** - Key in context where extracted parameters are stored
+- **llm_config** - Optional LLM configuration (uses default if not specified)
 
-## JSON Configuration
+### ActionNode
 
-### Graph Structure
-
-```json
-{
-  "root": "main_classifier",
-  "nodes": {
-    "main_classifier": {
-      "id": "main_classifier",
-      "type": "classifier",
-      "classifier_type": "llm",
-      "name": "main_classifier",
-      "description": "Main intent classifier",
-      "llm_config": {
-        "provider": "openai",
-        "model": "gpt-3.5-turbo"
-      },
-      "children": ["greet_action", "weather_action"]
-    },
-    "greet_action": {
-      "id": "greet_action",
-      "type": "action",
-      "name": "greet_action",
-      "description": "Greet the user",
-      "function": "greet",
-      "param_schema": {"name": "str"}
-    },
-    "weather_action": {
-      "id": "weather_action",
-      "type": "action",
-      "name": "weather_action",
-      "description": "Get weather information",
-      "function": "weather",
-      "param_schema": {"city": "str"}
-    }
-  }
-}
-```
-
-### Node Types
-
-#### Classifier Nodes
-
-```json
-{
-  "id": "classifier_id",
-  "type": "classifier",
-  "classifier_type": "llm",
-  "name": "classifier_name",
-  "description": "Classifier description",
-  "llm_config": {
-    "provider": "openai",
-    "model": "gpt-3.5-turbo",
-    "api_key": "your-api-key"
-  },
-  "children": ["action1", "action2"]
-}
-```
-
-#### Action Nodes
-
-```json
-{
-  "id": "action_id",
-  "type": "action",
-  "name": "action_name",
-  "description": "Action description",
-  "function": "function_name",
-  "param_schema": {
-    "param1": "str",
-    "param2": "int"
-  }
-}
-```
-
-## LLM Configuration
-
-### Supported Providers
-
-#### OpenAI
+Action nodes execute actions and produce outputs.
 
 ```python
-llm_config = {
-    "provider": "openai",
-    "model": "gpt-3.5-turbo",
-    "api_key": "your-openai-api-key"
-}
+from intent_kit.nodes.action import ActionNode
+
+def greet(name: str) -> str:
+    return f"Hello {name}!"
+
+action = ActionNode(
+    name="greet_action",
+    action=greet,
+    description="Greet the user"
+)
 ```
 
-#### Anthropic
+#### Parameters
+
+- **name** - Node name
+- **action** - Function to execute
+- **description** - Human-readable description
+- **terminate_on_success** - Whether to terminate after successful execution (default: True)
+- **param_key** - Key in context to get parameters from (default: "extracted_params")
+
+### ClarificationNode
+
+Clarification nodes handle unclear intent by asking for clarification.
 
 ```python
-llm_config = {
-    "provider": "anthropic",
-    "model": "claude-3-sonnet-20240229",
-    "api_key": "your-anthropic-api-key"
-}
+from intent_kit.nodes.clarification import ClarificationNode
+
+clarification = ClarificationNode(
+    name="clarification",
+    clarification_message="I'm not sure what you'd like me to do.",
+    available_options=["Say hello", "Ask about weather", "Calculate something"]
+)
 ```
 
-#### Google AI
+#### Parameters
+
+- **name** - Node name
+- **clarification_message** - Message to display to the user
+- **available_options** - List of options the user can choose from
+- **description** - Human-readable description
+
+## Context Management
+
+### DefaultContext
+
+The default context implementation with type safety and audit trails.
 
 ```python
-llm_config = {
-    "provider": "google",
-    "model": "gemini-pro",
-    "api_key": "your-google-api-key"
-}
+from intent_kit.core.context import DefaultContext
+
+context = DefaultContext()
 ```
 
-#### Ollama
+#### Methods
+
+##### `get(key, default=None)`
+Get a value from context.
 
 ```python
-llm_config = {
-    "provider": "ollama",
-    "model": "llama2",
-    "base_url": "http://localhost:11434"
-}
+name = context.get("user.name", "Unknown")
 ```
 
-#### OpenRouter
+##### `set(key, value, modified_by=None)`
+Set a value in context.
 
 ```python
-llm_config = {
-    "provider": "openrouter",
-    "model": "mistralai/ministral-8b",
-    "api_key": "your-openrouter-api-key"
-}
+context.set("user.name", "Alice", modified_by="greet_action")
 ```
 
-## Graph Execution
-
-### Routing Input
+##### `snapshot()`
+Create an immutable snapshot of the context.
 
 ```python
-# Route user input through the graph
-result = graph.route("Hello Alice")
-print(result.output)  # → "Hello Alice!"
+snapshot = context.snapshot()
 ```
 
-### Execution Result
+##### `apply_patch(patch)`
+Apply a context patch.
 
-The `route()` method returns an execution result object with:
+```python
+patch = {"user.name": "Bob", "user.age": 30}
+context.apply_patch(patch)
+```
 
-- **output**: The result of the action execution
-- **node_path**: The path of nodes that were executed
-- **parameters**: The extracted parameters
-- **metadata**: Additional execution metadata
+## Execution
+
+### run_dag
+
+Execute a DAG with user input and context.
+
+```python
+from intent_kit import run_dag
+
+result = run_dag(dag, "Hello Alice", context)
+print(result.data)  # → "Hello Alice!"
+```
+
+#### Parameters
+
+- **dag** - IntentDAG instance to execute
+- **user_input** - User input string
+- **context** - Context instance for state management
+- **max_steps** - Maximum execution steps (default: 100)
+- **max_fanout** - Maximum fanout per node (default: 10)
+- **memoize** - Whether to memoize results (default: True)
+
+#### Returns
+
+- **ExecutionResult** - Result containing data, metrics, and context updates
+
+## Validation
+
+### validate_dag_structure
+
+Validate DAG structure and configuration.
+
+```python
+from intent_kit.core.validation import validate_dag_structure
+
+try:
+    validate_dag_structure(dag)
+    print("DAG is valid!")
+except ValueError as e:
+    print(f"DAG validation failed: {e}")
+```
 
 ## Error Handling
 
-### Common Errors
-
-#### Missing Functions
+### Built-in Exceptions
 
 ```python
-# Error: Function not found in registry
-function_registry = {"greet": greet_func}
-# Missing "weather" function referenced in JSON
+from intent_kit.core.exceptions import (
+    ExecutionError,
+    TraversalLimitError,
+    NodeError,
+    TraversalError,
+    ContextConflictError,
+    CycleError,
+    NodeResolutionError
+)
 ```
 
-#### Invalid JSON Configuration
-
-```python
-# Error: Invalid node type
-{
-  "type": "invalid_type"  # Must be "classifier" or "action"
-}
-```
-
-#### Missing Required Parameters
-
-```python
-# Error: Missing required parameter
-param_schema = {"name": "str"}
-# Input doesn't contain name parameter
-```
-
-## Best Practices
-
-### Function Registry
-
-- Register all functions referenced in your JSON configuration
-- Use descriptive function names
-- Include proper error handling in your functions
-
-### JSON Configuration
-
-- Use descriptive node names and IDs
-- Provide clear descriptions for all nodes
-- Validate your JSON configuration before deployment
+## Configuration
 
 ### LLM Configuration
 
-- Store API keys securely (use environment variables)
-- Choose appropriate models for your use case
-- Monitor API usage and costs
+```python
+llm_config = {
+    "provider": "openai",  # openai, anthropic, google, ollama, openrouter
+    "model": "gpt-3.5-turbo",
+    "api_key": "your-api-key",
+    "temperature": 0.7,
+    "max_tokens": 1000
+}
+```
 
-### Error Handling
+### Parameter Schema
 
-- Always handle potential errors in your action functions
-- Provide meaningful error messages
-- Test with various input scenarios
+```python
+param_schema = {
+    "name": str,
+    "age": int,
+    "city": str,
+    "temperature": float,
+    "is_active": bool,
+    "tags": list[str]
+}
+```

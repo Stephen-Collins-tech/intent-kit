@@ -2,41 +2,42 @@
 
 from collections import deque
 from time import perf_counter
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from ..nodes.classifier import ClassifierNode
 from ..nodes.action import ActionNode
-from ..nodes.extractor import DAGExtractorNode
+from ..nodes.extractor import ExtractorNode
 from ..nodes.clarification import ClarificationNode
 
-from .exceptions import TraversalLimitError, TraversalError, ContextConflictError
-from .types import IntentDAG
-from .types import NodeProtocol, ExecutionResult, Context
+from .exceptions import TraversalLimitError, TraversalError
+from .types import IntentDAG, GraphNode
+from .types import NodeProtocol, ExecutionResult
+from .context import ContextProtocol, ContextPatch, DefaultContext
+from ..services.ai.llm_service import LLMService
 
 
 def run_dag(
     dag: IntentDAG,
-    ctx: Context,
     user_input: str,
+    ctx: Optional[ContextProtocol] = None,
     max_steps: int = 1000,
     max_fanout_per_node: int = 16,
-    resolve_impl: Optional[Callable[[Any], NodeProtocol]] = None,
     enable_memoization: bool = False,
-    llm_service: Optional[Any] = None,
-) -> Tuple[Optional[ExecutionResult], Dict[str, Any]]:
+    llm_service: Optional[LLMService] = None,
+) -> Tuple[ExecutionResult, ContextProtocol]:
     """Execute a DAG starting from entrypoints using BFS traversal.
 
     Args:
         dag: The DAG to execute
-        ctx: The execution context
         user_input: The user input to process
+        ctx: The execution context (defaults to DefaultContext if not provided)
         max_steps: Maximum number of steps to execute
         max_fanout_per_node: Maximum number of outgoing edges per node
-        resolve_impl: Function to resolve node type to implementation
         enable_memoization: Whether to enable node memoization
+        llm_service: LLM service instance (defaults to new LLMService if not provided)
 
     Returns:
-        Tuple of (last execution result, aggregated metrics)
+        Tuple of (last execution result, context)
 
     Raises:
         TraversalLimitError: When traversal limits are exceeded
@@ -46,9 +47,18 @@ def run_dag(
     if not dag.entrypoints:
         raise TraversalError("No entrypoints defined in DAG")
 
-    # Attach LLM service to context if provided
-    if llm_service is not None:
-        ctx.set("llm_service", llm_service, modified_by="traversal:init")
+    # Create default context if not provided
+    if ctx is None:
+        ctx = DefaultContext()
+
+    # Create default LLM service if not provided
+    if llm_service is None:
+        llm_service = LLMService()
+
+    # Attach LLM service and DAG metadata to context
+    ctx.set("llm_service", llm_service, modified_by="traversal:init")
+    if hasattr(dag, "metadata"):
+        ctx.set("metadata", dag.metadata, modified_by="traversal:init")
 
     # Initialize worklist with entrypoints
     q = deque(dag.entrypoints)
@@ -64,14 +74,14 @@ def run_dag(
         steps += 1
 
         if steps > max_steps:
-            raise TraversalLimitError(
-                f"Exceeded max_steps limit of {max_steps}")
+            raise TraversalLimitError(f"Exceeded max_steps limit of {max_steps}")
 
         node = dag.nodes[node_id]
 
         # Apply merged context patch for this node
         if node_id in context_patches:
-            _apply_context_patch(ctx, context_patches[node_id], node_id)
+            patch = ContextPatch(data=context_patches[node_id], provenance=node_id)
+            ctx.apply_patch(patch)
             # Clear the patch after applying it
             del context_patches[node_id]
 
@@ -80,49 +90,67 @@ def run_dag(
             cache_key = _create_memo_key(node_id, ctx, user_input)
             if cache_key in memo_cache:
                 result = memo_cache[cache_key]
-                _log_node_execution(node_id, node.type, 0.0, result, ctx)
+                if hasattr(ctx, "logger"):
+                    input_summary = f"input='{user_input[:50]}{'...' if len(user_input) > 50 else ''}'"
+                    output_summary = f"output='{str(result.data)[:50]}{'...' if len(str(result.data)) > 50 else ''}'"
+                    ctx.logger.info(
+                        f"Node execution completed (memoized): {node_id} ({node.type}) in 0.00ms | {input_summary} | {output_summary}"
+                    )
                 last_result = result
                 _merge_metrics(total_metrics, result.metrics)
 
                 # Apply context patch from memoized result
                 if result.context_patch:
-                    _apply_context_patch(ctx, result.context_patch, node_id)
+                    patch = ContextPatch(data=result.context_patch, provenance=node_id)
+                    ctx.apply_patch(patch)
 
                 if result.terminate:
                     break
 
                 _enqueue_next_nodes(
-                    dag, node_id, result, q, seen_steps,
-                    max_fanout_per_node, context_patches
+                    dag,
+                    node_id,
+                    result,
+                    q,
+                    seen_steps,
+                    max_fanout_per_node,
+                    context_patches,
                 )
                 continue
 
         # Resolve node implementation
-        if resolve_impl is None:
-            raise TraversalError(
-                f"No implementation resolver provided for node {node_id}")
+        impl = _create_node(node)
 
-        impl = resolve_impl(node)
         if impl is None:
-            raise TraversalError(
-                f"Could not resolve implementation for node {node_id}")
+            raise TraversalError(f"Could not resolve implementation for node {node_id}")
 
         # Execute node
         t0 = perf_counter()
+
+        # Track start of node execution
+        if hasattr(ctx, "logger"):
+            ctx.logger.debug(f"Node execution started: {node_id} ({node.type})")
+
         try:
             # Execute node - LLM service is now available in context
             result = impl.execute(user_input, ctx)
         except Exception as e:
             # Handle node execution errors
             dt = (perf_counter() - t0) * 1000
-            _log_node_error(node_id, node.type, dt, str(e), ctx)
+            if hasattr(ctx, "logger"):
+                input_summary = (
+                    f"input='{user_input[:50]}{'...' if len(user_input) > 50 else ''}'"
+                )
+                ctx.logger.error(
+                    f"Node execution failed: {node_id} ({node.type}) after {dt:.2f}ms | {input_summary} | error: {str(e)}"
+                )
 
             # Apply error context patch
             error_patch = {
                 "last_error": str(e),
                 "error_node": node_id,
                 "error_type": type(e).__name__,
-                "error_timestamp": perf_counter()
+                "error_timestamp": perf_counter(),
             }
 
             # Route via "error" edge if exists
@@ -146,28 +174,42 @@ def run_dag(
             memo_cache[cache_key] = result
 
         # Log execution
-        _log_node_execution(node_id, node.type, dt, result, ctx)
+        if hasattr(ctx, "logger"):
+            input_summary = (
+                f"input='{user_input[:50]}{'...' if len(user_input) > 50 else ''}'"
+            )
+            output_summary = f"output='{str(result.data)[:50]}{'...' if len(str(result.data)) > 50 else ''}'"
+            ctx.logger.info(
+                f"Node execution completed: {node_id} ({node.type}) in {dt:.2f}ms | {input_summary} | {output_summary}"
+            )
 
         # Update metrics
         _merge_metrics(total_metrics, result.metrics)
 
         # Apply context patch from current result
         if result.context_patch:
-            _apply_context_patch(ctx, result.context_patch, node_id)
+            patch = ContextPatch(data=result.context_patch, provenance=node_id)
+            ctx.apply_patch(patch)
 
+        # Store the last result
         last_result = result
 
+        # Check if we should terminate
+        if result.terminate:
+            break
+
         # Enqueue next nodes (unless terminating)
-        if not result.terminate:
-            _enqueue_next_nodes(
-                dag, node_id, result, q, seen_steps,
-                max_fanout_per_node, context_patches
-            )
+        _enqueue_next_nodes(
+            dag, node_id, result, q, seen_steps, max_fanout_per_node, context_patches
+        )
 
-    return last_result, total_metrics
+    if last_result is None:
+        raise TraversalError("No nodes were executed")
+
+    return last_result, ctx
 
 
-def resolve_impl_direct(node: Any) -> NodeProtocol:
+def _create_node(node: GraphNode) -> NodeProtocol:
     """Resolve a GraphNode to its implementation by directly creating known node types.
 
     This bypasses the registry system and directly creates nodes for known types.
@@ -185,42 +227,33 @@ def resolve_impl_direct(node: Any) -> NodeProtocol:
 
     # Add node ID as name if not present
     config = node.config.copy()
-    if 'name' not in config:
-        config['name'] = node.id
+    if "name" not in config:
+        config["name"] = node.id
 
-    if node_type == "dag_classifier":
+    if node_type == "classifier":
+        # Provide default output_labels if not specified
+        if "output_labels" not in config:
+            config["output_labels"] = ["next", "error"]
         return ClassifierNode(**config)
-    elif node_type == "dag_action":
+    elif node_type == "action":
+        # Provide default action if not specified
+        if "action" not in config:
+            config["action"] = lambda **kwargs: "default_action_result"
         return ActionNode(**config)
-    elif node_type == "dag_extractor":
-        return DAGExtractorNode(**config)
-    elif node_type == "dag_clarification":
+    elif node_type == "extractor":
+        return ExtractorNode(**config)
+    elif node_type == "clarification":
         return ClarificationNode(**config)
     else:
         raise ValueError(
             f"Unsupported node type '{node_type}'. "
-            f"Supported types: dag_classifier, dag_action, dag_extractor, dag_clarification"
+            f"Supported types: classifier, action, extractor, clarification"
         )
 
 
-def _apply_context_patch(ctx: Context, patch: Dict[str, Any], node_id: str) -> None:
-    """Apply a context patch to the context.
-
-    Args:
-        ctx: The context to update
-        patch: The patch to apply
-        node_id: The node ID for logging
-    """
-    for key, value in patch.items():
-        try:
-            ctx.set(key, value, modified_by=f"traversal:{node_id}")
-        except Exception as e:
-            raise ContextConflictError(
-                f"Failed to apply context patch for key '{key}' from node {node_id}: {e}"
-            )
-
-
-def _create_memo_key(node_id: str, ctx: Context, user_input: str) -> tuple[str, str, str]:
+def _create_memo_key(
+    node_id: str, ctx: ContextProtocol, user_input: str
+) -> tuple[str, str, str]:
     """Create a memoization key for a node execution.
 
     Args:
@@ -231,10 +264,10 @@ def _create_memo_key(node_id: str, ctx: Context, user_input: str) -> tuple[str, 
     Returns:
         A tuple key for memoization
     """
-    # Create a hash of important context fields
-    context_hash = hash(str(sorted(ctx.keys())))
+    # Use the new fingerprint method for stable memoization
+    context_hash = ctx.fingerprint()
     input_hash = hash(user_input)
-    return (node_id, str(context_hash), str(input_hash))
+    return (node_id, context_hash, str(input_hash))
 
 
 def _enqueue_next_nodes(
@@ -244,7 +277,7 @@ def _enqueue_next_nodes(
     q: deque,
     seen_steps: set[tuple[str, Optional[str]]],
     max_fanout_per_node: int,
-    context_patches: Dict[str, Dict[str, Any]]
+    context_patches: Dict[str, Dict[str, Any]],
 ) -> None:
     """Enqueue next nodes based on execution result.
 
@@ -293,71 +326,11 @@ def _merge_metrics(total_metrics: Dict[str, Any], node_metrics: Dict[str, Any]) 
     for key, value in node_metrics.items():
         if key in total_metrics:
             # For numeric values, add them; otherwise replace
-            if isinstance(total_metrics[key], (int, float)) and isinstance(value, (int, float)):
+            if isinstance(total_metrics[key], (int, float)) and isinstance(
+                value, (int, float)
+            ):
                 total_metrics[key] += value
             else:
                 total_metrics[key] = value
         else:
             total_metrics[key] = value
-
-
-def _log_node_execution(
-    node_id: str,
-    node_type: str,
-    duration_ms: float,
-    result: ExecutionResult,
-    ctx: Context
-) -> None:
-    """Log node execution details.
-
-    Args:
-        node_id: The node ID
-        node_type: The node type
-        duration_ms: Execution duration in milliseconds
-        result: The execution result
-        ctx: The context
-    """
-    log_data = {
-        "node_id": node_id,
-        "node_type": node_type,
-        "duration_ms": round(duration_ms, 2),
-        "terminate": result.terminate,
-        "next_edges": result.next_edges,
-        "context_patch_keys": list(result.context_patch.keys()) if result.context_patch else [],
-        "metrics": result.metrics
-    }
-
-    if hasattr(ctx, 'logger'):
-        ctx.logger.info(log_data)
-    else:
-        print(f"Node execution: {log_data}")
-
-
-def _log_node_error(
-    node_id: str,
-    node_type: str,
-    duration_ms: float,
-    error_message: str,
-    ctx: Context
-) -> None:
-    """Log node error details.
-
-    Args:
-        node_id: The node ID
-        node_type: The node type
-        duration_ms: Execution duration in milliseconds
-        error_message: The error message
-        ctx: The context
-    """
-    log_data = {
-        "node_id": node_id,
-        "node_type": node_type,
-        "duration_ms": round(duration_ms, 2),
-        "error": error_message,
-        "status": "error"
-    }
-
-    if hasattr(ctx, 'logger'):
-        ctx.logger.error(log_data)
-    else:
-        print(f"Node error: {log_data}")

@@ -94,9 +94,10 @@ from typing import (
 # Try to import yaml at module load time
 try:
     import yaml
+
     YAML_AVAILABLE = True
 except ImportError:
-    yaml = None
+    yaml = None  # type: ignore
     YAML_AVAILABLE = False
 
 T = TypeVar("T")
@@ -169,7 +170,7 @@ def validate_raw_content(raw_content: str, expected_type: Type[T]) -> T:
         raise ValueError(f"Expected string content, got {type(raw_content)}")
 
     # If expected type is str, return as-is
-    if expected_type == str:
+    if expected_type is str:
         return raw_content.strip()  # type: ignore[return-value]
 
     # Parse the raw content into structured data
@@ -183,7 +184,7 @@ def validate_raw_content(raw_content: str, expected_type: Type[T]) -> T:
         raise TypeValidationError(
             f"Failed to validate content against {expected_type.__name__}: {str(e)}",
             raw_content,
-            expected_type
+            expected_type,
         )
 
 
@@ -200,10 +201,8 @@ def _parse_string_to_structured(content_str: str) -> Union[dict, list, Any]:
     cleaned_str = content_str.strip()
 
     # Remove markdown code blocks if present
-    json_block_pattern = re.compile(
-        r"```json\s*([\s\S]*?)\s*```", re.IGNORECASE)
-    yaml_block_pattern = re.compile(
-        r"```yaml\s*([\s\S]*?)\s*```", re.IGNORECASE)
+    json_block_pattern = re.compile(r"```json\s*([\s\S]*?)\s*```", re.IGNORECASE)
+    yaml_block_pattern = re.compile(r"```yaml\s*([\s\S]*?)\s*```", re.IGNORECASE)
     generic_block_pattern = re.compile(r"```\s*([\s\S]*?)\s*```")
 
     # Try to extract from JSON code block first
@@ -277,8 +276,7 @@ def _coerce_value(val: Any, tp: Any) -> Any:
     if tp is type(None):  # noqa: E721
         if val is None:
             return None
-        raise TypeValidationError(
-            f"Expected None, got {type(val).__name__}", val, tp)
+        raise TypeValidationError(f"Expected None, got {type(val).__name__}", val, tp)
 
     # Handle Any/object
     if tp is Any or tp is object:
@@ -300,8 +298,7 @@ def _coerce_value(val: Any, tp: Any) -> Any:
     if origin is Literal:
         if val in args:
             return val
-        raise TypeValidationError(
-            f"Expected one of {args}, got {val!r}", val, tp)
+        raise TypeValidationError(f"Expected one of {args}, got {val!r}", val, tp)
 
     # Handle Enums
     if isinstance(tp, type) and issubclass(tp, enum.Enum):
@@ -338,8 +335,7 @@ def _coerce_value(val: Any, tp: Any) -> Any:
         try:
             return tp(val)  # type: ignore[call-arg]
         except Exception:
-            raise TypeValidationError(
-                f"Expected {tp.__name__}, got {val!r}", val, tp)
+            raise TypeValidationError(f"Expected {tp.__name__}, got {val!r}", val, tp)
 
     # Handle collections
     if origin in (list, tuple, set, frozenset):
@@ -372,7 +368,7 @@ def _coerce_value(val: Any, tp: Any) -> Any:
         }
 
     # Handle dataclasses
-    if is_dataclass(tp):
+    if is_dataclass(tp) and isinstance(tp, type):
         if not isinstance(val, ABCMapping):
             raise TypeValidationError(
                 f"Expected object (mapping) for {tp.__name__}", val, tp
@@ -389,8 +385,7 @@ def _coerce_value(val: Any, tp: Any) -> Any:
             ):
                 required_names.add(field.name)
             if field.name in val:
-                out_kwargs[field.name] = _coerce_value(
-                    val[field.name], field_type)
+                out_kwargs[field.name] = _coerce_value(val[field.name], field_type)
 
         missing = required_names - set(out_kwargs)
         if missing:
@@ -410,7 +405,7 @@ def _coerce_value(val: Any, tp: Any) -> Any:
         return tp(**out_kwargs)  # type: ignore[misc]
 
     # Handle plain classes
-    if inspect.isclass(tp):
+    if inspect.isclass(tp) and isinstance(tp, type):
         # Special handling for dict type
         if tp is dict:
             if isinstance(val, ABCMapping):
@@ -438,8 +433,7 @@ def _coerce_value(val: Any, tp: Any) -> Any:
                 )
             if param.name in val:
                 target_type = anno.get(param.name, Any)
-                kwargs[param.name] = _coerce_value(
-                    val[param.name], target_type)
+                kwargs[param.name] = _coerce_value(val[param.name], target_type)
             else:
                 if param.default is inspect._empty:
                     raise TypeValidationError(

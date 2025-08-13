@@ -1,11 +1,11 @@
 """Tests for node execution interface."""
 
-import pytest
-from intent_kit.core import ExecutionResult, NodeProtocol
+from intent_kit.core import ExecutionResult
 
 
 class MockContext:
     """Mock context for testing."""
+
     pass
 
 
@@ -39,7 +39,7 @@ class TestExecutionResult:
             next_edges=["a", "b"],
             terminate=True,
             metrics={"tokens": 100},
-            context_patch={"key": "value"}
+            context_patch={"key": "value"},
         )
 
         assert result.data == "test"

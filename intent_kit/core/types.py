@@ -2,9 +2,11 @@ from typing import Protocol, runtime_checkable, Any
 from typing import Dict, Set, List, Optional, Union
 from dataclasses import dataclass, field
 
+from .context import ContextProtocol
+
 EdgeLabel = Optional[str]
 
-Context = Any
+# Context is now defined in core.context.ContextProtocol
 
 
 @dataclass
@@ -30,8 +32,8 @@ class IntentDAG:
     nodes: Dict[str, GraphNode] = field(default_factory=dict)
     adj: Dict[str, Dict[EdgeLabel, Set[str]]] = field(default_factory=dict)
     rev: Dict[str, Set[str]] = field(default_factory=dict)
-    entrypoints: Union[list[str], tuple[str, ...]
-                       ] = field(default_factory=list)
+    entrypoints: Union[list[str], tuple[str, ...]] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -53,7 +55,9 @@ class ExecutionResult:
         for key, value in other.items():
             if key in self.metrics:
                 # For numeric values, add them; otherwise replace
-                if isinstance(self.metrics[key], (int, float)) and isinstance(value, (int, float)):
+                if isinstance(self.metrics[key], (int, float)) and isinstance(
+                    value, (int, float)
+                ):
                     self.metrics[key] += value
                 else:
                     self.metrics[key] = value
@@ -65,7 +69,7 @@ class ExecutionResult:
 class NodeProtocol(Protocol):
     """Protocol for nodes that can be executed in the DAG."""
 
-    def execute(self, user_input: str, ctx: Context) -> ExecutionResult:
+    def execute(self, user_input: str, ctx: ContextProtocol) -> ExecutionResult:
         """Execute the node with given input and context.
 
         Args:

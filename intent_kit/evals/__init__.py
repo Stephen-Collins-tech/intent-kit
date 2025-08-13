@@ -12,8 +12,9 @@ from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
 from intent_kit.services.yaml_service import yaml_service
-from intent_kit.context import Context
+from intent_kit.core.context import DefaultContext as Context
 from intent_kit.utils.perf_util import PerfUtil
+from intent_kit.core.types import ExecutionResult
 
 
 @dataclass
@@ -55,10 +56,13 @@ class EvalTestResult:
     context: Optional[Dict[str, Any]]
     error: Optional[str] = None
     elapsed_time: Optional[float] = None  # Time in seconds
+    metrics: Optional[Dict[str, Any]] = None  # Execution metrics
 
     def __post_init__(self):
         if self.context is None:
             self.context = {}
+        if self.metrics is None:
+            self.metrics = {}
 
 
 class EvalResult:
@@ -118,7 +122,7 @@ class EvalResult:
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(
-                ["input", "expected", "actual", "passed", "error", "context"]
+                ["input", "expected", "actual", "passed", "error", "context", "metrics"]
             )
             for result in self.results:
                 writer.writerow(
@@ -129,6 +133,7 @@ class EvalResult:
                         result.passed,
                         result.error or "",
                         str(result.context),
+                        str(result.metrics),
                     ]
                 )
         return str(path)
@@ -159,6 +164,7 @@ class EvalResult:
                     "passed": r.passed,
                     "error": r.error,
                     "context": r.context,
+                    "metrics": r.metrics,
                 }
                 for r in self.results
             ],
@@ -260,8 +266,8 @@ def run_eval(
     extra_kwargs: Optional[dict] = None,
 ) -> EvalResult:
     """
-    Evaluate a node or graph against a dataset of test cases.
-    Supports .route, .execute, or callable nodes. Handles flexible context and result extraction.
+    Evaluate a node against a dataset of test cases.
+    Supports DAG nodes with .execute method. Handles flexible context and result extraction.
     Records timing for each test case using PerfUtil.
     """
     if comparator is None:
@@ -285,26 +291,22 @@ def run_eval(
                     context.set(key, value, modified_by="eval")
 
             with PerfUtil(f"Eval: {test_case.input}") as perf:
-                # Node execution: support .route, .execute, or callable
-                if hasattr(node, "route"):
-                    result = node.route(
-                        test_case.input, context=context, **extra_kwargs
-                    )
-                elif hasattr(node, "execute"):
+                # Node execution: support DAG nodes with .execute method
+                if hasattr(node, "execute"):
                     result = node.execute(test_case.input, context, **extra_kwargs)
                 elif callable(node):
+                    # Fallback for callable nodes
                     result = node(test_case.input, context=context, **extra_kwargs)
                 else:
-                    raise ValueError(
-                        "Node must be callable or have .execute/.route method"
-                    )
+                    raise ValueError("Node must be callable or have .execute method")
 
-            # Result extraction: support new result types
-            output = getattr(result, "output", result)
-            success = getattr(result, "success", output == test_case.expected)
-            error = getattr(result, "error", None)
-            if not success and error and hasattr(error, "message"):
-                error = error.message
+            # Result extraction: handle ExecutionResult and other types
+            if isinstance(result, ExecutionResult):
+                output = result.data
+                metrics = result.metrics
+            else:
+                output = result
+                metrics = {}
 
             passed = comparator(test_case.expected, output)
             eval_result = EvalTestResult(
@@ -313,8 +315,13 @@ def run_eval(
                 actual=output,
                 passed=passed,
                 context=test_case.context,
-                error=str(error) if error and not passed else None,
+                error=(
+                    None
+                    if passed
+                    else f"Expected '{test_case.expected}', got '{output}'"
+                ),
                 elapsed_time=perf.elapsed,
+                metrics=metrics,
             )
         except Exception as e:
             eval_result = EvalTestResult(
@@ -325,6 +332,7 @@ def run_eval(
                 context=test_case.context,
                 error=str(e),
                 elapsed_time=None,
+                metrics={},
             )
             if fail_fast:
                 results.append(eval_result)
@@ -342,7 +350,7 @@ def run_eval_from_path(
     extra_kwargs: Optional[dict] = None,
 ) -> EvalResult:
     """
-    Load a dataset from path and evaluate a node/graph using run_eval.
+    Load a dataset from path and evaluate a node using run_eval.
     """
     dataset = load_dataset(dataset_path)
     return run_eval(dataset, node, comparator, fail_fast, context_factory, extra_kwargs)

@@ -1,6 +1,6 @@
 # Welcome to Intent Kit
 
-Intent Kit is a Python framework that helps you build intelligent applications that understand what users want and take the right actions.
+Intent Kit is a Python framework that helps you build intelligent applications using Directed Acyclic Graphs (DAGs) to understand what users want and take the right actions.
 
 ## 🚀 Quick Start
 
@@ -9,18 +9,21 @@ Get up and running in minutes with our [Quickstart Guide](quickstart.md).
 ## 📚 Documentation
 
 ### Core Concepts
-- [Intent Graphs](concepts/intent-graphs.md) - How to structure your workflows
+- [Intent DAGs](concepts/intent-graphs.md) - How to structure your workflows with DAGs
 - [Nodes and Actions](concepts/nodes-and-actions.md) - Building blocks for your applications
+- [Context Architecture](concepts/context-architecture.md) - Managing state and memory
 
 ### Examples
 - [Calculator Bot](examples/calculator-bot.md) - Simple math operations
 - [Context-Aware Chatbot](examples/context-aware-chatbot.md) - Remembering conversations
+- [Context Memory Demo](examples/context-memory-demo.md) - Multi-turn conversations
 
 ### Development
 - [Building](development/building.md) - How to build the package
 - [Testing](development/testing.md) - Unit tests and integration testing
 - [Evaluation](development/evaluation.md) - Performance evaluation and benchmarking
 - [Debugging](development/debugging.md) - Debugging tools and techniques
+- [Performance Monitoring](development/performance-monitoring.md) - Performance tracking and reporting
 
 ## 🛠️ Installation
 
@@ -37,6 +40,7 @@ pip install intentkit-py[all]  # All AI providers
 - **🔧 Easy to Build** - Simple, clear API that feels natural to use
 - **🧪 Testable & Reliable** - Built-in testing tools for confidence
 - **📊 See What's Happening** - Visualize workflows and track decisions
+- **🔄 DAG Architecture** - Flexible, scalable workflow design
 
 ## 🎯 Common Use Cases
 
@@ -55,8 +59,8 @@ Create systems that make smart decisions based on user requests.
 ## 🚀 Key Features
 
 - **Smart Understanding** - Works with any AI model, extracts parameters automatically
-- **JSON Configuration** - Define complex workflows in JSON for easy management
-- **Function Registry** - Register your functions and use them in actions
+- **DAG Configuration** - Define complex workflows in JSON for easy management
+- **Context Management** - Maintain state and memory across interactions
 - **Developer Friendly** - Simple API, comprehensive error handling, built-in debugging
 - **Testing & Evaluation** - Test against real datasets, measure performance
 

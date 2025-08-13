@@ -1,249 +1,377 @@
 # JSON Serialization
 
-IntentKit supports creating IntentGraph instances from JSON definitions, enabling portable and configurable intent graphs. This feature allows you to define your intent graph structure in JSON format and reference functions from a registry.
+Intent Kit supports creating DAG instances from JSON definitions, enabling portable and configurable intent workflows. This feature allows you to define your DAG structure in JSON format and reference functions directly.
 
 ## Overview
 
 The JSON serialization system provides:
 
-- **Portable Graph Definitions**: Define your intent graph structure in JSON
-- **Function Registry**: Map function names to callable functions
+- **Portable DAG Definitions**: Define your DAG structure in JSON
+- **Direct Function References**: Reference Python functions directly in JSON
 - **LLM-Powered Extraction**: Intelligent parameter extraction from natural language
-- **Builder Pattern**: Clean, fluent interface for graph construction
+- **Builder Pattern**: Clean, fluent interface for DAG construction
 
 ## Quick Start
 
 ```python
-from intent_kit import IntentGraphBuilder
+from intent_kit import DAGBuilder
 
 # Define your functions
 def greet_function(name: str) -> str:
     return f"Hello {name}!"
 
 def calculate_function(operation: str, a: float, b: float) -> str:
-    # ... calculation logic
-    return f"{a} {operation} {b} = {result}"
+    if operation == "add":
+        return str(a + b)
+    elif operation == "subtract":
+        return str(a - b)
+    return "Unknown operation"
 
-# Create function registry
-function_registry = {
-    "greet_function": greet_function,
-    "calculate_function": calculate_function,
-}
-
-# Define graph in JSON
-json_graph = {
-    "root_nodes": [
-        {
-            "name": "main_classifier",
+# Define DAG in JSON
+dag_config = {
+    "nodes": {
+        "classifier": {
             "type": "classifier",
-            "classifier_function": "smart_classifier",
-            "children": [
-                {
-                    "name": "greet_action",
-                    "type": "action",
-                    "function_name": "greet_function",
-                    "param_schema": {"name": "str"},
-                    "llm_config": {"provider": "openai", "model": "gpt-4"},
-                }
-            ]
+            "output_labels": ["greet", "calculate"],
+            "description": "Main intent classifier",
+            "llm_config": {"provider": "openai", "model": "gpt-4"}
+        },
+        "extract_greet": {
+            "type": "extractor",
+            "param_schema": {"name": str},
+            "description": "Extract name from greeting",
+            "output_key": "extracted_params"
+        },
+        "extract_calc": {
+            "type": "extractor",
+            "param_schema": {"operation": str, "a": float, "b": float},
+            "description": "Extract calculation parameters",
+            "output_key": "extracted_params"
+        },
+        "greet_action": {
+            "type": "action",
+            "action": greet_function,
+            "description": "Greet the user"
+        },
+        "calculate_action": {
+            "type": "action",
+            "action": calculate_function,
+            "description": "Perform calculation"
         }
-    ]
+    },
+    "edges": [
+        {"from": "classifier", "to": "extract_greet", "label": "greet"},
+        {"from": "extract_greet", "to": "greet_action", "label": "success"},
+        {"from": "classifier", "to": "extract_calc", "label": "calculate"},
+        {"from": "extract_calc", "to": "calculate_action", "label": "success"}
+    ],
+    "entrypoints": ["classifier"]
 }
 
-# Build the graph using the Builder pattern
-graph = IntentGraphBuilder().with_functions(function_registry).with_json(json_graph).build()
+# Build the DAG
+dag = DAGBuilder.from_json(dag_config)
 ```
 
 ## JSON Schema
 
-### Graph Structure
+### DAG Structure
 
 ```json
 {
-  "root_nodes": [
-    {
-      "name": "node_name",
-      "type": "action|classifier",
+  "nodes": {
+    "node_id": {
+      "type": "classifier|extractor|action|clarification",
       "description": "Optional description",
-      "function_name": "registry_function_name",
-      "param_schema": {
-        "param_name": "str|int|float|bool|list|dict"
-      },
-      "llm_config": {
-        "provider": "openai|anthropic|openrouter",
-        "model": "model_name",
-        "api_key": "your_api_key"
-      },
-      "context_inputs": ["input1", "input2"],
-      "context_outputs": ["output1", "output2"],
-      "remediation_strategies": ["strategy1", "strategy2"],
-      "children": [
-        // Child nodes follow the same schema
-      ]
+      // Node-specific configuration
+    }
+  },
+  "edges": [
+    {
+      "from": "source_node_id",
+      "to": "target_node_id",
+      "label": "optional_edge_label"
     }
   ],
-
-  "visualize": false,
-  "debug_context": false,
-  "context_trace": false
+  "entrypoints": ["node_id1", "node_id2"]
 }
 ```
 
 ### Node Types
 
-#### Action Node
-```json
-{
-  "name": "greet_action",
-  "type": "action",
-  "function_name": "greet_function",
-  "param_schema": {"name": "str"},
-  "llm_config": {"provider": "openai", "model": "gpt-4"},
-  "context_inputs": ["user_name"],
-  "context_outputs": ["greeting_sent"]
-}
-```
-
 #### Classifier Node
 ```json
 {
-  "name": "intent_classifier",
   "type": "classifier",
-  "classifier_function": "smart_classifier",
-  "description": "Routes to appropriate action",
-  "children": [
-    // Child action nodes
-  ],
-  "remediation_strategies": ["fallback", "clarification"]
+  "output_labels": ["label1", "label2", "label3"],
+  "description": "Classify user intent",
+  "llm_config": {
+    "provider": "openai|anthropic|google|ollama|openrouter",
+    "model": "model_name",
+    "api_key": "your_api_key",
+    "temperature": 0.7,
+    "max_tokens": 1000
+  },
+  "classification_func": "optional_custom_function_name"
 }
 ```
 
-
-
-## LLM-Powered Argument Extraction
-
-When you include `llm_config` in an action node, IntentKit automatically creates an LLM-based argument extractor:
-
-```python
-# JSON with LLM config
+#### Extractor Node
+```json
 {
-  "name": "weather_action",
-  "type": "action",
-  "function_name": "weather_function",
-  "param_schema": {"location": "str"},
+  "type": "extractor",
+  "param_schema": {
+    "param_name": "str|int|float|bool|list|dict"
+  },
+  "description": "Extract parameters from input",
+  "output_key": "extracted_params",
   "llm_config": {
-    "provider": "openrouter",
-    "model": "meta-llama/llama-4-maverick-17b-128e-instruct",
-    "api_key": "your_api_key"
+    "provider": "openai",
+    "model": "gpt-4"
   }
 }
-
-# Natural language input: "What's the weather in San Francisco?"
-# LLM extracts: {"location": "San Francisco"}
 ```
 
-## Function Registry
-
-The function registry maps function names to callable functions:
-
-```python
-from intent_kit import FunctionRegistry
-
-# Create registry
-registry = FunctionRegistry({
-    "greet_function": greet_function,
-    "calculate_function": calculate_function,
-    "weather_function": weather_function,
-})
-
-# Register additional functions
-registry.register("new_function", my_new_function)
-
-# Check if function exists
-if registry.has("greet_function"):
-    func = registry.get("greet_function")
-```
-
-## Advanced Features
-
-### Multiple Registries
-
-```python
-# Different registries for different domains
-greeting_registry = FunctionRegistry({
-    "greet_function": greet_function,
-    "farewell_function": farewell_function,
-})
-
-calculation_registry = FunctionRegistry({
-    "add_function": add_function,
-    "multiply_function": multiply_function,
-})
-
-# Use with Builder pattern
-graph = IntentGraphBuilder().with_functions(greeting_registry.functions).with_json(json_graph).build()
-```
-
-### Context Management
-
-```python
-# JSON with context inputs/outputs
+#### Action Node
+```json
 {
-  "name": "user_profile_action",
   "type": "action",
-  "function_name": "update_profile",
-  "param_schema": {"name": "str", "age": "int"},
-  "context_inputs": ["user_id", "current_profile"],
-  "context_outputs": ["updated_profile", "profile_changed"]
+  "action": "function_reference",
+  "description": "Execute action",
+  "terminate_on_success": true,
+  "param_key": "extracted_params"
 }
 ```
 
-### Remediation Strategies
-
-```python
-# JSON with remediation
+#### Clarification Node
+```json
 {
-  "name": "payment_action",
-  "type": "action",
-  "function_name": "process_payment",
-  "param_schema": {"amount": "float", "card_number": "str"},
-  "remediation_strategies": ["retry", "fallback_payment", "human_escalation"]
+  "type": "clarification",
+  "clarification_message": "I'm not sure what you'd like me to do.",
+  "available_options": ["Option 1", "Option 2", "Option 3"],
+  "description": "Ask for clarification"
 }
 ```
 
-## Error Handling
-
-The system provides clear error messages for common issues:
+## Complete Example
 
 ```python
-# Missing function in registry
-ValueError: Action function 'missing_function' not found in registry
+import os
+from intent_kit import DAGBuilder, run_dag
+from intent_kit.core.context import DefaultContext
 
-# Invalid JSON
-ValueError: Invalid JSON: Expecting property name enclosed in double quotes
+def greet(name: str) -> str:
+    return f"Hello {name}!"
 
-# Missing required fields
-KeyError: JSON must contain 'root_nodes' field
+def get_weather(city: str) -> str:
+    return f"Weather in {city} is sunny"
+
+def calculate(operation: str, a: float, b: float) -> str:
+    if operation == "add":
+        return str(a + b)
+    elif operation == "subtract":
+        return str(a - b)
+    return "Unknown operation"
+
+# Define complete DAG
+dag_config = {
+    "nodes": {
+        "classifier": {
+            "type": "classifier",
+            "output_labels": ["greet", "weather", "calculate"],
+            "description": "Main intent classifier",
+            "llm_config": {
+                "provider": "openai",
+                "model": "gpt-3.5-turbo",
+                "api_key": os.getenv("OPENAI_API_KEY")
+            }
+        },
+        "extract_name": {
+            "type": "extractor",
+            "param_schema": {"name": str},
+            "description": "Extract name from greeting",
+            "output_key": "extracted_params"
+        },
+        "extract_location": {
+            "type": "extractor",
+            "param_schema": {"city": str},
+            "description": "Extract city from weather request",
+            "output_key": "extracted_params"
+        },
+        "extract_calc": {
+            "type": "extractor",
+            "param_schema": {"operation": str, "a": float, "b": float},
+            "description": "Extract calculation parameters",
+            "output_key": "extracted_params"
+        },
+        "greet_action": {
+            "type": "action",
+            "action": greet,
+            "description": "Greet the user"
+        },
+        "weather_action": {
+            "type": "action",
+            "action": get_weather,
+            "description": "Get weather information"
+        },
+        "calculate_action": {
+            "type": "action",
+            "action": calculate,
+            "description": "Perform calculation"
+        },
+        "clarification": {
+            "type": "clarification",
+            "clarification_message": "I'm not sure what you'd like me to do. You can greet me, ask about weather, or perform calculations!",
+            "available_options": ["Say hello", "Ask about weather", "Calculate something"]
+        }
+    },
+    "edges": [
+        {"from": "classifier", "to": "extract_name", "label": "greet"},
+        {"from": "extract_name", "to": "greet_action", "label": "success"},
+        {"from": "classifier", "to": "extract_location", "label": "weather"},
+        {"from": "extract_location", "to": "weather_action", "label": "success"},
+        {"from": "classifier", "to": "extract_calc", "label": "calculate"},
+        {"from": "extract_calc", "to": "calculate_action", "label": "success"},
+        {"from": "classifier", "to": "clarification", "label": "clarification"}
+    ],
+    "entrypoints": ["classifier"]
+}
+
+# Build and execute DAG
+dag = DAGBuilder.from_json(dag_config)
+context = DefaultContext()
+
+# Test different inputs
+result = run_dag(dag, "Hello Alice", context)
+print(result.data)  # → "Hello Alice!"
+
+result = run_dag(dag, "What's the weather in San Francisco?", context)
+print(result.data)  # → "Weather in San Francisco is sunny"
+
+result = run_dag(dag, "Add 5 and 3", context)
+print(result.data)  # → "8"
 ```
+
+## Advanced Configuration
+
+### Default LLM Configuration
+
+You can set default LLM configuration for the entire DAG:
+
+```python
+# Set default LLM config
+builder = DAGBuilder()
+builder.with_default_llm_config({
+    "provider": "openai",
+    "model": "gpt-4",
+    "api_key": os.getenv("OPENAI_API_KEY")
+})
+
+# Individual nodes can override this
+dag_config = {
+    "nodes": {
+        "classifier": {
+            "type": "classifier",
+            "output_labels": ["greet", "weather"],
+            "description": "Main classifier"
+            # Uses default LLM config
+        },
+        "extract_name": {
+            "type": "extractor",
+            "param_schema": {"name": str},
+            "description": "Extract name",
+            "llm_config": {
+                "provider": "anthropic",  # Override default
+                "model": "claude-3-sonnet-20240229"
+            }
+        }
+    }
+}
+```
+
+### Error Handling Edges
+
+Add error handling by connecting nodes to clarification:
+
+```json
+{
+  "edges": [
+    {"from": "extract_name", "to": "greet_action", "label": "success"},
+    {"from": "extract_name", "to": "clarification", "label": "error"},
+    {"from": "greet_action", "to": "clarification", "label": "error"}
+  ]
+}
+```
+
+### Complex Parameter Schemas
+
+Define complex parameter types:
+
+```json
+{
+  "type": "extractor",
+  "param_schema": {
+    "name": "str",
+    "age": "int",
+    "city": "str",
+    "temperature": "float",
+    "is_active": "bool",
+    "tags": "list[str]",
+    "preferences": "dict"
+  },
+  "description": "Extract user profile information"
+}
+```
+
+## Validation
+
+### DAG Structure Validation
+
+The JSON configuration is validated when building the DAG:
+
+```python
+try:
+    dag = DAGBuilder.from_json(dag_config)
+    print("DAG is valid!")
+except ValueError as e:
+    print(f"DAG validation failed: {e}")
+```
+
+### Common Validation Errors
+
+- **Missing required fields** - Node type, description, etc.
+- **Invalid node types** - Must be classifier, extractor, action, or clarification
+- **Missing edges** - Referenced nodes don't exist
+- **Cycles** - DAG contains circular references
+- **Unreachable nodes** - Nodes not connected to entrypoints
 
 ## Best Practices
 
-1. **Use the Builder Pattern**: Provides better error handling and type safety
-2. **Validate Function Registry**: Ensure all referenced functions exist
-3. **Test LLM Configurations**: Verify API keys and model availability
-4. **Use Descriptive Names**: Make function and node names meaningful
-5. **Include Descriptions**: Add descriptions for complex nodes
-6. **Handle Errors Gracefully**: Implement remediation strategies
+### Node Naming
 
-## Example
+- Use descriptive, consistent node names
+- Follow a naming convention (e.g., `{type}_{purpose}`)
+- Avoid special characters in node IDs
 
-See `examples/json_llm_demo.py` for a complete working example that demonstrates:
+### Edge Labels
 
-- JSON-based graph configuration
-- LLM-powered argument extraction
-- Natural language understanding
-- Function registry system
-- Intelligent parameter parsing
-- Builder pattern usage
+- Use meaningful edge labels for routing
+- Common labels: `success`, `error`, `clarification`
+- Use intent-specific labels for classifier outputs
 
-The demo shows how to create IntentGraph instances using the Builder pattern with LLM-powered argument extraction.
+### Function References
+
+- Reference functions directly in JSON
+- Ensure functions are available in the current scope
+- Use type hints for better parameter extraction
+
+### Error Handling
+
+- Always include clarification nodes for unclear intent
+- Add error handling edges for robust operation
+- Test with various input scenarios
+
+### Documentation
+
+- Provide clear descriptions for all nodes
+- Document parameter schemas thoroughly
+- Include examples in node descriptions

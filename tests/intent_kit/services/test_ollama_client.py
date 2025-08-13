@@ -6,7 +6,7 @@ import pytest
 import os
 from unittest.mock import Mock, patch
 from intent_kit.services.ai.ollama_client import OllamaClient
-from intent_kit.types import LLMResponse
+from intent_kit.types import RawLLMResponse
 from intent_kit.services.ai.pricing_service import PricingService
 
 
@@ -60,8 +60,8 @@ class TestOllamaClient:
         client = OllamaClient()
         result = client.generate("Test prompt", model="llama2")
 
-        assert isinstance(result, LLMResponse)
-        assert result.output == "Test response"
+        assert isinstance(result, RawLLMResponse)
+        assert result.content == "Test response"
         assert result.model == "llama2"
         assert result.provider == "ollama"
         assert result.duration >= 0
@@ -266,8 +266,8 @@ class TestOllamaClient:
         client = OllamaClient()
         result = client.generate("Test prompt")
 
-        assert isinstance(result, LLMResponse)
-        assert result.output == ""
+        assert isinstance(result, RawLLMResponse)
+        assert result.content == ""
 
     @patch("ollama.Client")
     def test_generate_none_response(self, mock_client_class):
@@ -280,8 +280,8 @@ class TestOllamaClient:
         client = OllamaClient()
         result = client.generate("Test prompt")
 
-        assert isinstance(result, LLMResponse)
-        assert result.output == ""
+        assert isinstance(result, RawLLMResponse)
+        assert result.content == ""
 
     @patch("ollama.Client")
     def test_chat_empty_response(self, mock_client_class):
@@ -357,7 +357,7 @@ class TestOllamaClient:
             client = OllamaClient()
             result = client.generate("Test prompt", model="llama2")
 
-            assert isinstance(result, LLMResponse)
+            assert isinstance(result, RawLLMResponse)
             assert result.cost == 0.0  # Ollama is typically free
 
     @patch.dict(os.environ, {"OLLAMA_BASE_URL": "http://custom-ollama:11434"})
@@ -407,8 +407,8 @@ class TestOllamaClient:
             client = OllamaClient()
             result = client.generate("Test prompt", model="llama2")
 
-            assert isinstance(result, LLMResponse)
-            assert result.output == "Test response"
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == "Test response"
             assert result.input_tokens == 100
             assert (
                 result.output_tokens == 50
@@ -426,8 +426,8 @@ class TestOllamaClient:
             client = OllamaClient()
             result = client.generate("Test prompt", model="llama2")
 
-            assert isinstance(result, LLMResponse)
-            assert result.output == "Test response"
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == "Test response"
             assert result.input_tokens == 0
             assert result.output_tokens == 0
             assert result.cost == 0.0

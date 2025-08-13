@@ -2,12 +2,17 @@
 
 from typing import Any, Dict, Optional, Union, Type
 from intent_kit.core.types import NodeProtocol, ExecutionResult
-from intent_kit.context import Context
+from intent_kit.core.context import ContextProtocol
 from intent_kit.utils.logger import Logger
-from intent_kit.utils.type_coercion import validate_type, resolve_type, TypeValidationError, validate_raw_content
+from intent_kit.utils.type_coercion import (
+    validate_type,
+    resolve_type,
+    TypeValidationError,
+    validate_raw_content,
+)
 
 
-class DAGExtractorNode(NodeProtocol):
+class ExtractorNode(NodeProtocol):
     """Parameter extraction node for DAG execution using LLM services."""
 
     def __init__(
@@ -37,7 +42,7 @@ class DAGExtractorNode(NodeProtocol):
         self.output_key = output_key
         self.logger = Logger(name)
 
-    def execute(self, user_input: str, ctx: Context) -> ExecutionResult:
+    def execute(self, user_input: str, ctx: ContextProtocol) -> ExecutionResult:
         """Execute parameter extraction using LLM.
 
         Args:
@@ -49,21 +54,30 @@ class DAGExtractorNode(NodeProtocol):
         """
         try:
             # Get LLM service from context
-            llm_service = ctx.get("llm_service") if hasattr(
-                ctx, 'get') else None
+            llm_service = ctx.get("llm_service") if hasattr(ctx, "get") else None
 
-            if not llm_service or not self.llm_config:
+            # Get effective LLM config (node-specific or default from DAG)
+            effective_llm_config = self.llm_config
+            if not effective_llm_config and hasattr(ctx, "get"):
+                # Try to get default config from DAG metadata
+                metadata = ctx.get("metadata", {})
+                effective_llm_config = metadata.get("default_llm_config", {})
+
+            if not llm_service or not effective_llm_config:
                 raise ValueError(
-                    "LLM service and config required for parameter extraction")
+                    "LLM service and config required for parameter extraction"
+                )
 
             # Build prompt for parameter extraction
             prompt = self._build_prompt(user_input, ctx)
 
             # Get model from config or use default
-            model = self.llm_config.get("model", "gpt-3.5-turbo")
+            model = effective_llm_config.get("model")
+            if not model:
+                raise ValueError("LLM model required for parameter extraction")
 
             # Get client from shared service
-            llm_client = llm_service.get_client(self.llm_config)
+            llm_client = llm_service.get_client(effective_llm_config)
 
             # Generate raw response using LLM
             raw_response = llm_client.generate(prompt, model=model)
@@ -72,8 +86,7 @@ class DAGExtractorNode(NodeProtocol):
             validated_params = validate_raw_content(raw_response.content, dict)
 
             # Ensure all required parameters are present with defaults if missing
-            validated_params = self._ensure_all_parameters_present(
-                validated_params)
+            validated_params = self._ensure_all_parameters_present(validated_params)
 
             # Build metrics
             metrics = {}
@@ -93,8 +106,8 @@ class DAGExtractorNode(NodeProtocol):
                 metrics=metrics,
                 context_patch={
                     self.output_key: validated_params,
-                    "extraction_success": True
-                }
+                    "extraction_success": True,
+                },
             )
 
         except Exception as e:
@@ -107,8 +120,8 @@ class DAGExtractorNode(NodeProtocol):
                 context_patch={
                     "error": str(e),
                     "error_type": "ExtractionError",
-                    "extraction_success": False
-                }
+                    "extraction_success": False,
+                },
             )
 
     def _build_prompt(self, user_input: str, ctx: Any) -> str:
@@ -132,10 +145,10 @@ class DAGExtractorNode(NodeProtocol):
 
         # Build context info
         context_info = ""
-        if ctx and hasattr(ctx, 'export_to_dict'):
-            context_data = ctx.export_to_dict()
-            if context_data.get('fields'):
-                context_info = f"\nAvailable Context:\n{context_data['fields']}"
+        if ctx and hasattr(ctx, "snapshot"):
+            context_data = ctx.snapshot()
+            if context_data:
+                context_info = f"\nAvailable Context:\n{context_data}"
 
         return f"""You are a parameter extraction specialist. Given a user input, extract the required parameters.
 
@@ -170,10 +183,11 @@ Return only the JSON object with the extracted parameters:"""
         elif isinstance(response, str):
             # Try to extract JSON from string response
             import json
+
             try:
                 # Find JSON-like content in the response
-                start = response.find('{')
-                end = response.rfind('}') + 1
+                start = response.find("{")
+                end = response.rfind("}") + 1
                 if start != -1 and end != 0:
                     json_str = response[start:end]
                     return json.loads(json_str)
@@ -181,8 +195,7 @@ Return only the JSON object with the extracted parameters:"""
                     # Fallback: try to parse the entire response
                     return json.loads(response)
             except json.JSONDecodeError:
-                self.logger.warning(
-                    f"Failed to parse JSON from response: {response}")
+                self.logger.warning(f"Failed to parse JSON from response: {response}")
                 return {}
         else:
             self.logger.warning(f"Unexpected response type: {type(response)}")
@@ -205,14 +218,17 @@ Return only the JSON object with the extracted parameters:"""
                     )
                 except TypeValidationError as e:
                     self.logger.warning(
-                        f"Parameter validation failed for {param_name}: {e}")
+                        f"Parameter validation failed for {param_name}: {e}"
+                    )
                     validated_data[param_name] = parsed_data[param_name]
             else:
                 validated_data[param_name] = None
 
         return validated_data
 
-    def _ensure_all_parameters_present(self, extracted_params: Dict[str, Any]) -> Dict[str, Any]:
+    def _ensure_all_parameters_present(
+        self, extracted_params: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Ensures all required parameters are present in the extracted_params dictionary,
         adding them with default values if they are missing.
         """
@@ -235,13 +251,13 @@ Return only the JSON object with the extracted parameters:"""
                         result_params[param_name] = ""
                 else:
                     # For complex types, try to provide a reasonable default
-                    if param_type == str:
+                    if param_type is str:
                         result_params[param_name] = ""
-                    elif param_type == int:
+                    elif param_type is int:
                         result_params[param_name] = 0
-                    elif param_type == float:
+                    elif param_type is float:
                         result_params[param_name] = 0.0
-                    elif param_type == bool:
+                    elif param_type is bool:
                         result_params[param_name] = False
                     else:
                         result_params[param_name] = ""

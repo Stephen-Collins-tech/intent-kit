@@ -1,6 +1,6 @@
 # Debugging
 
-Intent Kit provides comprehensive debugging tools to help you troubleshoot and optimize your intent graphs.
+Intent Kit provides comprehensive debugging tools to help you troubleshoot and optimize your DAGs.
 
 ## Debug Output
 
@@ -9,20 +9,37 @@ Intent Kit provides comprehensive debugging tools to help you troubleshoot and o
 Enable debug output to see detailed execution information:
 
 ```python
-from intent_kit import IntentGraphBuilder, action
-from intent_kit.context import Context
+from intent_kit import DAGBuilder, run_dag
+from intent_kit.core.context import DefaultContext
 
-# Create a graph with debug enabled
-graph = IntentGraphBuilder().root(action(...)).build()
-context = Context(session_id="debug_session", debug=True)
+# Create a DAG with debug enabled
+def greet(name: str) -> str:
+    return f"Hello {name}!"
 
-result = graph.route("Hello Alice", context=context)
-print(context.debug_log)  # View detailed execution log
+builder = DAGBuilder()
+builder.add_node("classifier", "classifier",
+                 output_labels=["greet"],
+                 description="Main classifier")
+builder.add_node("extract_name", "extractor",
+                 param_schema={"name": str},
+                 description="Extract name")
+builder.add_node("greet_action", "action",
+                 action=greet,
+                 description="Greet user")
+builder.add_edge("classifier", "extract_name", "greet")
+builder.add_edge("extract_name", "greet_action", "success")
+builder.set_entrypoints(["classifier"])
+
+dag = builder.build()
+context = DefaultContext()
+
+result = run_dag(dag, "Hello Alice", context)
+print(result.data)  # View execution result
 ```
 
 ### Structured Debug Logging
 
-Intent Kit now uses structured logging for better diagnostic information. Debug logs are organized into clear sections:
+Intent Kit uses structured logging for better diagnostic information. Debug logs are organized into clear sections:
 
 #### Node Execution Diagnostics
 
@@ -30,11 +47,10 @@ Intent Kit now uses structured logging for better diagnostic information. Debug 
 # Example structured debug output for action nodes
 {
   "node_name": "greet_action",
-  "node_path": ["root", "greet_action"],
+  "node_type": "action",
   "input": "Hello Alice",
   "extracted_params": {"name": "Alice"},
-  "context_inputs": ["user_name"],
-  "validated_params": {"name": "Alice"},
+  "context_data": {"user.name": "Alice"},
   "output": "Hello Alice!",
   "output_type": "str",
   "success": true,
@@ -50,11 +66,12 @@ Intent Kit now uses structured logging for better diagnostic information. Debug 
 ```python
 # Example structured debug output for classifier nodes
 {
-  "node_name": "intent_classifier",
-  "node_path": ["root", "intent_classifier"],
+  "node_name": "classifier",
+  "node_type": "classifier",
   "input": "Hello Alice",
-  "available_children": ["greet_action", "farewell_action"],
-  "chosen_child": "greet_action",
+  "available_labels": ["greet", "weather"],
+  "chosen_label": "greet",
+  "confidence": 0.95,
   "classifier_cost": 0.000045,
   "classifier_tokens": {"input": 23, "output": 8},
   "classifier_model": "gpt-4.1-mini",
@@ -73,16 +90,20 @@ The debug log shows:
 
 ## Context Debugging
 
-### Context Dependencies
+### Context State Analysis
 
-Track how context flows through your graph:
+Track how context flows through your DAG:
 
 ```python
-from intent_kit.context.debug import get_context_dependencies
+from intent_kit.core.context import DefaultContext
 
-# Analyze context dependencies
-dependencies = get_context_dependencies(graph)
-print("Context dependencies:", dependencies)
+# Create context and execute DAG
+context = DefaultContext()
+result = run_dag(dag, "Hello Alice", context)
+
+# Analyze context state
+print("Context keys:", context.keys())
+print("Context snapshot:", context.snapshot())
 ```
 
 ### Context Validation
@@ -90,220 +111,260 @@ print("Context dependencies:", dependencies)
 Validate that context is properly managed:
 
 ```python
-from intent_kit.context.debug import validate_context_flow
+def validate_context_state(context):
+    """Check for context issues."""
+    issues = []
 
-# Check for context issues
-issues = validate_context_flow(graph, context)
+    # Check for required keys
+    required_keys = ["user.name", "session.id"]
+    for key in required_keys:
+        if not context.has(key):
+            issues.append(f"Missing required key: {key}")
+
+    # Check for data types
+    if context.has("user.age") and not isinstance(context.get("user.age"), int):
+        issues.append("user.age should be an integer")
+
+    return issues
+
+# Use in debugging
+context = DefaultContext()
+result = run_dag(dag, "Hello Alice", context)
+issues = validate_context_state(context)
 if issues:
     print("Context issues found:", issues)
 ```
 
-### Context Tracing
-
-Trace context execution step by step:
-
-```python
-from intent_kit.context.debug import trace_context_execution
-
-# Get detailed context trace
-trace = trace_context_execution(graph, "Hello Alice", context)
-for step in trace:
-    print(f"Step {step.step}: {step.node} -> {step.context_changes}")
-```
-
-### Important Context Keys
-
-Mark specific context keys for detailed logging:
-
-```python
-context = Context(session_id="debug_session", debug=True)
-
-# Mark important keys for detailed logging
-context.mark_important("user_name")
-context.mark_important("session_data")
-
-# Only these keys will be logged in detail
-context.set("user_name", "Alice")  # Will be logged
-context.set("temp_data", "xyz")    # Won't be logged
-```
-
-## Node-Level Debugging
-
-### Action Node Debugging
-
-```python
-# Debug action node execution
-action_node = action(
-    name="debug_action",
-    action_func=lambda name: f"Hello {name}!",
-    param_schema={"name": str}
-)
-
-result = action_node.execute("Hello Alice")
-# Structured logs show parameter extraction, validation, and execution
-```
-
-### Classifier Node Debugging
-
-```python
-# Debug classifier node execution
-classifier_node = classifier(
-    name="intent_classifier",
-    classifier_func=llm_classifier,
-    children=[action1, action2]
-)
-
-result = classifier_node.execute("Hello Alice")
-# Structured logs show classification decision and child selection
-```
-
 ## Error Debugging
 
-### Error Tracing
+### Structured Error Information
+
+Intent Kit provides detailed error information:
 
 ```python
-try:
-    result = graph.route("Invalid input")
-except Exception as e:
-    print(f"Error: {e}")
-    print(f"Error context: {e.context}")
-    print(f"Error node: {e.node}")
+# Example error output
+{
+  "error_type": "ParameterExtractionError",
+  "node_name": "extract_name",
+  "input": "Invalid input",
+  "error_message": "Could not extract name parameter",
+  "suggested_fix": "Provide a name in the input",
+  "context_state": {"previous_operations": ["classifier"]},
+  "timestamp": "2024-01-15T10:30:00Z"
+}
 ```
 
-### Validation Errors
+### Error Handling Patterns
 
 ```python
-# Check parameter validation
-action_node = action(
-    name="test",
-    action_func=lambda x: x,
-    param_schema={"x": int}
-)
+def robust_action(name: str, context=None) -> str:
+    """Action with comprehensive error handling."""
+    try:
+        # Validate input
+        if not name or not isinstance(name, str):
+            raise ValueError("Name must be a non-empty string")
 
-result = action_node.execute("not a number")
-if not result.success:
-    print(f"Validation errors: {result.validation_errors}")
+        # Perform action
+        result = f"Hello {name}!"
+
+        # Update context
+        if context:
+            context.set("last_greeting", result, modified_by="robust_action")
+
+        return result
+
+    except Exception as e:
+        # Log error details
+        if context:
+            context.set("error", str(e), modified_by="robust_action")
+
+        # Return fallback response
+        return "Hello there! (I couldn't process your name properly)"
 ```
 
-## Logging Configuration
+## Performance Debugging
 
-### Configure Logging
+### Execution Timing
 
-```python
-import os
-
-# Set log level via environment variable
-os.environ["LOG_LEVEL"] = "debug"
-
-# Or set programmatically
-from intent_kit.utils.logger import Logger
-logger = Logger("my_component", level="debug")
-```
-
-### Available Log Levels
-
-- `trace`: Most verbose - detailed execution flow
-- `debug`: Debug information for development
-- `info`: General information
-- `warning`: Warnings that don't stop execution
-- `error`: Errors that affect functionality
-- `critical`: Critical errors that may cause failure
-- `fatal`: Fatal errors that will cause termination
-- `off`: No logging
-
-### Structured Logging
-
-Use structured logging for better diagnostic information:
+Track execution time for each node:
 
 ```python
-logger.debug_structured(
-    {
-        "node_name": "my_node",
-        "input": user_input,
-        "params": extracted_params,
-        "cost": 0.000123,
-        "tokens": {"input": 45, "output": 12},
-    },
-    "Node Execution"
-)
-```
-
-## Performance Monitoring
-
-### Cost Tracking
-
-```python
-# Monitor LLM costs across execution
-result = graph.route("Hello Alice")
-print(f"Total cost: ${result.cost:.6f}")
-print(f"Input tokens: {result.input_tokens}")
-print(f"Output tokens: {result.output_tokens}")
-```
-
-### Timing Information
-
-```python
-# Monitor execution timing
 import time
-start_time = time.time()
-result = graph.route("Hello Alice")
-duration = time.time() - start_time
-print(f"Execution time: {duration:.3f}s")
+from intent_kit import run_dag
+
+def timed_execution(dag, input_text, context):
+    """Execute DAG with timing information."""
+    start_time = time.time()
+
+    result = run_dag(dag, input_text, context)
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+
+    print(f"Total execution time: {execution_time:.3f}s")
+    print(f"Result: {result.data}")
+
+    return result
+
+# Use for debugging
+context = DefaultContext()
+result = timed_execution(dag, "Hello Alice", context)
+```
+
+### Memory Usage
+
+Monitor context memory usage:
+
+```python
+def monitor_context_memory(context):
+    """Monitor context memory usage."""
+    snapshot = context.snapshot()
+
+    print(f"Context keys: {len(snapshot)}")
+    print(f"Context size: {len(str(snapshot))} characters")
+
+    # Check for large objects
+    for key, value in snapshot.items():
+        if len(str(value)) > 1000:
+            print(f"Large object in {key}: {len(str(value))} characters")
+
+# Use during debugging
+context = DefaultContext()
+result = run_dag(dag, "Hello Alice", context)
+monitor_context_memory(context)
+```
+
+## Debugging Tools
+
+### Logger Configuration
+
+Configure logging for debugging:
+
+```python
+import logging
+from intent_kit.utils.logger import Logger
+
+# Set up debug logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Create logger for your application
+logger = Logger("my_app")
+
+# Use in your actions
+def debug_action(name: str, context=None) -> str:
+    logger.debug(f"Processing name: {name}")
+    logger.debug(f"Context keys: {context.keys() if context else 'None'}")
+
+    result = f"Hello {name}!"
+    logger.info(f"Action completed: {result}")
+
+    return result
+```
+
+### Context Inspection
+
+Inspect context state during execution:
+
+```python
+def inspect_context(context, stage=""):
+    """Inspect context at different stages."""
+    print(f"\n=== Context Inspection ({stage}) ===")
+    print(f"Keys: {list(context.keys())}")
+
+    for key in context.keys():
+        value = context.get(key)
+        print(f"  {key}: {type(value).__name__} = {value}")
+
+    print("=" * 40)
+
+# Use throughout execution
+context = DefaultContext()
+inspect_context(context, "initial")
+
+result1 = run_dag(dag, "Hello Alice", context)
+inspect_context(context, "after first execution")
+
+result2 = run_dag(dag, "What's the weather?", context)
+inspect_context(context, "after second execution")
+```
+
+## Common Debugging Scenarios
+
+### 1. Parameter Extraction Issues
+
+```python
+# Debug parameter extraction
+def debug_extractor(input_text, param_schema):
+    """Debug parameter extraction process."""
+    print(f"Input: {input_text}")
+    print(f"Schema: {param_schema}")
+
+    # Simulate extraction
+    # In real usage, this would be done by the extractor node
+    print("Extraction would happen here")
+
+    return {"debug": "extraction_info"}
+
+# Use in your extractor nodes
+```
+
+### 2. Classification Problems
+
+```python
+# Debug classification
+def debug_classifier(input_text, output_labels):
+    """Debug classification process."""
+    print(f"Input: {input_text}")
+    print(f"Available labels: {output_labels}")
+
+    # Simulate classification
+    # In real usage, this would be done by the classifier node
+    print("Classification would happen here")
+
+    return "greet"  # Example result
+```
+
+### 3. Context State Issues
+
+```python
+# Debug context state
+def debug_context_flow(context, operation=""):
+    """Debug context state changes."""
+    print(f"\nContext operation: {operation}")
+    print(f"Current keys: {list(context.keys())}")
+
+    if context.has("error"):
+        print(f"Error state: {context.get('error')}")
+
+    if context.has("last_operation"):
+        print(f"Last operation: {context.get('last_operation')}")
+
+# Use throughout your debugging
 ```
 
 ## Best Practices
 
-1. **Use debug mode** during development
-2. **Enable structured logging** for better diagnostics
-3. **Mark important context keys** for detailed tracking
-4. **Monitor costs and tokens** for performance optimization
-5. **Use error tracing** for troubleshooting
-6. **Test with edge cases** to catch issues early
+### 1. **Structured Logging**
+- Use consistent log levels (DEBUG, INFO, ERROR)
+- Include relevant context in log messages
+- Use structured data when possible
 
-## Common Issues
+### 2. **Error Handling**
+- Always catch and log exceptions
+- Provide meaningful error messages
+- Include context information in errors
 
-### Parameter Extraction Failures
+### 3. **Performance Monitoring**
+- Track execution times for critical paths
+- Monitor memory usage patterns
+- Use profiling tools for optimization
 
-```python
-# Debug parameter extraction
-action_node = action(
-    name="debug",
-    action_func=lambda name, age: f"{name} is {age}",
-    param_schema={"name": str, "age": int}
-)
+### 4. **Context Management**
+- Validate context state at key points
+- Monitor context size and growth
+- Clear temporary data when no longer needed
 
-result = action_node.execute("Alice is 25")
-# Structured logs show extraction process and results
-```
-
-### Classifier Routing Issues
-
-```python
-# Debug classifier routing
-classifier_node = classifier(
-    name="intent_classifier",
-    classifier_func=llm_classifier,
-    children=[action1, action2]
-)
-
-result = classifier_node.execute("Hello Alice")
-# Structured logs show classification decision process
-```
-
-## Recent Improvements
-
-### Reduced Log Noise
-
-- **Removed verbose internal state logging** from node execution
-- **Consolidated AI client logging** across all providers
-- **Added structured logging** for better organization
-- **Improved context logging** to only log important changes
-- **Enhanced error reporting** with structured error information
-
-### Enhanced Diagnostics
-
-- **Structured parameter extraction logs** with input/output details
-- **Classifier decision tracking** with cost and token information
-- **Context change monitoring** for important fields only
-- **Performance metrics** including cost, tokens, and timing
-- **Error context preservation** for better troubleshooting
+### 5. **Testing**
+- Test error conditions explicitly
+- Use debug mode during development
+- Validate context state in tests

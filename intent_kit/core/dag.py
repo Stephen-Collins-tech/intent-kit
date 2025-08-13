@@ -36,20 +36,17 @@ class DAGBuilder:
         required_keys = ["nodes", "edges", "entrypoints"]
         missing_keys = [key for key in required_keys if key not in config]
         if missing_keys:
-            raise ValueError(
-                f"Missing required keys in config: {missing_keys}")
+            raise ValueError(f"Missing required keys in config: {missing_keys}")
 
         builder = cls()
 
         # Add nodes
         for node_id, node_config in config["nodes"].items():
             if not isinstance(node_config, dict):
-                raise ValueError(
-                    f"Node config for {node_id} must be a dictionary")
+                raise ValueError(f"Node config for {node_id} must be a dictionary")
 
             if "type" not in node_config:
-                raise ValueError(
-                    f"Node {node_id} missing required 'type' field")
+                raise ValueError(f"Node {node_id} missing required 'type' field")
 
             node_type = node_config.pop("type")
             builder.add_node(node_id, node_type, **node_config)
@@ -60,11 +57,9 @@ class DAGBuilder:
                 raise ValueError("Edge must be a dictionary")
 
             required_edge_keys = ["from", "to"]
-            missing_edge_keys = [
-                key for key in required_edge_keys if key not in edge]
+            missing_edge_keys = [key for key in required_edge_keys if key not in edge]
             if missing_edge_keys:
-                raise ValueError(
-                    f"Edge missing required keys: {missing_edge_keys}")
+                raise ValueError(f"Edge missing required keys: {missing_edge_keys}")
 
             label = edge.get("label")
             builder.add_edge(edge["from"], edge["to"], label)
@@ -113,7 +108,7 @@ class DAGBuilder:
 
         Args:
             src: Source node ID
-            dst: Destination node ID  
+            dst: Destination node ID
             label: Optional edge label (None means default/fall-through)
 
         Returns:
@@ -153,28 +148,52 @@ class DAGBuilder:
         self.dag.entrypoints = entrypoints
         return self
 
+    def with_default_llm_config(self, llm_config: Dict[str, Any]) -> "DAGBuilder":
+        """Set default LLM configuration for the graph.
+
+        This configuration will be used by nodes that don't have their own llm_config.
+
+        Args:
+            llm_config: Default LLM configuration dictionary
+
+        Returns:
+            Self for method chaining
+        """
+        if self._frozen:
+            raise RuntimeError("Cannot modify frozen DAG")
+
+        # Store the default config in the DAG metadata
+        if not hasattr(self.dag, "metadata"):
+            self.dag.metadata = {}
+        self.dag.metadata["default_llm_config"] = llm_config
+        return self
+
     def freeze(self) -> "DAGBuilder":
         """Make the DAG immutable to catch mutation bugs."""
         self._frozen = True
 
         # Make sets immutable
-        frozen_adj = {}
+        frozen_adj: Dict[str, Dict[EdgeLabel, frozenset[str]]] = {}
         for node_id, labels in self.dag.adj.items():
             frozen_adj[node_id] = {}
             for label, dsts in labels.items():
                 frozen_adj[node_id][label] = frozenset(dsts)
-        self.dag.adj = frozen_adj
+        self.dag.adj = frozen_adj  # type: ignore[assignment]
 
         frozen_rev = {}
         for node_id, srcs in self.dag.rev.items():
             frozen_rev[node_id] = frozenset(srcs)
-        self.dag.rev = frozen_rev
+        self.dag.rev = frozen_rev  # type: ignore[assignment]
 
         self.dag.entrypoints = tuple(self.dag.entrypoints)
 
         return self
 
-    def build(self, validate_structure: bool = True, producer_labels: Optional[Dict[str, Set[str]]] = None) -> IntentDAG:
+    def build(
+        self,
+        validate_structure: bool = True,
+        producer_labels: Optional[Dict[str, Set[str]]] = None,
+    ) -> IntentDAG:
         """Build and return the final IntentDAG.
 
         Args:
@@ -204,12 +223,7 @@ class DAGBuilder:
         Raises:
             ValueError: If the node type is not supported
         """
-        supported_types = {
-            "dag_classifier",
-            "dag_action",
-            "dag_extractor",
-            "dag_clarification"
-        }
+        supported_types = {"classifier", "action", "extractor", "clarification"}
 
         if node_type not in supported_types:
             raise ValueError(
