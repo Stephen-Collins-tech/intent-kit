@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.7.0] - 2025-08-14
+
+### Added
+- **Enhanced Context System** - Improved context management with better debugging capabilities and execution tracing
+- **Context Architecture Documentation** - Comprehensive documentation covering context protocols, merge policies, and best practices
+- **Context Management Guide** - Detailed guide for working with context in DAG-based applications
+- **Evaluation Framework Updates** - Enhanced evaluation system with improved metrics tracking and DAG node support
+
+### Changed
+- **Context Implementation** - Streamlined context handling with improved performance and reliability
+- **Documentation Structure** - Reorganized and enhanced documentation for better developer experience
+- **Evaluation System** - Updated evaluation framework to work seamlessly with DAG-based architecture
+- **Context Debugging** - Enhanced debugging capabilities for context-related issues
+
+### Improved
+- **Context Performance** - Optimized context operations for better execution speed
+- **Error Handling** - Improved error messages and debugging information for context operations
+- **Developer Experience** - Better documentation and examples for context usage patterns
+
 ## [v0.6.1] - 2025-08-14
 
 ### Changed
