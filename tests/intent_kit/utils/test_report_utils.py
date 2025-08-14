@@ -2,7 +2,6 @@
 Tests for report utilities module.
 """
 
-import pytest
 from unittest.mock import Mock
 from intent_kit.utils.report_utils import (
     ReportData,
@@ -35,7 +34,7 @@ class TestReportData:
             llm_config={"model": "gpt-4", "provider": "openai"},
             test_inputs=["input1", "input2"],
         )
-        
+
         assert len(data.timings) == 2
         assert len(data.successes) == 2
         assert len(data.costs) == 2
@@ -103,7 +102,7 @@ class TestGenerateTimingTable:
             llm_config={"model": "test", "provider": "test"},
             test_inputs=[],
         )
-        
+
         result = generate_timing_table(data)
         assert "Timing Summary:" in result
         assert "Input" in result
@@ -123,7 +122,7 @@ class TestGenerateTimingTable:
             llm_config={"model": "gpt-4", "provider": "openai"},
             test_inputs=["test_input"],
         )
-        
+
         result = generate_timing_table(data)
         assert "test_input" in result
         assert "1.5000" in result
@@ -147,7 +146,7 @@ class TestGenerateTimingTable:
             llm_config={"model": "gpt-4", "provider": "openai"},
             test_inputs=["very_long_input_name_that_needs_truncation"],
         )
-        
+
         result = generate_timing_table(data)
         # Check that long values are truncated
         assert "very_long_input_name_that_needs_truncation" not in result
@@ -167,7 +166,7 @@ class TestGenerateSummaryStatistics:
             total_input_tokens=600,
             total_output_tokens=400,
         )
-        
+
         assert "Total Requests: 10" in result
         assert "Successful Requests: 8 (80.0%)" in result
         assert "Total Cost: $0.0500" in result
@@ -186,7 +185,7 @@ class TestGenerateSummaryStatistics:
             total_input_tokens=0,
             total_output_tokens=0,
         )
-        
+
         assert "Total Requests: 5" in result
         assert "Successful Requests: 3 (60.0%)" in result
         assert "Total Cost: $0.0200" in result
@@ -205,7 +204,7 @@ class TestGenerateSummaryStatistics:
             total_input_tokens=600,
             total_output_tokens=400,
         )
-        
+
         assert "Total Cost: $0.00" in result
         assert "Average Cost per Request: $0.00" in result
         # When cost is 0, the cost per successful request line is not included
@@ -221,7 +220,7 @@ class TestGenerateSummaryStatistics:
             total_input_tokens=600,
             total_output_tokens=400,
         )
-        
+
         assert "Successful Requests: 0 (0.0%)" in result
         assert "Cost per Successful Request: $0.00" in result
 
@@ -233,7 +232,7 @@ class TestGenerateModelInformation:
         """Test generating model information."""
         llm_config = {"model": "gpt-4", "provider": "openai"}
         result = generate_model_information(llm_config)
-        
+
         assert "Primary Model: gpt-4" in result
         assert "Provider: openai" in result
 
@@ -248,7 +247,7 @@ class TestGenerateCostBreakdown:
             total_output_tokens=400,
             total_cost=0.05,
         )
-        
+
         assert "Input Tokens: 600" in result
         assert "Output Tokens: 400" in result
         assert "Total Cost: $0.0500" in result
@@ -260,7 +259,7 @@ class TestGenerateCostBreakdown:
             total_output_tokens=0,
             total_cost=0.0,
         )
-        
+
         # Should return empty string when no tokens
         assert result == ""
 
@@ -282,15 +281,15 @@ class TestGeneratePerformanceReport:
             llm_config={"model": "gpt-4", "provider": "openai"},
             test_inputs=["test1", "test2"],
         )
-        
+
         result = generate_performance_report(data)
-        
+
         # Check that all sections are present
         assert "Timing Summary:" in result
         assert "SUMMARY STATISTICS:" in result
         assert "MODEL INFORMATION:" in result
         assert "COST BREAKDOWN:" in result
-        
+
         # Check specific content
         assert "test1" in result
         assert "test2" in result
@@ -317,7 +316,7 @@ class TestGenerateDetailedView:
             llm_config={"model": "gpt-4", "provider": "openai"},
             test_inputs=["test1"],
         )
-        
+
         execution_results = [
             {
                 "node_name": "test_node",
@@ -327,9 +326,9 @@ class TestGenerateDetailedView:
                 "output_tokens": 50,
             }
         ]
-        
+
         result = generate_detailed_view(data, execution_results, "Performance info")
-        
+
         assert "Performance Report:" in result
         assert "Intent: test_node" in result
         assert "Output: test_output" in result
@@ -352,7 +351,7 @@ class TestGenerateDetailedView:
             llm_config={"model": "gpt-4", "provider": "openai"},
             test_inputs=["test1"],
         )
-        
+
         execution_results = [
             {
                 "node_name": "test_node",
@@ -360,9 +359,9 @@ class TestGenerateDetailedView:
                 "cost": 0.01,
             }
         ]
-        
+
         result = generate_detailed_view(data, execution_results)
-        
+
         assert "Performance Report:" in result
         assert "Intent: test_node" in result
         assert "Output: test_output" in result
@@ -395,11 +394,11 @@ class TestFormatExecutionResults:
         mock_result.node_type = "ACTION"
         mock_result.context_patch = {"key": "value"}
         mock_result.error = None
-        
+
         llm_config = {"model": "gpt-4", "provider": "openai"}
-        
+
         result = format_execution_results([mock_result], llm_config, "Performance info")
-        
+
         assert "Performance Report:" in result
         assert "Intent: test_node" in result
         assert "Output: test_output" in result
@@ -425,12 +424,12 @@ class TestFormatExecutionResults:
         mock_result.node_type = None
         mock_result.context_patch = None
         mock_result.error = None
-        
+
         llm_config = {"model": "gpt-4", "provider": "openai"}
         timings = [("test_input", 2.5)]  # Custom timing
-        
+
         result = format_execution_results([mock_result], llm_config, "", timings)
-        
+
         assert "test_input: 2.500 seconds elapsed" in result
 
     def test_format_execution_results_with_error(self):
@@ -450,10 +449,10 @@ class TestFormatExecutionResults:
         mock_result.node_type = None
         mock_result.context_patch = None
         mock_result.error = "Test error"
-        
+
         llm_config = {"model": "gpt-4", "provider": "openai"}
-        
+
         result = format_execution_results([mock_result], llm_config)
-        
+
         assert "Error: Test error" in result
         assert "False" in result  # Success status should be False
