@@ -17,10 +17,14 @@ from intent_kit.evals import run_eval, load_dataset
 from intent_kit import DAGBuilder, run_dag
 
 # Create a simple DAG
-def greet(name: str) -> str:
+def greet(name: str, **kwargs) -> str:
     return f"Hello {name}!"
 
 builder = DAGBuilder()
+builder.with_default_llm_config({
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it"
+})
 builder.add_node("classifier", "classifier",
                  output_labels=["greet"],
                  description="Main classifier")

@@ -17,10 +17,10 @@ The JSON serialization system provides:
 from intent_kit import DAGBuilder
 
 # Define your functions
-def greet_function(name: str) -> str:
+def greet_function(name: str, **kwargs) -> str:
     return f"Hello {name}!"
 
-def calculate_function(operation: str, a: float, b: float) -> str:
+def calculate_function(operation: str, a: float, b: float, **kwargs) -> str:
     if operation == "add":
         return str(a + b)
     elif operation == "subtract":
@@ -34,7 +34,7 @@ dag_config = {
             "type": "classifier",
             "output_labels": ["greet", "calculate"],
             "description": "Main intent classifier",
-            "llm_config": {"provider": "openai", "model": "gpt-4"}
+            "llm_config": {"provider": "openrouter", "model": "google/gemma-2-9b-it"}
         },
         "extract_greet": {
             "type": "extractor",
@@ -125,8 +125,8 @@ dag = DAGBuilder.from_json(dag_config)
   "description": "Extract parameters from input",
   "output_key": "extracted_params",
   "llm_config": {
-    "provider": "openai",
-    "model": "gpt-4"
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it"
   }
 }
 ```
@@ -159,13 +159,13 @@ import os
 from intent_kit import DAGBuilder, run_dag
 from intent_kit.core.context import DefaultContext
 
-def greet(name: str) -> str:
+def greet(name: str, **kwargs) -> str:
     return f"Hello {name}!"
 
-def get_weather(city: str) -> str:
+def get_weather(city: str, **kwargs) -> str:
     return f"Weather in {city} is sunny"
 
-def calculate(operation: str, a: float, b: float) -> str:
+def calculate(operation: str, a: float, b: float, **kwargs) -> str:
     if operation == "add":
         return str(a + b)
     elif operation == "subtract":
@@ -180,9 +180,9 @@ dag_config = {
             "output_labels": ["greet", "weather", "calculate"],
             "description": "Main intent classifier",
             "llm_config": {
-                "provider": "openai",
-                "model": "gpt-3.5-turbo",
-                "api_key": os.getenv("OPENAI_API_KEY")
+                "provider": "openrouter",
+                "model": "google/gemma-2-9b-it",
+                "api_key": os.getenv("OPENROUTER_API_KEY")
             }
         },
         "extract_name": {
@@ -241,13 +241,13 @@ dag = DAGBuilder.from_json(dag_config)
 context = DefaultContext()
 
 # Test different inputs
-result = run_dag(dag, "Hello Alice", context)
+result, context = run_dag(dag, "Hello Alice")
 print(result.data)  # → "Hello Alice!"
 
-result = run_dag(dag, "What's the weather in San Francisco?", context)
+result, context = run_dag(dag, "What's the weather in San Francisco?", context)
 print(result.data)  # → "Weather in San Francisco is sunny"
 
-result = run_dag(dag, "Add 5 and 3", context)
+result, context = run_dag(dag, "Add 5 and 3", context)
 print(result.data)  # → "8"
 ```
 
@@ -261,9 +261,9 @@ You can set default LLM configuration for the entire DAG:
 # Set default LLM config
 builder = DAGBuilder()
 builder.with_default_llm_config({
-    "provider": "openai",
-    "model": "gpt-4",
-    "api_key": os.getenv("OPENAI_API_KEY")
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it",
+    "api_key": os.getenv("OPENROUTER_API_KEY")
 })
 
 # Individual nodes can override this
@@ -280,8 +280,8 @@ dag_config = {
             "param_schema": {"name": str},
             "description": "Extract name",
             "llm_config": {
-                "provider": "anthropic",  # Override default
-                "model": "claude-3-sonnet-20240229"
+                "provider": "openrouter",  # Override default
+                "model": "google/gemma-2-9b-it"
             }
         }
     }

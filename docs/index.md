@@ -12,22 +12,33 @@ Get up and running in minutes with our [Quickstart Guide](quickstart.md).
 - [Intent DAGs](concepts/intent-graphs.md) - How to structure your workflows with DAGs
 - [Nodes and Actions](concepts/nodes-and-actions.md) - Building blocks for your applications
 - [Context Architecture](concepts/context-architecture.md) - Managing state and memory
+- [Extractor Nodes](concepts/extractor-nodes.md) - Parameter extraction using LLM services
+- [Clarification Nodes](concepts/clarification-nodes.md) - Multi-turn conversation handling
 
 ### Examples
+- [Basic Examples](examples/basic-examples.md) - Simple examples to get started
 - [Calculator Bot](examples/calculator-bot.md) - Simple math operations
 - [Context-Aware Chatbot](examples/context-aware-chatbot.md) - Remembering conversations
 - [Context Memory Demo](examples/context-memory-demo.md) - Multi-turn conversations
+- [DAG Examples](examples/dag-examples.md) - Advanced DAG patterns and node reuse
 
 ### Configuration
 - [JSON Serialization](configuration/json-serialization.md) - Define workflows in JSON
 - [LLM Integration](configuration/llm-integration.md) - OpenAI, Anthropic, Google, Ollama
 
+### Services
+- [AI Services](services/ai-services.md) - Comprehensive AI service integration
+
 ### Development
 - [Building](development/building.md) - How to build the package
 - [Testing](development/testing.md) - Unit tests and integration testing
 - [Evaluation](development/evaluation.md) - Performance evaluation and benchmarking
+- [Evaluation Framework](development/evaluation-framework.md) - Comprehensive testing framework
 - [Debugging](development/debugging.md) - Debugging tools and techniques
 - [Performance Monitoring](development/performance-monitoring.md) - Performance tracking and reporting
+
+### Utilities
+- [Utilities](utils/utilities.md) - Type coercion, text processing, performance monitoring, logging, and reporting
 
 ### API Reference
 - [Complete API Reference](api/api-reference.md) - Full API documentation
@@ -221,7 +232,7 @@ export OPENAI_API_KEY="your-openai-api-key"
 ### 3. Build Your First Workflow
 
 ```python
-from intent_kit import DAGBuilder
+from intent_kit import DAGBuilder, run_dag
 from intent_kit.core.context import DefaultContext
 
 # Define what your app can do
@@ -231,8 +242,8 @@ def greet(name: str) -> str:
 # Create a DAG
 builder = DAGBuilder()
 builder.with_default_llm_config({
-    "provider": "openai",
-    "model": "gpt-3.5-turbo"
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it"
 })
 
 # Add nodes
@@ -256,7 +267,7 @@ builder.set_entrypoints(["classifier"])
 # Build and test
 dag = builder.build()
 context = DefaultContext()
-result = dag.execute("Hello Alice", context)
+result, final_context = run_dag(dag, "Hello Alice", context)
 print(result.data)  # → "Hello Alice!"
 ```
 
@@ -291,3 +302,7 @@ Intent Kit is licensed under the MIT License. See the [LICENSE](../LICENSE) file
 ---
 
 **Ready to build intelligent applications?** Start with our [Quickstart Guide](quickstart.md) and see how easy it is to create AI-powered workflows with Intent Kit!
+
+---
+
+**Built and maintained by [Stephen Collins.tech LLC](https://stephencollins.tech)**

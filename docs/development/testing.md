@@ -48,11 +48,15 @@ from intent_kit.core.context import DefaultContext
 
 def test_simple_action():
     """Test basic action execution."""
-    def greet(name: str) -> str:
+    def greet(name: str, **kwargs) -> str:
         return f"Hello {name}!"
 
     # Create DAG
     builder = DAGBuilder()
+    builder.with_default_llm_config({
+        "provider": "openrouter",
+        "model": "google/gemma-2-9b-it"
+    })
     builder.add_node("classifier", "classifier",
                      output_labels=["greet"],
                      description="Main classifier")
@@ -68,7 +72,7 @@ def test_simple_action():
 
     dag = builder.build()
     context = DefaultContext()
-    result = run_dag(dag, "Hello Alice", context)
+    result, context = run_dag(dag, "Hello Alice")
 
     assert result.data == "Hello Alice!"
 ```
@@ -93,13 +97,17 @@ from intent_kit.core.context import DefaultContext
 @pytest.fixture
 def simple_dag():
     """Create a simple DAG for testing."""
-    def greet(name: str) -> str:
+    def greet(name: str, **kwargs) -> str:
         return f"Hello {name}!"
 
     builder = DAGBuilder()
     builder.add_node("classifier", "classifier",
                      output_labels=["greet"],
-                     description="Main classifier")
+                     description="Main classifier",
+                     llm_config={
+                         "provider": "openrouter",
+                         "model": "google/gemma-2-9b-it"
+                     })
     builder.add_node("extract_name", "extractor",
                      param_schema={"name": str},
                      description="Extract name")
@@ -119,7 +127,7 @@ def test_context():
 
 def test_greeting_workflow(simple_dag, test_context):
     """Test the complete greeting workflow."""
-    result = run_dag(simple_dag, "Hello Alice", test_context)
+    result, test_context = run_dag(simple_dag, "Hello Alice")
     assert result.data == "Hello Alice!"
 ```
 
@@ -141,7 +149,7 @@ def test_classifier_with_mock(simple_dag, test_context, mock_llm_service):
     # Inject mock service into context
     test_context.set("llm_service", mock_llm_service)
 
-    result = run_dag(simple_dag, "Hello Alice", test_context)
+    result, test_context = run_dag(simple_dag, "Hello Alice")
     assert result.data == "Hello Alice!"
 ```
 
@@ -152,7 +160,7 @@ def test_classifier_with_mock(simple_dag, test_context, mock_llm_service):
 ```python
 def test_classifier_node():
     """Test classifier node functionality."""
-    def custom_classifier(input_text: str) -> str:
+    def custom_classifier(input_text: str, **kwargs) -> str:
         if "hello" in input_text.lower():
             return "greet"
         return "unknown"
@@ -172,11 +180,11 @@ def test_classifier_node():
     context = DefaultContext()
 
     # Test greeting input
-    result = run_dag(dag, "Hello there", context)
+    result, context = run_dag(dag, "Hello there")
     assert result.data == "Hello!"
 
     # Test unknown input
-    result = run_dag(dag, "Random text", context)
+    result, context = run_dag(dag, "Random text")
     assert result.data is None  # No action executed
 ```
 
@@ -185,7 +193,7 @@ def test_classifier_node():
 ```python
 def test_extractor_node():
     """Test extractor node functionality."""
-    def test_action(name: str, age: int) -> str:
+    def test_action(name: str, age: int, **kwargs) -> str:
         return f"{name} is {age} years old"
 
     builder = DAGBuilder()
@@ -205,7 +213,7 @@ def test_extractor_node():
     # Mock extracted parameters
     context.set("extracted_params", {"name": "Alice", "age": 25})
 
-    result = run_dag(dag, "Test input", context)
+    result, context = run_dag(dag, "Test input")
     assert result.data == "Alice is 25 years old"
 ```
 
@@ -214,9 +222,7 @@ def test_extractor_node():
 ```python
 def test_action_node():
     """Test action node functionality."""
-    def test_action(name: str, context=None) -> str:
-        if context:
-            context.set("last_action", "greet", modified_by="test_action")
+    def test_action(name: str, **kwargs) -> str:
         return f"Hello {name}!"
 
     builder = DAGBuilder()
@@ -231,9 +237,8 @@ def test_action_node():
     # Mock parameters
     context.set("extracted_params", {"name": "Bob"})
 
-    result = run_dag(dag, "Test input", context)
+    result, context = run_dag(dag, "Test input")
     assert result.data == "Hello Bob!"
-    assert context.get("last_action") == "greet"
 ```
 
 ## Testing Error Conditions
@@ -244,11 +249,11 @@ def test_action_node():
 def test_invalid_input_handling(simple_dag, test_context):
     """Test handling of invalid inputs."""
     # Test with empty input
-    result = run_dag(simple_dag, "", test_context)
+    result, test_context = run_dag(simple_dag, "")
     assert result.data is None or "error" in str(result.data).lower()
 
     # Test with None input
-    result = run_dag(simple_dag, None, test_context)
+    result, test_context = run_dag(simple_dag, None)
     assert result.data is None or "error" in str(result.data).lower()
 ```
 
@@ -257,10 +262,7 @@ def test_invalid_input_handling(simple_dag, test_context):
 ```python
 def test_context_error_handling():
     """Test context error handling."""
-    def failing_action(context=None) -> str:
-        if context:
-            # Simulate context error
-            context.set("error", "Test error", modified_by="failing_action")
+    def failing_action(**kwargs) -> str:
         raise ValueError("Test error")
 
     builder = DAGBuilder()
@@ -273,9 +275,8 @@ def test_context_error_handling():
     context = DefaultContext()
 
     # Test error handling
-    result = run_dag(dag, "Test input", context)
+    result, context = run_dag(dag, "Test input")
     assert result.data is None or "error" in str(result.data).lower()
-    assert context.get("error") == "Test error"
 ```
 
 ## Integration Testing
@@ -285,10 +286,10 @@ def test_context_error_handling():
 ```python
 def test_complete_workflow():
     """Test a complete workflow with multiple nodes."""
-    def greet(name: str) -> str:
+    def greet(name: str, **kwargs) -> str:
         return f"Hello {name}!"
 
-    def get_weather(city: str) -> str:
+    def get_weather(city: str, **kwargs) -> str:
         return f"Weather in {city} is sunny"
 
     # Create complex DAG
@@ -320,14 +321,11 @@ def test_complete_workflow():
     context = DefaultContext()
 
     # Test greeting workflow
-    context.set("extracted_params", {"name": "Alice"})
-    result = run_dag(dag, "Hello Alice", context)
+    result, context = run_dag(dag, "Hello Alice")
     assert result.data == "Hello Alice!"
 
     # Test weather workflow
-    context.clear()
-    context.set("extracted_params", {"city": "San Francisco"})
-    result = run_dag(dag, "Weather in San Francisco", context)
+    result, context = run_dag(dag, "Weather in San Francisco")
     assert result.data == "Weather in San Francisco is sunny"
 ```
 

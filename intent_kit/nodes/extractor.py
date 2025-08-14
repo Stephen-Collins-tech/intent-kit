@@ -1,6 +1,6 @@
 """DAG ExtractorNode implementation for parameter extraction."""
 
-from typing import Any, Dict, Optional, Union, Type
+from typing import Any, Dict, Optional, Union, Type, List
 from intent_kit.core.types import NodeProtocol, ExecutionResult
 from intent_kit.core.context import ContextProtocol
 from intent_kit.utils.logger import Logger
@@ -23,6 +23,8 @@ class ExtractorNode(NodeProtocol):
         llm_config: Optional[Dict[str, Any]] = None,
         custom_prompt: Optional[str] = None,
         output_key: str = "extracted_params",
+        context_read: Optional[List[str]] = None,
+        context_write: Optional[List[str]] = None,
     ):
         """Initialize the DAG extractor node.
 
@@ -33,6 +35,8 @@ class ExtractorNode(NodeProtocol):
             llm_config: LLM configuration
             custom_prompt: Custom prompt for parameter extraction
             output_key: Key to store extracted parameters in context
+            context_read: List of context keys to read before execution
+            context_write: List of context keys to write after execution
         """
         self.name = name
         self.param_schema = param_schema
@@ -40,6 +44,8 @@ class ExtractorNode(NodeProtocol):
         self.llm_config = llm_config or {}
         self.custom_prompt = custom_prompt
         self.output_key = output_key
+        self.context_read = context_read or []
+        self.context_write = context_write or []
         self.logger = Logger(name)
 
     def execute(self, user_input: str, ctx: ContextProtocol) -> ExecutionResult:
@@ -53,6 +59,13 @@ class ExtractorNode(NodeProtocol):
             ExecutionResult with extracted parameters
         """
         try:
+            # Read context values if specified
+            context_data = {}
+            for key in self.context_read:
+                value = ctx.get(key)
+                if value is not None:
+                    context_data[key] = value
+
             # Get LLM service from context
             llm_service = ctx.get("llm_service") if hasattr(ctx, "get") else None
 
@@ -68,7 +81,7 @@ class ExtractorNode(NodeProtocol):
                     "LLM service and config required for parameter extraction"
                 )
 
-            # Build prompt for parameter extraction
+            # Build prompt for parameter extraction (pass context data for potential use)
             prompt = self._build_prompt(user_input, ctx)
 
             # Get model from config or use default
@@ -99,15 +112,31 @@ class ExtractorNode(NodeProtocol):
             if raw_response.duration:
                 metrics["duration"] = raw_response.duration
 
+            # Create context patch with extraction results
+            context_patch = {
+                self.output_key: validated_params,
+                "extraction_success": True,
+            }
+
+            # Add context write operations if specified
+            for key in self.context_write:
+                if key == "extraction.confidence":
+                    # Could be calculated based on validation
+                    context_patch[key] = True
+                elif key == "extraction.time":
+                    import time
+
+                    context_patch[key] = time.time()
+                else:
+                    # For other keys, we could add more special cases as needed
+                    context_patch[key] = validated_params
+
             return ExecutionResult(
                 data=validated_params,
                 next_edges=["success"],  # Continue to next node
                 terminate=False,
                 metrics=metrics,
-                context_patch={
-                    self.output_key: validated_params,
-                    "extraction_success": True,
-                },
+                context_patch=context_patch,
             )
 
         except Exception as e:
@@ -263,3 +292,13 @@ Return only the JSON object with the extracted parameters:"""
                         result_params[param_name] = ""
 
         return result_params
+
+    @property
+    def context_read_keys(self) -> List[str]:
+        """List of context keys to read before execution."""
+        return self.context_read
+
+    @property
+    def context_write_keys(self) -> List[str]:
+        """List of context keys to write after execution."""
+        return self.context_write

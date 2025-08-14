@@ -148,12 +148,7 @@ Enable detailed execution tracing to understand performance bottlenecks.
 ```python
 from intent_kit import DAGBuilder
 
-dag = (
-    DAGBuilder()
-    .with_json(dag_config)
-    .with_default_llm_config(llm_config)
-    .build()
-)
+dag = DAGBuilder.from_json(dag_config)
 ```
 
 ### Trace Information

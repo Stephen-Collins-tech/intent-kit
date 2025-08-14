@@ -27,7 +27,7 @@ builder = DAGBuilder()
 builder.add_node("classifier", "classifier",
                  output_labels=["greet", "weather", "calculate"],
                  description="Route user input to appropriate action",
-                 llm_config={"provider": "openai", "model": "gpt-4"})
+                 llm_config={"provider": "openrouter", "model": "google/gemma-2-9b-it"})
 
 # Custom classifier function
 def custom_classifier(user_input: str, context) -> str:
@@ -154,8 +154,8 @@ builder = DAGBuilder()
 
 # Set default LLM configuration
 builder.with_default_llm_config({
-    "provider": "openai",
-    "model": "gpt-4"
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it"
 })
 
 # Add classifier
@@ -222,10 +222,10 @@ dag_config = {
             "type": "classifier",
             "output_labels": ["greet", "weather"],
             "description": "Main intent classifier",
-            "llm_config": {
-                "provider": "openai",
-                "model": "gpt-4"
-            }
+                            "llm_config": {
+                    "provider": "openrouter",
+                    "model": "google/gemma-2-9b-it"
+                }
         },
         "extract_name": {
             "type": "extractor",

@@ -22,6 +22,8 @@ class ClarificationNode(NodeProtocol):
         description: Optional[str] = None,
         llm_config: Optional[Dict[str, Any]] = None,
         custom_prompt: Optional[str] = None,
+        context_read: Optional[list[str]] = None,
+        context_write: Optional[list[str]] = None,
     ):
         """Initialize the clarification node.
 
@@ -39,6 +41,8 @@ class ClarificationNode(NodeProtocol):
         self.description = description or "Ask user to clarify their intent"
         self.llm_config = llm_config or {}
         self.custom_prompt = custom_prompt
+        self.context_read = context_read or []
+        self.context_write = context_write or []
         self.logger = Logger(name)
 
     def _default_message(self) -> str:
@@ -58,6 +62,13 @@ class ClarificationNode(NodeProtocol):
         Returns:
             ExecutionResult with clarification message and termination flag
         """
+        # Read context values if specified
+        context_data = {}
+        for key in self.context_read:
+            value = ctx.get(key)
+            if value is not None:
+                context_data[key] = value
+
         # Generate clarification message using LLM if configured
         if self.llm_config and self.custom_prompt:
             clarification_text = self._generate_clarification_with_llm(user_input, ctx)
@@ -65,7 +76,25 @@ class ClarificationNode(NodeProtocol):
             # Use static message
             clarification_text = self._format_message()
 
-        # Context information will be added via context_patch
+        # Create context patch with clarification results
+        context_patch = {
+            "clarification_requested": True,
+            "original_input": user_input,
+            "available_options": self.available_options,
+            "clarification_message": clarification_text,
+        }
+
+        # Add context write operations if specified
+        for key in self.context_write:
+            if key == "clarification.requested":
+                context_patch[key] = True
+            elif key == "clarification.time":
+                import time
+
+                context_patch[key] = time.time()
+            else:
+                # For other keys, we could add more special cases as needed
+                context_patch[key] = True
 
         return ExecutionResult(
             data={
@@ -77,12 +106,7 @@ class ClarificationNode(NodeProtocol):
             next_edges=None,  # Terminate the DAG
             terminate=True,
             metrics={},
-            context_patch={
-                "clarification_requested": True,
-                "original_input": user_input,
-                "available_options": self.available_options,
-                "clarification_message": clarification_text,
-            },
+            context_patch=context_patch,
         )
 
     def _generate_clarification_with_llm(self, user_input: str, ctx: Any) -> str:
@@ -165,3 +189,13 @@ Generate a clarification message:"""
 
         options_text = "\n".join(f"- {option}" for option in self.available_options)
         return f"{message}\n\nAvailable options:\n{options_text}"
+
+    @property
+    def context_read_keys(self) -> list[str]:
+        """List of context keys to read before execution."""
+        return self.context_read
+
+    @property
+    def context_write_keys(self) -> list[str]:
+        """List of context keys to write after execution."""
+        return self.context_write

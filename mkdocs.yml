@@ -33,20 +33,35 @@ nav:
       - Overview: concepts/index.md
       - Intent Graphs: concepts/intent-graphs.md
       - Nodes and Actions: concepts/nodes-and-actions.md
+      - Context Architecture: concepts/context-architecture.md
+      - Context Management: concepts/context-management.md
+      - DAG Validation: concepts/dag-validation.md
+      - Extractor Nodes: concepts/extractor-nodes.md
+      - Clarification Nodes: concepts/clarification-nodes.md
   - API Reference:
       - API Reference: api/api-reference.md
+  - Configuration:
+      - Overview: configuration/index.md
+      - JSON Serialization: configuration/json-serialization.md
+      - LLM Integration: configuration/llm-integration.md
+  - Services:
+      - AI Services: services/ai-services.md
+  - Utilities:
+      - Utilities: utils/utilities.md
   - Examples:
       - Overview: examples/index.md
+      - Basic Examples: examples/basic-examples.md
       - Calculator Bot: examples/calculator-bot.md
       - Context-Aware Chatbot: examples/context-aware-chatbot.md
-      - Multi-Intent Routing: examples/multi-intent-routing.md
-  - Configuration:
-      - JSON Serialization: configuration/json-serialization.md
+      - Context Memory Demo: examples/context-memory-demo.md
+      - DAG Examples: examples/dag-examples.md
+      - JSON Demo: examples/json-demo.md
   - Development:
       - Overview: development/index.md
       - Building: development/building.md
       - Testing: development/testing.md
       - Evaluation: development/evaluation.md
+      - Evaluation Framework: development/evaluation-framework.md
       - Debugging: development/debugging.md
       - Performance Monitoring: development/performance-monitoring.md
       - Documentation Management: development/documentation-management.md

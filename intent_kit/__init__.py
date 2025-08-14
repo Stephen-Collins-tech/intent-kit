@@ -1,7 +1,7 @@
 """
 Intent Kit - A Python library for building hierarchical intent classification and execution systems.
 
-This library provides a tree-based intent architecture with classifier and action nodes,
+This library provides a DAG-based intent architecture with classifier, extractor, action, and clarification nodes,
 supports multiple AI service backends, and enables context-aware execution.
 """
 
@@ -17,7 +17,7 @@ from intent_kit.core import (
     DefaultContext,
 )
 
-# run_dag moved to DAGBuilder.run()
+# run_dag is available from core.traversal
 
 __version__ = "0.6.1"
 

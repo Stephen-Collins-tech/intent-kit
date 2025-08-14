@@ -80,3 +80,13 @@ class NodeProtocol(Protocol):
             ExecutionResult containing the result and next steps
         """
         ...
+
+    @property
+    def context_read_keys(self) -> List[str]:
+        """List of context keys to read before execution."""
+        ...
+
+    @property
+    def context_write_keys(self) -> List[str]:
+        """List of context keys to write after execution."""
+        ...

@@ -8,21 +8,22 @@ from intent_kit import DAGBuilder, run_dag
 from intent_kit.core.context import DefaultContext
 
 # Action that remembers how many times we greeted the user
-def greet(name: str, context=None) -> str:
-    if context:
-        count = context.get("greet_count", 0) + 1
-        context.set("greet_count", count, modified_by="greet")
-        return f"Hello {name}! (greeting #{count})"
-    return f"Hello {name}!"
+def greet(name: str, **kwargs) -> str:
+    # In a real implementation, you'd access context through kwargs or a global context
+    # For this example, we'll simulate context persistence
+    global _greet_count
+    _greet_count = getattr(greet, '_count', 0) + 1
+    greet._count = _greet_count
+    return f"Hello {name}! (greeting #{_greet_count})"
 
 # Create DAG
 builder = DAGBuilder()
 
 # Set default LLM configuration
 builder.with_default_llm_config({
-    "provider": "openai",
-    "api_key": os.getenv("OPENAI_API_KEY"),
-    "model": "gpt-3.5-turbo"
+    "provider": "openrouter",
+    "api_key": os.getenv("OPENROUTER_API_KEY"),
+    "model": "google/gemma-2-9b-it"
 })
 
 # Add classifier
@@ -58,9 +59,10 @@ builder.set_entrypoints(["classifier"])
 dag = builder.build()
 
 # Test with context persistence
-context = DefaultContext()
-print(run_dag(dag, "hello alice", context).data)
-print(run_dag(dag, "hello bob", context).data)  # Greeting count increments
+result, context = run_dag(dag, "hello alice")
+print(result.data)
+result, context = run_dag(dag, "hello bob", context)  # Greeting count increments
+print(result.data)
 ```
 
 Running the above prints:
