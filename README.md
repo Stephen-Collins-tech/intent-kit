@@ -18,19 +18,23 @@ Build reliable, auditable AI applications that understand user intent and take i
 
 ## What is Intent Kit?
 
-Intent Kit helps you build AI-powered applications that understand what users want and take the right actions. Think of it as a smart router that can:
+Intent Kit helps you build AI-powered applications that understand what users want and take the right actions. Built on a flexible DAG (Directed Acyclic Graph) architecture, it provides:
 
-- **Understand user requests** using any AI model (OpenAI, Anthropic, Google, or your own)
-- **Extract important details** like names, dates, and preferences automatically
-- **Take actions** like sending messages, making calculations, or calling APIs
-- **Handle complex requests** that involve multiple steps
-- **Keep track of conversations** so your app remembers context
+- **Smart Intent Understanding** using any AI model (OpenAI, Anthropic, Google, or your own)
+- **Automatic Parameter Extraction** for names, dates, preferences, and more
+- **Flexible Action Execution** like sending messages, making calculations, or calling APIs
+- **Complex Multi-Step Workflows** with reusable nodes and flexible routing
+- **Context-Aware Conversations** that remember user preferences and conversation history
+- **Node Reuse & Modularity** - share nodes across different execution paths
 
 The best part? You stay in complete control. You define exactly what your app can do and how it should respond.
 
 ---
 
 ## Why Intent Kit?
+
+### **Flexible & Scalable**
+DAG-based architecture allows complex workflows with node reuse, fan-out/fan-in patterns, and multiple entry points.
 
 ### **Reliable & Auditable**
 Every decision is traceable. Test your workflows thoroughly and deploy with confidence knowing exactly how your AI will behave.
@@ -64,32 +68,67 @@ pip install 'intentkit-py[anthropic]'  # Anthropic
 pip install 'intentkit-py[all]'        # All providers
 ```
 
-### 2. Build Your First Workflow
+### 2. Build Your First DAG Workflow
 
 ```python
-from intent_kit.nodes.actions import ActionNode
-from intent_kit import IntentGraphBuilder, llm_classifier
+from intent_kit import DAGBuilder, run_dag
+from intent_kit.core.context import DefaultContext
 
 # Define actions your app can take
-greet = ActionNode(
-    name="greet",
-    action=lambda name: f"Hello {name}!",
-    param_schema={"name": str},
-    description="Greet the user by name"
-)
+def greet(name: str) -> str:
+    return f"Hello {name}!"
 
-# Create a classifier to understand requests
-classifier = llm_classifier(
-    name="main",
-    description="Route to appropriate action",
-    children=[greet],
-    llm_config={"provider": "openai", "model": "gpt-3.5-turbo"}
-)
+def get_weather(city: str) -> str:
+    return f"Weather in {city} is sunny"
 
-# Build and test your workflow
-graph = IntentGraphBuilder().root(classifier).build()
-result = graph.route("Hello Alice")
-print(result.output)  # → "Hello Alice!"
+# Create DAG
+builder = DAGBuilder()
+
+# Set default LLM configuration
+builder.with_default_llm_config({
+    "provider": "openai",
+    "model": "gpt-3.5-turbo"
+})
+
+# Add classifier node
+builder.add_node("classifier", "classifier",
+                 output_labels=["greet", "weather"],
+                 description="Route to appropriate action")
+
+# Add extractors
+builder.add_node("extract_name", "extractor",
+                 param_schema={"name": str},
+                 description="Extract name from greeting",
+                 output_key="extracted_params")
+
+builder.add_node("extract_city", "extractor",
+                 param_schema={"city": str},
+                 description="Extract city from weather request",
+                 output_key="extracted_params")
+
+# Add actions
+builder.add_node("greet_action", "action",
+                 function=greet,
+                 param_schema={"name": str},
+                 description="Greet the user")
+
+builder.add_node("weather_action", "action",
+                 function=get_weather,
+                 param_schema={"city": str},
+                 description="Get weather information")
+
+# Add edges
+builder.add_edge("classifier", "extract_name", "greet")
+builder.add_edge("classifier", "extract_city", "weather")
+builder.add_edge("extract_name", "greet_action")
+builder.add_edge("extract_city", "weather_action")
+
+# Build and test your DAG
+dag = builder.build()
+context = DefaultContext()
+
+result, final_context = run_dag(dag, "Hello Alice", context)
+print(result.data)  # → "Hello Alice!"
 ```
 
 ### 3. Using JSON Configuration
@@ -97,7 +136,7 @@ print(result.output)  # → "Hello Alice!"
 For more complex workflows, use JSON configuration:
 
 ```python
-from intent_kit import IntentGraphBuilder
+from intent_kit import DAGBuilder
 
 # Define your functions
 def greet(name, context=None):
@@ -114,70 +153,83 @@ function_registry = {
     "calculate": calculate,
 }
 
-# Define your graph in JSON
-graph_config = {
-    "root": "main_classifier",
+# Define your DAG in JSON
+dag_config = {
+    "entrypoints": ["main_classifier"],
     "nodes": {
         "main_classifier": {
-            "id": "main_classifier",
             "type": "classifier",
-            "classifier_type": "llm",
-            "name": "main_classifier",
-            "description": "Main intent classifier",
-            "llm_config": {
-                "provider": "openai",
-                "model": "gpt-3.5-turbo",
-            },
-            "children": ["greet_action", "calculate_action"],
+            "config": {
+                "description": "Main intent classifier",
+                "llm_config": {
+                    "provider": "openai",
+                    "model": "gpt-3.5-turbo",
+                },
+                "output_labels": ["greet", "calculate"]
+            }
         },
         "greet_action": {
-            "id": "greet_action",
             "type": "action",
-            "name": "greet_action",
-            "description": "Greet the user",
-            "function": "greet",
-            "param_schema": {"name": "str"},
+            "config": {
+                "function": "greet",
+                "param_schema": {"name": "str"},
+                "description": "Greet the user"
+            }
         },
         "calculate_action": {
-            "id": "calculate_action",
             "type": "action",
-            "name": "calculate_action",
-            "description": "Perform a calculation",
-            "function": "calculate",
-            "param_schema": {"operation": "str", "a": "float", "b": "float"},
+            "config": {
+                "function": "calculate",
+                "param_schema": {"operation": "str", "a": "float", "b": "float"},
+                "description": "Perform a calculation"
+            }
         },
     },
+    "edges": [
+        {"from": "main_classifier", "to": "greet_action", "label": "greet"},
+        {"from": "main_classifier", "to": "calculate_action", "label": "calculate"}
+    ]
 }
 
-# Build your graph
-graph = (
-    IntentGraphBuilder()
-    .with_json(graph_config)
+# Build your DAG
+dag = (
+    DAGBuilder()
+    .with_json(dag_config)
     .with_functions(function_registry)
     .build()
 )
 
 # Test it!
-result = graph.route("Hello Alice")
-print(result.output)  # → "Hello Alice!"
+context = DefaultContext()
+result, final_context = run_dag(dag, "Hello Alice", context)
+print(result.data)  # → "Hello Alice!"
 ```
 
 ---
 
 ## How It Works
 
-Intent Kit uses a simple but powerful pattern:
+Intent Kit uses a powerful DAG (Directed Acyclic Graph) pattern:
 
-1. **Actions** - Define what your app can do (send messages, make API calls, etc.)
-2. **Classifiers** - Understand what the user wants using AI or rules
-3. **Graphs** - Connect everything together into a workflow
-4. **Context** - Remember conversations and user preferences
+1. **Nodes** - Define decision points, extractors, or actions
+2. **Edges** - Connect nodes with optional labels for flexible routing
+3. **Entrypoints** - Starting nodes for user input
+4. **Context** - Remember conversations and user preferences across nodes
 
 The magic happens when a user sends a message:
-- The classifier figures out what they want
-- Intent Kit extracts the important details (names, locations, etc.)
-- The right action runs with those details
-- You get back a response
+- The classifier figures out what they want and routes to appropriate nodes
+- Extractors pull out important details (names, locations, etc.)
+- Actions execute with those details
+- Context flows through the DAG, enabling complex multi-step workflows
+- You get back a response with full execution trace
+
+### DAG Benefits
+
+- **Node Reuse** - Share nodes across different execution paths
+- **Flexible Routing** - Support fan-out, fan-in, and complex patterns
+- **Multiple Entry Points** - Handle different types of input
+- **Deterministic Execution** - Predictable, testable behavior
+- **Context Propagation** - State flows through the entire workflow
 
 ---
 
@@ -194,7 +246,7 @@ from intent_kit.evals import run_eval, load_dataset
 dataset = load_dataset("tests/greeting_tests.yaml")
 
 # Test your workflow
-result = run_eval(dataset, graph)
+result = run_eval(dataset, dag)
 
 print(f"Accuracy: {result.accuracy():.1%}")
 result.save_report("test_results.md")
@@ -215,6 +267,12 @@ This means you can deploy with confidence, knowing your AI workflows work reliab
 
 ## Key Features
 
+### **Flexible DAG Architecture**
+- Node reuse across different execution paths
+- Support for fan-out, fan-in, and complex routing patterns
+- Multiple entry points for different input types
+- Deterministic execution with full traceability
+
 ### **Reliable & Auditable**
 - Every decision is traceable and testable
 - Comprehensive testing framework
@@ -227,14 +285,16 @@ This means you can deploy with confidence, knowing your AI workflows work reliab
 - Handles complex, multi-step requests
 
 ### **Multi-Step Workflows**
-- Chain actions together
+- Chain actions together with flexible routing
 - Handle "do X and Y" requests
 - Remember context across conversations
+- Support for complex branching and merging
 
 ### **Debugging & Transparency**
 - Track how decisions are made
 - Debug complex flows with full transparency
 - Audit decision paths when needed
+- Context propagation tracking
 
 ### **Developer Friendly**
 - Simple, clear API
@@ -258,16 +318,19 @@ This means you can deploy with confidence, knowing your AI workflows work reliab
 ## Common Use Cases
 
 ### **Chatbots & Virtual Assistants**
-Build intelligent bots that understand natural language and take appropriate actions.
+Build intelligent bots that understand natural language and take appropriate actions with context awareness.
 
 ### **Task Automation**
-Automate complex workflows that require understanding user intent.
+Automate complex workflows that require understanding user intent and multi-step processing.
 
 ### **Data Processing**
-Route and process information based on what users are asking for.
+Route and process information based on what users are asking for with flexible DAG patterns.
 
 ### **Decision Systems**
-Create systems that make smart decisions based on user requests.
+Create systems that make smart decisions based on user requests with full audit trails.
+
+### **Multi-Modal Workflows**
+Handle complex scenarios requiring multiple classifiers, extractors, and actions working together.
 
 ---
 
@@ -297,6 +360,10 @@ pip install 'intentkit-py[dev]'
 ```
 intent-kit/
 ├── intent_kit/           # Main library code
+│   ├── core/            # DAG engine, traversal, validation
+│   ├── nodes/           # Node implementations
+│   ├── services/        # AI services and utilities
+│   └── utils/           # Helper utilities
 ├── examples/             # Working examples
 ├── docs/                 # Documentation
 ├── tests/                # Test suite
