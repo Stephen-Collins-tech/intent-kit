@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.6.0] - 2025-08-14
+
+### Added
+- **DAG Architecture** - Complete refactor from tree-based to directed acyclic graph (DAG) patterns for enhanced flexibility and node reuse
+- **Node Reuse Capabilities** - Nodes can now be shared across multiple execution paths, enabling more efficient and modular intent processing
+- **Enhanced Context System** - Simplified context management with improved debugging and execution tracing
+- **Structured Logging** - Comprehensive logging system with structured output for better observability
+- **Flattened Examples Directory** - Reorganized examples for better discoverability and maintenance
+
+### Changed
+- **Core Architecture Pattern** - Migrated from hierarchical tree structures to flexible DAG patterns, allowing nodes to have multiple parents and children
+- **Node Class Construction** - Simplified node creation and configuration with cleaner, more maintainable patterns
+- **Context Implementation** - Streamlined context handling with reduced complexity and improved performance
+- **Evaluation Framework** - Updated evaluation system to work with new DAG architecture
+- **Documentation Updates** - Comprehensive documentation refresh to reflect DAG-based patterns and capabilities
+
+### Removed
+- **Excessive Logging** - Removed verbose logging in favor of structured, targeted logging
+- **Tree-Specific Constraints** - Eliminated hierarchical limitations that prevented node reuse and complex routing patterns
+
+### Breaking Changes
+- **Architecture Pattern** - Complete shift from tree-based to DAG-based execution patterns
+- **Node Relationships** - Nodes can now have multiple parents and children, breaking previous tree-only constraints
+- **Context API** - Simplified context interface with updated methods and properties
+- **Graph Construction** - Updated graph building patterns to support DAG structures
+
 ## [v0.5.0] - 2025-08-03
 
 ### Added

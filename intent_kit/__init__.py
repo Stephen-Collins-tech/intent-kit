@@ -19,7 +19,7 @@ from intent_kit.core import (
 
 # run_dag moved to DAGBuilder.run()
 
-__version__ = "0.1.0"
+__version__ = "0.6.0"
 
 __all__ = [
     "IntentDAG",
