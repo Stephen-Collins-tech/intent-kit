@@ -6,7 +6,7 @@ import pytest
 import os
 from unittest.mock import Mock, patch
 from intent_kit.services.ai.anthropic_client import AnthropicClient
-from intent_kit.types import RawLLMResponse
+from intent_kit.services.ai.llm_response import RawLLMResponse
 from intent_kit.services.ai.pricing_service import PricingService
 import sys
 

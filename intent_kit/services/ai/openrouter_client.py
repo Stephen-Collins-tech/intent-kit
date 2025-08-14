@@ -5,7 +5,8 @@ This module provides an implementation of the LLM client for OpenRouter.
 """
 
 from intent_kit.utils.perf_util import PerfUtil
-from intent_kit.types import RawLLMResponse, InputTokens, OutputTokens, Cost
+from intent_kit.types import InputTokens, OutputTokens, Cost
+from .llm_response import RawLLMResponse
 from intent_kit.services.ai.base_client import (
     BaseLLMClient,
     PricingConfiguration,

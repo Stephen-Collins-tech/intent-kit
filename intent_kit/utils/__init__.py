@@ -37,6 +37,7 @@ from .type_coercion import (
     resolve_type,
     TYPE_MAP,
 )
+from .typed_output import TypedOutputData
 
 __all__ = [
     "Logger",
@@ -74,4 +75,6 @@ __all__ = [
     "validate_dict_simple",
     "resolve_type",
     "TYPE_MAP",
+    # Typed output utilities
+    "TypedOutputData",
 ]

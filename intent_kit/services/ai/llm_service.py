@@ -3,7 +3,7 @@
 from typing import Dict, Any, Type, TypeVar
 from intent_kit.services.ai.llm_factory import LLMFactory
 from intent_kit.services.ai.base_client import BaseLLMClient
-from intent_kit.types import RawLLMResponse, StructuredLLMResponse
+from .llm_response import RawLLMResponse, StructuredLLMResponse
 from intent_kit.utils.logger import Logger
 
 T = TypeVar("T")
@@ -12,7 +12,7 @@ T = TypeVar("T")
 class LLMService:
     """LLM service for use within a specific DAG instance."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the LLM service."""
         self._clients: Dict[str, BaseLLMClient] = {}
         self._logger = Logger("llm_service")

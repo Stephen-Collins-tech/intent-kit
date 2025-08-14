@@ -2,7 +2,7 @@
 Tests for structured output functionality.
 """
 
-from intent_kit.types import LLMResponse, StructuredLLMResponse
+from intent_kit.services.ai.llm_response import LLMResponse, StructuredLLMResponse
 
 
 class TestStructuredOutput:

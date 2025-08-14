@@ -35,7 +35,9 @@ def load_dataset(dataset_path: Path) -> Dict[str, Any]:
 
 def get_node_from_module(module_name: str, node_name: str):
     """Get a node instance from a module."""
-    return module_loader.load(module_name, node_name)
+    # Create a path-like string that ModuleLoader expects: "module_name:node_name"
+    module_path = f"{module_name}:{node_name}"
+    return module_loader.load(Path(module_path))
 
 
 def save_raw_results_to_csv(

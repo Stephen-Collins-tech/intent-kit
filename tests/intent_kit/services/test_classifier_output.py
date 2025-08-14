@@ -3,11 +3,11 @@ Tests for classifier output functionality.
 """
 
 from intent_kit.types import (
-    TypedOutputData,
     TypedOutputType,
     IntentClassification,
     IntentAction,
 )
+from intent_kit.utils.typed_output import TypedOutputData
 
 
 class TestClassifierOutput:

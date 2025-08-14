@@ -12,6 +12,8 @@ from .openrouter_client import OpenRouterClient
 from .ollama_client import OllamaClient
 from .llm_factory import LLMFactory
 from .pricing_service import PricingService
+from .llm_response import LLMResponse, RawLLMResponse, StructuredLLMResponse
+from .pricing import ModelPricing, PricingConfig, PricingService as BasePricingService
 
 __all__ = [
     "BaseLLMClient",
@@ -22,4 +24,10 @@ __all__ = [
     "OllamaClient",
     "LLMFactory",
     "PricingService",
+    "LLMResponse",
+    "RawLLMResponse",
+    "StructuredLLMResponse",
+    "ModelPricing",
+    "PricingConfig",
+    "BasePricingService",
 ]

@@ -4,13 +4,13 @@ Pricing service for calculating LLM costs.
 
 from typing import Optional
 from intent_kit.types import (
-    PricingService as BasePricingService,
-    ModelPricing,
-    PricingConfig,
     InputTokens,
     OutputTokens,
     Cost,
 )
+from .pricing import PricingService as BasePricingService, ModelPricing, PricingConfig
+
+ONE_MILLION_TOKENS = 1_000_000
 
 
 class PricingService(BasePricingService):
@@ -163,8 +163,8 @@ class PricingService(BasePricingService):
             return 0.0
 
         # Calculate cost: (tokens / 1M) * price_per_1M
-        input_cost = (input_tokens / 1_000_000.0) * pricing.input_price_per_1m
-        output_cost = (output_tokens / 1_000_000.0) * pricing.output_price_per_1m
+        input_cost = (input_tokens / ONE_MILLION_TOKENS) * pricing.input_price_per_1m
+        output_cost = (output_tokens / ONE_MILLION_TOKENS) * pricing.output_price_per_1m
 
         return input_cost + output_cost
 

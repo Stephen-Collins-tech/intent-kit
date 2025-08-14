@@ -11,7 +11,8 @@ from intent_kit.services.ai.base_client import (
     ModelPricing,
 )
 from intent_kit.services.ai.pricing_service import PricingService
-from intent_kit.types import RawLLMResponse, InputTokens, OutputTokens, Cost
+from intent_kit.types import InputTokens, OutputTokens, Cost
+from .llm_response import RawLLMResponse
 from intent_kit.utils.perf_util import PerfUtil
 
 T = TypeVar("T")
