@@ -6,7 +6,7 @@ import pytest
 import os
 from unittest.mock import Mock, patch
 from intent_kit.services.ai.anthropic_client import AnthropicClient
-from intent_kit.types import LLMResponse
+from intent_kit.services.ai.llm_response import RawLLMResponse
 from intent_kit.services.ai.pricing_service import PricingService
 import sys
 
@@ -120,8 +120,8 @@ class TestAnthropicClient:
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert isinstance(result, LLMResponse)
-            assert result.output == "Generated response"
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == "Generated response"
             assert result.model == "claude-3-5-sonnet-20241022"
             assert result.input_tokens == 100
             assert result.output_tokens == 50
@@ -156,8 +156,8 @@ class TestAnthropicClient:
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt", model="claude-3-haiku-20240307")
 
-            assert isinstance(result, LLMResponse)
-            assert result.output == "Generated response"
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == "Generated response"
             assert result.model == "claude-3-haiku-20240307"
             assert result.input_tokens == 150
             assert result.output_tokens == 75
@@ -180,8 +180,8 @@ class TestAnthropicClient:
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert isinstance(result, LLMResponse)
-            assert result.output == ""
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == ""
             assert result.input_tokens == 0
             assert result.output_tokens == 0
             assert result.cost == 0
@@ -198,8 +198,8 @@ class TestAnthropicClient:
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
 
-            assert isinstance(result, LLMResponse)
-            assert result.output == ""
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == ""
             assert result.input_tokens == 0
             assert result.output_tokens == 0
             assert result.cost == 0
@@ -232,8 +232,8 @@ class TestAnthropicClient:
         client._client = None  # Simulate client being None
 
         result = client.generate("Test prompt")
-        assert isinstance(result, LLMResponse)
-        assert result.output == "Generated response"
+        assert isinstance(result, RawLLMResponse)
+        assert result.content == "Generated response"
         assert client._client == mock_client
 
         # Clean up
@@ -254,13 +254,13 @@ class TestAnthropicClient:
 
             # Test with simple prompt
             result1 = client.generate("Hello")
-            assert isinstance(result1, LLMResponse)
-            assert result1.output == "Response"
+            assert isinstance(result1, RawLLMResponse)
+            assert result1.content == "Response"
 
             # Test with complex prompt
             result2 = client.generate("Please summarize this text.")
-            assert isinstance(result2, LLMResponse)
-            assert result2.output == "Response"
+            assert isinstance(result2, RawLLMResponse)
+            assert result2.content == "Response"
 
             # Verify calls
             assert mock_client.messages.create.call_count == 2
@@ -287,18 +287,18 @@ class TestAnthropicClient:
 
             # Test with default model
             result1 = client.generate("Test")
-            assert isinstance(result1, LLMResponse)
-            assert result1.output == "Response"
+            assert isinstance(result1, RawLLMResponse)
+            assert result1.content == "Response"
 
             # Test with custom model
             result2 = client.generate("Test", model="claude-3-haiku-20240307")
-            assert isinstance(result2, LLMResponse)
-            assert result2.output == "Response"
+            assert isinstance(result2, RawLLMResponse)
+            assert result2.content == "Response"
 
             # Test with another model
             result3 = client.generate("Test", model="claude-2.1")
-            assert isinstance(result3, LLMResponse)
-            assert result3.output == "Response"
+            assert isinstance(result3, RawLLMResponse)
+            assert result3.content == "Response"
 
             # Verify different models were used
             assert mock_client.messages.create.call_count == 3
@@ -319,8 +319,8 @@ class TestAnthropicClient:
 
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
-            assert isinstance(result, LLMResponse)
-            assert result.output == "Part 1"
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == "Part 1"
 
     def test_generate_with_logging(self):
         """Test generate with debug logging."""
@@ -335,8 +335,8 @@ class TestAnthropicClient:
 
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt")
-            assert isinstance(result, LLMResponse)
-            assert result.output == "Generated response"
+            assert isinstance(result, RawLLMResponse)
+            assert result.content == "Generated response"
 
     def test_generate_with_api_error(self):
         """Test generate with API error handling."""
@@ -383,7 +383,7 @@ class TestAnthropicClient:
             client = AnthropicClient("test_api_key")
             result = client.generate("Test prompt", model="claude-3-sonnet-20240229")
 
-            assert isinstance(result, LLMResponse)
+            assert isinstance(result, RawLLMResponse)
             assert result.cost > 0  # Should calculate cost based on pricing service
 
     def test_is_available_method(self):

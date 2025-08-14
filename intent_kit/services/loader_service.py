@@ -13,26 +13,33 @@ class Loader(ABC):
     """Base class for loaders."""
 
     @abstractmethod
-    def load(self, *args, **kwargs) -> Any:
+    def load(self, path: Path) -> Any:
         """Load the specified resource."""
-        pass
 
 
 class DatasetLoader(Loader):
     """Loader for dataset files."""
 
-    def load(self, dataset_path: Path) -> Dict[str, Any]:
+    def load(self, path: Path) -> Dict[str, Any]:
         """Load a dataset from YAML file."""
-        with open(dataset_path, "r") as f:
+        with open(path, "r", encoding="utf-8") as f:
             return yaml_service.safe_load(f)
 
 
 class ModuleLoader(Loader):
     """Loader for modules and nodes."""
 
-    def load(self, module_name: str, node_name: str) -> Optional[Any]:
-        """Get a node instance from a module."""
+    def load(self, path: Path) -> Optional[Any]:
+        """Get a node instance from a module path."""
         try:
+            # Parse path as module_name:node_name
+            parts = str(path).split(":", 1)
+            if len(parts) != 2:
+                raise ValueError(
+                    f"Invalid module path format: {path}. Expected 'module_name:node_name'"
+                )
+
+            module_name, node_name = parts
             module = importlib.import_module(module_name)
             node_func = getattr(module, node_name)
             # Call the function to get the node instance

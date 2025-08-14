@@ -3,7 +3,7 @@ OpenAI client wrapper for intent-kit
 """
 
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, TypeVar
 from intent_kit.services.ai.base_client import (
     BaseLLMClient,
     PricingConfiguration,
@@ -11,8 +11,11 @@ from intent_kit.services.ai.base_client import (
     ModelPricing,
 )
 from intent_kit.services.ai.pricing_service import PricingService
-from intent_kit.types import LLMResponse, InputTokens, OutputTokens, Cost
+from intent_kit.types import InputTokens, OutputTokens, Cost
+from .llm_response import RawLLMResponse
 from intent_kit.utils.perf_util import PerfUtil
+
+T = TypeVar("T")
 
 # Dummy assignment for testing
 openai = None
@@ -69,6 +72,13 @@ class OpenAIClient(BaseLLMClient):
 
         openai_provider = ProviderPricing("openai")
         openai_provider.models = {
+            "gpt-5-2025-08-07": ModelPricing(
+                model_name="gpt-5-2025-08-07",
+                provider="openai",
+                input_price_per_1m=1.25,
+                output_price_per_1m=10.0,
+                last_updated="2025-08-09",
+            ),
             "gpt-4": ModelPricing(
                 model_name="gpt-4",
                 provider="openai",
@@ -158,71 +168,31 @@ class OpenAIClient(BaseLLMClient):
 
         return cleaned
 
-    def generate(self, prompt: str, model: Optional[str] = None) -> LLMResponse:
+    def generate(self, prompt: str, model: str = "gpt-4") -> RawLLMResponse:
         """Generate text using OpenAI's GPT model."""
         self._ensure_imported()
-        assert self._client is not None  # Type assertion for linter
-        model = model or "gpt-4"
+        assert self._client is not None
+
         perf_util = PerfUtil("openai_generate")
         perf_util.start()
 
         try:
-            response = self._client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=1000,
-            )
-
-            # Convert to our custom dataclass structure
-            usage = None
-            if response.usage:
-                # Handle both real and mocked usage metadata
-                prompt_tokens = getattr(response.usage, "prompt_tokens", 0)
-                completion_tokens = getattr(response.usage, "completion_tokens", 0)
-
-                # Safe arithmetic for mocked objects
-                try:
-                    total_tokens = prompt_tokens + completion_tokens
-                except (TypeError, ValueError):
-                    total_tokens = 0
-
-                usage = OpenAIUsage(
-                    prompt_tokens=prompt_tokens,
-                    completion_tokens=completion_tokens,
-                    total_tokens=total_tokens,
+            openai_response: OpenAIChatCompletion = (
+                self._client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=1000,
                 )
-
-            # Convert choices to our custom structure
-            choices = []
-            for choice in response.choices:
-                choices.append(
-                    OpenAIChoice(
-                        message=OpenAIMessage(
-                            content=choice.message.content or "",
-                            role=choice.message.role,
-                        ),
-                        finish_reason=choice.finish_reason or "",
-                        index=choice.index,
-                    )
-                )
-
-            openai_response = OpenAIChatCompletion(
-                id=response.id,
-                object=response.object,
-                created=response.created,
-                model=response.model,
-                choices=choices,
-                usage=usage,
             )
 
             if not openai_response.choices:
-                return LLMResponse(
-                    output="",
+                return RawLLMResponse(
+                    content="",
                     model=model,
+                    provider="openai",
                     input_tokens=0,
                     output_tokens=0,
                     cost=0.0,
-                    provider="openai",
                     duration=0.0,
                 )
 
@@ -266,13 +236,13 @@ class OpenAIClient(BaseLLMClient):
                 duration=duration,
             )
 
-            return LLMResponse(
-                output=self._clean_response(content),
+            return RawLLMResponse(
+                content=self._clean_response(content),
                 model=model,
+                provider="openai",
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 cost=cost,
-                provider="openai",
                 duration=duration,
             )
 
@@ -300,5 +270,20 @@ class OpenAIClient(BaseLLMClient):
         input_cost = (input_tokens / 1_000_000) * model_pricing.input_price_per_1m
         output_cost = (output_tokens / 1_000_000) * model_pricing.output_price_per_1m
         total_cost = input_cost + output_cost
+
+        # Log structured cost calculation info
+        self.logger.debug_structured(
+            {
+                "model": model,
+                "provider": provider,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "input_cost": input_cost,
+                "output_cost": output_cost,
+                "total_cost": total_cost,
+                "pricing_source": "local",
+            },
+            "Cost Calculation",
+        )
 
         return total_cost

@@ -5,7 +5,7 @@ Tests for the pricing service.
 import pytest
 
 from intent_kit.services.ai.pricing_service import PricingService
-from intent_kit.types import ModelPricing, PricingConfig
+from intent_kit.services.ai.pricing import ModelPricing, PricingConfig
 
 
 class TestPricingService:

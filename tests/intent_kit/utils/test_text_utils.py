@@ -239,4 +239,4 @@ class TestTextUtils:
     def test_extract_json_from_text_json_block_malformed(self):
         text = """```json\n{"foo": "bar", "num": }```"""
         result = extract_json_from_text(text)
-        assert result == {"foo": "bar", "num": ""}
+        assert result == {"foo": "bar"}

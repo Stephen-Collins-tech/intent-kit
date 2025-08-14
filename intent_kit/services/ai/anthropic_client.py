@@ -3,7 +3,7 @@ Anthropic client wrapper for intent-kit
 """
 
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, TypeVar
 from intent_kit.services.ai.base_client import (
     BaseLLMClient,
     PricingConfiguration,
@@ -11,8 +11,11 @@ from intent_kit.services.ai.base_client import (
     ModelPricing,
 )
 from intent_kit.services.ai.pricing_service import PricingService
-from intent_kit.types import LLMResponse, InputTokens, OutputTokens, Cost
+from intent_kit.types import InputTokens, OutputTokens, Cost
+from .llm_response import RawLLMResponse
 from intent_kit.utils.perf_util import PerfUtil
+
+T = TypeVar("T")
 
 # Dummy assignment for testing
 anthropic = None
@@ -130,10 +133,12 @@ class AnthropicClient(BaseLLMClient):
 
         return cleaned
 
-    def generate(self, prompt: str, model: Optional[str] = None) -> LLMResponse:
+    def generate(
+        self, prompt: str, model: str = "claude-3-5-sonnet-20241022"
+    ) -> RawLLMResponse:
         """Generate text using Anthropic's Claude model."""
         self._ensure_imported()
-        assert self._client is not None  # Type assertion for linter
+        assert self._client is not None
         model = model or "claude-3-5-sonnet-20241022"
         perf_util = PerfUtil("anthropic_generate")
         perf_util.start()
@@ -145,75 +150,27 @@ class AnthropicClient(BaseLLMClient):
                 messages=[{"role": "user", "content": prompt}],
             )
 
-            # Convert to our custom dataclass structure
-            usage = None
-            if response.usage:
-                # Handle both real and mocked usage metadata
-                prompt_tokens = getattr(response.usage, "prompt_tokens", 0)
-                completion_tokens = getattr(response.usage, "completion_tokens", 0)
-
-                # Safe arithmetic for mocked objects
-                try:
-                    total_tokens = prompt_tokens + completion_tokens
-                except (TypeError, ValueError):
-                    total_tokens = 0
-
-                usage = AnthropicUsage(
-                    prompt_tokens=prompt_tokens,
-                    completion_tokens=completion_tokens,
-                    total_tokens=total_tokens,
-                )
-
-            # Convert content to our custom structure
-            content_messages = []
-            if response.content:
-                for content_item in response.content:
-                    content_messages.append(
-                        AnthropicMessage(
-                            content=content_item.text,
-                            role=content_item.type,
-                        )
-                    )
-
-            anthropic_response = AnthropicResponse(
-                content=content_messages,
-                usage=usage,
-            )
-
-            if not anthropic_response.content:
-                return LLMResponse(
-                    output="",
+            # Extract content from the response
+            if not response.content:
+                return RawLLMResponse(
+                    content="",
                     model=model,
+                    provider="anthropic",
                     input_tokens=0,
                     output_tokens=0,
                     cost=0,
-                    provider="anthropic",
                     duration=0.0,
                 )
 
+            # Extract text content from the first content item
+            output_text = response.content[0].text if response.content else ""
+
             # Extract token information
-            if anthropic_response.usage:
-                # Handle both real and mocked usage metadata
-                input_tokens = getattr(anthropic_response.usage, "prompt_tokens", 0)
-                output_tokens = getattr(
-                    anthropic_response.usage, "completion_tokens", 0
-                )
-
-                # Convert to int if they're mocked objects or ensure they're integers
-                try:
-                    input_tokens = int(input_tokens) if input_tokens is not None else 0
-                except (TypeError, ValueError):
-                    input_tokens = 0
-
-                try:
-                    output_tokens = (
-                        int(output_tokens) if output_tokens is not None else 0
-                    )
-                except (TypeError, ValueError):
-                    output_tokens = 0
-            else:
-                input_tokens = 0
-                output_tokens = 0
+            input_tokens = 0
+            output_tokens = 0
+            if response.usage:
+                input_tokens = getattr(response.usage, "prompt_tokens", 0) or 0
+                output_tokens = getattr(response.usage, "completion_tokens", 0) or 0
 
             # Calculate cost using local pricing configuration
             cost = self.calculate_cost(model, "anthropic", input_tokens, output_tokens)
@@ -230,20 +187,13 @@ class AnthropicClient(BaseLLMClient):
                 duration=duration,
             )
 
-            # Extract the text content from the first message
-            output_text = (
-                anthropic_response.content[0].content
-                if anthropic_response.content
-                else ""
-            )
-
-            return LLMResponse(
-                output=self._clean_response(output_text),
+            return RawLLMResponse(
+                content=self._clean_response(output_text),
                 model=model,
+                provider="anthropic",
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 cost=cost,
-                provider="anthropic",
                 duration=duration,
             )
 

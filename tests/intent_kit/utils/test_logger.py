@@ -228,25 +228,25 @@ class TestLogger:
         assert levels == expected
 
     def test_should_log(self):
-        """Test should_log method with different levels."""
+        """Test _should_log method with different levels."""
         # Test with info level logger
         logger = Logger("test", "info")
-        assert logger.should_log("info")
-        assert logger.should_log("warning")
-        assert logger.should_log("error")
-        assert not logger.should_log("debug")
-        assert not logger.should_log("trace")
+        assert logger._should_log("info")
+        assert logger._should_log("warning")
+        assert logger._should_log("error")
+        assert not logger._should_log("debug")
+        assert not logger._should_log("trace")
 
         # Test with debug level logger
         logger = Logger("test", "debug")
-        assert logger.should_log("debug")
-        assert logger.should_log("info")
-        assert not logger.should_log("trace")
+        assert logger._should_log("debug")
+        assert logger._should_log("info")
+        assert not logger._should_log("trace")
 
         # Test with trace level logger
         logger = Logger("test", "trace")
-        assert logger.should_log("trace")
-        assert logger.should_log("debug")
+        assert logger._should_log("trace")
+        assert logger._should_log("debug")
 
     def test_validate_log_level(self):
         """Test log level validation."""

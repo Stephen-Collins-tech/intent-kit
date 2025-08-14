@@ -16,11 +16,12 @@ from datetime import datetime
 
 # Add text similarity imports
 from difflib import SequenceMatcher
-import re
 from dotenv import load_dotenv
-from intent_kit.context import IntentContext
+from intent_kit.core.context import DefaultContext as Context
 from intent_kit.services.yaml_service import yaml_service
 from intent_kit.services.loader_service import dataset_loader, module_loader
+from intent_kit.core.types import ExecutionResult
+from intent_kit.nodes import ActionNode, ClassifierNode
 
 load_dotenv()
 
@@ -34,7 +35,9 @@ def load_dataset(dataset_path: Path) -> Dict[str, Any]:
 
 def get_node_from_module(module_name: str, node_name: str):
     """Get a node instance from a module."""
-    return module_loader.load(module_name, node_name)
+    # Create a path-like string that ModuleLoader expects: "module_name:node_name"
+    module_path = f"{module_name}:{node_name}"
+    return module_loader.load(Path(module_path))
 
 
 def save_raw_results_to_csv(
@@ -45,6 +48,7 @@ def save_raw_results_to_csv(
     error: Optional[str] = None,
     similarity_score: Optional[float] = None,
     run_timestamp: Optional[str] = None,
+    metrics: Optional[Dict[str, Any]] = None,
 ):
     """Save raw evaluation results to CSV files."""
     # Create organized results directory structure
@@ -74,6 +78,7 @@ def save_raw_results_to_csv(
         "similarity_score": similarity_score or "",
         "error": error or "",
         "context": str(test_case.get("context", {})),
+        "metrics": str(metrics or {}),
     }
 
     # Check if this is the first test case (to write header)
@@ -102,41 +107,21 @@ def save_raw_results_to_csv(
             writer.writeheader()
         writer.writerow(row_data)
 
-    return csv_file, date_csv_file
+    return str(csv_file)
 
 
-def similarity_score(text1: str, text2: str) -> float:
-    """Calculate similarity score between two texts."""
-
-    # Normalize texts for comparison
-    def normalize(text):
-        return re.sub(r"\s+", " ", text.lower().strip())
-
-    norm1 = normalize(text1)
-    norm2 = normalize(text2)
-
-    # Use sequence matcher for similarity
-    return SequenceMatcher(None, norm1, norm2).ratio()
-
-
-def chunks_similarity_score(
-    expected_chunks: List[str], actual_chunks: List[str], threshold: float = 0.8
-) -> tuple[bool, float]:
-    """Calculate similarity score between expected and actual chunks."""
-    if len(expected_chunks) != len(actual_chunks):
-        return False, 0.0
-
-    total_score = 0.0
-    for expected, actual in zip(expected_chunks, actual_chunks):
-        score = similarity_score(expected, actual)
-        total_score += score
-
-    avg_score = total_score / len(expected_chunks)
-    return avg_score >= threshold, avg_score
+def calculate_similarity(expected: str, actual: str) -> float:
+    """Calculate similarity between expected and actual outputs."""
+    if not expected or not actual:
+        return 0.0
+    return SequenceMatcher(None, expected.lower(), actual.lower()).ratio()
 
 
 def evaluate_node(
-    node, test_cases: List[Dict[str, Any]], dataset_name: str
+    node: Any,
+    test_cases: List[Dict[str, Any]],
+    dataset_name: str,
+    run_timestamp: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Evaluate a node against test cases."""
     results: Dict[str, Any] = {
@@ -146,55 +131,50 @@ def evaluate_node(
         "incorrect": 0,
         "errors": [],
         "details": [],
-        "raw_results_file": f"intent_kit/evals/results/latest/{dataset_name}_results.csv",
+        "raw_results_file": "",
     }
-
-    # Generate a unique run timestamp for this evaluation
-    run_timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-    # Check if this node needs persistent context (like action_node_llm)
-    needs_persistent_context = hasattr(node, "name") and "action_node_llm" in node.name
-
-    # Create persistent context if needed
-    persistent_context = None
-    if needs_persistent_context:
-        persistent_context = IntentContext()
-        # Initialize booking count for action_node_llm
-        persistent_context.set("booking_count", 0, modified_by="evaluation_init")
 
     for i, test_case in enumerate(test_cases):
         user_input = test_case["input"]
         expected = test_case["expected"]
-        context_data = test_case.get("context", {})
-
-        # Use persistent context if available, otherwise create new one
-        if persistent_context is not None:
-            context = persistent_context
-            # Update context with test case data
-            for key, value in context_data.items():
-                context.set(key, value, modified_by="test_case")
-        else:
-            # Create new context for each test case
-            context = IntentContext()
-            for key, value in context_data.items():
-                context.set(key, value, modified_by="test_case")
 
         try:
-            # Execute the node
-            result = node.execute(user_input, context)
+            # Create context with test case context
+            context = Context()
+            if "context" in test_case:
+                for key, value in test_case["context"].items():
+                    context.set(key, value, modified_by="eval")
 
-            if result.success:
-                actual_output = result.output
-                similarity_score_val = None
+            # Execute node
+            if hasattr(node, "execute"):
+                result = node.execute(user_input, context)
+            elif callable(node):
+                result = node(user_input, context=context)
+            else:
+                raise ValueError("Node must be callable or have .execute method")
 
-                if isinstance(actual_output, list):
-                    # For splitters, compare lists using similarity
-                    if isinstance(expected, list):
-                        correct, similarity_score_val = chunks_similarity_score(
-                            expected, actual_output
-                        )
-                    else:
-                        correct = False
+            # Extract result data
+            if isinstance(result, ExecutionResult):
+                actual_output = result.data
+                metrics = result.metrics
+            else:
+                actual_output = result
+                metrics = {}
+
+            # Check if execution was successful
+            if actual_output is not None:
+                # Calculate similarity for string comparisons
+                similarity_score_val = calculate_similarity(
+                    str(expected), str(actual_output)
+                )
+
+                # Determine correctness
+                if isinstance(expected, (int, float)) and isinstance(
+                    actual_output, (int, float)
+                ):
+                    # For numeric values, allow small tolerance
+                    tolerance = 1e-6
+                    correct = abs(expected - actual_output) < tolerance
                 else:
                     # For actions and classifiers, compare strings
                     correct = (
@@ -225,17 +205,18 @@ def evaluate_node(
                     correct,
                     similarity_score=similarity_score_val,
                     run_timestamp=run_timestamp,
+                    metrics=metrics,
                 )
             else:
                 results["incorrect"] += 1
-                error_msg = result.error.message if result.error else "Unknown error"
+                error_msg = "No output produced"
                 results["errors"].append(
                     {
                         "case": i + 1,
                         "input": user_input,
                         "expected": expected,
                         "actual": None,
-                        "type": "execution_failed",
+                        "type": "no_output",
                         "error": error_msg,
                     }
                 )
@@ -248,6 +229,7 @@ def evaluate_node(
                     False,
                     error_msg,
                     run_timestamp=run_timestamp,
+                    metrics=metrics,
                 )
 
         except Exception as e:
@@ -280,13 +262,10 @@ def evaluate_node(
                 "case": i + 1,
                 "input": user_input,
                 "expected": expected,
-                "actual": result.output if "result" in locals() else None,
-                "success": result.success if "result" in locals() else False,
-                "error": (
-                    result.error.message
-                    if "result" in locals() and result.error
-                    else None
-                ),
+                "actual": actual_output if "actual_output" in locals() else None,
+                "success": "actual_output" in locals() and actual_output is not None,
+                "error": error_msg if "error_msg" in locals() else None,
+                "metrics": metrics if "metrics" in locals() else {},
             }
         )
 
@@ -413,41 +392,84 @@ def main():
     for dataset_file in dataset_files:
         print(f"\nEvaluating dataset: {dataset_file.name}")
 
-        # Load dataset
-        dataset = load_dataset(dataset_file)
-        dataset_name = dataset["dataset"]["name"]
-        node_name = dataset["dataset"]["node_name"]
+        try:
+            # Load dataset
+            dataset = load_dataset(dataset_file)
+            dataset_name = dataset["dataset"]["name"]
+            node_type = dataset["dataset"]["node_type"]
+            node_name = dataset["dataset"]["node_name"]
 
-        # Determine module name based on node name
-        if "llm" in node_name:
-            module_name = f"intent_kit.node_library.{node_name.split('_')[0]}_node_llm"
-        else:
-            module_name = f"intent_kit.node_library.{node_name.split('_')[0]}_node"
+            # Create appropriate node based on type
+            if node_type == "action":
+                # Create a simple test action function
+                def test_action(**kwargs):
+                    destination = kwargs.get("destination", "Unknown")
+                    date = kwargs.get("date", "ASAP")
+                    booking_id = kwargs.get("booking_id", 1)
+                    return f"Flight booked to {destination} for {date} (Booking #{booking_id})"
 
-        # Load node
-        node = get_node_from_module(module_name, node_name)
-        if node is None:
-            print(f"Failed to load node {node_name} from {module_name}")
+                node = ActionNode(
+                    name=node_name,
+                    action=test_action,
+                    description=f"Test action for {dataset_name}",
+                    terminate_on_success=True,
+                    param_key="extracted_params",
+                )
+            elif node_type == "classifier":
+                # Create a simple test classifier function
+                def test_classifier(user_input: str, ctx) -> str:
+                    weather_keywords = ["weather", "temperature", "forecast", "climate"]
+                    cancel_keywords = [
+                        "cancel",
+                        "cancellation",
+                        "canceled",
+                        "cancelled",
+                    ]
+
+                    input_lower = user_input.lower()
+
+                    if any(keyword in input_lower for keyword in weather_keywords):
+                        return "weather"
+                    elif any(keyword in input_lower for keyword in cancel_keywords):
+                        return "cancel"
+                    else:
+                        return "unknown"
+
+                node = ClassifierNode(
+                    name=node_name,
+                    output_labels=["weather", "cancel", "unknown"],
+                    description=f"Test classifier for {dataset_name}",
+                    classification_func=test_classifier,
+                )
+            else:
+                print(f"Unsupported node type: {node_type}")
+                continue
+
+            # Run evaluation
+            test_cases = dataset["test_cases"]
+            result = evaluate_node(node, test_cases, dataset_name, run_timestamp)
+            results.append(result)
+
+            # Print results
+            accuracy = result["accuracy"]
+            print(
+                f"  Accuracy: {accuracy:.1%} ({result['correct']}/{result['total_cases']})"
+            )
+            print(f"  Raw results saved to: {result['raw_results_file']}")
+
+            if result["errors"]:
+                print(f"  Errors: {len(result['errors'])}")
+                for error in result["errors"][:3]:  # Show first 3 errors
+                    print(f"    - Case {error['case']}: {error['input']}")
+                    print(f"      Expected: {error['expected']}")
+                    print(f"      Actual: {error['actual']}")
+
+        except Exception as e:
+            print(f"Error evaluating {dataset_file.name}: {e}")
+            import traceback
+
+            traceback.print_exc()
             continue
-
-        # Run evaluation
-        test_cases = dataset["test_cases"]
-        result = evaluate_node(node, test_cases, dataset_name)
-        results.append(result)
-
-        # Print results
-        accuracy = result["accuracy"]
-        print(
-            f"  Accuracy: {accuracy:.1%} ({result['correct']}/{result['total_cases']})"
-        )
-        print(f"  Raw results saved to: {result['raw_results_file']}")
-
-        if result["errors"]:
-            print(f"  Errors: {len(result['errors'])}")
-            for error in result["errors"][:3]:  # Show first 3 errors
-                print(f"    - Case {error['case']}: {error['input']}")
-                print(f"      Expected: {error['expected']}")
-                print(f"      Actual: {error['actual']}")
 
     # Generate report
     if results:

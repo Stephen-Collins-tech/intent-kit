@@ -12,7 +12,6 @@ from intent_kit.services.ai.ollama_client import OllamaClient
 from intent_kit.services.ai.pricing_service import PricingService
 from intent_kit.utils.logger import Logger
 from intent_kit.services.ai.base_client import BaseLLMClient
-from intent_kit.types import LLMResponse
 
 logger = Logger("llm_factory")
 
@@ -75,20 +74,3 @@ class LLMFactory:
             )
         else:
             raise ValueError(f"Unsupported LLM provider: {provider}")
-
-    @staticmethod
-    def generate_with_config(llm_config, prompt: str) -> LLMResponse:
-        """
-        Generate text using the specified LLM configuration or client instance.
-        """
-        logger.debug(f"generate_with_config LLM config: {llm_config}")
-        client = LLMFactory.create_client(llm_config)
-        logger.debug(f"generate_with_config LLM client: {client}")
-        model = None
-        if isinstance(llm_config, dict):
-            model = llm_config.get("model")
-        # If the client is a BaseLLMClient, use its generate method
-        if model:
-            return client.generate(prompt, model=model)
-        else:
-            return client.generate(prompt)

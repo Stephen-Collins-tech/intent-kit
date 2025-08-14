@@ -10,119 +10,251 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 from intent_kit.utils.logger import Logger
 
-logger = Logger(__name__)
+# Create a module-level logger
+_logger = Logger(__name__)
 
 
-def extract_json_from_text(
-    text: Optional[str], fallback_to_manual: bool = True
-) -> Optional[Dict[str, Any]]:
+def _extract_json_only(text: str) -> Optional[Dict[str, Any]]:
     """
-    Extract JSON object from text, handling various formats and edge cases.
-    Now also supports extracting from ```json ... ``` blocks.
+    Extract JSON from text without manual extraction fallback.
+
+    Args:
+        text: Text that may contain JSON
+
+    Returns:
+        Parsed JSON as dict, or None if no valid JSON found
     """
     if not text or not isinstance(text, str):
         return None
 
-    # First, look for a ```json ... ``` block
-    json_block = re.search(r"```json\s*([\s\S]*?)```", text, re.IGNORECASE)
-    if json_block:
-        json_str = json_block.group(1).strip()
-        try:
-            return json.loads(json_str)
-        except json.JSONDecodeError as e:
-            logger.debug(f"JSON decode error in ```json block: {e}")
+    # Try to find JSON in ```json blocks first
+    json_block_pattern = r"```json\s*\n(.*?)\n```"
+    json_blocks = re.findall(json_block_pattern, text, re.DOTALL)
 
-    # Try to find JSON object pattern
+    for block in json_blocks:
+        try:
+            parsed = json.loads(block.strip())
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError as e:
+            _logger.debug_structured(
+                {
+                    "error_type": "JSONDecodeError",
+                    "error_message": str(e),
+                    "block_content": (
+                        block[:100] + "..." if len(block) > 100 else block
+                    ),
+                    "source": "json_block",
+                },
+                "JSON Block Parse Failed",
+            )
+
+    # Try to find JSON in ``` blocks (without json specifier)
+    code_block_pattern = r"```\s*\n(.*?)\n```"
+    code_blocks = re.findall(code_block_pattern, text, re.DOTALL)
+
+    for block in code_blocks:
+        try:
+            parsed = json.loads(block.strip())
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError as e:
+            _logger.debug_structured(
+                {
+                    "error_type": "JSONDecodeError",
+                    "error_message": str(e),
+                    "block_content": (
+                        block[:100] + "..." if len(block) > 100 else block
+                    ),
+                    "source": "code_block",
+                },
+                "Code Block Parse Failed",
+            )
+
+    # Try to find JSON object pattern in the entire text
     json_match = re.search(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", text, re.DOTALL)
     if json_match:
         json_str = json_match.group(0)
         try:
-            return json.loads(json_str)
+            parsed = json.loads(json_str)
+            if isinstance(parsed, dict):
+                return parsed
         except json.JSONDecodeError as e:
-            logger.debug(f"JSON decode error: {e}")
-
-    # Try to find JSON array pattern
-    array_match = re.search(r"\[[^\[\]]*(?:\{[^{}]*\}[^\[\]]*)*\]", text, re.DOTALL)
-    if array_match:
-        json_str = array_match.group(0)
-        try:
-            return json.loads(json_str)
-        except json.JSONDecodeError as e:
-            logger.debug(f"JSON array decode error: {e}")
-
-    if fallback_to_manual:
-        return _manual_json_extraction(text)
+            _logger.debug_structured(
+                {
+                    "error_type": "JSONDecodeError",
+                    "error_message": str(e),
+                    "json_str": (
+                        json_str[:100] + "..." if len(json_str) > 100 else json_str
+                    ),
+                    "source": "regex_match",
+                },
+                "Regex JSON Parse Failed",
+            )
 
     return None
 
 
-def extract_json_array_from_text(
-    text: Optional[str], fallback_to_manual: bool = True
-) -> Optional[List[Any]]:
+def _extract_json_array_only(text: str) -> Optional[List[Any]]:
     """
-    Extract JSON array from text, handling various formats and edge cases.
-    Now also supports extracting from ```json ... ``` blocks.
+    Extract JSON array from text without manual extraction fallback.
+
+    Args:
+        text: Text that may contain JSON array
+
+    Returns:
+        Parsed JSON array as list, or None if no valid JSON array found
     """
     if not text or not isinstance(text, str):
         return None
 
-    # First, look for a ```json ... ``` block
-    json_block = re.search(r"```json\s*([\s\S]*?)```", text, re.IGNORECASE)
-    if json_block:
-        json_str = json_block.group(1).strip()
+    # Try to find JSON array in ```json blocks first
+    json_block_pattern = r"```json\s*\n(.*?)\n```"
+    json_blocks = re.findall(json_block_pattern, text, re.DOTALL)
+
+    for block in json_blocks:
+        try:
+            parsed = json.loads(block.strip())
+            if isinstance(parsed, list):
+                return parsed
+        except json.JSONDecodeError as e:
+            _logger.debug_structured(
+                {
+                    "error_type": "JSONDecodeError",
+                    "error_message": str(e),
+                    "block_content": (
+                        block[:100] + "..." if len(block) > 100 else block
+                    ),
+                    "source": "json_block",
+                },
+                "JSON Block Parse Failed",
+            )
+
+    # Try to find JSON array in ``` blocks (without json specifier)
+    code_block_pattern = r"```\s*\n(.*?)\n```"
+    code_blocks = re.findall(code_block_pattern, text, re.DOTALL)
+
+    for block in code_blocks:
+        try:
+            parsed = json.loads(block.strip())
+            if isinstance(parsed, list):
+                return parsed
+        except json.JSONDecodeError as e:
+            _logger.debug_structured(
+                {
+                    "error_type": "JSONDecodeError",
+                    "error_message": str(e),
+                    "block_content": (
+                        block[:100] + "..." if len(block) > 100 else block
+                    ),
+                    "source": "code_block",
+                },
+                "Code Block Parse Failed",
+            )
+
+    # Try to find JSON array pattern in the entire text
+    json_array_match = re.search(
+        r"\[[^\[\]]*(?:\{[^{}]*\}[^\[\]]*)*\]", text, re.DOTALL
+    )
+    if json_array_match:
+        json_str = json_array_match.group(0)
         try:
             parsed = json.loads(json_str)
             if isinstance(parsed, list):
                 return parsed
         except json.JSONDecodeError as e:
-            logger.debug(f"JSON array decode error in ```json block: {e}")
-
-    # Try to find JSON array pattern
-    array_match = re.search(r"\[[^\[\]]*(?:\{[^{}]*\}[^\[\]]*)*\]", text, re.DOTALL)
-    if array_match:
-        json_str = array_match.group(0)
-        try:
-            parsed = json.loads(json_str)
-            if isinstance(parsed, list):
-                return parsed
-        except json.JSONDecodeError as e:
-            logger.debug(f"JSON array decode error: {e}")
-
-    if fallback_to_manual:
-        return _manual_array_extraction(text)
+            _logger.debug_structured(
+                {
+                    "error_type": "JSONDecodeError",
+                    "error_message": str(e),
+                    "json_str": (
+                        json_str[:100] + "..." if len(json_str) > 100 else json_str
+                    ),
+                    "source": "regex_match",
+                },
+                "Regex JSON Array Parse Failed",
+            )
 
     return None
 
 
-def extract_key_value_pairs(text: Optional[str]) -> Dict[str, Any]:
+def extract_json_from_text(text: Optional[str]) -> Optional[Dict[str, Any]]:
     """
-    Extract key-value pairs from text using various patterns.
+    Extract JSON object from text using multiple strategies.
 
     Args:
-        text: The text to extract key-value pairs from
+        text: Text that may contain JSON
 
     Returns:
-        Dictionary of extracted key-value pairs
+        Parsed JSON as dict, or None if no valid JSON found
     """
-    if not text or not isinstance(text, str):
+    if not text:
+        return None
+
+    # First try automatic extraction
+    result = _extract_json_only(text)
+    if result is not None:
+        return result
+
+    # Fall back to manual extraction
+    return _manual_json_extraction(text)
+
+
+def extract_json_array_from_text(text: Optional[str]) -> Optional[List[Any]]:
+    """
+    Extract JSON array from text using multiple strategies.
+
+    Args:
+        text: Text that may contain JSON array
+
+    Returns:
+        Parsed JSON array as list, or None if no valid JSON array found
+    """
+    if not text:
+        return None
+
+    # First try automatic extraction
+    result = _extract_json_array_only(text)
+    if result is not None:
+        return result
+
+    # Fall back to manual extraction
+    return _manual_array_extraction(text)
+
+
+def extract_key_value_pairs(text: Optional[str]) -> Dict[str, Any]:
+    """
+    Extract key-value pairs from text using various formats.
+
+    Args:
+        text: Text containing key-value pairs
+
+    Returns:
+        Dictionary of key-value pairs
+    """
+    if not text:
         return {}
 
     pairs = {}
+    content = text.strip()
 
-    # Pattern 1: "key": value
-    kv_pattern1 = re.findall(r'"([^"]+)"\s*:\s*([^,\n}]+)', text)
-    for key, value in kv_pattern1:
+    # Pattern 1: "key": value format (JSON-like)
+    pattern1 = r'"([^"]+)":\s*([^\n,}]+)'
+    matches = re.findall(pattern1, content)
+    for key, value in matches:
         pairs[key.strip()] = _clean_value(value.strip())
 
-    # Pattern 2: key: value
-    kv_pattern2 = re.findall(r"(\w+)\s*:\s*([^,\n}]+)", text)
-    for key, value in kv_pattern2:
+    # Pattern 2: key: value format
+    pattern2 = r"(\w+)\s*:\s*([^,\n}]+)"
+    matches = re.findall(pattern2, content)
+    for key, value in matches:
         if key not in pairs:  # Don't override quoted keys
             pairs[key.strip()] = _clean_value(value.strip())
 
-    # Pattern 3: key = value
-    kv_pattern3 = re.findall(r"(\w+)\s*=\s*([^,\n}]+)", text)
-    for key, value in kv_pattern3:
+    # Pattern 3: key = value format
+    pattern3 = r"(\w+)\s*=\s*([^,\n}]+)"
+    matches = re.findall(pattern3, content)
+    for key, value in matches:
         if key not in pairs:
             pairs[key.strip()] = _clean_value(value.strip())
 
@@ -131,15 +263,15 @@ def extract_key_value_pairs(text: Optional[str]) -> Dict[str, Any]:
 
 def is_deserializable_json(text: Optional[str]) -> bool:
     """
-    Check if text can be deserialized as valid JSON.
+    Check if text can be deserialized as JSON.
 
     Args:
-        text: The text to check
+        text: Text to check
 
     Returns:
-        True if text is valid JSON, False otherwise
+        True if text can be deserialized as JSON, False otherwise
     """
-    if not text or not isinstance(text, str):
+    if not text:
         return False
 
     try:
@@ -151,104 +283,140 @@ def is_deserializable_json(text: Optional[str]) -> bool:
 
 def clean_for_deserialization(text: Optional[str]) -> str:
     """
-    Clean text to make it more likely to be deserializable.
+    Clean text for JSON deserialization by removing common formatting issues.
 
     Args:
-        text: The text to clean
+        text: Text to clean
 
     Returns:
-        Cleaned text that's more likely to be valid JSON
+        Cleaned text ready for JSON deserialization
     """
-    if not text or not isinstance(text, str):
+    if not text:
         return ""
 
-    # Remove common LLM response artifacts
-    text = re.sub(r"```json\s*", "", text)
-    text = re.sub(r"```\s*$", "", text)
-    text = re.sub(r"^```\s*", "", text)
+    # Remove leading/trailing whitespace
+    cleaned = text.strip()
+
+    # Remove markdown code block markers
+    cleaned = re.sub(r"```json\s*\n", "", cleaned)
+    cleaned = re.sub(r"```\s*\n", "", cleaned)
+    cleaned = re.sub(r"\n```", "", cleaned)
+
+    # Remove extra whitespace around brackets
+    cleaned = re.sub(r"\s*{\s*", "{", cleaned)
+    cleaned = re.sub(r"\s*}\s*", "}", cleaned)
+    cleaned = re.sub(r"\s*\[\s*", "[", cleaned)
+    cleaned = re.sub(r"\s*\]\s*", "]", cleaned)
 
     # Fix common JSON issues
-    text = re.sub(
-        r"([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:", r'\1"\2":', text
+    cleaned = re.sub(
+        r"([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:", r'\1"\2":', cleaned
     )  # Quote unquoted keys
-    text = re.sub(
-        r":\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([,}])", r': "\1"\2', text
+    cleaned = re.sub(
+        r":\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*([,}])", r': "\1"\2', cleaned
     )  # Quote unquoted string values
 
     # Normalize spacing around colons
-    text = re.sub(r":\s+", ": ", text)
+    cleaned = re.sub(r":\s+", ": ", cleaned)
 
-    # Fix trailing commas
-    text = re.sub(r",\s*}", "}", text)
-    text = re.sub(r",\s*]", "]", text)
+    # Remove trailing commas before closing brackets/braces
+    cleaned = re.sub(r",\s*([}\]])", r"\1", cleaned)
 
-    return text.strip()
+    return cleaned
 
 
 def extract_structured_data(
     text: Optional[str], expected_type: str = "auto"
 ) -> Tuple[Optional[Any], str]:
     """
-    Extract structured data from text with type detection.
+    Extract structured data from text with automatic type detection.
 
     Args:
-        text: The text to extract data from
+        text: Text containing structured data
         expected_type: Expected data type ("auto", "dict", "list", "string")
 
     Returns:
-        Tuple of (extracted_data, extraction_method_used)
+        Tuple of (extracted_data, extraction_method)
     """
-    if not text or not isinstance(text, str):
-        return None, "empty"
+    if not text:
+        return None, "no_data"
 
-    # For auto detection, try to determine the type first
-    if expected_type == "auto":
-        # Check if it looks like a JSON array
-        if text.strip().startswith("[") and text.strip().endswith("]"):
-            json_array = extract_json_array_from_text(text, fallback_to_manual=False)
-            if json_array:
-                return json_array, "json_array"
+    # Clean the text first
+    cleaned_text = clean_for_deserialization(text)
 
-        # Check if it looks like a JSON object
-        if text.strip().startswith("{") and text.strip().endswith("}"):
-            json_obj = extract_json_from_text(text, fallback_to_manual=False)
-            if json_obj:
-                return json_obj, "json_object"
+    # Try to extract based on expected type
+    if expected_type == "dict":
+        json_obj = _extract_json_only(cleaned_text)
+        if json_obj is not None:
+            return json_obj, "json_object"
+        manual_obj = _manual_json_extraction(cleaned_text)
+        if manual_obj is not None:
+            return manual_obj, "manual_object"
+        return None, "failed_dict"
 
-    # Try JSON object first
-    if expected_type in ["auto", "dict"]:
-        json_obj = extract_json_from_text(text, fallback_to_manual=False)
-        if json_obj:
+    elif expected_type == "list":
+        json_array = _extract_json_array_only(cleaned_text)
+        if json_array is not None:
+            return json_array, "json_array"
+        manual_array = _manual_array_extraction(cleaned_text)
+        if manual_array is not None:
+            return manual_array, "manual_array"
+        return None, "failed_list"
+
+    elif expected_type == "string":
+        extracted_string = _extract_clean_string(cleaned_text)
+        if extracted_string is not None:
+            return extracted_string, "string"
+        return None, "failed_string"
+
+    else:  # auto
+        # Try JSON object first
+        json_obj = _extract_json_only(cleaned_text)
+        if json_obj is not None:
             return json_obj, "json_object"
 
-    # Try JSON array
-    if expected_type in ["auto", "list"]:
-        json_array = extract_json_array_from_text(text, fallback_to_manual=False)
-        if json_array:
+        # Try JSON array
+        json_array = _extract_json_array_only(cleaned_text)
+        if json_array is not None:
             return json_array, "json_array"
 
-    # Try manual extraction
-    if expected_type in ["auto", "dict"]:
-        manual_obj = _manual_json_extraction(text)
-        if manual_obj:
+        # Try manual extraction for object
+        manual_obj = _manual_json_extraction(cleaned_text)
+        if manual_obj is not None:
             return manual_obj, "manual_object"
 
-    if expected_type in ["auto", "list"]:
-        manual_array = _manual_array_extraction(text)
-        if manual_array:
+        # Try manual extraction for array
+        manual_array = _manual_array_extraction(cleaned_text)
+        if manual_array is not None:
             return manual_array, "manual_array"
 
-    # Fallback to string extraction
-    if expected_type in ["auto", "string"]:
-        extracted_string = _extract_clean_string(text)
-        if extracted_string:
+        # Try string extraction
+        extracted_string = _extract_clean_string(cleaned_text)
+        if extracted_string is not None:
             return extracted_string, "string"
 
-    return None, "failed"
+        return None, "failed_auto"
 
 
 def _manual_json_extraction(text: str) -> Optional[Dict[str, Any]]:
-    """Manually extract JSON-like object from text."""
+    """
+    Manually extract JSON object from text using regex patterns.
+
+    Args:
+        text: Text to extract from
+
+    Returns:
+        Extracted JSON object or None
+    """
+    # Look for object patterns
+    object_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
+    match = re.search(object_pattern, text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(0))
+        except json.JSONDecodeError:
+            pass
+
     # Try to extract from common patterns first
     # Pattern: { key: value, key2: value2 }
     brace_pattern = re.search(r"\{([^}]+)\}", text)
@@ -267,7 +435,23 @@ def _manual_json_extraction(text: str) -> Optional[Dict[str, Any]]:
 
 
 def _manual_array_extraction(text: str) -> Optional[List[Any]]:
-    """Manually extract array-like data from text."""
+    """
+    Manually extract JSON array from text using regex patterns.
+
+    Args:
+        text: Text to extract from
+
+    Returns:
+        Extracted JSON array or None
+    """
+    # Look for array patterns
+    array_pattern = r"\[[^\[\]]*(?:\{[^{}]*\}[^\[\]]*)*\]"
+    match = re.search(array_pattern, text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(0))
+        except json.JSONDecodeError:
+            pass
 
     # Extract quoted strings
     quoted_strings = re.findall(r'"([^"]*)"', text)
@@ -295,52 +479,60 @@ def _manual_array_extraction(text: str) -> Optional[List[Any]]:
 
 
 def _extract_clean_string(text: str) -> Optional[str]:
-    """Extract a clean string from text."""
-    # Remove common artifacts
-    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
-    text = re.sub(r"`.*?`", "", text)
+    """
+    Extract a clean string from text.
 
-    # Extract content between quotes
-    quoted = re.findall(r'"([^"]*)"', text)
-    if quoted:
-        return quoted[0].strip()
+    Args:
+        text: Text to extract from
 
-    # Return cleaned text
-    cleaned = text.strip()
-    if cleaned and len(cleaned) > 0:
+    Returns:
+        Clean string or None
+    """
+    # Remove quotes and extra whitespace
+    cleaned = text.strip().strip("\"'")
+    if cleaned:
         return cleaned
-
     return None
 
 
 def _clean_value(value: str) -> Any:
-    """Clean and convert a value string to appropriate type."""
+    """
+    Clean and convert a value string to appropriate type.
+
+    Args:
+        value: String value to clean
+
+    Returns:
+        Cleaned value with appropriate type
+    """
     value = value.strip()
 
-    # Try to convert to appropriate type
-    if value.lower() in ["true", "false"]:
+    # Try to convert to number
+    try:
+        if "." in value:
+            return float(value)
+        else:
+            return int(value)
+    except ValueError:
+        pass
+
+    # Try to convert to boolean
+    if value.lower() in ("true", "false"):
         return value.lower() == "true"
-    elif value.lower() == "null":
-        return None
-    elif value.isdigit():
-        return int(value)
-    elif re.match(r"^\d+\.\d+$", value):
-        return float(value)
-    elif value.startswith('"') and value.endswith('"'):
-        return value[1:-1]
-    else:
-        return value
+
+    # Return as string
+    return value.strip('"')
 
 
 def validate_json_structure(
     data: Any, required_keys: Optional[List[str]] = None
 ) -> bool:
     """
-    Validate that extracted data has the expected structure.
+    Validate that data has the expected JSON structure.
 
     Args:
-        data: The data to validate
-        required_keys: List of required keys if data should be a dict
+        data: Data to validate
+        required_keys: List of required keys (for dict validation)
 
     Returns:
         True if data has valid structure, False otherwise
@@ -348,7 +540,9 @@ def validate_json_structure(
     if data is None:
         return False
 
-    if required_keys and isinstance(data, dict):
+    if required_keys:
+        if not isinstance(data, dict):
+            return False
         return all(key in data for key in required_keys)
 
     return True

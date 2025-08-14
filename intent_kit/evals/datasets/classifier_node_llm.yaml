@@ -1,56 +1,56 @@
 dataset:
   name: "classifier_node_llm"
-  description: "Test LLM-powered intent classification for weather and cancellation actions"
+  description: "Test DAG ClassifierNode with intent classification labels"
   node_type: "classifier"
-  node_name: "classifier_node_llm"
+  node_name: "ClassifierNode"
 
 test_cases:
   - input: "What's the weather like in New York?"
-    expected: "Weather in New York: Sunny with a chance of rain"
+    expected: "weather"
     context:
       user_id: "user123"
 
   - input: "How's the temperature in London?"
-    expected: "Weather in London: Sunny with a chance of rain"
+    expected: "weather"
     context:
       user_id: "user123"
 
   - input: "Can you tell me the weather forecast for Tokyo?"
-    expected: "Weather in Tokyo: Sunny with a chance of rain"
+    expected: "weather"
     context:
       user_id: "user123"
 
   - input: "What's the weather like today?"
-    expected: "Weather in Unknown: Sunny with a chance of rain"
+    expected: "weather"
     context:
       user_id: "user123"
 
   - input: "I need to cancel my flight reservation"
-    expected: "Successfully cancelled flight reservation"
+    expected: "cancel"
     context:
       user_id: "user123"
 
   - input: "Cancel my hotel booking"
-    expected: "Successfully cancelled hotel booking"
+    expected: "cancel"
     context:
       user_id: "user123"
 
   - input: "I want to cancel my restaurant reservation"
-    expected: "Successfully cancelled restaurant reservation"
+    expected: "cancel"
     context:
       user_id: "user123"
 
   - input: "Please cancel my appointment"
-    expected: "Successfully cancelled appointment"
+    expected: "cancel"
     context:
       user_id: "user123"
 
   - input: "Cancel my subscription"
-    expected: "Successfully cancelled subscription"
+    expected: "cancel"
     context:
       user_id: "user123"
 
   - input: "I need to cancel my order"
-    expected: "Successfully cancelled order"
+    expected: "cancel"
     context:
       user_id: "user123"

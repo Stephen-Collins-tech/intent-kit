@@ -6,19 +6,58 @@ Run evaluations on all datasets and generate comprehensive markdown reports.
 """
 
 import argparse
-from intent_kit.evals import load_dataset
-from intent_kit.evals.run_node_eval import (
-    get_node_from_module,
-    evaluate_node,
-    generate_markdown_report,
-)
+from intent_kit.evals import load_dataset, run_eval_from_path, get_node_from_module
+from intent_kit.evals.run_node_eval import generate_markdown_report
 from intent_kit.services.yaml_service import yaml_service
+from intent_kit.nodes import ActionNode, ClassifierNode
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 import pathlib
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def create_test_action(destination: str, date: str, booking_id: int) -> str:
+    """Simple booking action function for testing."""
+    return f"Flight booked to {destination} for {date} (Booking #{booking_id})"
+
+
+def create_test_classifier(user_input: str, ctx) -> str:
+    """Simple weather classifier function for testing."""
+    weather_keywords = ["weather", "temperature", "forecast", "climate"]
+    cancel_keywords = ["cancel", "cancellation", "canceled", "cancelled"]
+
+    input_lower = user_input.lower()
+
+    if any(keyword in input_lower for keyword in weather_keywords):
+        return "weather"
+    elif any(keyword in input_lower for keyword in cancel_keywords):
+        return "cancel"
+    else:
+        return "unknown"
+
+
+def create_node_for_dataset(dataset_name: str, node_type: str, node_name: str):
+    """Create appropriate node instance based on dataset configuration."""
+    if node_type == "action":
+        return ActionNode(
+            name=node_name,
+            action=create_test_action,
+            description=f"Test action for {dataset_name}",
+            terminate_on_success=True,
+            param_key="extracted_params",
+        )
+    elif node_type == "classifier":
+        return ClassifierNode(
+            name=node_name,
+            output_labels=["weather", "cancel", "unknown"],
+            description=f"Test classifier for {dataset_name}",
+            classification_func=create_test_classifier,
+        )
+    else:
+        # For other node types, try to load from module
+        return get_node_from_module("intent_kit.nodes", node_name)
 
 
 def run_all_evaluations():
@@ -106,12 +145,10 @@ def run_all_evaluations():
             ):
                 dst.write(src.read())
             if not args.quiet:
-                print(
-                    f"Individual report written to: {individual_report_path} and archived as {date_individual_report_path}"
-                )
+                print(f"Individual report archived as: {date_individual_report_path}")
 
     if not args.quiet:
-        print("Evaluation complete!")
+        print(f"Comprehensive report generated: {output_path}")
 
     return True
 
@@ -119,152 +156,171 @@ def run_all_evaluations():
 def run_all_evaluations_internal(
     llm_config_path: Optional[str] = None, mock_mode: bool = False
 ) -> List[Dict[str, Any]]:
-    """Run evaluations on all datasets and return results."""
-    dataset_dir = pathlib.Path(__file__).parent / "datasets"
-    results = []
-
+    """Internal function to run all evaluations."""
     # Load LLM configuration if provided
     if llm_config_path:
-        import os
-
         with open(llm_config_path, "r") as f:
             llm_config = yaml_service.safe_load(f)
 
         # Set environment variables for API keys
         for provider, config in llm_config.items():
             if "api_key" in config:
+                import os
+
                 env_var = f"{provider.upper()}_API_KEY"
                 os.environ[env_var] = config["api_key"]
-                print(f"Set {env_var} environment variable (key obfuscated)")
+                print(f"Set {env_var} environment variable")
 
-    # Set mock mode environment variable
-    if mock_mode:
-        import os
+    # Find datasets
+    datasets_dir = pathlib.Path(__file__).parent / "datasets"
+    if not datasets_dir.exists():
+        print(f"Datasets directory not found: {datasets_dir}")
+        return []
 
-        os.environ["INTENT_KIT_MOCK_MODE"] = "1"
-        print("Running in MOCK mode - using simulated responses")
+    dataset_files = list(datasets_dir.glob("*.yaml"))
+    if not dataset_files:
+        print(f"No dataset files found in {datasets_dir}")
+        return []
 
-    for dataset_file in dataset_dir.glob("*.yaml"):
-        print(f"Evaluating {dataset_file.name}...")
+    results = []
 
-        # Load dataset
-        dataset = load_dataset(dataset_file)
-        dataset_name = dataset.name
-        node_name = dataset.node_name
+    for dataset_file in dataset_files:
+        print(f"\nEvaluating dataset: {dataset_file.name}")
 
-        # Determine module name based on node name
-        if "llm" in node_name:
-            module_name = f"intent_kit.node_library.{node_name.split('_')[0]}_node_llm"
-        else:
-            module_name = f"intent_kit.node_library.{node_name.split('_')[0]}_node"
+        try:
+            # Load dataset
+            dataset = load_dataset(dataset_file)
+            dataset_name = dataset.name
+            node_type = dataset.node_type
+            node_name = dataset.node_name
 
-        # Load node
-        node = get_node_from_module(module_name, node_name)
-        if node is None:
-            print(f"Failed to load node {node_name} from {module_name}")
+            # Create appropriate node
+            node = create_node_for_dataset(dataset_name, node_type, node_name)
+            if node is None:
+                print(f"Failed to create node for {dataset_name}")
+                continue
+
+            # Run evaluation using the new API
+            result = run_eval_from_path(dataset_file, node)
+
+            # Convert to the format expected by the report generator
+            converted_result = {
+                "dataset": dataset_name,
+                "total_cases": result.total_count(),
+                "correct": result.passed_count(),
+                "incorrect": result.failed_count(),
+                "accuracy": result.accuracy(),
+                "errors": [
+                    {
+                        "case": i + 1,
+                        "input": error.input,
+                        "expected": error.expected,
+                        "actual": error.actual,
+                        "error": error.error,
+                        "type": "evaluation_error",
+                    }
+                    for i, error in enumerate(result.errors())
+                ],
+                "details": [
+                    {
+                        "case": i + 1,
+                        "input": r.input,
+                        "expected": r.expected,
+                        "actual": r.actual,
+                        "success": r.passed,
+                        "error": r.error,
+                        "metrics": r.metrics,
+                    }
+                    for i, r in enumerate(result.results)
+                ],
+                "raw_results_file": result.save_csv(),
+            }
+
+            results.append(converted_result)
+
+            # Print results
+            accuracy = result.accuracy()
+            print(
+                f"  Accuracy: {accuracy:.1%} ({result.passed_count()}/{result.total_count()})"
+            )
+
+            if result.errors():
+                print(f"  Errors: {len(result.errors())}")
+                for error in result.errors()[:3]:  # Show first 3 errors
+                    print(f"    - Input: {error.input}")
+                    print(f"      Expected: {error.expected}")
+                    print(f"      Actual: {error.actual}")
+
+        except Exception as e:
+            print(f"Error evaluating {dataset_file.name}: {e}")
+            import traceback
+
+            traceback.print_exc()
             continue
-
-        # Run evaluation
-        test_cases = [
-            {"input": tc.input, "expected": tc.expected, "context": tc.context}
-            for tc in dataset.test_cases
-        ]
-        result = evaluate_node(node, test_cases, dataset_name)
-        results.append(result)
-
-        # Print results
-        accuracy = result["accuracy"]
-        mode_indicator = "[MOCK]" if mock_mode else ""
-        print(
-            f"  Accuracy: {accuracy:.1%} ({result['correct']}/{result['total_cases']}) {mode_indicator}"
-        )
 
     return results
 
 
 def generate_comprehensive_report(
     results: List[Dict[str, Any]],
-    output_file: Optional[str] = None,
-    run_timestamp: str = "",
+    output_path: str,
+    run_timestamp: Optional[str] = None,
     mock_mode: bool = False,
-) -> str:
-    """Generate a comprehensive markdown report for all evaluations."""
+):
+    """Generate a comprehensive markdown report from all evaluation results."""
+    import importlib
 
-    total_datasets = len(results)
-    total_tests = sum(r["total_cases"] for r in results)
-    total_passed = sum(r["correct"] for r in results)
-    overall_accuracy = total_passed / total_tests if total_tests > 0 else 0.0
-
-    # Count statuses
-    passed_datasets = sum(1 for r in results if r["accuracy"] >= 0.8)  # 80% threshold
-    failed_datasets = total_datasets - passed_datasets
-
-    # Add mock mode indicator
+    # Generate the report content
     mock_indicator = " (MOCK MODE)" if mock_mode else ""
+    report_content = f"# Comprehensive Node Evaluation Report{mock_indicator}\n\n"
+    report_content += f"Generated on: {importlib.import_module('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+    report_content += f"Mode: {'Mock (simulated responses)' if mock_mode else 'Live (real API calls)'}\n\n"
 
-    report = f"""# Comprehensive Evaluation Report{mock_indicator}
+    # Summary
+    report_content += "## Summary\n\n"
+    total_cases = sum(r["total_cases"] for r in results)
+    total_correct = sum(r["correct"] for r in results)
+    overall_accuracy = total_correct / total_cases if total_cases > 0 else 0
 
-**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-**Mode:** {'Mock (simulated responses)' if mock_mode else 'Live (real API calls)'}
-**Total Datasets:** {total_datasets}
-**Total Tests:** {total_tests}
-**Overall Accuracy:** {overall_accuracy:.1%}
+    report_content += f"- **Total Test Cases**: {total_cases}\n"
+    report_content += f"- **Total Correct**: {total_correct}\n"
+    report_content += f"- **Overall Accuracy**: {overall_accuracy:.1%}\n"
+    report_content += f"- **Datasets Evaluated**: {len(results)}\n\n"
 
-## Executive Summary
-
-| Metric | Value |
-|--------|-------|
-| **Datasets Evaluated** | {total_datasets} |
-| **Datasets Passed** | {passed_datasets} |
-| **Datasets Failed** | {failed_datasets} |
-| **Total Tests** | {total_tests} |
-| **Tests Passed** | {total_passed} |
-| **Tests Failed** | {total_tests - total_passed} |
-| **Overall Accuracy** | {overall_accuracy:.1%} |
-
-## Dataset Results
-
-| Dataset | Accuracy | Status | Tests |
-|---------|----------|--------|-------|
-"""
-
+    # Individual dataset results
+    report_content += "## Dataset Results\n\n"
     for result in results:
-        status = "PASSED" if result["accuracy"] >= 0.8 else "FAILED"
-        status_icon = "✅" if status == "PASSED" else "❌"
-
-        report += f"| `{result['dataset']}` | {result['accuracy']:.1%} | {status_icon} {status} | {result['correct']}/{result['total_cases']} |\n"
-
-    # Detailed results for each dataset
-    report += "\n## Detailed Results\n\n"
-
-    for result in results:
-        report += f"### {result['dataset']}\n\n"
-        report += f"**Accuracy:** {result['accuracy']:.1%} ({result['correct']}/{result['total_cases']})  \n"
-        report += (
-            f"**Status:** {'PASSED' if result['accuracy'] >= 0.8 else 'FAILED'}\n\n"
-        )
+        report_content += f"### {result['dataset']}\n"
+        report_content += f"- **Accuracy**: {result['accuracy']:.1%} ({result['correct']}/{result['total_cases']})\n"
+        report_content += f"- **Correct**: {result['correct']}\n"
+        report_content += f"- **Incorrect**: {result['incorrect']}\n"
+        report_content += f"- **Raw Results**: `{result['raw_results_file']}`\n\n"
 
         # Show errors if any
         if result["errors"]:
-            report += "#### Errors\n"
+            report_content += "#### Errors\n"
             for error in result["errors"][:5]:  # Show first 5 errors
-                report += f"- **Case {error['case']}**: {error['input']}\n"
-                report += f"  - Expected: `{error['expected']}`\n"
-                report += f"  - Actual: `{error['actual']}`\n"
+                report_content += f"- **Case {error['case']}**: {error['input']}\n"
+                report_content += f"  - Expected: `{error['expected']}`\n"
+                report_content += f"  - Actual: `{error['actual']}`\n"
                 if error.get("error"):
-                    report += f"  - Error: {error['error']}\n"
-                report += "\n"
+                    report_content += f"  - Error: {error['error']}\n"
+                report_content += "\n"
             if len(result["errors"]) > 5:
-                report += f"- ... and {len(result['errors']) - 5} more errors\n\n"
+                report_content += (
+                    f"- ... and {len(result['errors']) - 5} more errors\n\n"
+                )
 
-    # Write to file if specified
-    if output_file:
-        with open(output_file, "w") as f:
-            f.write(report)
-        print(f"Comprehensive report written to: {output_file}")
-        return output_file
+    # Detailed results table
+    report_content += "## Detailed Results\n\n"
+    report_content += "| Dataset | Accuracy | Correct | Total | Raw Results |\n"
+    report_content += "|---------|----------|---------|-------|-------------|\n"
+    for result in results:
+        report_content += f"| {result['dataset']} | {result['accuracy']:.1%} | {result['correct']} | {result['total_cases']} | `{result['raw_results_file']}` |\n"
 
-    return report
+    # Write to the specified output path
+    with open(output_path, "w") as f:
+        f.write(report_content)
 
 
 if __name__ == "__main__":

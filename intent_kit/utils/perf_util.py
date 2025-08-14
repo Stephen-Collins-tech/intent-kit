@@ -20,9 +20,9 @@ class PerfUtil:
 
     Example (collection):
         timings = []
-        with PerfUtil.collect("label", timings):
+        with collect("label", timings):
             ... # code to time
-        PerfUtil.report_table(timings)
+        report_table(timings)
     """
 
     def __init__(self, label=None, auto_print=True):
@@ -71,39 +71,39 @@ class PerfUtil:
         """Return the elapsed time in seconds, or None if not stopped."""
         return self.elapsed
 
-    @staticmethod
-    def report_table(timings: List[Tuple[str, float]], label: Optional[str] = None):
-        """
-        Print a formatted table of timings. Each entry is (label, elapsed).
-        """
-        if label:
-            print(f"\n{label}")
-        print("\nTiming Summary:")
-        print(f"  {'Label':<40} | {'Elapsed (sec)':>12}")
-        print("  " + "-" * 57)
-        for lbl, elapsed in timings:
-            print(f"  {lbl[:40]:<40} | {elapsed:12.4f}")
 
-    @staticmethod
-    def collect(
-        label: str, timings: List[Tuple[str, float]], auto_print: bool = False
-    ) -> ContextManager["PerfUtil"]:
-        """
-        Context manager that yields a PerfUtil and appends (label, elapsed) to timings on exit.
-        """
+def report_table(timings: List[Tuple[str, float]], label: Optional[str] = None):
+    """
+    Print a formatted table of timings. Each entry is (label, elapsed).
+    """
+    if label:
+        print(f"\n{label}")
+    print("\nTiming Summary:")
+    print(f"  {'Label':<40} | {'Elapsed (sec)':>12}")
+    print("  " + "-" * 57)
+    for lbl, elapsed in timings:
+        print(f"  {lbl[:40]:<40} | {elapsed:12.4f}")
 
-        class _Collector:
-            def __init__(self, label, timings, auto_print):
-                self.perf = PerfUtil(label, auto_print=auto_print)
-                self.timings = timings
-                self.label = label
 
-            def __enter__(self):
-                self.perf.start()
-                return self.perf
+def collect(
+    label: str, timings: List[Tuple[str, float]], auto_print: bool = False
+) -> ContextManager[PerfUtil]:
+    """
+    Context manager that yields a PerfUtil and appends (label, elapsed) to timings on exit.
+    """
 
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                self.perf.stop()
-                self.timings.append((self.label, self.perf.get()))
+    class _Collector:
+        def __init__(self, label, timings, auto_print):
+            self.perf = PerfUtil(label, auto_print=auto_print)
+            self.timings = timings
+            self.label = label
 
-        return _Collector(label, timings, auto_print)
+        def __enter__(self):
+            self.perf.start()
+            return self.perf
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self.perf.stop()
+            self.timings.append((self.label, self.perf.elapsed))
+
+    return _Collector(label, timings, auto_print)

@@ -1,16 +1,12 @@
 """
-Core types for intent-kit package.
+Core type definitions for intent-kit package.
 """
 
-from dataclasses import dataclass
-from abc import ABC
-from typing import TypedDict, Optional, Dict, Any, Callable, TYPE_CHECKING
+from typing import TypeVar, Union
 from enum import Enum
+from typing import TypedDict, Optional, Dict, Any, Callable
 
-if TYPE_CHECKING:
-    pass
-
-
+# Type aliases for basic types
 TokenUsage = str
 InputTokens = int
 OutputTokens = int
@@ -21,57 +17,32 @@ Model = str
 Output = str
 Duration = float  # in seconds
 
+# Type variable for structured output
 
-@dataclass
-class ModelPricing:
-    """Pricing information for a specific model."""
+T = TypeVar("T")
 
-    input_price_per_1m: float
-    output_price_per_1m: float
-    model_name: str
-    provider: str
-    last_updated: str  # ISO date string
+# Structured output type - can be any structured data
+StructuredOutput = Union[Dict[str, Any], list, Any]
 
-
-@dataclass
-class PricingConfig:
-    """Configuration for model pricing."""
-
-    default_pricing: Dict[str, ModelPricing]
-    custom_pricing: Dict[str, ModelPricing]
+# Type-safe output that can be either structured or string
+TypedOutput = Union[StructuredOutput, str]
 
 
-class PricingService(ABC):
-    def calculate_cost(
-        self,
-        model: str,
-        provider: str,
-        input_tokens: InputTokens,
-        output_tokens: OutputTokens,
-    ) -> Cost:
-        """Abstract method to calculate the cost for a model usage using the pricing service."""
-        raise NotImplementedError("Subclasses must implement calculate_cost()")
+class TypedOutputType(str, Enum):
+    """Types of output that can be cast."""
 
-
-@dataclass
-class LLMResponse:
-    """Response from an LLM."""
-
-    output: Output
-    model: Model
-    input_tokens: InputTokens
-    output_tokens: OutputTokens
-    cost: Cost
-    provider: Provider
-    duration: Duration
-
-    @property
-    def total_tokens(self) -> TotalTokens:
-        """Total tokens used in the response."""
-        return self.input_tokens + self.output_tokens
+    JSON = "json"
+    YAML = "yaml"
+    STRING = "string"
+    DICT = "dict"
+    LIST = "list"
+    CLASSIFIER = "classifier"  # Cast to ClassifierOutput type
+    AUTO = "auto"  # Automatically detect type
 
 
 class IntentClassification(str, Enum):
+    """Classification types for intent chunks."""
+
     ATOMIC = "Atomic"
     COMPOSITE = "Composite"
     AMBIGUOUS = "Ambiguous"
@@ -79,6 +50,8 @@ class IntentClassification(str, Enum):
 
 
 class IntentAction(str, Enum):
+    """Actions that can be taken on intent chunks."""
+
     HANDLE = "handle"
     SPLIT = "split"
     CLARIFY = "clarify"
@@ -86,6 +59,8 @@ class IntentAction(str, Enum):
 
 
 class IntentChunkClassification(TypedDict, total=False):
+    """Classification result for an intent chunk."""
+
     chunk_text: str
     classification: IntentClassification
     intent_type: Optional[str]

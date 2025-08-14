@@ -5,7 +5,7 @@ Tests for performance utilities.
 import pytest
 import time
 from unittest.mock import patch
-from intent_kit.utils.perf_util import PerfUtil
+from intent_kit.utils.perf_util import PerfUtil, report_table, collect
 
 
 class TestPerfUtil:
@@ -159,7 +159,7 @@ class TestPerfUtil:
     def test_report_table_empty():
         """Test report_table with empty timings."""
         with patch("builtins.print") as mock_print:
-            PerfUtil.report_table([])
+            report_table([])
             assert (
                 mock_print.call_count == 3
             )  # "Timing Summary:", header, and separator
@@ -169,7 +169,7 @@ class TestPerfUtil:
         """Test report_table with timing data."""
         timings = [("task1", 1.234), ("task2", 0.567)]
         with patch("builtins.print") as mock_print:
-            PerfUtil.report_table(timings)
+            report_table(timings)
             calls = mock_print.call_args_list
 
             # Should have header, separator, and data rows
@@ -184,7 +184,7 @@ class TestPerfUtil:
         """Test report_table with custom label."""
         timings = [("task1", 1.234)]
         with patch("builtins.print") as mock_print:
-            PerfUtil.report_table(timings, "Custom Label")
+            report_table(timings, "Custom Label")
             calls = mock_print.call_args_list
 
             # Should have label, header, separator, and data
@@ -196,7 +196,7 @@ class TestPerfUtil:
         """Test collect static method as context manager."""
         timings = []
         with patch("builtins.print"):
-            with PerfUtil.collect("collect_test", timings, auto_print=False):
+            with collect("collect_test", timings, auto_print=False):
                 time.sleep(0.001)  # Small delay
 
             # Should have added timing to list
@@ -210,7 +210,7 @@ class TestPerfUtil:
         """Test collect with auto_print enabled."""
         timings = []
         with patch("builtins.print") as mock_print:
-            with PerfUtil.collect("collect_test", timings, auto_print=True):
+            with collect("collect_test", timings, auto_print=True):
                 time.sleep(0.001)  # Small delay
 
             # Collector doesn't auto-print, it only collects timings
@@ -223,7 +223,7 @@ class TestPerfUtil:
         """Test collect with exception."""
         timings = []
         with pytest.raises(ValueError):
-            with PerfUtil.collect("collect_test", timings):
+            with collect("collect_test", timings):
                 time.sleep(0.001)  # Small delay
                 raise ValueError("test exception")
 

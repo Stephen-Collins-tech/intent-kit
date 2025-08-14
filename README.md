@@ -1,27 +1,14 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Stephen-Collins-tech/intent-kit/main/assets/logo.png" alt="Intent Kit Logo" height="100"/>
-</p>
+# Intent Kit
 
-<h1 align="center">Intent Kit</h1>
-<p align="center">Build reliable, auditable AI applications that understand user intent and take intelligent actions</p>
+Build reliable, auditable AI applications that understand user intent and take intelligent actions
 
-<p align="center" >
-  <a style="text-decoration: none;" href="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml">
-    <img src="https://github.com/Stephen-Collins-tech/intent-kit/actions/workflows/ci.yml/badge.svg" alt="CI"/>
-  </a>
-  <a style="text-decoration: none;" href="https://codecov.io/gh/Stephen-Collins-tech/intent-kit">
-    <img src="https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg" alt="Coverage Status"/>
-  </a>
-  <a style="text-decoration: none;" href="https://docs.intentkit.io">
-    <img src="https://img.shields.io/badge/docs-online-blue" alt="Documentation"/>
-  </a>
-  <a style="text-decoration: none;" href="https://pypi.org/project/intentkit-py">
-    <img src="https://img.shields.io/pypi/v/intentkit-py" alt="PyPI"/>
-  </a>
-  <a style="text-decoration: none;" href="https://pypi.org/project/intentkit-py">
-    <img src="https://img.shields.io/pypi/dm/intentkit-py" alt="PyPI Downloads"/>
-  </a>
-</p>
+  [![CI](https://img.shields.io/github/actions/workflow/status/Stephen-Collins-tech/intent-kit/ci.yml?branch=main&logo=github&label=CI)](https://github.com/Stephen-Collins-tech/intent-kit/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)
+  [![Coverage](https://codecov.io/gh/Stephen-Collins-tech/intent-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/Stephen-Collins-tech/intent-kit)
+  [![PyPI](https://img.shields.io/pypi/v/intentkit-py.svg)](https://pypi.python.org/pypi/intentkit-py)
+  [![Downloads](https://static.pepy.tech/badge/intentkit-py/month)](https://pepy.tech/project/intentkit-py)
+  [![Versions](https://img.shields.io/pypi/pyversions/intentkit-py.svg)](https://github.com/Stephen-Collins-tech/intent-kit)
+  [![License](https://img.shields.io/github/license/Stephen-Collins-tech/intent-kit.svg)](https://github.com/Stephen-Collins-tech/intent-kit/blob/main/LICENSE)
+  [![Documentation](https://img.shields.io/badge/docs-online-blue)](https://docs.intentkit.io)
 
 <p align="center">
   <a href="https://docs.intentkit.io">Docs</a>
@@ -80,14 +67,15 @@ pip install 'intentkit-py[all]'        # All providers
 ### 2. Build Your First Workflow
 
 ```python
-from intent_kit import IntentGraphBuilder, action, llm_classifier
+from intent_kit.nodes.actions import ActionNode
+from intent_kit import IntentGraphBuilder, llm_classifier
 
 # Define actions your app can take
-greet = action(
+greet = ActionNode(
     name="greet",
-    description="Greet the user by name",
-    action_func=lambda name: f"Hello {name}!",
-    param_schema={"name": str}
+    action=lambda name: f"Hello {name}!",
+    param_schema={"name": str},
+    description="Greet the user by name"
 )
 
 # Create a classifier to understand requests

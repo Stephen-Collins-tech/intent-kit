@@ -57,3 +57,5 @@ build/
 .env
 coverage.xml
 repomix-output.*
+
+file.log

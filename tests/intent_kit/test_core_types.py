@@ -1,5 +1,5 @@
 """
-Tests for core types module.
+Tests for core type definitions.
 """
 
 from intent_kit.types import (
@@ -8,6 +8,18 @@ from intent_kit.types import (
     IntentChunkClassification,
     ClassifierOutput,
     ClassifierFunction,
+    TypedOutputType,
+    TokenUsage,
+    InputTokens,
+    OutputTokens,
+    TotalTokens,
+    Cost,
+    Provider,
+    Model,
+    Output,
+    Duration,
+    StructuredOutput,
+    TypedOutput,
 )
 
 
@@ -216,6 +228,41 @@ class TestIntentAction:
         assert IntentAction is not None
 
 
+class TestTypedOutputType:
+    """Test the TypedOutputType enum."""
+
+    def test_all_enum_values_exist(self):
+        """Test that all expected enum values exist."""
+        expected_values = {
+            "JSON": "json",
+            "YAML": "yaml",
+            "STRING": "string",
+            "DICT": "dict",
+            "LIST": "list",
+            "CLASSIFIER": "classifier",
+            "AUTO": "auto",
+        }
+
+        for name, value in expected_values.items():
+            assert hasattr(TypedOutputType, name)
+            assert getattr(TypedOutputType, name).value == value
+
+    def test_enum_values_are_strings(self):
+        """Test that all enum values are strings."""
+        for output_type in TypedOutputType:
+            assert isinstance(output_type.value, str)
+
+    def test_enum_values_are_unique(self):
+        """Test that all enum values are unique."""
+        values = [output_type.value for output_type in TypedOutputType]
+        assert len(values) == len(set(values))
+
+    def test_enum_iteration(self):
+        """Test that the enum can be iterated over."""
+        output_types = list(TypedOutputType)
+        assert len(output_types) == 7  # Total number of enum values
+
+
 class TestTypeAliases:
     """Test the type aliases."""
 
@@ -231,3 +278,18 @@ class TestTypeAliases:
 
         expected_type = Callable[[str], ClassifierOutput]
         assert str(ClassifierFunction) == str(expected_type)
+
+    def test_type_aliases_are_defined(self):
+        """Test that all type aliases are properly defined."""
+        # Test that the type aliases are not None
+        assert TokenUsage is not None
+        assert InputTokens is not None
+        assert OutputTokens is not None
+        assert TotalTokens is not None
+        assert Cost is not None
+        assert Provider is not None
+        assert Model is not None
+        assert Output is not None
+        assert Duration is not None
+        assert StructuredOutput is not None
+        assert TypedOutput is not None
