@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.6.1] - 2025-08-14
+
+### Changed
+- **Documentation Updates** - Updated README.md to reflect DAG-based architecture and new API patterns
+- **Removed Outdated Files** - Cleaned up completed task files (CONTEXT_REFACTOR_TASKS.md, TASKS.md)
+
 ## [v0.6.0] - 2025-08-14
 
 ### Added
