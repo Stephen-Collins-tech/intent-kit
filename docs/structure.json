@@ -4,19 +4,39 @@
       "title": "Core Concepts",
       "description": "Fundamental concepts and architecture",
       "files": {
-        "intent_graphs.md": {
-          "title": "Intent Graphs",
-          "description": "Understanding the core architecture",
+        "intent-graphs.md": {
+          "title": "Intent DAGs",
+          "description": "Understanding the DAG-based architecture with node reuse",
           "status": "complete"
         },
-        "nodes_and_actions.md": {
+        "nodes-and-actions.md": {
           "title": "Nodes and Actions",
-          "description": "Building blocks of intent graphs",
+          "description": "Building blocks of intent DAGs",
           "status": "complete"
         },
-        "context_architecture.md": {
+        "context-architecture.md": {
           "title": "Context Architecture",
           "description": "State management and dependency tracking",
+          "status": "complete"
+        },
+        "extractor-nodes.md": {
+          "title": "Extractor Nodes",
+          "description": "Parameter extraction using LLM services",
+          "status": "complete"
+        },
+        "clarification-nodes.md": {
+          "title": "Clarification Nodes",
+          "description": "Multi-turn conversation and clarification handling",
+          "status": "complete"
+        },
+        "context-management.md": {
+          "title": "Context Management",
+          "description": "Advanced context protocols, patches, merge policies, and state management",
+          "status": "complete"
+        },
+        "dag-validation.md": {
+          "title": "DAG Validation",
+          "description": "Comprehensive DAG validation rules, error handling, and best practices",
           "status": "complete"
         }
       }
@@ -25,7 +45,7 @@
       "title": "API Reference",
       "description": "Complete API documentation",
       "files": {
-        "api_reference.md": {
+        "api-reference.md": {
           "title": "Complete API Reference",
           "description": "Comprehensive API documentation with examples",
           "status": "complete"
@@ -36,14 +56,36 @@
       "title": "Configuration",
       "description": "Configuration and setup guides",
       "files": {
-        "json_serialization.md": {
+        "json-serialization.md": {
           "title": "JSON Serialization",
-          "description": "Define graphs in JSON",
+          "description": "Define DAGs in JSON",
           "status": "complete"
         },
-        "llm_integration.md": {
+        "llm-integration.md": {
           "title": "LLM Integration",
           "description": "OpenAI, Anthropic, Google, Ollama configuration",
+          "status": "complete"
+        }
+      }
+    },
+    "services": {
+      "title": "Services",
+      "description": "Service layer documentation",
+      "files": {
+        "ai-services.md": {
+          "title": "AI Services",
+          "description": "Comprehensive AI service integration with multiple providers",
+          "status": "complete"
+        }
+      }
+    },
+    "utils": {
+      "title": "Utilities",
+      "description": "Utility modules and helper functions",
+      "files": {
+        "utilities.md": {
+          "title": "Utilities",
+          "description": "Type coercion, text processing, performance monitoring, logging, and reporting",
           "status": "complete"
         }
       }
@@ -52,24 +94,34 @@
       "title": "Examples",
       "description": "Working examples and tutorials",
       "files": {
-        "basic_examples.md": {
+        "basic-examples.md": {
           "title": "Basic Examples",
           "description": "Fundamental patterns and common use cases",
           "status": "complete"
         },
-        "calculator_bot.md": {
+        "calculator-bot.md": {
           "title": "Calculator Bot",
           "description": "Simple math operations with natural language processing",
           "status": "complete"
         },
-        "context_aware_chatbot.md": {
+        "context-aware-chatbot.md": {
           "title": "Context-Aware Chatbot",
           "description": "Basic context persistence across turns",
           "status": "complete"
         },
-        "context_memory_demo.md": {
+        "context-memory-demo.md": {
           "title": "Context Memory Demo",
           "description": "Multi-turn conversations with sophisticated memory management",
+          "status": "complete"
+        },
+        "dag-examples.md": {
+          "title": "DAG Examples",
+          "description": "Comprehensive DAG patterns and advanced use cases",
+          "status": "complete"
+        },
+        "json-demo.md": {
+          "title": "JSON Demo",
+          "description": "Create DAGs using JSON configuration",
           "status": "complete"
         }
       }
@@ -93,17 +145,22 @@
           "description": "Performance evaluation and benchmarking",
           "status": "complete"
         },
+        "evaluation-framework.md": {
+          "title": "Evaluation Framework",
+          "description": "Comprehensive evaluation framework for testing and benchmarking",
+          "status": "complete"
+        },
         "debugging.md": {
           "title": "Debugging",
           "description": "Debugging tools and techniques",
           "status": "complete"
         },
-        "performance_monitoring.md": {
+        "performance-monitoring.md": {
           "title": "Performance Monitoring",
           "description": "Performance tracking and reporting",
           "status": "complete"
         },
-        "documentation_management.md": {
+        "documentation-management.md": {
           "title": "Documentation Management",
           "description": "Managing and maintaining documentation",
           "status": "complete"
@@ -114,11 +171,11 @@
   "metadata": {
     "last_updated": "2024-12-19",
     "version": "1.0.0",
-    "total_files": 15,
+    "total_files": 25,
     "completion_status": {
-      "complete": 15,
+      "complete": 25,
       "pending": 0,
-      "total": 15
+      "total": 25
     }
   }
 }

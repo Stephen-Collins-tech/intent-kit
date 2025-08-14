@@ -1,5 +1,6 @@
 """DAG ClassifierNode implementation with LLM integration."""
 
+import time
 from typing import Any, Dict, List, Optional, Callable
 from intent_kit.core.types import NodeProtocol, ExecutionResult
 from intent_kit.core.context import ContextProtocol
@@ -19,6 +20,8 @@ class ClassifierNode(NodeProtocol):
         llm_config: Optional[Dict[str, Any]] = None,
         classification_func: Optional[Callable[[str, Any], str]] = None,
         custom_prompt: Optional[str] = None,
+        context_read: Optional[List[str]] = None,
+        context_write: Optional[List[str]] = None,
     ):
         """Initialize the DAG classifier node.
 
@@ -29,6 +32,8 @@ class ClassifierNode(NodeProtocol):
             llm_config: LLM configuration
             classification_func: Function to perform classification (overrides LLM)
             custom_prompt: Custom prompt for classification
+            context_read: List of context keys to read before execution
+            context_write: List of context keys to write after execution
         """
         self.name = name
         self.output_labels = output_labels
@@ -36,6 +41,8 @@ class ClassifierNode(NodeProtocol):
         self.llm_config = llm_config or {}
         self.classification_func = classification_func
         self.custom_prompt = custom_prompt
+        self.context_read = context_read or []
+        self.context_write = context_write or []
         self.logger = Logger(name)
 
     def execute(self, user_input: str, ctx: ContextProtocol) -> ExecutionResult:
@@ -49,6 +56,13 @@ class ClassifierNode(NodeProtocol):
             ExecutionResult with classification results
         """
         try:
+            # Read context values if specified
+            context_data = {}
+            for key in self.context_read:
+                value = ctx.get(key)
+                if value is not None:
+                    context_data[key] = value
+
             # Get LLM service from context
             llm_service = ctx.get("llm_service") if hasattr(ctx, "get") else None
 
@@ -61,7 +75,7 @@ class ClassifierNode(NodeProtocol):
 
             # Use custom classification function if provided
             if self.classification_func:
-                chosen_label = self.classification_func(user_input, ctx)
+                chosen_label = self.classification_func(user_input, context_data)
             elif llm_service and effective_llm_config:
                 # Use LLM for classification
                 chosen_label = self._classify_with_llm(
@@ -86,13 +100,26 @@ class ClassifierNode(NodeProtocol):
                 )
                 chosen_label = ""  # Use empty string instead of None
 
+            # Create context patch with classification result
+            context_patch: Dict[str, Any] = {"chosen_label": chosen_label}
+
+            # Add context write operations if specified
+            for key in self.context_write:
+                if key == "intent.confidence":
+                    context_patch[key] = chosen_label
+                elif key == "classification.time":
+                    context_patch[key] = time.time()
+                else:
+                    # For other keys, we could add more special cases as needed
+                    context_patch[key] = chosen_label
+
             return ExecutionResult(
                 data=chosen_label,  # Return the classification result in data
                 # Route to clarification when classification fails
                 next_edges=[chosen_label] if chosen_label else ["clarification"],
                 terminate=False,  # Classifiers don't terminate
                 metrics={},
-                context_patch={"chosen_label": chosen_label},
+                context_patch=context_patch,
             )
         except Exception as e:
             self.logger.error(f"Classification failed: {e}")
@@ -202,3 +229,13 @@ Return only the category name:"""
         else:
             self.logger.warning(f"Unexpected response type: {type(response)}")
             return None
+
+    @property
+    def context_read_keys(self) -> List[str]:
+        """List of context keys to read before execution."""
+        return self.context_read
+
+    @property
+    def context_write_keys(self) -> List[str]:
+        """List of context keys to write after execution."""
+        return self.context_write

@@ -7,10 +7,12 @@ These examples demonstrate how to use Intent Kit's DAG approach to build intelli
 - **[Basic Examples](basic-examples.md)** - Fundamental patterns and common use cases
 - **[Calculator Bot](calculator-bot.md)** - Simple math operations with natural language processing
 - **[Context-Aware Chatbot](context-aware-chatbot.md)** - Basic context persistence across turns
+- **[JSON Demo](json-demo.md)** - Create DAGs using JSON configuration
 
 ## Advanced Examples
 
 - **[Context Memory Demo](context-memory-demo.md)** - Multi-turn conversations with sophisticated memory management
+- **[JSON Demo](json-demo.md)** - Create DAGs using JSON configuration
 
 ## Example Categories
 
@@ -41,6 +43,14 @@ Examples demonstrate parameter extraction for:
 - **Complex Parameters** - Calculations, preferences, settings
 - **Contextual Parameters** - Information that depends on previous interactions
 
+### Configuration
+
+Examples show different configuration approaches:
+
+- **JSON Configuration** - Declarative DAG definitions
+- **Programmatic Building** - Code-based DAG construction
+- **Mixed Approaches** - Combining JSON and code
+
 ## Running Examples
 
 All examples can be run with:
@@ -60,6 +70,8 @@ python examples/example_name.py
 - **Natural Language Processing** - Understanding user intent and extracting parameters
 - **Error Handling** - Graceful handling of unclear or invalid requests
 - **Multi-Intent Support** - Handling different types of user requests in a single DAG
+- **JSON Configuration** - Declarative workflow definitions
+- **Node Reuse** - Sharing nodes across different execution paths
 
 ## Example Structure
 
@@ -119,7 +131,8 @@ prefs = context.get("user_preferences", {})
 
 After exploring these examples:
 
-- Read the [Core Concepts](concepts/index.md) to understand the fundamentals
-- Check out the [API Reference](api/api-reference.md) for complete documentation
-- Explore [Configuration Options](configuration/index.md) for advanced setup
-- Review [Development Guides](development/index.md) for testing and deployment
+- Read the [Core Concepts](../concepts/index.md) to understand the fundamentals
+- Check out the [API Reference](../api/api-reference.md) for complete documentation
+- Explore [Configuration Options](../configuration/index.md) for advanced setup
+- Review [Development Guides](../development/index.md) for testing and deployment
+- Try [JSON Configuration](../configuration/json-serialization.md) for declarative workflows

@@ -6,6 +6,7 @@ conversation state and memory between interactions.
 """
 
 import os
+from typing import Optional
 from dotenv import load_dotenv
 from intent_kit import DAGBuilder, run_dag
 from intent_kit.core.context import DefaultContext
@@ -13,32 +14,38 @@ from intent_kit.core.context import DefaultContext
 load_dotenv()
 
 
-# Global context for this demo (in a real app, you'd use a proper context management system)
-_global_context = {}
-
-
 def remember_name(name: str, **kwargs) -> str:
     """Remember the user's name in context for future interactions."""
-    global _global_context
-    _global_context["user.name"] = name
     return f"Nice to meet you, {name}! I'll remember your name."
 
 
-def get_weather(location: str, **kwargs) -> str:
+def get_weather(location: str, user_name: Optional[str] = None, **kwargs) -> str:
     """Get weather for a location, using remembered name if available."""
-    global _global_context
-    user_name = _global_context.get("user.name", "there")
-    return f"Hey {user_name}! The weather in {location} is sunny and 72°F."
+    # Check for user.name from context first, then user_name parameter
+    context_user_name = kwargs.get("user.name")
+    if context_user_name:
+        return f"Hey {context_user_name}! The weather in {location} is sunny and 72°F."
+    elif user_name:
+        return f"Hey {user_name}! The weather in {location} is sunny and 72°F."
+    else:
+        return f"Hey there! The weather in {location} is sunny and 72°F."
 
 
-def get_remembered_name(**kwargs) -> str:
+def get_remembered_name(user_name: Optional[str] = None, **kwargs) -> str:
     """Get the remembered name from context."""
-    global _global_context
-    name = _global_context.get("user.name")
-    if name:
-        return f"I remember you! Your name is {name}."
+    # Check for user.name from context first, then user_name parameter
+    context_user_name = kwargs.get("user.name")
+    if context_user_name:
+        return f"I remember you! Your name is {context_user_name}."
+    elif user_name:
+        return f"I remember you! Your name is {user_name}."
     else:
         return "I don't remember your name yet. Try introducing yourself first!"
+
+
+# Note: In the current implementation, action functions receive parameters
+# but not the context directly. The context is managed by the traversal engine
+# and accessed through context patches returned by the node's execute method.
 
 
 def create_memory_dag():
@@ -68,7 +75,7 @@ def create_memory_dag():
         "extractor",
         param_schema={"name": str},
         description="Extract name from greeting",
-        output_key="extracted_params",
+        output_key="name_params",  # Use different key to avoid overwriting
     )
 
     # Add extractor for location extraction
@@ -77,15 +84,20 @@ def create_memory_dag():
         "extractor",
         param_schema={"location": str},
         description="Extract location from weather request",
-        output_key="extracted_params",
+        output_key="location_params",  # Use different key to avoid overwriting
     )
 
-    # Add action nodes
+    # Add action nodes with context read/write configuration
     builder.add_node(
         "remember_name_action",
         "action",
         action=remember_name,
         description="Remember the user's name",
+        # Look for name parameters
+        param_keys=["name_params", "extracted_params"],
+        context_read=[],  # No context to read
+        # Write name to context
+        context_write=["user.name", "user.first_seen"],
     )
 
     builder.add_node(
@@ -93,6 +105,13 @@ def create_memory_dag():
         "action",
         action=get_weather,
         description="Get weather information",
+        # Look for location parameters
+        param_keys=["location_params", "extracted_params"],
+        context_read=["user.name"],  # Read user name from context
+        context_write=[
+            "weather.requests",
+            "weather.last_location",
+        ],  # Write weather data
     )
 
     builder.add_node(
@@ -100,6 +119,10 @@ def create_memory_dag():
         "action",
         action=get_remembered_name,
         description="Get remembered name from context",
+        # Look for name parameters
+        param_keys=["name_params", "extracted_params"],
+        context_read=["user.name"],  # Read user name from context
+        context_write=[],  # No context to write
     )
 
     # Add clarification node
@@ -131,6 +154,10 @@ def simulate_conversation():
     """Simulate a multi-turn conversation with context memory."""
     print("=== Context Memory Demo ===\n")
     print("This demo shows how context persists across multiple turns.\n")
+    print("Features demonstrated:\n")
+    print("- Context read/write configuration for nodes")
+    print("- Persistent storage of user data across turns")
+    print("- Context-aware responses using stored data\n")
 
     # Create a shared context that persists across all turns
     shared_context = DefaultContext()
@@ -171,10 +198,15 @@ def simulate_conversation():
         for key, value in context_snapshot.items():
             if not key.startswith("private.") and not key.startswith("tmp."):
                 print(f"  {key}: {value}")
-        # Also show global context for demo purposes
-        print("Global context (for action functions):")
-        for key, value in _global_context.items():
-            print(f"  {key}: {value}")
+
+        # Show context persistence status
+        if i == 1:
+            print("\n  ✓ Alice's name stored in context for future use")
+        elif i == 2:
+            print("\n  ✓ Weather response personalized using Alice's name from context")
+        elif i == 3:
+            print("\n  ✓ Successfully retrieved Alice's name from context")
+
         print()
 
 

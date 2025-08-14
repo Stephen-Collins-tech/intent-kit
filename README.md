@@ -108,13 +108,11 @@ builder.add_node("extract_city", "extractor",
 
 # Add actions
 builder.add_node("greet_action", "action",
-                 function=greet,
-                 param_schema={"name": str},
+                 action=greet,
                  description="Greet the user")
 
 builder.add_node("weather_action", "action",
-                 function=get_weather,
-                 param_schema={"city": str},
+                 action=get_weather,
                  description="Get weather information")
 
 # Add edges
@@ -170,19 +168,13 @@ dag_config = {
         },
         "greet_action": {
             "type": "action",
-            "config": {
-                "function": "greet",
-                "param_schema": {"name": "str"},
-                "description": "Greet the user"
-            }
+            "action": greet,
+            "description": "Greet the user"
         },
         "calculate_action": {
             "type": "action",
-            "config": {
-                "function": "calculate",
-                "param_schema": {"operation": "str", "a": "float", "b": "float"},
-                "description": "Perform a calculation"
-            }
+            "action": calculate,
+            "description": "Perform a calculation"
         },
     },
     "edges": [
@@ -192,12 +184,7 @@ dag_config = {
 }
 
 # Build your DAG
-dag = (
-    DAGBuilder()
-    .with_json(dag_config)
-    .with_functions(function_registry)
-    .build()
-)
+dag = DAGBuilder.from_json(dag_config)
 
 # Test it!
 context = DefaultContext()
@@ -419,3 +406,7 @@ We welcome contributions! See our [GitHub Issues](https://github.com/Stephen-Col
 ## License
 
 MIT License - feel free to use Intent Kit in your projects!
+
+---
+
+**Built and maintained by [Stephen Collins.tech LLC](https://stephencollins.tech)**

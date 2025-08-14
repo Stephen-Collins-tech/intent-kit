@@ -25,7 +25,7 @@ from intent_kit import DAGBuilder, run_dag
 from intent_kit.core.context import DefaultContext
 
 # Define what your bot can do
-def greet(name: str) -> str:
+def greet(name: str, **kwargs) -> str:
     return f"Hello {name}!"
 
 # Create a DAG
@@ -33,9 +33,9 @@ builder = DAGBuilder()
 
 # Set default LLM configuration
 builder.with_default_llm_config({
-    "provider": "openai",
-    "api_key": os.getenv("OPENAI_API_KEY"),
-    "model": "gpt-3.5-turbo"
+    "provider": "openrouter",
+    "api_key": os.getenv("OPENROUTER_API_KEY"),
+    "model": "google/gemma-2-9b-it"
 })
 
 # Add classifier node to understand user requests
@@ -63,8 +63,7 @@ builder.set_entrypoints(["classifier"])
 dag = builder.build()
 
 # Test it!
-context = DefaultContext()
-result = run_dag(dag, "Hello Alice", context)
+result, context = run_dag(dag, "Hello Alice")
 print(result.data)  # → "Hello Alice!"
 ```
 
@@ -84,10 +83,10 @@ For more complex workflows, you can define your DAG in JSON:
 from intent_kit import DAGBuilder, run_dag
 
 # Define your functions
-def greet(name: str) -> str:
+def greet(name: str, **kwargs) -> str:
     return f"Hello {name}!"
 
-def calculate(operation: str, a: float, b: float) -> str:
+def calculate(operation: str, a: float, b: float, **kwargs) -> str:
     if operation == "add":
         return str(a + b)
     elif operation == "subtract":
@@ -102,8 +101,8 @@ dag_config = {
             "output_labels": ["greet", "calculate"],
             "description": "Main intent classifier",
             "llm_config": {
-                "provider": "openai",
-                "model": "gpt-3.5-turbo",
+                "provider": "openrouter",
+                "model": "google/gemma-2-9b-it",
             }
         },
         "extract_greet": {
@@ -142,11 +141,10 @@ dag_config = {
 dag = DAGBuilder.from_json(dag_config)
 
 # Test it!
-context = DefaultContext()
-result = run_dag(dag, "Hello Alice", context)
+result, context = run_dag(dag, "Hello Alice")
 print(result.data)  # → "Hello Alice!"
 
-result = run_dag(dag, "Add 5 and 3", context)
+result, context = run_dag(dag, "Add 5 and 3", context)
 print(result.data)  # → "8"
 ```
 
@@ -154,10 +152,10 @@ print(result.data)  # → "8"
 
 ```python
 # Test with different inputs
-result = run_dag(dag, "Hi Bob", context)
+result, context = run_dag(dag, "Hi Bob", context)
 print(result.data)  # → "Hello Bob!"
 
-result = run_dag(dag, "Greet Sarah", context)
+result, context = run_dag(dag, "Greet Sarah", context)
 print(result.data)  # → "Hello Sarah!"
 
 # Test calculations

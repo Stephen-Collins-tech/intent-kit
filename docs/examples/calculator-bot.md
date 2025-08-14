@@ -7,10 +7,10 @@ import os
 from intent_kit import DAGBuilder, run_dag
 from intent_kit.core.context import DefaultContext
 
-def add(a: float, b: float) -> str:
+def add(a: float, b: float, **kwargs) -> str:
     return str(a + b)
 
-def subtract(a: float, b: float) -> str:
+def subtract(a: float, b: float, **kwargs) -> str:
     return str(a - b)
 
 # Create DAG
@@ -18,9 +18,9 @@ builder = DAGBuilder()
 
 # Set default LLM configuration
 builder.with_default_llm_config({
-    "provider": "openai",
-    "api_key": os.getenv("OPENAI_API_KEY"),
-    "model": "gpt-3.5-turbo"
+    "provider": "openrouter",
+    "api_key": os.getenv("OPENROUTER_API_KEY"),
+    "model": "google/gemma-2-9b-it"
 })
 
 # Add classifier to determine operation
@@ -62,11 +62,10 @@ builder.set_entrypoints(["classifier"])
 dag = builder.build()
 
 # Test it!
-context = DefaultContext()
-result = run_dag(dag, "add 2 and 3", context)
+result, context = run_dag(dag, "add 2 and 3")
 print(result.data)  # → "5"
 
-result = run_dag(dag, "subtract 10 from 15", context)
+result, context = run_dag(dag, "subtract 10 from 15", context)
 print(result.data)  # → "5"
 ```
 

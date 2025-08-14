@@ -6,14 +6,14 @@ Intent Kit supports multiple Large Language Model (LLM) providers, allowing you 
 
 ### OpenAI
 
-OpenAI provides access to GPT models including GPT-3.5-turbo and GPT-4.
+OpenAI provides access to GPT models including GPT-4o and GPT-5-2025-08-07.
 
 #### Configuration
 
 ```python
 llm_config = {
     "provider": "openai",
-    "model": "gpt-5-2025-08-07",  # or "gpt-4", "gpt-4-turbo"
+    "model": "gpt-5-2025-08-07",  # or "gpt-4o", "gpt-4o-mini"
     "api_key": "your-openai-api-key",
     "temperature": 0.1,
     "max_tokens": 1000
@@ -35,8 +35,8 @@ export OPENAI_API_KEY="your-openai-api-key"
 
 #### Best Practices
 
-- Use `gpt-3.5-turbo` for classification and extraction tasks
-- Use `gpt-4` for complex reasoning tasks
+- Use `gpt-4o` for classification and extraction tasks
+- Use `gpt-5-2025-08-07` for complex reasoning tasks
 - Set `temperature` to 0.1-0.3 for consistent results
 - Monitor token usage to control costs
 
@@ -49,7 +49,7 @@ Anthropic provides access to Claude models with strong reasoning capabilities.
 ```python
 llm_config = {
     "provider": "anthropic",
-    "model": "claude-3-sonnet-20240229",  # or "claude-3-haiku", "claude-3-opus"
+    "model": "claude-3-7-sonnet-20250219",  # or "claude-3-5-haiku-20241022", "claude-opus-4-20250514"
     "api_key": "your-anthropic-api-key",
     "temperature": 0.1,
     "max_tokens": 1000
@@ -71,9 +71,9 @@ export ANTHROPIC_API_KEY="your-anthropic-api-key"
 
 #### Best Practices
 
-- Use `claude-3-sonnet` for most tasks (good balance of speed and capability)
-- Use `claude-3-opus` for complex reasoning tasks
-- Use `claude-3-haiku` for simple, fast tasks
+- Use `claude-3-7-sonnet-20250219` for most tasks (good balance of speed and capability)
+- Use `claude-opus-4-20250514` for complex reasoning tasks
+- Use `claude-3-5-haiku-20241022` for simple, fast tasks
 - Leverage long context for multi-turn conversations
 
 ### Google
@@ -85,7 +85,7 @@ Google provides access to Gemini models with strong multimodal capabilities.
 ```python
 llm_config = {
     "provider": "google",
-    "model": "gemini-pro",  # or "gemini-pro-vision"
+    "model": "gemini-2.5-flash-lite",  # or "gemini-2.5-flash", "gemini-2.5-pro"
     "api_key": "your-google-api-key",
     "temperature": 0.1,
     "max_tokens": 1000
@@ -107,8 +107,8 @@ export GOOGLE_API_KEY="your-google-api-key"
 
 #### Best Practices
 
-- Use `gemini-pro` for text-based tasks
-- Use `gemini-pro-vision` for image-related tasks
+- Use `gemini-2.5-flash-lite` for text-based tasks
+- Use `gemini-2.5-pro` for complex reasoning tasks
 - Leverage Google Cloud integration for enterprise features
 - Monitor usage through Google Cloud Console
 
@@ -160,7 +160,7 @@ OpenRouter provides access to multiple AI providers through a unified API.
 ```python
 llm_config = {
     "provider": "openrouter",
-    "model": "openai/gpt-3.5-turbo",  # or "anthropic/claude-3-sonnet"
+    "model": "google/gemma-2-9b-it",  # or "mistralai/mistral-7b-instruct"
     "api_key": "your-openrouter-api-key",
     "base_url": "https://openrouter.ai/api/v1",
     "temperature": 0.1
@@ -189,7 +189,7 @@ All providers support these common configuration options:
 ```python
 llm_config = {
     "provider": "openai",  # Required: Provider name
-    "model": "gpt-3.5-turbo",  # Required: Model name
+    "model": "google/gemma-2-9b-it",  # Required: Model name
     "api_key": "your-api-key",  # Required: API key
     "temperature": 0.1,  # Optional: Sampling temperature (0.0-2.0)
     "max_tokens": 1000,  # Optional: Maximum tokens to generate
@@ -205,7 +205,7 @@ llm_config = {
 ```python
 llm_config = {
     "provider": "openai",
-    "model": "gpt-3.5-turbo",
+    "model": "gpt-4o",
     "api_key": "your-api-key",
     "temperature": 0.1,
     "max_tokens": 1000,
@@ -220,7 +220,7 @@ llm_config = {
 ```python
 llm_config = {
     "provider": "anthropic",
-    "model": "claude-3-sonnet-20240229",
+    "model": "claude-3-7-sonnet-20250219",
     "api_key": "your-api-key",
     "temperature": 0.1,
     "max_tokens": 1000,
@@ -234,7 +234,7 @@ llm_config = {
 ```python
 llm_config = {
     "provider": "google",
-    "model": "gemini-pro",
+    "model": "gemini-2.5-flash-lite",
     "api_key": "your-api-key",
     "temperature": 0.1,
     "max_tokens": 1000,
@@ -253,8 +253,8 @@ from intent_kit import DAGBuilder
 # Create builder with default LLM config
 builder = DAGBuilder()
 builder.with_default_llm_config({
-    "provider": "openai",
-    "model": "gpt-3.5-turbo",
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it",
     "api_key": "your-api-key",
     "temperature": 0.1
 })
@@ -273,9 +273,9 @@ builder.add_node("classifier", "classifier",
                  output_labels=["greet", "calculate"],
                  description="Main intent classifier",
                  llm_config={
-                     "provider": "anthropic",
-                     "model": "claude-3-sonnet-20240229",
-                     "api_key": "your-anthropic-api-key",
+                     "provider": "openrouter",
+                     "model": "google/gemma-2-9b-it",
+                     "api_key": "your-openrouter-api-key",
                      "temperature": 0.1
                  })
 ```
@@ -285,8 +285,8 @@ builder.add_node("classifier", "classifier",
 ```python
 dag_config = {
     "default_llm_config": {
-        "provider": "openai",
-        "model": "gpt-3.5-turbo",
+        "provider": "openrouter",
+        "model": "google/gemma-2-9b-it",
         "api_key": "your-api-key",
         "temperature": 0.1
     },
@@ -301,9 +301,9 @@ dag_config = {
             "param_schema": {"name": str},
             "description": "Extract name from greeting",
             "llm_config": {
-                "provider": "anthropic",
-                "model": "claude-3-sonnet-20240229",
-                "api_key": "your-anthropic-api-key"
+                "provider": "openrouter",
+                "model": "google/gemma-2-9b-it",
+                "api_key": "your-openrouter-api-key"
             }
         }
     }
@@ -314,9 +314,9 @@ dag_config = {
 
 ### Model Selection
 
-1. **Classification Tasks**: Use faster, cheaper models (GPT-3.5-turbo, Claude-3-haiku)
-2. **Extraction Tasks**: Use models with good instruction following (GPT-3.5-turbo, Claude-3-sonnet)
-3. **Complex Reasoning**: Use more capable models (GPT-4, Claude-3-opus)
+1. **Classification Tasks**: Use faster, cheaper models (gpt-4o, claude-3-5-haiku-20241022)
+2. **Extraction Tasks**: Use models with good instruction following (gpt-4o, claude-3-7-sonnet-20250219)
+3. **Complex Reasoning**: Use more capable models (gpt-5-2025-08-07, claude-opus-4-20250514)
 4. **Privacy-Sensitive**: Use local models (Ollama)
 
 ### Temperature Settings
@@ -328,7 +328,7 @@ dag_config = {
 
 ### Cost Optimization
 
-1. **Use appropriate models** - Don't use GPT-4 for simple tasks
+1. **Use appropriate models** - Don't use gpt-5-2025-08-07 for simple tasks
 2. **Set reasonable limits** - Use `max_tokens` to control costs
 3. **Cache results** - Implement caching for repeated requests
 4. **Monitor usage** - Track token consumption and costs
@@ -340,7 +340,7 @@ dag_config = {
 from intent_kit.core.exceptions import LLMError
 
 try:
-    result = dag.execute("Hello Alice", context)
+    result, context = run_dag(dag, "Hello Alice")
 except LLMError as e:
     print(f"LLM error: {e}")
     # Handle rate limits, API errors, etc.
@@ -386,9 +386,9 @@ llm_config = {
 
 ```python
 # Check model names
-# OpenAI: "gpt-3.5-turbo", "gpt-4"
-# Anthropic: "claude-3-sonnet-20240229", "claude-3-haiku"
-# Google: "gemini-pro", "gemini-pro-vision"
+# OpenAI: "gpt-4o", "gpt-5-2025-08-07"
+# Anthropic: "claude-3-7-sonnet-20250219", "claude-3-5-haiku-20241022"
+# Google: "gemini-2.5-flash-lite", "gemini-2.5-pro"
 # Ollama: "llama2", "mistral", "codellama"
 ```
 
@@ -411,10 +411,10 @@ To switch from one provider to another:
 1. **Update configuration**:
    ```python
    # From OpenAI
-   llm_config = {"provider": "openai", "model": "gpt-3.5-turbo"}
+   llm_config = {"provider": "openrouter", "model": "google/gemma-2-9b-it"}
 
    # To Anthropic
-   llm_config = {"provider": "anthropic", "model": "claude-3-sonnet-20240229"}
+   llm_config = {"provider": "openrouter", "model": "google/gemma-2-9b-it"}
    ```
 
 2. **Update environment variables**:

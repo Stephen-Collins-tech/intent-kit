@@ -1,28 +1,38 @@
 # Intent DAGs
 
-Intent DAGs (Directed Acyclic Graphs) are the core architectural concept in Intent Kit. They provide a flexible, scalable way to route user input through a series of nodes to produce structured outputs.
+Intent DAGs (Directed Acyclic Graphs) are the core architectural concept in Intent Kit. They provide a flexible, scalable way to route user input through a series of nodes to produce structured outputs with support for node reuse and complex routing patterns.
 
 ## Overview
 
 An intent DAG is a directed acyclic graph where:
 
-- **Nodes** represent decision points, extractors, or actions
+- **Nodes** represent decision points, extractors, actions, or clarification points
 - **Edges** represent the flow between nodes with optional labels
-- **Entrypoints** are starting nodes for user input
+- **Entrypoints** are starting nodes for user input processing
 - **Actions** are terminal nodes that produce outputs
+- **Node Reuse** allows nodes to be shared across multiple execution paths
 
 ## DAG Structure
 
 ```text
 User Input → Classifier → Extractor → Action → Output
-                ↓
-            Clarification
+                ↓              ↓
+            Clarification   Shared Extractor
+                ↓              ↓
+            Action         Action
 ```
+
+### Key DAG Features
+
+1. **Node Reuse** - Nodes can have multiple parents and children, enabling efficient sharing
+2. **Flexible Routing** - Complex routing patterns with conditional edges
+3. **Parallel Execution** - Multiple paths can be executed simultaneously
+4. **Context Propagation** - Rich context flows through all execution paths
 
 ### Node Types
 
-1. **Classifier Nodes** - Route input to appropriate child nodes based on intent
-2. **Extractor Nodes** - Extract parameters from user input using LLM
+1. **Classifier Nodes** - Route input to appropriate child nodes based on intent classification
+2. **Extractor Nodes** - Extract structured parameters from user input using LLM
 3. **Action Nodes** - Execute actions and produce outputs
 4. **Clarification Nodes** - Ask for clarification when intent is unclear
 
@@ -40,21 +50,25 @@ def greet(name: str) -> str:
 def get_weather(city: str) -> str:
     return f"Weather in {city} is sunny"
 
+def extract_location(text: str) -> str:
+    # Shared location extraction logic
+    return text.split()[-1]  # Simple example
+
 # Create DAG
 builder = DAGBuilder()
 
 # Set default LLM configuration
 builder.with_default_llm_config({
-    "provider": "openai",
-    "model": "gpt-4"
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it"
 })
 
 # Add classifier node
 builder.add_node("classifier", "classifier",
-                 output_labels=["greet", "weather"],
+                 output_labels=["greet", "weather", "clarification"],
                  description="Route to appropriate action")
 
-# Add extractors
+# Add extractors (including shared extractor)
 builder.add_node("extract_name", "extractor",
                  param_schema={"name": str},
                  description="Extract name from greeting",
@@ -64,6 +78,12 @@ builder.add_node("extract_city", "extractor",
                  param_schema={"city": str},
                  description="Extract city from weather request",
                  output_key="extracted_params")
+
+# Shared location extractor that can be used by multiple paths
+builder.add_node("shared_location_extractor", "extractor",
+                 param_schema={"location": str},
+                 description="Extract location information",
+                 output_key="location_params")
 
 # Add action nodes
 builder.add_node("greet_action", "action",
@@ -79,18 +99,42 @@ builder.add_node("clarification", "clarification",
                  clarification_message="I'm not sure what you'd like me to do. You can greet me or ask about weather!",
                  available_options=["Say hello", "Ask about weather"])
 
-# Connect nodes
+# Connect nodes with complex routing
 builder.add_edge("classifier", "extract_name", "greet")
 builder.add_edge("extract_name", "greet_action", "success")
 builder.add_edge("classifier", "extract_city", "weather")
 builder.add_edge("extract_city", "weather_action", "success")
 builder.add_edge("classifier", "clarification", "clarification")
 
+# Demonstrate node reuse - shared extractor can be used by multiple paths
+builder.add_edge("classifier", "shared_location_extractor", "location_needed")
+builder.add_edge("shared_location_extractor", "weather_action", "success")
+
 # Set entrypoints
 builder.set_entrypoints(["classifier"])
 
 # Build DAG
 dag = builder.build()
+```
+
+### Node Reuse Patterns
+
+DAGs support powerful node reuse patterns:
+
+```python
+# Shared classifier that routes to multiple specialized extractors
+builder.add_node("shared_classifier", "classifier",
+                 output_labels=["intent_a", "intent_b", "intent_c"])
+
+# Shared extractor used by multiple intents
+builder.add_node("shared_extractor", "extractor",
+                 param_schema={"common_param": str})
+
+# Multiple paths can use the same extractor
+builder.add_edge("shared_classifier", "shared_extractor", "intent_a")
+builder.add_edge("shared_classifier", "shared_extractor", "intent_b")
+builder.add_edge("shared_extractor", "action_a", "success")
+builder.add_edge("shared_extractor", "action_b", "success")
 ```
 
 ### Using JSON Configuration
@@ -111,7 +155,7 @@ dag_config = {
             "type": "classifier",
             "output_labels": ["greet", "weather"],
             "description": "Main intent classifier",
-            "llm_config": {"provider": "openai", "model": "gpt-4"}
+            "llm_config": {"provider": "openrouter", "model": "google/gemma-2-9b-it"}
         },
         "extract_name": {
             "type": "extractor",
@@ -226,9 +270,9 @@ DAGs can use different LLM providers and models:
 ```python
 builder = DAGBuilder()
 builder.with_default_llm_config({
-    "provider": "anthropic",
-    "api_key": os.getenv("ANTHROPIC_API_KEY"),
-    "model": "claude-3-sonnet-20240229"
+    "provider": "openrouter",
+    "api_key": os.getenv("OPENROUTER_API_KEY"),
+    "model": "google/gemma-2-9b-it"
 })
 ```
 

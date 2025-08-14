@@ -16,18 +16,18 @@ This guide provides basic examples of common Intent Kit patterns and use cases. 
 A basic example that demonstrates intent classification and parameter extraction.
 
 ```python
-from intent_kit import DAGBuilder
+from intent_kit import DAGBuilder, run_dag
 from intent_kit.core.context import DefaultContext
 
 # Define the greeting action
-def greet_action(name: str) -> str:
+def greet_action(name: str, **kwargs) -> str:
     return f"Hello {name}! Nice to meet you."
 
 # Create the DAG
 builder = DAGBuilder()
 builder.with_default_llm_config({
-    "provider": "openai",
-    "model": "gpt-3.5-turbo",
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it",
     "temperature": 0.1
 })
 
@@ -54,7 +54,6 @@ builder.set_entrypoints(["classifier"])
 
 # Build and test
 dag = builder.build()
-context = DefaultContext()
 
 # Test with different inputs
 test_inputs = [
@@ -65,7 +64,7 @@ test_inputs = [
 ]
 
 for input_text in test_inputs:
-    result = dag.execute(input_text, context)
+    result, context = run_dag(dag, input_text)
     print(f"Input: {input_text}")
     print(f"Output: {result.data}")
     print("---")
@@ -90,16 +89,16 @@ from intent_kit import DAGBuilder
 from intent_kit.core.context import DefaultContext
 
 # Define calculator actions
-def add_action(a: float, b: float) -> str:
+def add_action(a: float, b: float, **kwargs) -> str:
     return f"{a} + {b} = {a + b}"
 
-def subtract_action(a: float, b: float) -> str:
+def subtract_action(a: float, b: float, **kwargs) -> str:
     return f"{a} - {b} = {a - b}"
 
-def multiply_action(a: float, b: float) -> str:
+def multiply_action(a: float, b: float, **kwargs) -> str:
     return f"{a} × {b} = {a * b}"
 
-def divide_action(a: float, b: float) -> str:
+def divide_action(a: float, b: float, **kwargs) -> str:
     if b == 0:
         return "Error: Cannot divide by zero"
     return f"{a} ÷ {b} = {a / b}"
@@ -107,8 +106,8 @@ def divide_action(a: float, b: float) -> str:
 # Create the DAG
 builder = DAGBuilder()
 builder.with_default_llm_config({
-    "provider": "openai",
-    "model": "gpt-3.5-turbo",
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it",
     "temperature": 0.1
 })
 
@@ -172,7 +171,6 @@ builder.set_entrypoints(["classifier"])
 
 # Build and test
 dag = builder.build()
-context = DefaultContext()
 
 # Test with different operations
 test_inputs = [
@@ -184,7 +182,7 @@ test_inputs = [
 ]
 
 for input_text in test_inputs:
-    result = dag.execute(input_text, context)
+    result, context = run_dag(dag, input_text)
     print(f"Input: {input_text}")
     print(f"Output: {result.data}")
     print("---")
@@ -200,7 +198,7 @@ from intent_kit.core.context import DefaultContext
 from datetime import datetime
 
 # Simulate weather API call
-def get_weather_action(city: str, date: str = None) -> str:
+def get_weather_action(city: str, date: str = None, **kwargs) -> str:
     if date is None:
         date = datetime.now().strftime("%Y-%m-%d")
 
@@ -221,8 +219,8 @@ def get_weather_action(city: str, date: str = None) -> str:
 # Create the DAG
 builder = DAGBuilder()
 builder.with_default_llm_config({
-    "provider": "openai",
-    "model": "gpt-3.5-turbo",
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it",
     "temperature": 0.1
 })
 
@@ -249,7 +247,6 @@ builder.set_entrypoints(["classifier"])
 
 # Build and test
 dag = builder.build()
-context = DefaultContext()
 
 # Test with different weather queries
 test_inputs = [
@@ -260,7 +257,7 @@ test_inputs = [
 ]
 
 for input_text in test_inputs:
-    result = dag.execute(input_text, context)
+    result, context = run_dag(dag, input_text)
     print(f"Input: {input_text}")
     print(f"Output: {result.data}")
     print("---")
@@ -277,13 +274,13 @@ from intent_kit.core.context import DefaultContext
 # Task storage (in a real app, this would be a database)
 tasks = []
 
-def add_task_action(title: str, priority: str = "medium") -> str:
+def add_task_action(title: str, priority: str = "medium", **kwargs) -> str:
     task_id = len(tasks) + 1
     task = {"id": task_id, "title": title, "priority": priority, "completed": False}
     tasks.append(task)
     return f"Task added: {title} (Priority: {priority}, ID: {task_id})"
 
-def list_tasks_action() -> str:
+def list_tasks_action(**kwargs) -> str:
     if not tasks:
         return "No tasks found."
 
@@ -294,7 +291,7 @@ def list_tasks_action() -> str:
 
     return "Tasks:\n" + "\n".join(task_list)
 
-def complete_task_action(task_id: int) -> str:
+def complete_task_action(task_id: int, **kwargs) -> str:
     if 1 <= task_id <= len(tasks):
         tasks[task_id - 1]["completed"] = True
         return f"Task {task_id} marked as completed."
@@ -304,8 +301,8 @@ def complete_task_action(task_id: int) -> str:
 # Create the DAG
 builder = DAGBuilder()
 builder.with_default_llm_config({
-    "provider": "openai",
-    "model": "gpt-3.5-turbo",
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it",
     "temperature": 0.1
 })
 
@@ -351,7 +348,6 @@ builder.set_entrypoints(["classifier"])
 
 # Build and test
 dag = builder.build()
-context = DefaultContext()
 
 # Test task management
 test_inputs = [
@@ -363,7 +359,7 @@ test_inputs = [
 ]
 
 for input_text in test_inputs:
-    result = dag.execute(input_text, context)
+    result, context = run_dag(dag, input_text)
     print(f"Input: {input_text}")
     print(f"Output: {result.data}")
     print("---")
@@ -378,23 +374,23 @@ from intent_kit import DAGBuilder
 from intent_kit.core.context import DefaultContext
 
 # Support actions
-def billing_support_action(issue: str) -> str:
+def billing_support_action(issue: str, **kwargs) -> str:
     return f"Billing support ticket created: {issue}. A representative will contact you within 24 hours."
 
-def technical_support_action(issue: str) -> str:
+def technical_support_action(issue: str, **kwargs) -> str:
     return f"Technical support ticket created: {issue}. Our engineers will investigate and respond within 2 hours."
 
-def general_inquiry_action(question: str) -> str:
+def general_inquiry_action(question: str, **kwargs) -> str:
     return f"General inquiry received: {question}. We'll get back to you with an answer soon."
 
-def escalation_action(issue: str) -> str:
+def escalation_action(issue: str, **kwargs) -> str:
     return f"Your issue has been escalated to senior support: {issue}. You'll receive a call within 1 hour."
 
 # Create the DAG
 builder = DAGBuilder()
 builder.with_default_llm_config({
-    "provider": "openai",
-    "model": "gpt-3.5-turbo",
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it",
     "temperature": 0.1
 })
 
@@ -458,7 +454,6 @@ builder.set_entrypoints(["classifier"])
 
 # Build and test
 dag = builder.build()
-context = DefaultContext()
 
 # Test customer support routing
 test_inputs = [
@@ -469,7 +464,7 @@ test_inputs = [
 ]
 
 for input_text in test_inputs:
-    result = dag.execute(input_text, context)
+    result, context = run_dag(dag, input_text)
     print(f"Input: {input_text}")
     print(f"Output: {result.data}")
     print("---")
@@ -492,7 +487,7 @@ sales_data = [
     {"date": "2024-01-04", "product": "Widget C", "amount": 2000, "region": "East"},
 ]
 
-def sales_report_action(product: str = None, region: str = None, start_date: str = None, end_date: str = None) -> str:
+def sales_report_action(product: str = None, region: str = None, start_date: str = None, end_date: str = None, **kwargs) -> str:
     filtered_data = sales_data.copy()
 
     if product:
@@ -520,7 +515,7 @@ def sales_report_action(product: str = None, region: str = None, start_date: str
 
     return f"Sales Report ({filter_text}):\nTotal Sales: ${total_amount:,}\nNumber of Transactions: {count}"
 
-def inventory_check_action(product: str) -> str:
+def inventory_check_action(product: str, **kwargs) -> str:
     # Simulate inventory data
     inventory = {
         "Widget A": {"quantity": 150, "location": "Warehouse 1"},
@@ -537,8 +532,8 @@ def inventory_check_action(product: str) -> str:
 # Create the DAG
 builder = DAGBuilder()
 builder.with_default_llm_config({
-    "provider": "openai",
-    "model": "gpt-3.5-turbo",
+    "provider": "openrouter",
+    "model": "google/gemma-2-9b-it",
     "temperature": 0.1
 })
 
@@ -578,7 +573,6 @@ builder.set_entrypoints(["classifier"])
 
 # Build and test
 dag = builder.build()
-context = DefaultContext()
 
 # Test data queries
 test_inputs = [
@@ -589,7 +583,7 @@ test_inputs = [
 ]
 
 for input_text in test_inputs:
-    result = dag.execute(input_text, context)
+    result, context = run_dag(dag, input_text)
     print(f"Input: {input_text}")
     print(f"Output: {result.data}")
     print("---")
@@ -654,7 +648,7 @@ print(f"Execution time: {execution_time:.2f} seconds")
 
 ## Next Steps
 
-- Explore [Advanced Examples](advanced-examples.md) for more complex patterns
-- Learn about [Context Management](concepts/context-architecture.md) for stateful applications
-- Check out [JSON Configuration](configuration/json-serialization.md) for declarative workflows
-- Review [Testing Strategies](development/testing.md) for robust applications
+- Explore [DAG Examples](dag-examples.md) for more complex patterns
+- Learn about [Context Management](../concepts/context-architecture.md) for stateful applications
+- Check out [JSON Configuration](../configuration/json-serialization.md) for declarative workflows
+- Review [Testing Strategies](../development/testing.md) for robust applications
