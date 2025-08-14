@@ -14,15 +14,10 @@
           "description": "Building blocks of intent graphs",
           "status": "complete"
         },
-        "context_system.md": {
-          "title": "Context System",
+        "context_architecture.md": {
+          "title": "Context Architecture",
           "description": "State management and dependency tracking",
-          "status": "pending"
-        },
-        "remediation.md": {
-          "title": "Remediation",
-          "description": "Error handling and recovery strategies",
-          "status": "pending"
+          "status": "complete"
         }
       }
     },
@@ -30,25 +25,10 @@
       "title": "API Reference",
       "description": "Complete API documentation",
       "files": {
-        "intent_graph_builder.md": {
-          "title": "IntentGraphBuilder",
-          "description": "Fluent interface for building graphs",
-          "status": "pending"
-        },
-        "node_types.md": {
-          "title": "Node Types",
-          "description": "Action, Classifier, and Splitter nodes",
-          "status": "pending"
-        },
-        "context_api.md": {
-          "title": "Context API",
-          "description": "Context management and debugging",
-          "status": "pending"
-        },
-        "remediation_api.md": {
-          "title": "Remediation API",
-          "description": "Error handling strategies",
-          "status": "pending"
+        "api_reference.md": {
+          "title": "Complete API Reference",
+          "description": "Comprehensive API documentation with examples",
+          "status": "complete"
         }
       }
     },
@@ -63,13 +43,8 @@
         },
         "llm_integration.md": {
           "title": "LLM Integration",
-          "description": "OpenAI, Anthropic, Google, Ollama",
-          "status": "pending"
-        },
-        "function_registry.md": {
-          "title": "Function Registry",
-          "description": "Managing function mappings",
-          "status": "pending"
+          "description": "OpenAI, Anthropic, Google, Ollama configuration",
+          "status": "complete"
         }
       }
     },
@@ -79,23 +54,23 @@
       "files": {
         "basic_examples.md": {
           "title": "Basic Examples",
-          "description": "Simple intent graphs",
-          "status": "pending"
+          "description": "Fundamental patterns and common use cases",
+          "status": "complete"
         },
-        "advanced_examples.md": {
-          "title": "Advanced Examples",
-          "description": "Complex workflows",
-          "status": "pending"
+        "calculator_bot.md": {
+          "title": "Calculator Bot",
+          "description": "Simple math operations with natural language processing",
+          "status": "complete"
         },
-        "multi_intent_routing.md": {
-          "title": "Multi-Intent Routing",
-          "description": "Handling multiple nodes",
-          "status": "pending"
+        "context_aware_chatbot.md": {
+          "title": "Context-Aware Chatbot",
+          "description": "Basic context persistence across turns",
+          "status": "complete"
         },
-        "context_workflows.md": {
-          "title": "Context Workflows",
-          "description": "Stateful conversations",
-          "status": "pending"
+        "context_memory_demo.md": {
+          "title": "Context Memory Demo",
+          "description": "Multi-turn conversations with sophisticated memory management",
+          "status": "complete"
         }
       }
     },
@@ -111,19 +86,39 @@
         "testing.md": {
           "title": "Testing",
           "description": "Unit tests and integration testing",
-          "status": "pending"
+          "status": "complete"
         },
         "evaluation.md": {
           "title": "Evaluation",
           "description": "Performance evaluation and benchmarking",
-          "status": "pending"
+          "status": "complete"
         },
         "debugging.md": {
           "title": "Debugging",
           "description": "Debugging tools and techniques",
-          "status": "pending"
+          "status": "complete"
+        },
+        "performance_monitoring.md": {
+          "title": "Performance Monitoring",
+          "description": "Performance tracking and reporting",
+          "status": "complete"
+        },
+        "documentation_management.md": {
+          "title": "Documentation Management",
+          "description": "Managing and maintaining documentation",
+          "status": "complete"
         }
       }
+    }
+  },
+  "metadata": {
+    "last_updated": "2024-12-19",
+    "version": "1.0.0",
+    "total_files": 15,
+    "completion_status": {
+      "complete": 15,
+      "pending": 0,
+      "total": 15
     }
   }
 }
