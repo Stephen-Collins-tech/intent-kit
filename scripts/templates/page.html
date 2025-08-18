@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Intent Kit Documentation</title>
+    <meta name="description" content="Intent Kit - Open-source Python framework for intent classification and execution">
+    <link rel="stylesheet" href="/assets/style.css">
+    <link rel="canonical" href="https://stephen-collins-tech.github.io/intent-kit/{{ current_page }}">
+    <meta property="og:title" content="{{ title }} - Intent Kit Documentation">
+    <meta property="og:description" content="Intent Kit - Open-source Python framework for intent classification and execution">
+    <meta property="og:url" content="https://stephen-collins-tech.github.io/intent-kit/{{ current_page }}">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ title }} - Intent Kit Documentation">
+    <meta name="twitter:description" content="Intent Kit - Open-source Python framework for intent classification and execution">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1 class="site-title">
+                <a href="/index.html">Intent Kit</a>
+            </h1>
+            <p class="site-description">Open-source Python framework for intent classification and execution</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <nav class="nav">
+            <ul>
+                {% for page in navigation.pages %}
+                    {% if page is mapping and page.file %}
+                        <li>
+                            <a href="/{{ page.url }}" {% if page.url == current_page %}class="active"{% endif %}>
+                                {{ page.title }}
+                            </a>
+                        </li>
+                    {% elif page is mapping and page.pages %}
+                        <li class="nav-section">
+                            <strong>{{ page.title }}</strong>
+                            <ul>
+                                {% for subpage in page.pages %}
+                                    <li>
+                                        <a href="/{{ subpage.url }}" {% if subpage.url == current_page %}class="active"{% endif %}>
+                                            {{ subpage.title }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+
+        <main class="content">
+            {% if breadcrumb %}
+                <nav class="breadcrumb">
+                    <a href="/index.html">Home</a>
+                    {% for item in breadcrumb %}
+                        &raquo; <a href="/{{ item.url }}">{{ item.title }}</a>
+                    {% endfor %}
+                </nav>
+            {% endif %}
+
+            <article>
+                {{ content | safe }}
+            </article>
+
+            <footer class="page-footer">
+                <p>
+                    <a href="https://github.com/Stephen-Collins-tech/intent-kit" target="_blank" rel="noopener">
+                        View on GitHub
+                    </a>
+                    &bull;
+                    <a href="https://github.com/Stephen-Collins-tech/intent-kit/issues" target="_blank" rel="noopener">
+                        Report Issues
+                    </a>
+                    &bull;
+                    <a href="https://pypi.org/project/intentkit-py/" target="_blank" rel="noopener">
+                        PyPI Package
+                    </a>
+                </p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // Add syntax highlighting
+        document.addEventListener('DOMContentLoaded', function() {
+            // Highlight code blocks
+            const codeBlocks = document.querySelectorAll('pre code');
+            codeBlocks.forEach(function(block) {
+                block.classList.add('highlight');
+            });
+
+            // Add copy button to code blocks
+            const preBlocks = document.querySelectorAll('pre');
+            preBlocks.forEach(function(pre) {
+                const copyButton = document.createElement('button');
+                copyButton.textContent = 'Copy';
+                copyButton.className = 'copy-button';
+                copyButton.onclick = function() {
+                    const code = pre.querySelector('code');
+                    if (code) {
+                        navigator.clipboard.writeText(code.textContent).then(function() {
+                            copyButton.textContent = 'Copied!';
+                            setTimeout(function() {
+                                copyButton.textContent = 'Copy';
+                            }, 2000);
+                        });
+                    }
+                };
+                pre.appendChild(copyButton);
+            });
+        });
+    </script>
+
+    <style>
+        .header-content {
+            text-align: center;
+            padding: 2rem 0;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 2rem;
+        }
+
+        .site-title {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .site-title a {
+            color: #2c3e50;
+            text-decoration: none;
+        }
+
+        .site-description {
+            margin: 0.5rem 0 0 0;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .nav-section {
+            margin-top: 1.5rem;
+        }
+
+        .nav-section strong {
+            color: #2c3e50;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-section ul {
+            margin-top: 0.5rem;
+            padding-left: 1rem;
+        }
+
+        .nav a.active {
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        pre {
+            position: relative;
+        }
+
+        pre:hover .copy-button {
+            opacity: 1;
+        }
+
+        .page-footer {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #666;
+        }
+
+        .page-footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .page-footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav {
+                order: 2;
+            }
+            
+            .content {
+                order: 1;
+            }
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://stephen-collins-tech.github.io/intent-kit/sitemap.xml

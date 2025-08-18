@@ -8,10 +8,10 @@ Build reliable, auditable AI applications that understand user intent and take i
   [![Downloads](https://static.pepy.tech/badge/intentkit-py/month)](https://pepy.tech/project/intentkit-py)
   [![Versions](https://img.shields.io/pypi/pyversions/intentkit-py.svg)](https://github.com/Stephen-Collins-tech/intent-kit)
   [![License](https://img.shields.io/github/license/Stephen-Collins-tech/intent-kit.svg)](https://github.com/Stephen-Collins-tech/intent-kit/blob/main/LICENSE)
-  [![Documentation](https://img.shields.io/badge/docs-online-blue)](https://docs.intentkit.io)
+  [![Documentation](https://img.shields.io/badge/docs-online-blue)](https://stephen-collins-tech.github.io/intent-kit)
 
 <p align="center">
-  <a href="https://docs.intentkit.io">Docs</a>
+  <a href="https://stephen-collins-tech.github.io/intent-kit">Docs</a>
 </p>
 
 ---
